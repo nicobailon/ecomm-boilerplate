@@ -2,8 +2,11 @@ import { motion } from "framer-motion";
 import { Trash, Star } from "lucide-react";
 import { useProducts, useDeleteProduct, useToggleFeatured } from "@/hooks/queries/useProducts";
 import LoadingSpinner from "./LoadingSpinner";
+import { useEffect } from "react";
+import { ProductsListProps } from "@/types";
+import { cn } from "@/lib/utils";
 
-const ProductsList = () => {
+const ProductsList = ({ highlightProductId, onHighlightComplete }: ProductsListProps = {}) => {
 	const { data, isLoading } = useProducts();
 	const deleteProduct = useDeleteProduct();
 	const toggleFeatured = useToggleFeatured();
@@ -11,6 +14,21 @@ const ProductsList = () => {
 	if (isLoading) return <LoadingSpinner />;
 
 	const products = data?.data || [];
+
+	useEffect(() => {
+		if (highlightProductId) {
+			// Scroll to product
+			const element = document.getElementById(`product-${highlightProductId}`);
+			element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			
+			// Clear highlight after animation
+			const timer = setTimeout(() => {
+				onHighlightComplete?.();
+			}, 3000);
+			
+			return () => clearTimeout(timer);
+		}
+	}, [highlightProductId, onHighlightComplete]);
 
 	return (
 		<motion.div
@@ -58,7 +76,14 @@ const ProductsList = () => {
 
 				<tbody className='bg-gray-800 divide-y divide-gray-700'>
 					{products?.map((product) => (
-						<tr key={product._id} className='hover:bg-gray-700'>
+						<tr 
+							key={product._id} 
+							id={`product-${product._id}`}
+							className={cn(
+								'hover:bg-gray-700 transition-all duration-300',
+								highlightProductId === product._id && 'ring-2 ring-emerald-400 bg-emerald-900/20 animate-highlight'
+							)}
+						>
 							<td className='px-6 py-4 whitespace-nowrap'>
 								<div className='flex items-center'>
 									<div className='flex-shrink-0 h-10 w-10'>

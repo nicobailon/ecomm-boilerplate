@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "sonner";
 import Navbar from './Navbar';
 import LoadingSpinner from './LoadingSpinner';
 
@@ -19,7 +19,17 @@ function RootLayout() {
           <Outlet />
         </Suspense>
       </div>
-      <Toaster />
+      <Toaster 
+        theme="dark"
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#1f2937',
+            color: '#fff',
+            border: '1px solid #374151',
+          },
+        }}
+      />
     </div>
   );
 }

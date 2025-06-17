@@ -62,3 +62,33 @@ export interface DailySalesData {
   sales: number;
   revenue: number;
 }
+
+// Shared constants for navigation
+export const NAVIGATION_DELAY = 1500; // ms
+
+// Product creation types for form/navigation integration
+export interface ProductCreationResult {
+  productId: string;
+  timestamp: number;
+  bulkMode: boolean;
+}
+
+// Navigation state types
+export interface NavigationState {
+  isNavigating: boolean;
+  targetTab?: TabId;
+  highlightId?: string;
+}
+
+export type TabId = 'create' | 'products' | 'analytics';
+
+// CreateProductForm callback props
+export interface CreateProductFormProps {
+  onProductCreated?: (productId: string) => void;
+}
+
+// ProductsList props for highlighting
+export interface ProductsListProps {
+  highlightProductId?: string | null;
+  onHighlightComplete?: () => void;
+}

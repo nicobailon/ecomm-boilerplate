@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { CartItem, Product, ApiResponse } from '@/types';
 import toast from 'react-hot-toast';
+import { useCurrentUser } from './useAuth';
 
 interface CartResponse {
   cartItems: (CartItem & { product: Product })[];
@@ -14,12 +15,16 @@ interface CartResponse {
 }
 
 export const useCart = () => {
+  const { data: user } = useCurrentUser();
+  
   return useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
       const { data } = await apiClient.get<ApiResponse<CartResponse>>('/cart');
-      return data.data;
+      return data.data || { cartItems: [], totalAmount: 0, subtotal: 0, coupon: null };
     },
+    enabled: !!user && user.role !== 'admin', // Only fetch cart for non-admin users
+    retry: false, // Don't retry if the cart fetch fails
   });
 };
 

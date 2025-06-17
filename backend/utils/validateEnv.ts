@@ -8,7 +8,8 @@ export function validateEnvVariables() {
     'UPSTASH_REDIS_URL',
     'STRIPE_SECRET_KEY',
     'CLIENT_URL',
-    'NODE_ENV'
+    'NODE_ENV',
+    'UPLOADTHING_TOKEN'
   ];
 
   const missingVars: string[] = [];

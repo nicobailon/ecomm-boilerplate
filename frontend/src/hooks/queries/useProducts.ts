@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { Product, ApiResponse, PaginatedResponse, ProductCategory } from '@/types';
 import { ProductInput } from '@/lib/validations';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export const useProducts = (category?: ProductCategory, page = 1, limit = 12) => {
   return useQuery({
@@ -41,7 +41,6 @@ export const useCreateProduct = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Product created successfully');
     },
   });
 };

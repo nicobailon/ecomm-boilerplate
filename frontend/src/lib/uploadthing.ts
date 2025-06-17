@@ -1,11 +1,19 @@
-import { generateReactHelpers } from "@uploadthing/react";
-import { generateUploadButton } from "@uploadthing/react";
+import { generateUploadButton, generateUploadDropzone, generateReactHelpers } from "@uploadthing/react";
+import type { OurFileRouter } from "@/types/uploadthing";
 
-// Basic type for the file router - this will be properly typed when backend integration is complete
-interface FileRouter {
-  [key: string]: any;
-}
+// Use relative URL to leverage Vite's proxy in development
+// This ensures cookies are properly sent with requests
+const uploadThingUrl = "/api/uploadthing";
 
-export const { useUploadThing, uploadFiles } = generateReactHelpers<FileRouter>();
+// Create upload components - UploadThing will handle credentials internally
+export const UploadButton = generateUploadButton<OurFileRouter>({
+  url: uploadThingUrl,
+});
 
-export const UploadButton = generateUploadButton<FileRouter>();
+export const UploadDropzone = generateUploadDropzone<OurFileRouter>({
+  url: uploadThingUrl,
+});
+
+export const { useUploadThing, uploadFiles } = generateReactHelpers<OurFileRouter>({
+  url: uploadThingUrl,
+});

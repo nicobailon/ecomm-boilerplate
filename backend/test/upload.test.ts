@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import cookieParser from 'cookie-parser';
-
-
+import uploadRoutes from '../routes/upload.route.js';
+import { User } from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 
 // Mock dependencies
@@ -142,3 +142,4 @@ describe('Upload Routes', () => {
       expect(response.body.message).toBe('Unauthorized - Access token expired');
     });
   });
+});

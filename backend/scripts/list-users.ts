@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import User from '../models/user.model.js';
+import { User } from '../models/user.model.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,14 +30,14 @@ const listUsers = async () => {
     console.log('Email                          | Role     | Created');
     console.log('---------------------------------------------------');
     
-    users.forEach(user => {
+    users.forEach((user: any) => {
       const email = user.email.padEnd(30);
       const role = (user.role || 'customer').padEnd(8);
       const created = new Date(user.createdAt).toLocaleDateString();
       console.log(`${email} | ${role} | ${created}`);
     });
 
-    const adminCount = users.filter(u => u.role === 'admin').length;
+    const adminCount = users.filter((u: any) => u.role === 'admin').length;
     console.log(`\n📊 Summary: ${adminCount} admin(s), ${users.length - adminCount} customer(s)`);
 
   } catch (error) {

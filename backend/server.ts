@@ -3,10 +3,13 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import path from 'path';
+import * as trpcExpress from '@trpc/server/adapters/express';
 import { connectDB } from './lib/db.js';
 import { errorHandler } from './middleware/error.middleware.js';
-import { securityMiddleware, authRateLimit } from './middleware/security.middleware.js';
+import { securityMiddleware, authRateLimit, trpcRateLimit } from './middleware/security.middleware.js';
 import { validateEnvVariables } from './utils/validateEnv.js';
+import { createContext } from './trpc/context.js';
+import { appRouter } from './trpc/routers/app.router.js';
 import authRoutes from './routes/auth.route.js';
 import productRoutes from './routes/product.route.js';
 import cartRoutes from './routes/cart.route.js';
@@ -32,7 +35,7 @@ dotenv.config();
 validateEnvVariables();
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = parseInt(process.env.PORT || '3001', 10);
 
 const __dirname = path.resolve();
 
@@ -43,6 +46,23 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
+
+app.use('/api/trpc', (req, _res, next) => {
+  console.log(`tRPC ${req.method} ${req.path}`, {
+    procedure: req.body?.['0']?.procedure || 'unknown',
+    timestamp: new Date().toISOString()
+  });
+  next();
+});
+
+app.use(
+  '/api/trpc',
+  trpcRateLimit,
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  })
+);
 
 app.use('/api/auth', authRateLimit, authRoutes);
 app.use('/api/products', productRoutes);

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import User from '../models/user.model.js';
+import { User } from '../models/user.model.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,7 +33,7 @@ const makeAdmin = async () => {
       console.error(`❌ User with email "${email}" not found`);
       console.log('\nExisting users:');
       const users = await User.find({}, 'email role').lean();
-      users.forEach(u => {
+      users.forEach((u: any) => {
         console.log(`  - ${u.email} (${u.role})`);
       });
       process.exit(1);
@@ -50,7 +50,7 @@ const makeAdmin = async () => {
     console.log(`✅ Successfully promoted "${email}" to admin`);
     console.log('\nCurrent admins:');
     const admins = await User.find({ role: 'admin' }, 'email').lean();
-    admins.forEach(admin => {
+    admins.forEach((admin: any) => {
       console.log(`  - ${admin.email}`);
     });
 

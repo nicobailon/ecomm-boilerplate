@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
+import { AppError } from '../utils/AppError.js';
 
 describe('Product API Tests', () => {
   it('should create AppError correctly', () => {
@@ -13,3 +13,4 @@ describe('Product API Tests', () => {
     const testString: string = 'TypeScript is working';
     expect(typeof testString).toBe('string');
   });
+});

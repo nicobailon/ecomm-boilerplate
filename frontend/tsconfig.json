@@ -20,9 +20,13 @@
     "types": ["vite/client", "vitest/globals"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@backend/*": ["../backend/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*",
+    "../backend/trpc/routers/app.router.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

@@ -17,3 +17,13 @@ export const authRateLimit = rateLimit({
   max: 5,
   message: 'Too many authentication attempts'
 });
+
+export const trpcRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: 'Too many tRPC requests from this IP',
+  keyGenerator: (req) => {
+    const procedure = req.body?.['0']?.procedure || 'unknown';
+    return `${req.ip}-${procedure}`;
+  }
+});

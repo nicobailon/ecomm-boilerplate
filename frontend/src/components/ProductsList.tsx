@@ -11,12 +11,8 @@ const ProductsList = ({ highlightProductId, onHighlightComplete }: ProductsListP
 	const deleteProduct = useDeleteProduct();
 	const toggleFeatured = useToggleFeatured();
 
-	if (isLoading) return <LoadingSpinner />;
-
-	const products = data?.data || [];
-
 	useEffect(() => {
-		if (highlightProductId) {
+		if (highlightProductId && !isLoading) {
 			// Scroll to product
 			const element = document.getElementById(`product-${highlightProductId}`);
 			element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -28,7 +24,11 @@ const ProductsList = ({ highlightProductId, onHighlightComplete }: ProductsListP
 			
 			return () => clearTimeout(timer);
 		}
-	}, [highlightProductId, onHighlightComplete]);
+	}, [highlightProductId, onHighlightComplete, isLoading]);
+
+	if (isLoading) return <LoadingSpinner />;
+
+	const products = data?.data || [];
 
 	return (
 		<motion.div

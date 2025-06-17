@@ -3,7 +3,11 @@ import { createRouteHandler } from "uploadthing/express";
 
 // Verify UploadThing environment variables are set
 if (!process.env.UPLOADTHING_TOKEN && (!process.env.UPLOADTHING_APP_ID || !process.env.UPLOADTHING_SECRET)) {
-  throw new Error("Missing required UploadThing environment variables");
+  console.error("[UploadThing] Missing required environment variables:", {
+    UPLOADTHING_TOKEN: !!process.env.UPLOADTHING_TOKEN,
+    UPLOADTHING_APP_ID: !!process.env.UPLOADTHING_APP_ID,
+    UPLOADTHING_SECRET: !!process.env.UPLOADTHING_SECRET
+  });
 }
 
 const f = createUploadthing();

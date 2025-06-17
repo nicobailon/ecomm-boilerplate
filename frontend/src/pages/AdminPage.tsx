@@ -19,7 +19,6 @@ const AdminPage = () => {
 
 	// Create callback for product creation
 	const handleProductCreated = useCallback((productId: string) => {
-		console.log('Product created:', productId);
 		setNewProductId(productId);
 		setIsNavigating(true);
 		

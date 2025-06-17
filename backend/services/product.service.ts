@@ -97,8 +97,9 @@ class ProductService {
     // If not in cache, get from database
     const featuredProducts = await Product.find({ isFeatured: true }).lean();
 
+    // Return empty array if no featured products, don't throw error
     if (!featuredProducts || featuredProducts.length === 0) {
-      throw new AppError("No featured products found", 404);
+      return [];
     }
 
     // Cache for 1 hour

@@ -25,19 +25,23 @@ router.options('*', (req: Request, res: Response) => {
 // Handle GET requests (route config) without auth - these are just metadata requests
 router.get('/', uploadLogger, uploadthingHandler);
 
-// For POST requests, we need to differentiate between client uploads and UploadThing callbacks
-router.post('/', uploadLogger, (req: Request, res: Response, next: NextFunction) => {
-  // Check if this is a callback from UploadThing servers
-  // Callbacks won't have user authentication and that's OK
-  const isCallback = req.headers['x-uploadthing-package'] || 
-                    (req.headers['user-agent'] && req.headers['user-agent'].includes('uploadthing'));
+// Special route for callbacks - these come without auth
+router.post('/', (req: Request, res: Response, next: NextFunction) => {
+  // Check if this looks like a callback based on the path or headers
+  const hasCallbackHeaders = !!(
+    req.headers['x-uploadthing-signature'] ||
+    req.headers['x-uploadthing-hook'] ||
+    req.headers['x-uploadthing-api-key']
+  );
   
-  if (isCallback) {
-    // Let UploadThing handle the callback without auth
+  // If it has callback headers, skip auth
+  if (hasCallbackHeaders) {
+    console.log('[UploadThing Route] Callback detected via headers, skipping auth');
     return uploadthingHandler(req, res, next);
   }
   
-  // For client uploads, require authentication
+  // Otherwise, this is a client upload that needs auth
+  console.log('[UploadThing Route] Client upload detected, requiring auth');
   protectRoute(req as AuthRequest, res, (err?: any) => {
     if (err) return next(err);
     

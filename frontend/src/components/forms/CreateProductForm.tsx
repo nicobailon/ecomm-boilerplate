@@ -83,7 +83,7 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
         }
         toast.success('Draft loaded');
       } catch (error) {
-        console.error('Failed to load draft:', error);
+        // Silently fail if draft loading fails
       }
     }
   };
@@ -148,6 +148,9 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
           toast.success('Product created! Form ready for next product.');
         }
       },
+      onError: () => {
+        toast.error('Failed to create product');
+      }
     });
   };
 
@@ -285,10 +288,8 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
               onUploadError={(error: Error) => {
                 toast.error(`Upload Failed: ${error.message}`);
               }}
-              onUploadProgress={() => {
-              }}
-              onUploadBegin={() => {
-              }}
+              onUploadProgress={() => {}}
+              onUploadBegin={() => {}}
             />
             <div className="text-sm text-gray-500">
               or

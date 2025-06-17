@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { Product, ApiResponse, PaginatedResponse, ProductCategory } from '@/types';
+import { Product, PaginatedResponse, ProductCategory } from '@/types';
 import { ProductInput } from '@/lib/validations';
 import { toast } from 'sonner';
 
@@ -25,8 +25,8 @@ export const useFeaturedProducts = () => {
   return useQuery({
     queryKey: ['products', 'featured'],
     queryFn: async () => {
-      const { data } = await apiClient.get<ApiResponse<Product[]>>('/products/featured');
-      return data.data;
+      const { data } = await apiClient.get<Product[]>('/products/featured');
+      return data;
     },
   });
 };
@@ -36,8 +36,8 @@ export const useCreateProduct = () => {
 
   return useMutation({
     mutationFn: async (productData: ProductInput) => {
-      const { data } = await apiClient.post<ApiResponse<Product>>('/products', productData);
-      return data.data;
+      const { data } = await apiClient.post<Product>('/products', productData);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -50,8 +50,8 @@ export const useUpdateProduct = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ProductInput> }) => {
-      const response = await apiClient.patch<ApiResponse<Product>>(`/products/${id}`, data);
-      return response.data.data;
+      const response = await apiClient.patch<Product>(`/products/${id}`, data);
+      return response.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -80,10 +80,10 @@ export const useToggleFeatured = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await apiClient.patch<ApiResponse<Product>>(
+      const { data } = await apiClient.patch<Product>(
         `/products/${id}/toggle-featured`
       );
-      return data.data;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });

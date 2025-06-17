@@ -1,0 +1,82 @@
+import { lazy } from 'react';
+import { createBrowserRouter } from 'react-router-dom';
+import RootLayout from '@/components/Layout';
+import { AuthGuard } from '@/components/AuthGuard';
+
+// Lazy load pages for code splitting
+const HomePage = lazy(() => import('@/pages/HomePage'));
+const SignUpPage = lazy(() => import('@/pages/SignUpPage'));
+const LoginPage = lazy(() => import('@/pages/LoginPage'));
+const AdminPage = lazy(() => import('@/pages/AdminPage'));
+const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
+const CartPage = lazy(() => import('@/pages/CartPage'));
+const PurchaseSuccessPage = lazy(() => import('@/pages/PurchaseSuccessPage'));
+const PurchaseCancelPage = lazy(() => import('@/pages/PurchaseCancelPage'));
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootLayout />,
+    children: [
+      // Public routes
+      {
+        index: true,
+        element: <HomePage />,
+      },
+      {
+        path: 'category/:category',
+        element: <CategoryPage />,
+      },
+      // Auth routes (redirect to home if already logged in)
+      {
+        path: 'signup',
+        element: (
+          <AuthGuard requireAuth={false} redirectTo="/">
+            <SignUpPage />
+          </AuthGuard>
+        ),
+      },
+      {
+        path: 'login',
+        element: (
+          <AuthGuard requireAuth={false} redirectTo="/">
+            <LoginPage />
+          </AuthGuard>
+        ),
+      },
+      // Protected routes
+      {
+        path: 'cart',
+        element: (
+          <AuthGuard requireAuth={true} redirectTo="/login">
+            <CartPage />
+          </AuthGuard>
+        ),
+      },
+      {
+        path: 'purchase-success',
+        element: (
+          <AuthGuard requireAuth={true} redirectTo="/login">
+            <PurchaseSuccessPage />
+          </AuthGuard>
+        ),
+      },
+      {
+        path: 'purchase-cancel',
+        element: (
+          <AuthGuard requireAuth={true} redirectTo="/login">
+            <PurchaseCancelPage />
+          </AuthGuard>
+        ),
+      },
+      {
+        path: 'secret-dashboard',
+        element: (
+          <AuthGuard requireAuth={true} requireAdmin={true} redirectTo="/login">
+            <AdminPage />
+          </AuthGuard>
+        ),
+      },
+    ],
+  },
+]);

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { apiClient } from "@/lib/api-client";
 import Confetti from "react-confetti";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import LoadingSpinner from "../components/LoadingSpinner";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 const PurchaseSuccessPage = () => {
 	const [error, setError] = useState<string | null>(null);

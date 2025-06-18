@@ -1,8 +1,8 @@
 import { ShoppingCart, UserPlus, LogIn, LogOut, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useCurrentUser, useLogout } from "@/hooks/queries/useAuth";
-import { useCart } from "@/hooks/queries/useCart";
-import { ThemeToggle } from './ui/theme-toggle';
+import { useCurrentUser, useLogout } from "@/hooks/auth/useAuth";
+import { useCart } from "@/hooks/cart/useCart";
+import { ThemeToggle } from '../ui/theme-toggle';
 
 const Navbar: React.FC = () => {
 	const { data: user } = useCurrentUser();

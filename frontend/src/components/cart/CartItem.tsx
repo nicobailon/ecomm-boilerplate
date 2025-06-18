@@ -1,5 +1,5 @@
 import { Minus, Plus, Trash } from "lucide-react";
-import { useUpdateQuantity, useRemoveFromCart } from "@/hooks/queries/useCart";
+import { useUpdateQuantity, useRemoveFromCart } from "@/hooks/cart/useCart";
 import { CartItem as CartItemType, Product } from "@/types";
 
 interface CartItemProps {

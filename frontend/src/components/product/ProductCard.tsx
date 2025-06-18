@@ -1,9 +1,9 @@
 import toast from "react-hot-toast";
 import { ShoppingCart } from "lucide-react";
-import { useCurrentUser } from "@/hooks/queries/useAuth";
-import { useAddToCart } from "@/hooks/queries/useCart";
+import { useCurrentUser } from "@/hooks/auth/useAuth";
+import { useAddToCart } from "@/hooks/cart/useCart";
 import { Product } from "@/types";
-import { OptimizedImage } from "./OptimizedImage";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
 
 interface ProductCardProps {
 	product: Product;

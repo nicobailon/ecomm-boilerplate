@@ -1,6 +1,6 @@
 import { FEATURE_FLAGS } from '@/lib/feature-flags';
 import { trpc } from '@/lib/trpc';
-import { useAnalytics as useAnalyticsREST } from '@/hooks/queries/useAnalytics';
+import { useAnalytics as useAnalyticsREST } from '@/hooks/analytics/useAnalytics';
 
 export function useAnalytics() {
   const restQuery = useAnalyticsREST();

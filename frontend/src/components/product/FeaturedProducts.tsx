@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
-import { useAddToCart } from "@/hooks/queries/useCart";
-import { useCurrentUser } from "@/hooks/queries/useAuth";
+import { useAddToCart } from "@/hooks/cart/useCart";
+import { useCurrentUser } from "@/hooks/auth/useAuth";
 import { Product } from "@/types";
 import toast from "react-hot-toast";
 

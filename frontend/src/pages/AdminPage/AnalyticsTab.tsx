@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { Users, Package, ShoppingCart, DollarSign } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { useAnalytics } from "@/hooks/queries/useAnalytics";
-import LoadingSpinner from "./LoadingSpinner";
+import { useAnalytics } from "@/hooks/analytics/useAnalytics";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import type { LucideIcon } from "lucide-react";
 
 const AnalyticsTab = () => {

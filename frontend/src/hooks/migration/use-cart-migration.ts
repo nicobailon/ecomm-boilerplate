@@ -5,7 +5,7 @@ import {
   useAddToCart as useAddToCartREST,
   useUpdateQuantity as useUpdateQuantityREST,
   useRemoveFromCart as useRemoveFromCartREST,
-} from '@/hooks/queries/useCart';
+} from '@/hooks/cart/useCart';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Product } from '@/types';

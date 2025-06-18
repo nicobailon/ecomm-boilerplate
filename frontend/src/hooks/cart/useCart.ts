@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { CartItem, Product, ApiResponse } from '@/types';
 import toast from 'react-hot-toast';
-import { useCurrentUser } from './useAuth';
+import { useCurrentUser } from '../auth/useAuth';
 
 interface CartResponse {
   cartItems: (CartItem & { product: Product })[];

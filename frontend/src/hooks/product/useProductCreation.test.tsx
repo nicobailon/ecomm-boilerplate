@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useProductCreation } from './useProductCreation';
-import { useCreateProduct } from './queries/useProducts';
+import { useCreateProduct } from './useProducts';
 import { productEvents } from '@/lib/events';
 import { ProductInput } from '@/lib/validations';
 import React from 'react';
@@ -20,7 +20,7 @@ vi.mock('@/lib/events', () => ({
 }));
 
 // Mock useLocalStorage
-vi.mock('./useLocalStorage', () => ({
+vi.mock('@/hooks/utils/useLocalStorage', () => ({
   useLocalStorage: vi.fn((key: string, initialValue: any) => {
     const [value, setValue] = React.useState(() => {
       const stored = localStorage.getItem(key);

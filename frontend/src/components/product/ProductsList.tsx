@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Trash, Star } from "lucide-react";
-import { useProducts, useDeleteProduct, useToggleFeatured } from "@/hooks/queries/useProducts";
-import LoadingSpinner from "./LoadingSpinner";
+import { useProducts, useDeleteProduct, useToggleFeatured } from "@/hooks/product/useProducts";
+import LoadingSpinner from "../ui/LoadingSpinner";
 import { useEffect } from "react";
 import { ProductsListProps } from "@/types";
 import { cn } from "@/lib/utils";

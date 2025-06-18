@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useCreateProduct } from './queries/useProducts';
+import { useCreateProduct } from './useProducts';
 import { ProductInput } from '@/lib/validations';
 import { productEvents } from '@/lib/events';
-import { useLocalStorage } from './useLocalStorage';
+import { useLocalStorage } from '@/hooks/utils/useLocalStorage';
 import { TabId, NAVIGATION_DELAY } from '@/types';
 
 interface UseProductCreationState {
@@ -123,7 +123,7 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
   const createProduct = useCallback(async (data: ProductInput) => {
     return new Promise<string>((resolve, reject) => {
       createProductMutation.mutate(data, {
-        onSuccess: (response) => {
+        onSuccess: (response: any) => {
           // Clear draft on successful creation
           if (enableDraft) {
             clearDraft();
@@ -142,7 +142,7 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
           
           resolve(response._id);
         },
-        onError: (error) => {
+        onError: (error: any) => {
           toast.error('Failed to create product');
           reject(error);
         }
@@ -168,7 +168,7 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
   const toggleBulkMode = useCallback((enabled?: boolean) => {
     if (!enableBulkMode) return;
     
-    setBulkMode(prev => enabled !== undefined ? enabled : !prev);
+    setBulkMode((prev: boolean) => enabled !== undefined ? enabled : !prev);
   }, [enableBulkMode, setBulkMode]);
 
   // Clear highlighted product

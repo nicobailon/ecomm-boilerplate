@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RouterProvider } from "react-router-dom";
 import { queryClient } from '@/lib/query-client';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { router } from './router';
 import { trpc } from './lib/trpc';
 import { createTRPCClient } from './lib/trpc-client';

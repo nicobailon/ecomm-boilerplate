@@ -1,8 +1,8 @@
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import ProductCard from "../components/ProductCard";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { useProducts } from "@/hooks/queries/useProducts";
+import ProductCard from "../components/product/ProductCard";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
+import { useProducts } from "@/hooks/product/useProducts";
 import { ProductCategory } from "@/types";
 
 const CategoryPage = () => {

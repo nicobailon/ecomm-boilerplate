@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Toaster } from "sonner";
 import Navbar from './Navbar';
-import LoadingSpinner from './LoadingSpinner';
+import LoadingSpinner from '../ui/LoadingSpinner';
 
 function RootLayout() {
   return (

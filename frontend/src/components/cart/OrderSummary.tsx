@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { MoveRight, Loader } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
-import { useCart } from "@/hooks/queries/useCart";
+import { useCart } from "@/hooks/cart/useCart";
 import { apiClient } from "@/lib/api-client";
 import { useState } from "react";
 import toast from "react-hot-toast";

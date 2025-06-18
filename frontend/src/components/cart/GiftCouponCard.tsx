@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { useCart, useApplyCoupon, useRemoveCoupon } from "@/hooks/queries/useCart";
+import { useCart, useApplyCoupon, useRemoveCoupon } from "@/hooks/cart/useCart";
 
 const GiftCouponCard = () => {
 	const [userInputCode, setUserInputCode] = useState("");

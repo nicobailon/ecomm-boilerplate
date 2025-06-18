@@ -1,6 +1,6 @@
-import CategoryItem from "../components/CategoryItem";
-import FeaturedProducts from "../components/FeaturedProducts";
-import { useFeaturedProducts } from "@/hooks/queries/useProducts";
+import CategoryItem from "../components/product/CategoryItem";
+import FeaturedProducts from "../components/product/FeaturedProducts";
+import { useFeaturedProducts } from "@/hooks/product/useProducts";
 
 const categories = [
 	{ href: "/jeans", name: "Jeans", imageUrl: "/jeans.jpg" },

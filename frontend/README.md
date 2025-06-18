@@ -32,14 +32,14 @@ const { theme, setTheme, resolvedTheme } = useTheme();
 
 #### Checking Dark Mode
 ```typescript
-import { useIsDarkMode } from '@/hooks/useIsDarkMode';
+import { useIsDarkMode } from '@/hooks/utils/useIsDarkMode';
 
 const isDark = useIsDarkMode();
 ```
 
 #### Using Theme Info Hook
 ```typescript
-import { useThemeInfo } from '@/hooks/useIsDarkMode';
+import { useThemeInfo } from '@/hooks/utils/useIsDarkMode';
 
 const { theme, resolvedTheme, isDark, isLight, isSystem, setTheme } = useThemeInfo();
 ```

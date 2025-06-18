@@ -2,15 +2,15 @@ import { BarChart, PlusCircle, ShoppingBasket } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 
-import AnalyticsTab from "../components/AnalyticsTab";
-import { ProductForm } from "../components/forms/ProductForm";
-import ProductsList from "../components/ProductsList";
-import { TransitionOverlay } from "../components/ui/transition-overlay";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
-import { TabId } from "../types";
-import { useProductCreation } from "../hooks/useProductCreation";
-import { useProductEditor } from "../hooks/useProductEditor";
-import { ProductEditDrawer } from "../components/drawers/ProductEditDrawer";
+import AnalyticsTab from "./AnalyticsTab";
+import { ProductForm } from "../../components/forms/ProductForm";
+import ProductsList from "../../components/product/ProductsList";
+import { TransitionOverlay } from "../../components/ui/transition-overlay";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/tabs";
+import { TabId } from "../../types";
+import { useProductCreation } from "../../hooks/product/useProductCreation";
+import { useProductEditor } from "../../hooks/product/useProductEditor";
+import { ProductEditDrawer } from "../../components/drawers/ProductEditDrawer";
 
 const AdminPage = () => {
 	const [activeTab, setActiveTab] = useState<TabId>("create");

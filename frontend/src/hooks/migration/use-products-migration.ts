@@ -8,7 +8,7 @@ import {
   useDeleteProduct as useDeleteProductREST,
   useToggleFeatured as useToggleFeaturedREST,
   useProductRecommendations as useProductRecommendationsREST
-} from '@/hooks/queries/useProducts';
+} from '@/hooks/product/useProducts';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { ProductCategory, Product, ApiResponse } from '@/types';

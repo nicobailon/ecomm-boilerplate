@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
-import { useCurrentUser } from '@/hooks/queries/useAuth';
-import LoadingSpinner from './LoadingSpinner';
+import { useCurrentUser } from '@/hooks/auth/useAuth';
+import LoadingSpinner from '../ui/LoadingSpinner';
 
 interface AuthGuardProps {
   children: React.ReactNode;

@@ -1,8 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductInput, productSchema } from '@/lib/validations';
-import { useProductCreation } from '@/hooks/useProductCreation';
-import { useCreateProduct, useUpdateProduct } from '@/hooks/queries/useProducts';
+import { useProductCreation } from '@/hooks/product/useProductCreation';
+import { useCreateProduct, useUpdateProduct } from '@/hooks/product/useProducts';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';

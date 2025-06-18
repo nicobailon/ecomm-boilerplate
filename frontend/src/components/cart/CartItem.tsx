@@ -1,5 +1,5 @@
 import { Minus, Plus, Trash } from "lucide-react";
-import { useUpdateQuantity, useRemoveFromCart } from "@/hooks/cart/useCart";
+import { useUnifiedUpdateQuantity, useUnifiedRemoveFromCart } from "@/hooks/cart/useUnifiedCart";
 import { CartItem as CartItemType, Product } from "@/types";
 
 interface CartItemProps {
@@ -7,8 +7,8 @@ interface CartItemProps {
 }
 
 const CartItem: React.FC<CartItemProps> = ({ item }) => {
-	const updateQuantity = useUpdateQuantity();
-	const removeFromCart = useRemoveFromCart();
+	const updateQuantity = useUnifiedUpdateQuantity();
+	const removeFromCart = useUnifiedRemoveFromCart();
 
 	const handleUpdateQuantity = (newQuantity: number) => {
 		if (newQuantity < 1) {

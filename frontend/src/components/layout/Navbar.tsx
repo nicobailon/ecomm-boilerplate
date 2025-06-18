@@ -1,12 +1,12 @@
 import { ShoppingCart, UserPlus, LogIn, LogOut, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCurrentUser, useLogout } from "@/hooks/auth/useAuth";
-import { useCart } from "@/hooks/cart/useCart";
+import { useUnifiedCart } from "@/hooks/cart/useUnifiedCart";
 import { ThemeToggle } from '../ui/theme-toggle';
 
 const Navbar: React.FC = () => {
 	const { data: user } = useCurrentUser();
-	const { data: cart } = useCart();
+	const { data: cart } = useUnifiedCart();
 	const logout = useLogout();
 	
 	const isAdmin = user?.role === "admin";
@@ -32,24 +32,22 @@ const Navbar: React.FC = () => {
 						>
 							Home
 						</Link>
-						{user && (
-							<Link
-								to={"/cart"}
-								className='relative group text-muted-foreground hover:text-primary transition duration-300 
-							ease-in-out'
-							>
-								<ShoppingCart className='inline-block mr-1 group-hover:text-primary' size={20} />
-								<span className='hidden sm:inline'>Cart</span>
-								{cartItemsCount > 0 && (
-									<span
-										className='absolute -top-2 -left-2 bg-primary text-primary-foreground rounded-full px-2 py-0.5 
-									text-xs group-hover:bg-primary/90 transition duration-300 ease-in-out'
-									>
-										{cartItemsCount}
-									</span>
-								)}
-							</Link>
-						)}
+						<Link
+							to={"/cart"}
+							className='relative group text-muted-foreground hover:text-primary transition duration-300 
+						ease-in-out'
+						>
+							<ShoppingCart className='inline-block mr-1 group-hover:text-primary' size={20} />
+							<span className='hidden sm:inline'>Cart</span>
+							{cartItemsCount > 0 && (
+								<span
+									className='absolute -top-2 -left-2 bg-primary text-primary-foreground rounded-full px-2 py-0.5 
+								text-xs group-hover:bg-primary/90 transition duration-300 ease-in-out'
+								>
+									{cartItemsCount}
+								</span>
+							)}
+						</Link>
 						{isAdmin && (
 							<Link
 								className='bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-1 rounded-md font-medium

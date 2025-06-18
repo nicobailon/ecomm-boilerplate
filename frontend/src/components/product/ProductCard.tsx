@@ -1,7 +1,5 @@
-import toast from "react-hot-toast";
 import { ShoppingCart } from "lucide-react";
-import { useCurrentUser } from "@/hooks/auth/useAuth";
-import { useAddToCart } from "@/hooks/cart/useCart";
+import { useUnifiedAddToCart } from "@/hooks/cart/useUnifiedCart";
 import { Product } from "@/types";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
 
@@ -10,14 +8,9 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-	const { data: user } = useCurrentUser();
-	const addToCart = useAddToCart();
+	const addToCart = useUnifiedAddToCart();
 
 	const handleAddToCart = () => {
-		if (!user) {
-			toast.error("Please login to add products to cart", { id: "login" });
-			return;
-		}
 		addToCart.mutate(product);
 	};
 

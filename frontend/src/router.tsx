@@ -44,14 +44,10 @@ export const router = createBrowserRouter([
           </AuthGuard>
         ),
       },
-      // Protected routes
+      // Cart route (accessible to both guests and authenticated users)
       {
         path: 'cart',
-        element: (
-          <AuthGuard requireAuth={true} redirectTo="/login">
-            <CartPage />
-          </AuthGuard>
-        ),
+        element: <CartPage />,
       },
       {
         path: 'purchase-success',

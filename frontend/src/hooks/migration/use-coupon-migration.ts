@@ -2,7 +2,7 @@ import { FEATURE_FLAGS } from '@/lib/feature-flags';
 import { trpc } from '@/lib/trpc';
 import { useApplyCoupon as useApplyCouponREST, useRemoveCoupon as useRemoveCouponREST } from '@/hooks/cart/useCart';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 
 export function useApplyCoupon() {

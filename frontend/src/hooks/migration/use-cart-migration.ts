@@ -7,7 +7,7 @@ import {
   useRemoveFromCart as useRemoveFromCartREST,
 } from '@/hooks/cart/useCart';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Product } from '@/types';
 import { apiClient } from '@/lib/api-client';
 

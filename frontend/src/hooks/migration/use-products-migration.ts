@@ -10,7 +10,7 @@ import {
   useProductRecommendations as useProductRecommendationsREST
 } from '@/hooks/product/useProducts';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { ProductCategory, Product, ApiResponse } from '@/types';
 import { apiClient } from '@/lib/api-client';
 

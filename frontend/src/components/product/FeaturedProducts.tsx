@@ -3,7 +3,7 @@ import { ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAddToCart } from "@/hooks/cart/useCart";
 import { useCurrentUser } from "@/hooks/auth/useAuth";
 import { Product } from "@/types";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 interface FeaturedProductsProps {
 	featuredProducts: Product[];

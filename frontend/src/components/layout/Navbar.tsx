@@ -6,7 +6,7 @@ import { ThemeToggle } from '../ui/theme-toggle';
 
 const Navbar: React.FC = () => {
 	const { data: user } = useCurrentUser();
-	const { data: cart, totalQuantity } = useUnifiedCart();
+	const { totalQuantity } = useUnifiedCart();
 	const logout = useLogout();
 	
 	const isAdmin = user?.role === "admin";

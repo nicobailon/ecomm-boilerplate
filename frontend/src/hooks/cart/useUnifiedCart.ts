@@ -31,6 +31,7 @@ export interface UnifiedCartResult {
       discountPercentage: number;
     } | null;
   } | undefined;
+  totalQuantity: number;
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
@@ -44,9 +45,13 @@ export const useUnifiedCart = (): UnifiedCartResult => {
 
   const isGuest = !user || user.role === 'admin';
 
+  const cartData = isGuest ? guestCart.data : userCart.data;
+  const totalQuantity = cartData?.cartItems?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+
   if (isGuest) {
     return {
       data: guestCart.data,
+      totalQuantity,
       isLoading: guestCart.isLoading,
       isError: guestCart.isError,
       error: guestCart.error,
@@ -56,6 +61,7 @@ export const useUnifiedCart = (): UnifiedCartResult => {
 
   return {
     data: userCart.data,
+    totalQuantity,
     isLoading: userCart.isLoading,
     isError: userCart.isError,
     error: userCart.error,

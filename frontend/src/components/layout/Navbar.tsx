@@ -6,11 +6,11 @@ import { ThemeToggle } from '../ui/theme-toggle';
 
 const Navbar: React.FC = () => {
 	const { data: user } = useCurrentUser();
-	const { data: cart } = useUnifiedCart();
+	const { data: cart, totalQuantity } = useUnifiedCart();
 	const logout = useLogout();
 	
 	const isAdmin = user?.role === "admin";
-	const cartItemsCount = cart?.cartItems?.length || 0;
+	const cartItemsCount = totalQuantity;
 
 	const handleLogout = () => {
 		logout.mutate();

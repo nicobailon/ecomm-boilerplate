@@ -91,4 +91,21 @@ export interface CreateProductFormProps {
 export interface ProductsListProps {
   highlightProductId?: string | null;
   onHighlightComplete?: () => void;
+  onEditProduct?: (product: Product) => void;
+}
+
+// ProductEditDrawer props
+export interface ProductEditDrawerProps {
+  isOpen: boolean;
+  product: Product | null;
+  onClose: () => void;
+}
+
+// ProductForm types
+export type ProductFormMode = 'create' | 'edit';
+
+export interface ProductFormProps {
+  mode: ProductFormMode;
+  initialData?: Product;
+  onSuccess?: (product: Product) => void;
 }

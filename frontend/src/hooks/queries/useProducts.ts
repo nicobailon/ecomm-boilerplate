@@ -53,11 +53,44 @@ export const useUpdateProduct = () => {
       const response = await apiClient.patch<Product>(`/products/${id}`, data);
       return response.data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['product', variables.id] });
-      toast.success('Product updated successfully');
+    // Add optimistic update logic
+    onMutate: async (updatedProduct) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ['products'] });
+      
+      // Get all product queries from the cache
+      const productQueries = queryClient.getQueriesData<PaginatedResponse<Product>>({ queryKey: ['products'] });
+      
+      // Update all cached product lists
+      productQueries.forEach(([queryKey, data]) => {
+        if (data?.data) {
+          const updatedData = {
+            ...data,
+            data: data.data.map((product) =>
+              product._id === updatedProduct.id ? { ...product, ...updatedProduct.data } : product
+            )
+          };
+          queryClient.setQueryData(queryKey, updatedData);
+        }
+      });
+      
+      // Return a context object with all previous queries
+      return { previousQueries: productQueries };
     },
+    onError: (_err, _vars, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast.error('Update failed. Your changes have been rolled back.');
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+    // Remove the default onSuccess toast to avoid duplicates
   });
 };
 

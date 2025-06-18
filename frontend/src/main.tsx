@@ -8,6 +8,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { router } from './router';
 import { trpc } from './lib/trpc';
 import { createTRPCClient } from './lib/trpc-client';
+import { ThemeProvider } from './providers/theme-provider';
 import "./index.css";
 
 const rootElement = document.getElementById("root");
@@ -18,12 +19,14 @@ const trpcClient = createTRPCClient();
 createRoot(rootElement).render(
 	<StrictMode>
 		<ErrorBoundary>
-			<trpc.Provider client={trpcClient} queryClient={queryClient}>
-				<QueryClientProvider client={queryClient}>
-					<RouterProvider router={router} />
-					<ReactQueryDevtools initialIsOpen={false} />
-				</QueryClientProvider>
-			</trpc.Provider>
+			<ThemeProvider defaultTheme="dark" storageKey="mern-ecommerce-theme">
+				<trpc.Provider client={trpcClient} queryClient={queryClient}>
+					<QueryClientProvider client={queryClient}>
+						<RouterProvider router={router} />
+						<ReactQueryDevtools initialIsOpen={false} />
+					</QueryClientProvider>
+				</trpc.Provider>
+			</ThemeProvider>
 		</ErrorBoundary>
 	</StrictMode>
 );

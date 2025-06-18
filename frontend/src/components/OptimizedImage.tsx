@@ -29,7 +29,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
       style={aspectRatio ? { aspectRatio } : undefined}
     >
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+        <div className="absolute inset-0 bg-muted animate-pulse" />
       )}
       <img
         src={imgSrc}

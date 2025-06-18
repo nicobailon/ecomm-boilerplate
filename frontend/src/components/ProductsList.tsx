@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { ProductsListProps } from "@/types";
 import { cn } from "@/lib/utils";
 
-const ProductsList = ({ highlightProductId, onHighlightComplete }: ProductsListProps = {}) => {
+const ProductsList = ({ highlightProductId, onHighlightComplete, onEditProduct }: ProductsListProps = {}) => {
 	const { data, isLoading } = useProducts();
 	const deleteProduct = useDeleteProduct();
 	const toggleFeatured = useToggleFeatured();
@@ -32,56 +32,57 @@ const ProductsList = ({ highlightProductId, onHighlightComplete }: ProductsListP
 
 	return (
 		<motion.div
-			className='bg-gray-800 shadow-lg rounded-lg overflow-hidden max-w-4xl mx-auto'
+			className='bg-card shadow-lg rounded-lg overflow-hidden max-w-4xl mx-auto'
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.8 }}
 		>
-			<table className=' min-w-full divide-y divide-gray-700'>
-				<thead className='bg-gray-700'>
+			<table className=' min-w-full divide-y divide-border'>
+				<thead className='bg-muted'>
 					<tr>
 						<th
 							scope='col'
-							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
+							className='px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider'
 						>
 							Product
 						</th>
 						<th
 							scope='col'
-							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
+							className='px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider'
 						>
 							Price
 						</th>
 						<th
 							scope='col'
-							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
+							className='px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider'
 						>
 							Category
 						</th>
 
 						<th
 							scope='col'
-							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
+							className='px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider'
 						>
 							Featured
 						</th>
 						<th
 							scope='col'
-							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
+							className='px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider'
 						>
 							Actions
 						</th>
 					</tr>
 				</thead>
 
-				<tbody className='bg-gray-800 divide-y divide-gray-700'>
+				<tbody className='bg-card divide-y divide-border'>
 					{products?.map((product) => (
 						<tr 
 							key={product._id} 
 							id={`product-${product._id}`}
+							onClick={() => onEditProduct?.(product)}
 							className={cn(
-								'hover:bg-gray-700 transition-all duration-300',
-								highlightProductId === product._id && 'ring-2 ring-emerald-400 bg-emerald-900/20 animate-highlight'
+								'hover:bg-muted/50 transition-all duration-300 cursor-pointer',
+								highlightProductId === product._id && 'ring-2 ring-primary bg-primary/10 animate-highlight'
 							)}
 						>
 							<td className='px-6 py-4 whitespace-nowrap'>
@@ -99,29 +100,35 @@ const ProductsList = ({ highlightProductId, onHighlightComplete }: ProductsListP
 								</div>
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap'>
-								<div className='text-sm text-gray-300'>${product.price.toFixed(2)}</div>
+								<div className='text-sm text-muted-foreground'>${product.price.toFixed(2)}</div>
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap'>
-								<div className='text-sm text-gray-300'>{product.category}</div>
+								<div className='text-sm text-muted-foreground'>{product.category}</div>
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap'>
 								<button
-									onClick={() => toggleFeatured.mutate(product._id)}
+									onClick={(e) => {
+										e.stopPropagation();
+										toggleFeatured.mutate(product._id);
+									}}
 									disabled={toggleFeatured.isPending}
 									className={`p-1 rounded-full ${
 										product.isFeatured
-											? "bg-yellow-400 text-gray-900"
-											: "bg-gray-600 text-gray-300"
-									} hover:bg-yellow-500 transition-colors duration-200 disabled:opacity-50`}
+											? "bg-warning text-warning-foreground"
+											: "bg-muted text-muted-foreground"
+									} hover:bg-warning/80 transition-colors duration-200 disabled:opacity-50`}
 								>
 									<Star className='h-5 w-5' />
 								</button>
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
 								<button
-									onClick={() => deleteProduct.mutate(product._id)}
+									onClick={(e) => {
+										e.stopPropagation();
+										deleteProduct.mutate(product._id);
+									}}
 									disabled={deleteProduct.isPending}
-									className='text-red-400 hover:text-red-300 disabled:opacity-50'
+									className='text-destructive hover:text-destructive/80 disabled:opacity-50'
 								>
 									<Trash className='h-5 w-5' />
 								</button>

@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductInput, productSchema } from '@/lib/validations';
-import { useCreateProduct } from '@/hooks/queries/useProducts';
+import { useProductCreation } from '@/hooks/useProductCreation';
+import { useCreateProduct, useUpdateProduct } from '@/hooks/queries/useProducts';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
@@ -9,21 +10,20 @@ import { Select } from '@/components/ui/Select';
 import { UploadButton } from '@/lib/uploadthing';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Switch } from '@/components/ui/Switch';
 import { Label } from '@/components/ui/Label';
 import { Progress } from '@/components/ui/Progress';
 import { cn } from '@/lib/utils';
 import { CheckIcon } from 'lucide-react';
-import { CreateProductFormProps } from '@/types';
+import { ProductFormProps } from '@/types';
 
-const DRAFT_KEY = 'product-creation-draft';
+export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onSuccess }) => {
+  const productCreation = mode === 'create' ? useProductCreation() : null;
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
 
-export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductCreated }) => {
-  const createProduct = useCreateProduct();
   const [imagePreview, setImagePreview] = useState<string>('');
-  const [bulkMode, setBulkMode] = useLocalStorage('product-bulk-mode', false);
-  const [sessionCount, setSessionCount] = useState(0);
+  
   
   const {
     register,
@@ -35,7 +35,13 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
     formState: { errors, isSubmitting },
   } = useForm<ProductInput>({
     resolver: zodResolver(productSchema),
-    defaultValues: {
+    defaultValues: mode === 'edit' && initialData ? {
+      name: initialData.name,
+      description: initialData.description,
+      price: initialData.price,
+      category: initialData.category,
+      image: initialData.image
+    } : productCreation?.draftData || {
       name: '',
       description: '',
       price: 0,
@@ -64,42 +70,20 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
   const totalFields = 5;
   const progress = (completedFields / totalFields) * 100;
   
-  // Save draft to localStorage
-  const saveDraft = (data: Partial<ProductInput>) => {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
-  };
-  
-  // Load draft from localStorage
-  const loadDraft = () => {
-    const draft = localStorage.getItem(DRAFT_KEY);
-    if (draft) {
-      try {
-        const data = JSON.parse(draft);
-        Object.entries(data).forEach(([key, value]) => {
-          setValue(key as keyof ProductInput, value as any);
-        });
-        if (data.image) {
-          setImagePreview(data.image);
-        }
-        toast.success('Draft loaded');
-      } catch (error) {
-        // Silently fail if draft loading fails
+  // Load initial data for edit mode or draft for create mode
+  useEffect(() => {
+    if (mode === 'edit' && initialData) {
+      reset(initialData);
+      if (initialData.image) {
+        setImagePreview(initialData.image);
+      }
+    } else if (mode === 'create' && productCreation?.draftData) {
+      // Draft is already loaded in form defaults, just set image preview if needed
+      if (productCreation.draftData.image) {
+        setImagePreview(productCreation.draftData.image);
       }
     }
-  };
-  
-  // Clear draft from localStorage
-  const clearDraft = () => {
-    localStorage.removeItem(DRAFT_KEY);
-  };
-  
-  // Load draft on mount
-  useEffect(() => {
-    const draft = localStorage.getItem(DRAFT_KEY);
-    if (draft) {
-      loadDraft();
-    }
-  }, []);
+  }, [mode, initialData, reset, productCreation?.draftData]);
   
   // Keyboard shortcuts
   useEffect(() => {
@@ -109,80 +93,74 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
         e.preventDefault();
         handleSubmit(onSubmit)();
       }
-      // Ctrl/Cmd + S to save draft
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      // Ctrl/Cmd + S to save draft (only in create mode)
+      if ((e.ctrlKey || e.metaKey) && e.key === 's' && mode === 'create' && productCreation) {
         e.preventDefault();
-        saveDraft(getValues());
-        toast.success('Draft saved 💾');
+        productCreation.saveDraft(getValues());
       }
     };
     
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [handleSubmit]);
+  }, [handleSubmit, mode, productCreation, getValues]);
 
-  const onSubmit = (data: ProductInput) => {
-    createProduct.mutate(data, {
-      onSuccess: (response) => {
-        // Reset all form fields
-        reset();
-        
-        // Clear image preview
-        setImagePreview('');
-        
-        // Clear saved draft
-        clearDraft();
-        
-        // Increment session counter
-        setSessionCount(prev => prev + 1);
-        
-        // Handle navigation based on bulk mode
-        if (!bulkMode) {
-          // Only trigger navigation if not in bulk mode
-          if (onProductCreated && response?._id) {
-            onProductCreated(response._id);
+  const onSubmit = async (data: ProductInput) => {
+    if (mode === 'create') {
+      createProductMutation.mutate(data, {
+        onSuccess: (newProduct) => {
+          // Reset form after successful creation
+          reset();
+          setImagePreview('');
+          onSuccess?.(newProduct);
+          
+          // Handle navigation and other logic via the productCreation hook if available
+          if (productCreation && !productCreation.bulkMode) {
+            // The hook will handle navigation
           }
-          toast.success('Product created successfully!');
-        } else {
-          // Show different toast for bulk mode
-          toast.success('Product created! Form ready for next product.');
+        },
+      });
+    } else {
+      // Edit mode
+      updateProductMutation.mutate({ id: initialData!._id, data }, {
+        onSuccess: (updatedProduct) => {
+          toast.success('Product updated!');
+          onSuccess?.(updatedProduct);
         }
-      },
-      onError: () => {
-        toast.error('Failed to create product');
-      }
-    });
+      });
+    }
   };
 
   return (
     <div className="space-y-6">
       {/* Bulk Mode Toggle */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Create Product</h2>
-        <div className="flex items-center gap-2">
-          <Switch
-            id="bulk-mode"
-            checked={bulkMode}
-            onCheckedChange={setBulkMode}
-          />
-          <Label htmlFor="bulk-mode" className="cursor-pointer">
-            Stay on form after creation
-          </Label>
-        </div>
+        <h2 className="text-2xl font-bold">{mode === 'create' ? 'Create New Product' : 'Edit Product'}</h2>
+        {mode === 'create' && productCreation && (
+          <div className="flex items-center gap-2">
+            <Switch
+              id="bulk-mode"
+              checked={productCreation.bulkMode}
+              onCheckedChange={productCreation.toggleBulkMode}
+            />
+            <Label htmlFor="bulk-mode" className="cursor-pointer">
+              Stay on form after creation
+            </Label>
+          </div>
+        )}
       </div>
       
       {/* Session Counter */}
-      {bulkMode && sessionCount > 0 && (
-        <div className="text-sm text-gray-500 -mt-2">
-          Products created this session: {sessionCount}
+      {mode === 'create' && productCreation?.bulkMode && productCreation.sessionCount > 0 && (
+        <div className="text-sm -mt-2 text-muted-foreground">
+          Products created this session: {productCreation.sessionCount}
         </div>
       )}
       
       {/* Form Progress */}
       <div className="space-y-2">
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>Form completion</span>
-          <span>{Math.round(progress)}%</span>
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Form completion</span>
+          <span className="text-muted-foreground">{Math.round(progress)}%</span>
         </div>
         <Progress value={progress} className="h-2" />
       </div>
@@ -195,11 +173,11 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
             {...register('name')}
             error={errors.name?.message}
             className={cn(
-              isNameValid && 'border-green-500 focus-visible:ring-green-500'
+              isNameValid && 'border-success focus-visible:ring-success'
             )}
           />
           {isNameValid && (
-            <CheckIcon className="absolute right-3 top-8 h-4 w-4 text-green-500" />
+            <CheckIcon className="absolute right-3 top-8 h-4 w-4 text-success" />
           )}
         </div>
       
@@ -210,11 +188,11 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
           placeholder="Enter product description..."
           error={errors.description?.message}
           className={cn(
-            isDescriptionValid && 'border-green-500 focus-visible:ring-green-500'
+            isDescriptionValid && 'border-success focus-visible:ring-success'
           )}
         />
         {isDescriptionValid && (
-          <CheckIcon className="absolute right-3 top-8 h-4 w-4 text-green-500" />
+          <CheckIcon className="absolute right-3 top-8 h-4 w-4 text-success" />
         )}
       </div>
       
@@ -226,11 +204,11 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
           {...register('price', { valueAsNumber: true })}
           error={errors.price?.message}
           className={cn(
-            isPriceValid && 'border-green-500 focus-visible:ring-green-500'
+            isPriceValid && 'border-success focus-visible:ring-success'
           )}
         />
         {isPriceValid && (
-          <CheckIcon className="absolute right-3 top-8 h-4 w-4 text-green-500" />
+          <CheckIcon className="absolute right-3 top-8 h-4 w-4 text-success" />
         )}
       </div>
       
@@ -251,7 +229,7 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
       />
       
       <div className="space-y-1">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-foreground">
           Product Image
         </label>
         {watchedImage || imagePreview ? (
@@ -291,7 +269,7 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
               onUploadProgress={() => {}}
               onUploadBegin={() => {}}
             />
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               or
             </div>
             <Input
@@ -302,21 +280,24 @@ export const CreateProductForm: React.FC<CreateProductFormProps> = ({ onProductC
           </div>
         )}
         {errors.image && (
-          <p className="text-sm text-red-600">{errors.image.message}</p>
+          <p className="text-sm text-destructive">{errors.image.message}</p>
         )}
       </div>
       
       <Button
         type="submit"
         className="w-full"
-        isLoading={isSubmitting || createProduct.isPending}
+        isLoading={isSubmitting || (mode === 'create' ? createProductMutation.isPending : updateProductMutation.isPending)}
       >
-        Create Product
+        {isSubmitting || (mode === 'create' ? createProductMutation.isPending : updateProductMutation.isPending)
+          ? (mode === 'create' ? 'Creating...' : 'Saving...')
+          : (mode === 'create' ? 'Create Product' : 'Save Changes')}
       </Button>
       
       {/* Keyboard shortcuts hint */}
-      <p className="text-xs text-gray-500 text-center mt-2">
-        Tip: Press Ctrl+Enter (⌘+Enter on Mac) to submit • Ctrl+S (⌘+S on Mac) to save draft
+      <p className="text-xs text-center mt-2 text-muted-foreground">
+        Tip: Press Ctrl+Enter (⌘+Enter on Mac) to submit
+        {mode === 'create' && ' • Ctrl+S (⌘+S on Mac) to save draft'}
       </p>
     </form>
     </div>

@@ -17,8 +17,8 @@ export function TransitionOverlay({ isVisible, message }: TransitionOverlayProps
           className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
         >
           <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-            {message && <p className="text-sm text-gray-300">{message}</p>}
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            {message && <p className="text-sm text-muted-foreground">{message}</p>}
           </div>
         </motion.div>
       )}

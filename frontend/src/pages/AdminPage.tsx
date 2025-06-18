@@ -1,42 +1,36 @@
 import { BarChart, PlusCircle, ShoppingBasket } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 
 import AnalyticsTab from "../components/AnalyticsTab";
-import { CreateProductForm } from "../components/forms/CreateProductForm";
+import { ProductForm } from "../components/forms/ProductForm";
 import ProductsList from "../components/ProductsList";
 import { TransitionOverlay } from "../components/ui/transition-overlay";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
-import { TabId, NAVIGATION_DELAY } from "../types";
-import { productEvents } from "../lib/events";
+import { TabId } from "../types";
+import { useProductCreation } from "../hooks/useProductCreation";
+import { useProductEditor } from "../hooks/useProductEditor";
+import { ProductEditDrawer } from "../components/drawers/ProductEditDrawer";
 
 const AdminPage = () => {
 	const [activeTab, setActiveTab] = useState<TabId>("create");
-	const [newProductId, setNewProductId] = useState<string | null>(null);
-	const [isNavigating, setIsNavigating] = useState(false);
-
-
-	// Create callback for product creation
-	const handleProductCreated = useCallback((productId: string) => {
-		setNewProductId(productId);
-		setIsNavigating(true);
-		
-		// Emit event for extensibility
-		productEvents.emit('product:created', { productId, timestamp: Date.now() });
-		
-		// Show navigation feedback
-		toast('Redirecting to products list...', {
-			duration: 1500,
-			icon: '🔄'
-		});
-		
-		// Delayed navigation
-		setTimeout(() => {
-			setActiveTab('products');
-			setIsNavigating(false);
-		}, NAVIGATION_DELAY);
-	}, []);
+	
+	// Use the product creation hook
+	const {
+		isNavigating,
+		newProductId,
+		clearHighlight,
+	} = useProductCreation({
+		onNavigate: (tab) => setActiveTab(tab),
+	});
+	
+	// Use the product editor hook
+	const {
+		selectedProduct,
+		isEditDrawerOpen,
+		openEditor,
+		closeEditor,
+	} = useProductEditor();
 
 	// Enhanced tab switching
 	const handleTabChange = (value: string) => {
@@ -49,7 +43,7 @@ const AdminPage = () => {
 		<div className='min-h-screen relative overflow-hidden'>
 			<div className='relative z-10 container mx-auto px-4 py-16'>
 				<motion.h1
-					className='text-4xl font-bold mb-8 text-emerald-400 text-center'
+					className='text-4xl font-bold mb-8 text-primary text-center'
 					initial={{ opacity: 0, y: -20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.8 }}
@@ -86,7 +80,7 @@ const AdminPage = () => {
 								exit={{ opacity: 0, x: -20 }}
 								transition={{ duration: 0.2 }}
 							>
-								<CreateProductForm onProductCreated={handleProductCreated} />
+								<ProductForm mode="create" />
 							</motion.div>
 						</TabsContent>
 						
@@ -98,8 +92,9 @@ const AdminPage = () => {
 								transition={{ duration: 0.2 }}
 							>
 								<ProductsList 
+									onEditProduct={openEditor}
 									highlightProductId={newProductId}
-									onHighlightComplete={() => setNewProductId(null)}
+									onHighlightComplete={clearHighlight}
 								/>
 							</motion.div>
 						</TabsContent>
@@ -117,6 +112,12 @@ const AdminPage = () => {
 					</div>
 				</Tabs>
 			</div>
+
+			<ProductEditDrawer
+				isOpen={isEditDrawerOpen}
+				product={selectedProduct}
+				onClose={closeEditor}
+			/>
 		</div>
 	);
 };

@@ -13,7 +13,7 @@ describe('Input Component', () => {
     render(<Input label="Email" name="email" error="Email is required" />);
     
     expect(screen.getByText('Email is required')).toBeInTheDocument();
-    expect(screen.getByLabelText(/email/i)).toHaveClass('border-red-500');
+    expect(screen.getByLabelText(/email/i)).toHaveClass('border-destructive');
   });
 
   it('applies correct type attribute', () => {

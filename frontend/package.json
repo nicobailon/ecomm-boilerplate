@@ -12,10 +12,15 @@
 		"test:ui": "vitest --ui",
 		"test:coverage": "vitest --coverage",
 		"typecheck": "tsc --noEmit",
-		"check-all": "npm run typecheck && npm run lint && npm run test"
+		"check-all": "npm run typecheck && npm run lint && npm run test",
+		"check:colors": "node scripts/check-hardcoded-colors.cjs",
+		"check:theme": "npm run typecheck && npm run check:colors",
+		"test:theme": "vitest run src/__tests__/theme-integration.test.tsx",
+		"theme:audit": "grep -r 'bg-\\|text-\\|border-' --include='*.tsx' --exclude-dir=node_modules src/ | grep -E '(gray|emerald|green|red|yellow|blue)-[0-9]' || echo 'No hardcoded colors found!'"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.1.1",
+		"@radix-ui/react-dialog": "^1.1.14",
 		"@radix-ui/react-label": "^2.1.7",
 		"@radix-ui/react-progress": "^1.1.7",
 		"@radix-ui/react-switch": "^1.2.5",

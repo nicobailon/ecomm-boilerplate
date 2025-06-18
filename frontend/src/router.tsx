@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
-import RootLayout from '@/components/Layout';
-import { AuthGuard } from '@/components/AuthGuard';
+import RootLayout from '@/components/layout/Layout';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 
 // Lazy load pages for code splitting
 const HomePage = lazy(() => import('@/pages/HomePage'));

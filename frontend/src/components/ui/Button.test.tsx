@@ -28,7 +28,7 @@ describe('Button Component', () => {
   it('applies variant classes correctly', () => {
     render(<Button variant="destructive">Delete</Button>);
     
-    expect(screen.getByRole('button')).toHaveClass('bg-red-600');
+    expect(screen.getByRole('button')).toHaveClass('bg-destructive');
   });
 
   it('applies size classes correctly', () => {

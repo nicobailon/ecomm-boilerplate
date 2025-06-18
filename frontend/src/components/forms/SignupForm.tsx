@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SignupInput, signupSchema } from '@/lib/validations';
-import { useSignup } from '@/hooks/queries/useAuth';
+import { useSignup } from '@/hooks/auth/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 

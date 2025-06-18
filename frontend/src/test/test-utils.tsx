@@ -2,6 +2,7 @@ import { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
+import { ThemeProvider } from '@/providers/theme-provider';
 
 // Shared QueryClient instance for tests that don't require mutation isolation
 let sharedQueryClient: QueryClient | null = null;
@@ -32,6 +33,7 @@ const getSharedQueryClient = () => {
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   queryClient?: QueryClient;
   useSharedQueryClient?: boolean;
+  theme?: 'light' | 'dark' | 'system';
 }
 
 // Custom render function that includes providers
@@ -40,6 +42,7 @@ const customRender = (
   { 
     queryClient, 
     useSharedQueryClient = true,
+    theme = 'light',
     ...renderOptions 
   }: CustomRenderOptions = {}
 ) => {
@@ -47,11 +50,13 @@ const customRender = (
   const client = queryClient || (useSharedQueryClient ? getSharedQueryClient() : createTestQueryClient());
   
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <BrowserRouter>
-      <QueryClientProvider client={client}>
-        {children}
-      </QueryClientProvider>
-    </BrowserRouter>
+    <ThemeProvider defaultTheme={theme}>
+      <BrowserRouter>
+        <QueryClientProvider client={client}>
+          {children}
+        </QueryClientProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 
   return {
@@ -92,14 +97,16 @@ export function createMockApiResponse<T>(data: T, overrides = {}) {
 }
 
 // Create wrapper for renderHook
-export const createWrapper = (useSharedQueryClient = true) => {
+export const createWrapper = (useSharedQueryClient = true, theme: 'light' | 'dark' | 'system' = 'light') => {
   const queryClient = useSharedQueryClient ? getSharedQueryClient() : createTestQueryClient();
   return ({ children }: { children: React.ReactNode }) => (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </BrowserRouter>
+    <ThemeProvider defaultTheme={theme}>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 };
 
@@ -115,5 +122,14 @@ export const resetSharedQueryClient = () => {
 // type UserTypeTest = AssertEqual<ReturnType<typeof createMockUser>, import('@/types').User>;
 // type ProductTypeTest = AssertEqual<ReturnType<typeof createMockProduct>, import('@/types').Product>;
 
-export { customRender as render, createTestQueryClient };
+// Export theme-specific render helpers
+export function renderInDarkMode(ui: ReactElement, options?: Omit<CustomRenderOptions, 'theme'>) {
+  return customRender(ui, { ...options, theme: 'dark' });
+}
+
+export function renderInLightMode(ui: ReactElement, options?: Omit<CustomRenderOptions, 'theme'>) {
+  return customRender(ui, { ...options, theme: 'light' });
+}
+
+export { customRender as render, customRender as renderWithProviders, createTestQueryClient };
 export * from '@testing-library/react';

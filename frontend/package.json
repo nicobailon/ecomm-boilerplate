@@ -12,10 +12,19 @@
 		"test:ui": "vitest --ui",
 		"test:coverage": "vitest --coverage",
 		"typecheck": "tsc --noEmit",
-		"check-all": "npm run typecheck && npm run lint && npm run test"
+		"check-all": "npm run typecheck && npm run lint && npm run test",
+		"check:colors": "node scripts/check-hardcoded-colors.cjs",
+		"check:theme": "npm run typecheck && npm run check:colors",
+		"test:theme": "vitest run src/__tests__/theme-integration.test.tsx",
+		"theme:audit": "grep -r 'bg-\\|text-\\|border-' --include='*.tsx' --exclude-dir=node_modules src/ | grep -E '(gray|emerald|green|red|yellow|blue)-[0-9]' || echo 'No hardcoded colors found!'"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.1.1",
+		"@radix-ui/react-dialog": "^1.1.14",
+		"@radix-ui/react-label": "^2.1.7",
+		"@radix-ui/react-progress": "^1.1.7",
+		"@radix-ui/react-switch": "^1.2.5",
+		"@radix-ui/react-tabs": "^1.1.12",
 		"@stripe/stripe-js": "^7.3.1",
 		"@tanstack/eslint-plugin-query": "^5.78.0",
 		"@tanstack/react-query": "^5.80.7",
@@ -35,6 +44,7 @@
 		"react-hot-toast": "^2.4.1",
 		"react-router-dom": "^7.6.2",
 		"recharts": "^2.12.7",
+		"sonner": "^2.0.5",
 		"superjson": "2.2.2",
 		"tailwindcss-animate": "^1.0.7",
 		"uploadthing": "^7.7.2",

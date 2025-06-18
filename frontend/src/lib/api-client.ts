@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { queryClient } from './query-client';
+import { API_URL } from './env';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -8,7 +9,7 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: import.meta.env.VITE_API_URL || '/api',
+      baseURL: API_URL,
       withCredentials: true,
       timeout: 10000, // 10 second timeout
     });

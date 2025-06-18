@@ -44,7 +44,14 @@ app.use(cors({
   origin: process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',') : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
 }));
-app.use(express.json({ limit: "10mb" }));
+// Apply JSON parsing to all routes except uploadthing
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/uploadthing')) {
+    next();
+  } else {
+    express.json({ limit: "10mb" })(req, res, next);
+  }
+});
 app.use(cookieParser());
 
 app.use('/api/trpc', (req, _res, next) => {

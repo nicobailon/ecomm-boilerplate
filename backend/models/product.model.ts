@@ -5,7 +5,7 @@ export interface IProductDocument extends Document {
   description: string;
   price: number;
   image: string;
-  category: string;
+  collectionId?: mongoose.Types.ObjectId;
   isFeatured: boolean;
 }
 
@@ -28,9 +28,9 @@ const productSchema = new Schema<IProductDocument>(
       type: String,
       required: [true, "Image is required"],
     },
-    category: {
-      type: String,
-      required: true,
+    collectionId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Collection',
     },
     isFeatured: {
       type: Boolean,
@@ -40,8 +40,9 @@ const productSchema = new Schema<IProductDocument>(
   { timestamps: true }
 );
 
-productSchema.index({ category: 1 });
+productSchema.index({ collectionId: 1 });
 productSchema.index({ isFeatured: 1 });
 productSchema.index({ createdAt: -1 });
+productSchema.index({ name: 'text', description: 'text' });
 
 export const Product = mongoose.model<IProductDocument>('Product', productSchema);

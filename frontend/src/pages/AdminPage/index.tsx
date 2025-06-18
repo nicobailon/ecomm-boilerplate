@@ -1,8 +1,9 @@
-import { BarChart, PlusCircle, ShoppingBasket } from "lucide-react";
+import { BarChart, PlusCircle, ShoppingBasket, FolderOpen } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 
 import AnalyticsTab from "./AnalyticsTab";
+import { CollectionsTab } from "./CollectionsTab";
 import { ProductForm } from "../../components/forms/ProductForm";
 import ProductsList from "../../components/product/ProductsList";
 import { TransitionOverlay } from "../../components/ui/transition-overlay";
@@ -52,7 +53,7 @@ const AdminPage = () => {
 				</motion.h1>
 
 				<Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-					<TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-8">
+					<TabsList className="grid w-full max-w-lg mx-auto grid-cols-4 mb-8">
 						<TabsTrigger value="create" disabled={isNavigating} className={isNavigating && activeTab === "create" ? "animate-pulse" : ""}>
 							<PlusCircle className="mr-2 h-5 w-5" />
 							Create Product
@@ -60,6 +61,10 @@ const AdminPage = () => {
 						<TabsTrigger value="products" disabled={isNavigating} className={isNavigating && activeTab === "products" ? "animate-pulse" : ""}>
 							<ShoppingBasket className="mr-2 h-5 w-5" />
 							Products
+						</TabsTrigger>
+						<TabsTrigger value="collections" disabled={isNavigating} className={isNavigating && activeTab === "collections" ? "animate-pulse" : ""}>
+							<FolderOpen className="mr-2 h-5 w-5" />
+							Collections
 						</TabsTrigger>
 						<TabsTrigger value="analytics" disabled={isNavigating} className={isNavigating && activeTab === "analytics" ? "animate-pulse" : ""}>
 							<BarChart className="mr-2 h-5 w-5" />
@@ -96,6 +101,17 @@ const AdminPage = () => {
 									highlightProductId={newProductId}
 									onHighlightComplete={clearHighlight}
 								/>
+							</motion.div>
+						</TabsContent>
+						
+						<TabsContent value="collections">
+							<motion.div
+								initial={{ opacity: 0, x: 20 }}
+								animate={{ opacity: 1, x: 0 }}
+								exit={{ opacity: 0, x: -20 }}
+								transition={{ duration: 0.2 }}
+							>
+								<CollectionsTab />
 							</motion.div>
 						</TabsContent>
 						

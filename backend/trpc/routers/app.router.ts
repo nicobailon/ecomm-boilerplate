@@ -5,6 +5,7 @@ import { cartRouter } from './cart.router.js';
 import { couponRouter } from './coupon.router.js';
 import { analyticsRouter } from './analytics.router.js';
 import { paymentRouter } from './payment.router.js';
+import { collectionRouter } from './collection.router.js';
 
 export const appRouter = router({
   auth: authRouter,
@@ -13,6 +14,7 @@ export const appRouter = router({
   coupon: couponRouter,
   analytics: analyticsRouter,
   payment: paymentRouter,
+  collection: collectionRouter,
 });
 
 export type AppRouter = typeof appRouter;

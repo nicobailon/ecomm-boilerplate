@@ -13,7 +13,7 @@ export interface Product {
   description: string;
   price: number;
   image: string;
-  category: ProductCategory;
+  collectionId?: string | { _id: string; name: string; slug: string };
   isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
@@ -24,7 +24,6 @@ export interface CartItem {
   quantity: number;
 }
 
-export type ProductCategory = 'jeans' | 't-shirts' | 'shoes' | 'glasses' | 'jackets' | 'suits' | 'bags';
 
 export interface Coupon {
   code: string;
@@ -63,6 +62,7 @@ export interface DailySalesData {
   revenue: number;
 }
 
+
 // Shared constants for navigation
 export const NAVIGATION_DELAY = 1500; // ms
 
@@ -80,7 +80,7 @@ export interface NavigationState {
   highlightId?: string;
 }
 
-export type TabId = 'create' | 'products' | 'analytics';
+export type TabId = 'create' | 'products' | 'analytics' | 'collections';
 
 // CreateProductForm callback props
 export interface CreateProductFormProps {

@@ -131,7 +131,6 @@ describe('useProductCreation', () => {
       name: 'Test Product',
       description: 'Test Description',
       price: 99.99,
-      category: 'jeans',
       image: 'https://example.com/image.jpg',
     };
 

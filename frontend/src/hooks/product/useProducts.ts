@@ -1,15 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { Product, PaginatedResponse, ProductCategory } from '@/types';
+import { Product, PaginatedResponse } from '@/types';
 import { ProductInput } from '@/lib/validations';
 import { toast } from 'sonner';
 
-export const useProducts = (category?: ProductCategory, page = 1, limit = 12) => {
+export const useProducts = (page = 1, limit = 12) => {
   return useQuery({
-    queryKey: ['products', category ?? 'all', page, limit],
+    queryKey: ['products', page, limit],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (category) params.append('category', category);
       params.append('page', page.toString());
       params.append('limit', limit.toString());
 

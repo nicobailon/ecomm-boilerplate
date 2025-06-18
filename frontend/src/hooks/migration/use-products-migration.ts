@@ -11,13 +11,13 @@ import {
 } from '@/hooks/product/useProducts';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ProductCategory, Product, ApiResponse } from '@/types';
+import { Product, ApiResponse } from '@/types';
 import { apiClient } from '@/lib/api-client';
 
-export function useProducts(category?: ProductCategory, page = 1, limit = 12) {
-  const restQuery = useProductsREST(category, page, limit);
+export function useProducts(page = 1, limit = 12, search?: string) {
+  const restQuery = useProductsREST(page, limit);
   const trpcQuery = trpc.product.list.useQuery(
-    { category, page, limit },
+    { page, limit, search },
     { enabled: FEATURE_FLAGS.USE_TRPC_PRODUCTS }
   );
 

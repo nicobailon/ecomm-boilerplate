@@ -27,3 +27,11 @@ export const trpcRateLimit = rateLimit({
     return `${req.ip}-${procedure}`;
   }
 });
+
+export const collectionCreationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Too many collections created, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});

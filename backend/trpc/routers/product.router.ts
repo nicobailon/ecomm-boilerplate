@@ -10,28 +10,15 @@ export const productRouter = router({
     .input(z.object({
       page: z.number().min(1).optional().default(1),
       limit: z.number().min(1).max(100).optional().default(12),
-      category: z.string().optional(),
+      search: z.string().optional(),
     }))
     .query(async ({ input }) => {
       try {
-        return await productService.getAllProducts(input.page, input.limit, input.category);
+        return await productService.getAllProducts(input.page, input.limit, input.search);
       } catch (error: any) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error.message || 'Failed to fetch products',
-        });
-      }
-    }),
-
-  byCategory: publicProcedure
-    .input(z.string())
-    .query(async ({ input }) => {
-      try {
-        return await productService.getProductsByCategory(input);
-      } catch (error: any) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to fetch products by category',
         });
       }
     }),
@@ -86,10 +73,35 @@ export const productRouter = router({
     }),
 
   create: adminProcedure
-    .input(createProductSchema)
-    .mutation(async ({ input }) => {
+    .input(createProductSchema.extend({
+      collectionId: z.string().optional(),
+      collectionName: z.string()
+        .min(1)
+        .max(100)
+        .optional()
+        .refine(
+          (name) => !name || name.trim().length > 0,
+          'Collection name cannot be empty'
+        ),
+    }).refine(
+      (data) => !(data.collectionId && data.collectionName),
+      {
+        message: 'Provide either collectionId or collectionName, not both',
+        path: ['collectionName'],
+      }
+    ))
+    .mutation(async ({ input, ctx }) => {
       try {
-        return await productService.createProduct(input);
+        const result = await productService.createProductWithCollection(
+          ctx.userId,
+          input
+        );
+        
+        return {
+          product: result.product,
+          collection: result.collection,
+          created: result.created,
+        };
       } catch (error: any) {
         if (error.statusCode === 400) {
           throw new TRPCError({

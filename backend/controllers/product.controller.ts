@@ -30,28 +30,28 @@ export const getFeaturedProducts = asyncHandler(async (_req: Request, res: Respo
 });
 
 export const createProduct = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { name, description, price, image, category } = req.body;
+  const { name, description, price, image, collectionId } = req.body;
 
   const product = await productService.createProduct({
     name,
     description,
     price,
     image,
-    category,
+    collectionId,
   });
 
   res.status(201).json(product);
 });
 
 export const updateProduct = asyncHandler(async (req: Request, res: Response) => {
-  const { name, description, price, image, category } = req.body;
+  const { name, description, price, image, collectionId } = req.body;
   
   const product = await productService.updateProduct(req.params.id, {
     name,
     description,
     price,
     image,
-    category,
+    collectionId,
   });
 
   res.json(product);
@@ -65,12 +65,6 @@ export const deleteProduct = asyncHandler(async (req: Request, res: Response) =>
 export const getRecommendedProducts = asyncHandler(async (_req: Request, res: Response) => {
   const products = await productService.getRecommendedProducts();
   res.json(products);
-});
-
-export const getProductsByCategory = asyncHandler(async (req: Request, res: Response) => {
-  const { category } = req.params;
-  const products = await productService.getProductsByCategory(category);
-  res.json({ products });
 });
 
 export const getProduct = asyncHandler(async (req: Request, res: Response) => {

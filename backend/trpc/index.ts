@@ -24,6 +24,7 @@ const isAuthed = t.middleware(({ ctx, next }) => {
   return next({
     ctx: {
       user: ctx.user,
+      userId: (ctx.user as any)._id.toString(),
     },
   });
 });
@@ -35,11 +36,13 @@ const isAdmin = t.middleware(({ ctx, next }) => {
   return next({
     ctx: {
       user: ctx.user,
+      userId: (ctx.user as any)._id.toString(),
     },
   });
 });
 
 export const router = t.router;
+export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(isAuthed);
 export const adminProcedure = t.procedure.use(isAdmin);

@@ -2,28 +2,35 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductInput, productSchema } from '@/lib/validations';
 import { useProductCreation } from '@/hooks/product/useProductCreation';
-import { useCreateProduct, useUpdateProduct } from '@/hooks/product/useProducts';
+import { useCreateProduct, useUpdateProduct } from '@/hooks/migration/use-products-migration';
+import { useListCollections, useQuickCreateCollection } from '@/hooks/collections/useCollections';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
-import { Select } from '@/components/ui/Select';
+import { CreatableCollectionSelect, CreatableCollectionSelectSkeleton } from '@/components/ui/CreatableCollectionSelect';
 import { UploadButton } from '@/lib/uploadthing';
 import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Switch } from '@/components/ui/Switch';
 import { Label } from '@/components/ui/Label';
 import { Progress } from '@/components/ui/Progress';
 import { cn } from '@/lib/utils';
 import { CheckIcon } from 'lucide-react';
-import { ProductFormProps } from '@/types';
+import { ProductFormProps, Product } from '@/types';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onSuccess }) => {
+  // Detect if we're inside a modal/drawer by checking for Radix dialog context
+  const inModal = mode === 'edit';
   const productCreation = mode === 'create' ? useProductCreation() : null;
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
+  const { data: collectionsData, isLoading: isLoadingCollections } = useListCollections({ limit: 100 });
+  const { mutateAsync: quickCreateCollection } = useQuickCreateCollection();
 
   const [imagePreview, setImagePreview] = useState<string>('');
   
+  const collections = collectionsData?.collections || [];
   
   const {
     register,
@@ -39,16 +46,33 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
       name: initialData.name,
       description: initialData.description,
       price: initialData.price,
-      category: initialData.category,
+      collectionId: typeof initialData.collectionId === 'string' 
+        ? initialData.collectionId 
+        : initialData.collectionId?._id,
       image: initialData.image
     } : productCreation?.draftData || {
       name: '',
       description: '',
       price: 0,
-      category: 'jeans',
+      collectionId: '',
       image: ''
     }
   });
+  
+  const handleCreateCollection = useCallback(async (name: string) => {
+    try {
+      const newCollection = await quickCreateCollection({ 
+        name,
+        isPublic: false
+      });
+      
+      setValue('collectionId', newCollection._id as string);
+      
+      return newCollection._id as string;
+    } catch (error) {
+      throw error;
+    }
+  }, [quickCreateCollection, setValue]);
 
   const watchedImage = watch('image');
   const watchedFields = watch();
@@ -64,16 +88,23 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
     watchedFields.name,
     watchedFields.description,
     watchedFields.price > 0,
-    watchedFields.category,
     watchedFields.image || imagePreview
   ].filter(Boolean).length;
-  const totalFields = 5;
+  const totalFields = 4;
   const progress = (completedFields / totalFields) * 100;
   
   // Load initial data for edit mode or draft for create mode
   useEffect(() => {
     if (mode === 'edit' && initialData) {
-      reset(initialData);
+      reset({
+        name: initialData.name,
+        description: initialData.description,
+        price: initialData.price,
+        collectionId: typeof initialData.collectionId === 'string' 
+          ? initialData.collectionId 
+          : initialData.collectionId?._id,
+        image: initialData.image
+      });
       if (initialData.image) {
         setImagePreview(initialData.image);
       }
@@ -87,40 +118,52 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
   
   // Keyboard shortcuts
   useEffect(() => {
+    // Only add listener if form is mounted
+    if (!handleSubmit) return;
+    
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Ctrl/Cmd + Enter to submit
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      // Prevent default browser shortcuts
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'Enter' || e.key === 's')) {
         e.preventDefault();
-        handleSubmit(onSubmit)();
-      }
-      // Ctrl/Cmd + S to save draft (only in create mode)
-      if ((e.ctrlKey || e.metaKey) && e.key === 's' && mode === 'create' && productCreation) {
-        e.preventDefault();
-        productCreation.saveDraft(getValues());
+        
+        if (e.key === 'Enter') {
+          handleSubmit(onSubmit)();
+        } else if (e.key === 's' && mode === 'create' && productCreation) {
+          productCreation.saveDraft(getValues());
+        }
       }
     };
     
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
+    // Use capture phase to ensure we get the event first
+    window.addEventListener('keydown', handleKeyPress, { capture: true });
+    
+    // Cleanup function
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress, { capture: true });
+    };
   }, [handleSubmit, mode, productCreation, getValues]);
 
   const onSubmit = async (data: ProductInput) => {
     if (mode === 'create') {
       createProductMutation.mutate(data, {
-        onSuccess: (newProduct) => {
-          // Reset form after successful creation
+        onSuccess: (result) => {
+          const isTPRCResult = 'product' in result;
+          const product = isTPRCResult ? result.product : result;
+          const hasNewCollection = isTPRCResult && result.created?.collection;
+          
+          if (hasNewCollection && result.collection) {
+            toast.success(`Created product in new collection "${result.collection.name}"`);
+          }
+          
           reset();
           setImagePreview('');
-          onSuccess?.(newProduct);
+          onSuccess?.(product as Product);
           
-          // Handle navigation and other logic via the productCreation hook if available
           if (productCreation && !productCreation.bulkMode) {
-            // The hook will handle navigation
           }
         },
       });
     } else {
-      // Edit mode
       updateProductMutation.mutate({ id: initialData!._id, data }, {
         onSuccess: (updatedProduct) => {
           toast.success('Product updated!');
@@ -212,21 +255,38 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         )}
       </div>
       
-      <Select
-        label="Category"
-        {...register('category')}
-        placeholder="Select a category"
-        options={[
-          { value: 'jeans', label: 'Jeans' },
-          { value: 't-shirts', label: 'T-Shirts' },
-          { value: 'shoes', label: 'Shoes' },
-          { value: 'glasses', label: 'Glasses' },
-          { value: 'jackets', label: 'Jackets' },
-          { value: 'suits', label: 'Suits' },
-          { value: 'bags', label: 'Bags' },
-        ]}
-        error={errors.category?.message}
-      />
+      
+      {isLoadingCollections ? (
+        <CreatableCollectionSelectSkeleton />
+      ) : (
+        <ErrorBoundary
+          fallback={(_error, reset) => (
+            <div className="text-sm text-destructive">
+              Failed to load collections. 
+              <button onClick={reset} className="underline ml-1">
+                Try again
+              </button>
+            </div>
+          )}
+        >
+          <CreatableCollectionSelect
+            value={watch('collectionId')}
+            onChange={(value) => setValue('collectionId', value)}
+            onCreateCollection={handleCreateCollection}
+            collections={collections.map(c => ({ 
+              _id: c._id as string, 
+              name: c.name, 
+              slug: c.slug 
+            }))}
+            isLoading={isLoadingCollections}
+            label="Collection (Optional)"
+            placeholder="Select collection..."
+            error={errors.collectionId?.message}
+            disabled={isSubmitting}
+            inModal={inModal}
+          />
+        </ErrorBoundary>
+      )}
       
       <div className="space-y-1">
         <label className="text-sm font-medium text-foreground">

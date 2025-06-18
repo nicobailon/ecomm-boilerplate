@@ -8,10 +8,10 @@ const HomePage = lazy(() => import('@/pages/HomePage'));
 const SignUpPage = lazy(() => import('@/pages/SignUpPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const AdminPage = lazy(() => import('@/pages/AdminPage'));
-const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
 const CartPage = lazy(() => import('@/pages/CartPage'));
 const PurchaseSuccessPage = lazy(() => import('@/pages/PurchaseSuccessPage'));
 const PurchaseCancelPage = lazy(() => import('@/pages/PurchaseCancelPage'));
+const CollectionPage = lazy(() => import('@/pages/CollectionPage'));
 
 export const router = createBrowserRouter([
   {
@@ -24,8 +24,8 @@ export const router = createBrowserRouter([
         element: <HomePage />,
       },
       {
-        path: 'category/:category',
-        element: <CategoryPage />,
+        path: 'collections/:slug',
+        element: <CollectionPage />,
       },
       // Auth routes (redirect to home if already logged in)
       {

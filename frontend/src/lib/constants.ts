@@ -58,16 +58,6 @@ export const UI_CONSTANTS = {
   MIN_PASSWORD_LENGTH: 6,
 } as const;
 
-export const PRODUCT_CATEGORIES = [
-  { value: 'jeans', label: 'Jeans' },
-  { value: 't-shirts', label: 'T-Shirts' },
-  { value: 'shoes', label: 'Shoes' },
-  { value: 'glasses', label: 'Glasses' },
-  { value: 'jackets', label: 'Jackets' },
-  { value: 'suits', label: 'Suits' },
-  { value: 'bags', label: 'Bags' },
-] as const;
-
 export const ERROR_MESSAGES = {
   GENERIC: 'Something went wrong. Please try again.',
   NETWORK: 'Network error. Please check your connection.',

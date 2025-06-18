@@ -15,9 +15,7 @@ export const createProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   price: z.number().positive('Price must be a positive number'),
-  category: z.enum(['jeans', 't-shirts', 'shoes', 'glasses', 'jackets', 'suits', 'bags'], {
-    errorMap: () => ({ message: 'Invalid category' })
-  }),
+  collectionId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid collection ID format').optional(),
   image: z.string().url('Image must be a valid URL'),
 });
 
@@ -79,8 +77,3 @@ export const productIdParamSchema = z.object({
 });
 
 // Category param validation
-export const categoryParamSchema = z.object({
-  category: z.enum(['jeans', 't-shirts', 'shoes', 'glasses', 'jackets', 'suits', 'bags'], {
-    errorMap: () => ({ message: 'Invalid category' })
-  }),
-});

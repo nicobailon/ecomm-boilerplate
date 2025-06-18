@@ -21,7 +21,7 @@ export interface IProduct {
   description: string;
   price: number;
   image: string;
-  category: string;
+  collectionId?: string;
   isFeatured: boolean;
   createdAt?: Date;
   updatedAt?: Date;

@@ -33,7 +33,6 @@ describe('ProductEditDrawer', () => {
     description: 'Test description',
     price: 99.99,
     image: 'test.jpg',
-    category: 't-shirts',
     isFeatured: false,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

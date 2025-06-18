@@ -3,8 +3,10 @@ import { Outlet } from 'react-router-dom';
 import { Toaster } from "sonner";
 import Navbar from './Navbar';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import { useGuestCartSync } from '@/hooks/cart/useGuestCartSync';
 
 function RootLayout() {
+  useGuestCartSync();
   return (
     <div className='min-h-screen bg-background text-foreground relative overflow-hidden'>
       <div className='absolute inset-0 overflow-hidden'>

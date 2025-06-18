@@ -5,11 +5,11 @@ import CartItem from "../components/cart/CartItem";
 import PeopleAlsoBought from "../components/product/PeopleAlsoBought";
 import OrderSummary from "../components/cart/OrderSummary";
 import GiftCouponCard from "../components/cart/GiftCouponCard";
-import { useCart } from "@/hooks/cart/useCart";
+import { useUnifiedCart } from "@/hooks/cart/useUnifiedCart";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 const CartPage = () => {
-	const { data: cart, isLoading } = useCart();
+	const { data: cart, isLoading } = useUnifiedCart();
 
 	if (isLoading) return <LoadingSpinner />;
 

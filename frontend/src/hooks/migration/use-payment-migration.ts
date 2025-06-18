@@ -2,7 +2,7 @@ import { FEATURE_FLAGS } from '@/lib/feature-flags';
 import { trpc } from '@/lib/trpc';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface CheckoutProduct {
   _id: string;

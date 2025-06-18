@@ -1,7 +1,7 @@
 import { trpc } from '@/lib/trpc';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export const useCurrentUser = () => {
   return trpc.auth.profile.useQuery(undefined, {

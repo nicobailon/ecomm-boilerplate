@@ -1,19 +1,20 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MoveRight, Loader } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
-import { useCart } from "@/hooks/cart/useCart";
+import { useUnifiedCart } from "@/hooks/cart/useUnifiedCart";
 import { apiClient } from "@/lib/api-client";
 import { useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 const stripePromise = loadStripe(
 	"pk_test_51KZYccCoOZF2UhtOwdXQl3vcizup20zqKqT9hVUIsVzsdBrhqbUI2fE0ZdEVLdZfeHjeyFXtqaNsyCJCmZWnjNZa00PzMAjlcL"
 );
 
 const OrderSummary = () => {
-	const { data: cart } = useCart();
+	const { data: cart, source } = useUnifiedCart();
 	const [isProcessing, setIsProcessing] = useState(false);
+	const navigate = useNavigate();
 
 	const subtotal = cart?.subtotal || 0;
 	const total = cart?.totalAmount || 0;
@@ -28,6 +29,12 @@ const OrderSummary = () => {
 	const handlePayment = async () => {
 		if (cartItems.length === 0) {
 			toast.error("Your cart is empty");
+			return;
+		}
+
+		if (source === 'guest') {
+			toast.error("Please login to proceed with checkout");
+			navigate('/login');
 			return;
 		}
 

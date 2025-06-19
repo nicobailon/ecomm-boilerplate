@@ -5,7 +5,7 @@ import { User } from '../models/user.model.js';
 
 dotenv.config();
 
-async function createCoupon() {
+async function createCoupon(): Promise<void> {
   try {
     if (!process.env.MONGO_URI) {
       throw new Error('MONGO_URI is not defined in environment variables');
@@ -46,7 +46,7 @@ async function createCoupon() {
       const readline = await import('readline');
       const rl = readline.createInterface({
         input: process.stdin,
-        output: process.stdout
+        output: process.stdout,
       });
 
       const answer = await new Promise<string>((resolve) => {
@@ -72,7 +72,7 @@ async function createCoupon() {
       discountPercentage,
       expirationDate,
       userId: user._id,
-      isActive: true
+      isActive: true,
     });
 
     await newCoupon.save();
@@ -93,4 +93,4 @@ async function createCoupon() {
   }
 }
 
-createCoupon();
+void createCoupon();

@@ -1,4 +1,5 @@
-import axios, { AxiosError, AxiosInstance } from 'axios';
+import type { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import { queryClient } from './query-client';
 import { API_URL } from './env';
 
@@ -22,7 +23,7 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
-        const originalRequest = error.config as any;
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
         // Don't attempt to refresh for auth endpoints, public endpoints, or if it's already a retry
         const isPublicEndpoint = originalRequest.url?.includes('/products') && 
@@ -53,7 +54,7 @@ class ApiClient {
             await this.refreshToken();
             this.onRefreshSuccess();
             return this.client(originalRequest);
-          } catch (refreshError) {
+          } catch (_refreshError) {
             this.onRefreshFailure();
             queryClient.setQueryData(['user'], null);
             // Only redirect to login for protected routes, not for initial auth checks
@@ -68,7 +69,7 @@ class ApiClient {
         }
 
         return Promise.reject(error);
-      }
+      },
     );
   }
 
@@ -86,23 +87,23 @@ class ApiClient {
     this.refreshSubscribers = [];
   }
 
-  get<T>(url: string, config?: any) {
+  get<T>(url: string, config?: AxiosRequestConfig) {
     return this.client.get<T>(url, config);
   }
 
-  post<T>(url: string, data?: any, config?: any) {
+  post<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
     return this.client.post<T>(url, data, config);
   }
 
-  put<T>(url: string, data?: any, config?: any) {
+  put<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
     return this.client.put<T>(url, data, config);
   }
 
-  patch<T>(url: string, data?: any, config?: any) {
+  patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
     return this.client.patch<T>(url, data, config);
   }
 
-  delete<T>(url: string, config?: any) {
+  delete<T>(url: string, config?: AxiosRequestConfig) {
     return this.client.delete<T>(url, config);
   }
 }

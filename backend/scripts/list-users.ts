@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const listUsers = async () => {
+const listUsers = async (): Promise<void> => {
   if (!process.env.MONGO_URI) {
     console.error('❌ MONGO_URI not found in environment variables');
     process.exit(1);
@@ -30,7 +30,7 @@ const listUsers = async () => {
     console.log('Email                          | Role     | Created');
     console.log('---------------------------------------------------');
     
-    users.forEach((user: any) => {
+    users.forEach((user) => {
       const email = user.email.padEnd(30);
       const role = (user.role || 'customer').padEnd(8);
       const created = new Date(user.createdAt).toLocaleDateString();
@@ -49,4 +49,4 @@ const listUsers = async () => {
   }
 };
 
-listUsers();
+void listUsers();

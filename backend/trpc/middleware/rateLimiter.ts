@@ -8,10 +8,10 @@ interface RateLimitOptions {
   prefix: string;
 }
 
-export const createRateLimiter = (options: RateLimitOptions) => {
+export const createRateLimiter = (options: RateLimitOptions): ReturnType<typeof middleware> => {
   return middleware(async ({ ctx, next }) => {
     const userId = 'userId' in ctx ? (ctx.userId as string) : ctx.user?._id?.toString();
-    const key = `${options.prefix}${userId || ctx.req?.ip || 'unknown'}`;
+    const key = `${options.prefix}${userId ?? ctx.req?.ip ?? 'unknown'}`;
     const windowInSeconds = Math.floor(options.windowMs / 1000);
     
     try {

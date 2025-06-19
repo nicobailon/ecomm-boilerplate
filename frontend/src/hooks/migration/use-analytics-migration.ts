@@ -18,7 +18,7 @@ export function useAnalytics() {
     // Combine the data from both queries to match REST API structure
     const isLoading = overviewQuery.isLoading || dailySalesQuery.isLoading;
     const isError = overviewQuery.isError || dailySalesQuery.isError;
-    const error = overviewQuery.error || dailySalesQuery.error;
+    const error = overviewQuery.error ?? dailySalesQuery.error;
     
     const data = overviewQuery.data && dailySalesQuery.data ? {
       analyticsData: overviewQuery.data,
@@ -72,7 +72,7 @@ export function useDailySales(startDate?: string, endDate?: string) {
   const restQuery = useAnalyticsREST();
   const trpcQuery = trpc.analytics.dailySales.useQuery(
     { startDate, endDate },
-    { enabled: FEATURE_FLAGS.USE_TRPC_ANALYTICS }
+    { enabled: FEATURE_FLAGS.USE_TRPC_ANALYTICS },
   );
 
   if (FEATURE_FLAGS.USE_TRPC_ANALYTICS) {

@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Toaster } from "sonner";
+import { Toaster } from 'sonner';
 import Navbar from './Navbar';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { useGuestCartSync } from '@/hooks/cart/useGuestCartSync';

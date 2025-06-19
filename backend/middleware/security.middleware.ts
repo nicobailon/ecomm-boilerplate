@@ -8,14 +8,14 @@ export const securityMiddleware = [
   rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
-    message: 'Too many requests from this IP'
-  })
+    message: 'Too many requests from this IP',
+  }),
 ];
 
 export const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  message: 'Too many authentication attempts'
+  message: 'Too many authentication attempts',
 });
 
 export const trpcRateLimit = rateLimit({
@@ -23,9 +23,10 @@ export const trpcRateLimit = rateLimit({
   max: 200,
   message: 'Too many tRPC requests from this IP',
   keyGenerator: (req) => {
-    const procedure = req.body?.['0']?.procedure || 'unknown';
+    const body = req.body as Record<string, { procedure?: string }> | undefined;
+    const procedure = body?.['0']?.procedure ?? 'unknown';
     return `${req.ip}-${procedure}`;
-  }
+  },
 });
 
 export const collectionCreationLimiter = rateLimit({

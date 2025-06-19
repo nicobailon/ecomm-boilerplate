@@ -11,7 +11,7 @@ describe('Theme-aware Components', () => {
     return render(
       <ThemeProvider defaultTheme={theme}>
         {ui}
-      </ThemeProvider>
+      </ThemeProvider>,
     );
   };
 
@@ -50,7 +50,7 @@ describe('Theme-aware Components', () => {
       const variants = ['default', 'secondary', 'destructive', 'outline', 'success', 'warning'];
       variants.forEach(variant => {
         const { container } = renderWithTheme(
-          <Badge variant={variant as any}>Test</Badge>
+          <Badge variant={variant as any}>Test</Badge>,
         );
         expect(container.firstChild).toBeTruthy();
       });

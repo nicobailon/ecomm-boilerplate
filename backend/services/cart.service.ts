@@ -1,9 +1,10 @@
+import mongoose from 'mongoose';
 import { Product } from '../models/product.model.js';
 import { IUserDocument } from '../models/user.model.js';
 import { AppError } from '../utils/AppError.js';
 
 interface CartItem {
-  product: any;
+  product: mongoose.Types.ObjectId;
   quantity: number;
 }
 
@@ -13,7 +14,7 @@ interface CartProductWithQuantity {
   description: string;
   price: number;
   image: string;
-  category: string;
+  collectionId?: mongoose.Types.ObjectId;
   isFeatured: boolean;
   quantity: number;
 }
@@ -30,12 +31,22 @@ export interface CartResponse {
 
 export class CartService {
   async getCartProducts(user: IUserDocument): Promise<CartProductWithQuantity[]> {
-    const productIds = user.cartItems.map((item: any) => item.product);
+    const productIds = user.cartItems.map((item) => item.product);
     const products = await Product.find({ _id: { $in: productIds } });
 
-    const cartItems = products.map((product: any) => {
-      const item = user.cartItems.find((cartItem: any) => cartItem.product.toString() === product._id.toString());
-      return { ...product.toJSON(), quantity: item?.quantity || 0 };
+    const cartItems = products.map((product) => {
+      const productIdStr = (product._id as mongoose.Types.ObjectId).toString();
+      const item = user.cartItems.find((cartItem) => cartItem.product.toString() === productIdStr);
+      return {
+        _id: productIdStr,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        image: product.image,
+        collectionId: product.collectionId,
+        isFeatured: product.isFeatured,
+        quantity: item?.quantity ?? 0,
+      };
     });
 
     return cartItems;
@@ -59,7 +70,7 @@ export class CartService {
       cartItems,
       subtotal: Math.round(subtotal * 100) / 100,
       totalAmount: Math.round(totalAmount * 100) / 100,
-      appliedCoupon: user.appliedCoupon
+      appliedCoupon: user.appliedCoupon,
     };
   }
 
@@ -70,13 +81,13 @@ export class CartService {
     }
 
     const existingItem = user.cartItems.find(
-      (item: any) => item.product.toString() === productId
+      (item) => item.product.toString() === productId,
     );
 
     if (existingItem) {
       existingItem.quantity += 1;
     } else {
-      user.cartItems.push({ product: productId as any, quantity: 1 });
+      user.cartItems.push({ product: new mongoose.Types.ObjectId(productId), quantity: 1 });
     }
 
     await user.save();
@@ -89,7 +100,7 @@ export class CartService {
       user.cartItems = [];
     } else {
       // Remove specific product
-      user.cartItems = user.cartItems.filter((item: any) => item.product.toString() !== productId);
+      user.cartItems = user.cartItems.filter((item) => item.product.toString() !== productId);
     }
     
     await user.save();
@@ -97,7 +108,7 @@ export class CartService {
   }
 
   async updateQuantity(user: IUserDocument, productId: string, quantity: number): Promise<CartItem[]> {
-    const existingItem = user.cartItems.find((item: any) => item.product.toString() === productId);
+    const existingItem = user.cartItems.find((item) => item.product.toString() === productId);
 
     if (!existingItem) {
       throw new AppError('Product not found in cart', 404);
@@ -105,7 +116,7 @@ export class CartService {
 
     if (quantity === 0) {
       // Remove item if quantity is 0
-      user.cartItems = user.cartItems.filter((item: any) => item.product.toString() !== productId);
+      user.cartItems = user.cartItems.filter((item) => item.product.toString() !== productId);
     } else {
       existingItem.quantity = quantity;
     }

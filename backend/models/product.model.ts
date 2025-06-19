@@ -26,7 +26,7 @@ const productSchema = new Schema<IProductDocument>(
     },
     image: {
       type: String,
-      required: [true, "Image is required"],
+      required: [true, 'Image is required'],
     },
     collectionId: {
       type: Schema.Types.ObjectId,
@@ -37,7 +37,7 @@ const productSchema = new Schema<IProductDocument>(
       default: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 productSchema.index({ collectionId: 1 });

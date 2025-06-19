@@ -17,9 +17,9 @@ export const useLogin = () => {
   return trpc.auth.login.useMutation({
     onSuccess: () => {
       // Invalidate and refetch the profile query to update the navbar
-      utils.auth.profile.invalidate();
+      void utils.auth.profile.invalidate();
       toast.success('Welcome back!');
-      navigate('/');
+      void navigate('/');
     },
   });
 };
@@ -31,9 +31,9 @@ export const useSignup = () => {
   return trpc.auth.signup.useMutation({
     onSuccess: () => {
       // Invalidate and refetch the profile query to update the navbar
-      utils.auth.profile.invalidate();
+      void utils.auth.profile.invalidate();
       toast.success('Account created successfully!');
-      navigate('/');
+      void navigate('/');
     },
   });
 };
@@ -46,9 +46,9 @@ export const useLogout = () => {
   return trpc.auth.logout.useMutation({
     onSuccess: () => {
       // Clear all auth-related queries
-      utils.auth.profile.reset();
-      queryClient.removeQueries({ queryKey: ['cart'] });
-      navigate('/login');
+      void utils.auth.profile.reset();
+      void queryClient.removeQueries({ queryKey: ['cart'] });
+      void navigate('/login');
       toast.success('Logged out successfully');
     },
   });

@@ -1,6 +1,7 @@
 import { renderHook, createWrapper } from '@/test/test-utils';
 import { useLogin, useSignup, useLogout } from './useAuth';
 import { vi } from 'vitest';
+import type * as ReactRouterDom from 'react-router-dom';
 
 // Mock the API client
 vi.mock('@/lib/api-client', () => ({
@@ -12,7 +13,7 @@ vi.mock('@/lib/api-client', () => ({
 
 // Mock react-router-dom
 vi.mock('react-router-dom', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react-router-dom')>();
+  const actual = await importOriginal<typeof ReactRouterDom>();
   return {
     ...actual,
     useNavigate: () => vi.fn(),

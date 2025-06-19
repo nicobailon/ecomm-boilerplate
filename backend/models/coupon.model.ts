@@ -31,14 +31,14 @@ const couponSchema = new Schema<ICouponDocument>(
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
       unique: true,
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 couponSchema.index({ expirationDate: 1 });

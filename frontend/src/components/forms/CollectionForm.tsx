@@ -49,9 +49,9 @@ export const CollectionForm: React.FC<CollectionFormProps> = ({
   } = useForm<CollectionFormData>({
     resolver: zodResolver(collectionFormSchema),
     defaultValues: {
-      name: initialData?.name || '',
-      description: initialData?.description || '',
-      isPublic: initialData?.isPublic || false,
+      name: initialData?.name ?? '',
+      description: initialData?.description ?? '',
+      isPublic: initialData?.isPublic ?? false,
     },
   });
 
@@ -62,7 +62,7 @@ export const CollectionForm: React.FC<CollectionFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+    <form onSubmit={(...args) => void handleSubmit(handleFormSubmit)(...args)} className="space-y-4">
       <div>
         <Label htmlFor="name">Collection Name</Label>
         <Input

@@ -1,7 +1,7 @@
-import { ShoppingCart, UserPlus, LogIn, LogOut, Lock } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useCurrentUser, useLogout } from "@/hooks/auth/useAuth";
-import { useUnifiedCart } from "@/hooks/cart/useUnifiedCart";
+import { ShoppingCart, UserPlus, LogIn, LogOut, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useCurrentUser, useLogout } from '@/hooks/auth/useAuth';
+import { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
 import { ThemeToggle } from '../ui/theme-toggle';
 
 const Navbar: React.FC = () => {
@@ -9,7 +9,7 @@ const Navbar: React.FC = () => {
 	const { totalQuantity } = useUnifiedCart();
 	const logout = useLogout();
 	
-	const isAdmin = user?.role === "admin";
+	const isAdmin = user?.role === 'admin';
 	const cartItemsCount = totalQuantity;
 
 	const handleLogout = () => {
@@ -26,14 +26,14 @@ const Navbar: React.FC = () => {
 
 					<nav className='flex flex-wrap items-center gap-4'>
 						<Link
-							to={"/"}
+							to={'/'}
 							className='text-muted-foreground hover:text-primary transition duration-300
 					 ease-in-out'
 						>
 							Home
 						</Link>
 						<Link
-							to={"/cart"}
+							to={'/cart'}
 							className='relative group text-muted-foreground hover:text-primary transition duration-300 
 						ease-in-out'
 						>
@@ -52,7 +52,7 @@ const Navbar: React.FC = () => {
 							<Link
 								className='bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-1 rounded-md font-medium
 								 transition duration-300 ease-in-out flex items-center'
-								to={"/secret-dashboard"}
+								to={'/secret-dashboard'}
 							>
 								<Lock className='inline-block mr-1' size={18} />
 								<span className='hidden sm:inline'>Dashboard</span>
@@ -74,7 +74,7 @@ const Navbar: React.FC = () => {
 						) : (
 							<>
 								<Link
-									to={"/signup"}
+									to={'/signup'}
 									className='bg-primary hover:bg-primary/90 text-primary-foreground py-2 px-4 
 									rounded-md flex items-center transition duration-300 ease-in-out'
 								>
@@ -82,7 +82,7 @@ const Navbar: React.FC = () => {
 									Sign Up
 								</Link>
 								<Link
-									to={"/login"}
+									to={'/login'}
 									className='bg-muted hover:bg-muted/80 text-foreground py-2 px-4 
 									rounded-md flex items-center transition duration-300 ease-in-out'
 								>

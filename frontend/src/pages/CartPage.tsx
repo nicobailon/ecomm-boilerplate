@@ -1,19 +1,19 @@
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ShoppingCart } from "lucide-react";
-import CartItem from "../components/cart/CartItem";
-import PeopleAlsoBought from "../components/product/PeopleAlsoBought";
-import OrderSummary from "../components/cart/OrderSummary";
-import GiftCouponCard from "../components/cart/GiftCouponCard";
-import { useUnifiedCart } from "@/hooks/cart/useUnifiedCart";
-import LoadingSpinner from "../components/ui/LoadingSpinner";
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { ShoppingCart } from 'lucide-react';
+import CartItem from '../components/cart/CartItem';
+import PeopleAlsoBought from '../components/product/PeopleAlsoBought';
+import OrderSummary from '../components/cart/OrderSummary';
+import GiftCouponCard from '../components/cart/GiftCouponCard';
+import { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const CartPage = () => {
 	const { data: cart, isLoading } = useUnifiedCart();
 
 	if (isLoading) return <LoadingSpinner />;
 
-	const cartItems = cart?.cartItems || [];
+	const cartItems = cart?.cartItems ?? [];
 
 	return (
 		<div className='py-8 md:py-16'>
@@ -63,7 +63,7 @@ const EmptyCartUI = () => (
 	>
 		<ShoppingCart className='h-24 w-24 text-muted-foreground' />
 		<h3 className='text-2xl font-semibold '>Your cart is empty</h3>
-		<p className='text-muted-foreground'>Looks like you {"haven't"} added anything to your cart yet.</p>
+		<p className='text-muted-foreground'>Looks like you {'haven\'t'} added anything to your cart yet.</p>
 		<Link
 			className='mt-4 rounded-md bg-primary px-6 py-2 text-primary-foreground transition-colors hover:bg-primary/90'
 			to='/'

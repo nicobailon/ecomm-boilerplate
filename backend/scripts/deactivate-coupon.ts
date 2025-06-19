@@ -4,7 +4,7 @@ import { Coupon } from '../models/coupon.model.js';
 
 dotenv.config();
 
-async function deactivateCoupon() {
+async function deactivateCoupon(): Promise<void> {
   try {
     if (!process.env.MONGO_URI) {
       throw new Error('MONGO_URI is not defined in environment variables');
@@ -38,10 +38,10 @@ async function deactivateCoupon() {
     coupon.isActive = false;
     await coupon.save();
 
-    console.log(`\n✅ Coupon deactivated successfully!`);
+    console.log('\n✅ Coupon deactivated successfully!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`Code: ${coupon.code}`);
-    console.log(`Status: Inactive`);
+    console.log('Status: Inactive');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   } catch (error) {
@@ -52,4 +52,4 @@ async function deactivateCoupon() {
   }
 }
 
-deactivateCoupon();
+void deactivateCoupon();

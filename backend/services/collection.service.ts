@@ -18,7 +18,7 @@ interface CollectionQuery {
 export class CollectionService {
   async create(
     userId: string,
-    input: CreateCollectionInput
+    input: CreateCollectionInput,
   ): Promise<ICollection> {
     const { name, description, isPublic, products } = input;
     const session = await mongoose.startSession();
@@ -55,20 +55,20 @@ export class CollectionService {
         // First, remove these products from any existing collections
         const productsWithCollections = await Product.find({
           _id: { $in: products },
-          collectionId: { $exists: true }
+          collectionId: { $exists: true },
         }).select('collectionId').session(session);
 
         const existingCollectionIds = [...new Set(
           productsWithCollections
             .map(p => p.collectionId?.toString())
-            .filter(Boolean)
+            .filter(Boolean),
         )];
 
         if (existingCollectionIds.length > 0) {
           await Collection.updateMany(
             { _id: { $in: existingCollectionIds } },
             { $pull: { products: { $in: products } } },
-            { session }
+            { session },
           );
         }
 
@@ -76,7 +76,7 @@ export class CollectionService {
         await Product.updateMany(
           { _id: { $in: products } },
           { $set: { collectionId: collection._id } },
-          { session }
+          { session },
         );
       }
 
@@ -87,19 +87,22 @@ export class CollectionService {
         .populate('owner', 'name email')
         .populate('products');
         
-      return populatedCollection!;
+      if (!populatedCollection) {
+        throw new AppError('Failed to load collection after creation', 500);
+      }
+      return populatedCollection;
     } catch (error) {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
   async update(
     collectionId: string,
     userId: string,
-    input: UpdateCollectionInput
+    input: UpdateCollectionInput,
   ): Promise<ICollection> {
     const session = await mongoose.startSession();
     
@@ -134,7 +137,7 @@ export class CollectionService {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
@@ -156,7 +159,7 @@ export class CollectionService {
         await Product.updateMany(
           { _id: { $in: collection.products } },
           { $unset: { collectionId: 1 } },
-          { session }
+          { session },
         );
       }
       
@@ -166,14 +169,14 @@ export class CollectionService {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
   async addProducts(
     collectionId: string,
     userId: string,
-    productIds: string[]
+    productIds: string[],
   ): Promise<ICollection> {
     const session = await mongoose.startSession();
     
@@ -199,18 +202,18 @@ export class CollectionService {
 
       const existingProductIds = collection.products.map((id) => id.toString());
       const newProductIds = productIds.filter(
-        (id) => !existingProductIds.includes(id)
+        (id) => !existingProductIds.includes(id),
       );
 
       if (newProductIds.length > 0) {
         collection.products.push(
-          ...newProductIds.map((id) => new mongoose.Types.ObjectId(id))
+          ...newProductIds.map((id) => new mongoose.Types.ObjectId(id)),
         );
         
         await Product.updateMany(
           { _id: { $in: newProductIds } },
           { $set: { collectionId: collection._id } },
-          { session }
+          { session },
         );
         
         await collection.save({ session });
@@ -222,14 +225,14 @@ export class CollectionService {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
   async removeProducts(
     collectionId: string,
     userId: string,
-    productIds: string[]
+    productIds: string[],
   ): Promise<ICollection> {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -239,10 +242,10 @@ export class CollectionService {
         { _id: collectionId, owner: userId },
         { 
           $pullAll: { 
-            products: productIds.map(id => new mongoose.Types.ObjectId(id)) 
-          } 
+            products: productIds.map(id => new mongoose.Types.ObjectId(id)), 
+          }, 
         },
-        { new: true, session }
+        { new: true, session },
       );
 
       if (!collection) {
@@ -252,7 +255,7 @@ export class CollectionService {
       await Product.updateMany(
         { _id: { $in: productIds }, collectionId },
         { $unset: { collectionId: 1 } },
-        { session }
+        { session },
       );
       
       await session.commitTransaction();
@@ -261,13 +264,13 @@ export class CollectionService {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
   private async getCollectionWithAuth(
     query: mongoose.FilterQuery<ICollection>,
-    requesterId?: string
+    requesterId?: string,
   ): Promise<ICollection | null> {
     const collection = await Collection.findOne(query)
       .populate('owner', 'name email')
@@ -275,7 +278,7 @@ export class CollectionService {
         path: 'products',
         model: 'Product',
         select: '_id name description price image category isFeatured collectionId',
-        match: { _id: { $exists: true } } // Only populate existing products
+        match: { _id: { $exists: true } }, // Only populate existing products
       })
       .lean(); // Use lean for better performance and easier debugging
 
@@ -285,9 +288,8 @@ export class CollectionService {
 
     // Filter out any null products (deleted products)
     if (collection.products) {
-      collection.products = collection.products.filter((p: any) => p !== null);
+      collection.products = collection.products.filter((p) => p !== null);
     }
-
 
     if (!collection.isPublic && collection.owner._id.toString() !== requesterId) {
       throw new AppError('Collection is private', 403);
@@ -349,7 +351,7 @@ export class CollectionService {
     options: {
       limit: number;
       cursor?: string;
-    }
+    },
   ): Promise<{ collections: ICollection[]; nextCursor: string | null }> {
     return this.list({
       userId,
@@ -360,7 +362,7 @@ export class CollectionService {
 
   async quickCreate(
     userId: string,
-    data: { name: string; isPublic?: boolean }
+    data: { name: string; isPublic?: boolean },
   ): Promise<ICollection> {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -371,7 +373,7 @@ export class CollectionService {
         async (s) => {
           const exists = await Collection.findOne({ slug: s }).session(session);
           return !!exists;
-        }
+        },
       );
       
       const collection = await Collection.create(
@@ -383,7 +385,7 @@ export class CollectionService {
           products: [],
           isPublic: data.isPublic ?? false,
         }],
-        { session }
+        { session },
       );
       
       await session.commitTransaction();
@@ -392,13 +394,13 @@ export class CollectionService {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
   async checkNameAvailability(
     userId: string,
-    name: string
+    name: string,
   ): Promise<{
     available: boolean;
     suggestedName?: string;
@@ -408,7 +410,7 @@ export class CollectionService {
     
     const exactMatch = await Collection.findOne({ 
       slug,
-      owner: userId 
+      owner: userId, 
     });
     
     if (exactMatch) {
@@ -422,7 +424,7 @@ export class CollectionService {
     
     const count = await Collection.countDocuments({
       slug: { $regex: `^${escapedSlug}`, $options: 'i' },
-      owner: userId
+      owner: userId,
     });
     
     if (count > 0) {
@@ -438,7 +440,7 @@ export class CollectionService {
   async setProductsForCollection(
     collectionId: string,
     userId: string,
-    productIds: string[]
+    productIds: string[],
   ): Promise<ICollection> {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -472,7 +474,7 @@ export class CollectionService {
         await Product.updateMany(
           { _id: { $in: productsToRemove } },
           { $unset: { collectionId: 1 } },
-          { session }
+          { session },
         );
       }
 
@@ -480,7 +482,7 @@ export class CollectionService {
         await Product.updateMany(
           { _id: { $in: productsToAdd } },
           { $set: { collectionId: collection._id } },
-          { session }
+          { session },
         );
       }
 
@@ -493,12 +495,15 @@ export class CollectionService {
         .populate('owner', 'name email')
         .populate('products');
         
-      return populatedCollection!;
+      if (!populatedCollection) {
+        throw new AppError('Failed to load collection after creation', 500);
+      }
+      return populatedCollection;
     } catch (error) {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 }

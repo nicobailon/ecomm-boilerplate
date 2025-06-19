@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { Cart, Product, ApiResponse } from '@/types';
+import type { Cart, Product, ApiResponse } from '@/types';
 import { toast } from 'sonner';
 import { useCurrentUser } from '../auth/useAuth';
-
+import type { AxiosError } from 'axios';
 
 export const useCart = () => {
   const { data: user } = useCurrentUser();
@@ -12,7 +12,7 @@ export const useCart = () => {
     queryKey: ['cart'],
     queryFn: async () => {
       const { data } = await apiClient.get<Cart>('/cart');
-      return data || { cartItems: [], totalAmount: 0, subtotal: 0, appliedCoupon: null };
+      return data ?? { cartItems: [], totalAmount: 0, subtotal: 0, appliedCoupon: null };
     },
     enabled: !!user && user.role !== 'admin', // Only fetch cart for non-admin users
     retry: false, // Don't retry if the cart fetch fails
@@ -50,7 +50,7 @@ export const useAddToCart = () => {
             cartItems: old.cartItems.map(item =>
               item.product._id === productId
                 ? { ...item, quantity: item.quantity + 1 }
-                : item
+                : item,
             ),
           };
         }
@@ -79,7 +79,7 @@ export const useAddToCart = () => {
       toast.error('Failed to add to cart');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
     onSuccess: () => {
       toast.success('Added to cart');
@@ -107,7 +107,7 @@ export const useUpdateQuantity = () => {
           cartItems: old.cartItems.map(item =>
             item.product._id === productId
               ? { ...item, quantity }
-              : item
+              : item,
           ),
         };
       });
@@ -119,7 +119,7 @@ export const useUpdateQuantity = () => {
       toast.error('Failed to update quantity');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
     onSuccess: (data) => {
       if (data) {
@@ -157,7 +157,7 @@ export const useRemoveFromCart = () => {
       queryClient.setQueryData(['cart'], context?.previousCart);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
     onSuccess: () => {
       toast.success('Removed from cart');
@@ -178,17 +178,17 @@ export const useApplyCoupon = () => {
       const previousCart = queryClient.getQueryData<Cart>(['cart']);
       return { previousCart };
     },
-    onError: (error: any, _code, context) => {
+    onError: (error: AxiosError<{ message?: string }>, _code, context) => {
       queryClient.setQueryData(['cart'], context?.previousCart);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to apply coupon';
+      const errorMessage = error.response?.data?.message ?? error.message ?? 'Failed to apply coupon';
       toast.error(errorMessage);
     },
     onSuccess: (data) => {
       if (data.data?.cart) {
         queryClient.setQueryData(['cart'], data.data.cart);
       }
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      toast.success(data.data?.message || 'Coupon applied successfully');
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
+      toast.success(data.data?.message ?? 'Coupon applied successfully');
     },
   });
 };
@@ -216,17 +216,17 @@ export const useRemoveCoupon = () => {
       
       return { previousCart };
     },
-    onError: (error: any, _variables, context) => {
+    onError: (error: AxiosError<{ message?: string }>, _variables, context) => {
       queryClient.setQueryData(['cart'], context?.previousCart);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to remove coupon';
+      const errorMessage = error.response?.data?.message ?? error.message ?? 'Failed to remove coupon';
       toast.error(errorMessage);
     },
     onSuccess: (data) => {
       if (data.data?.cart) {
         queryClient.setQueryData(['cart'], data.data.cart);
       }
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      toast.success(data.data?.message || 'Coupon removed');
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
+      toast.success(data.data?.message ?? 'Coupon removed');
     },
   });
 };

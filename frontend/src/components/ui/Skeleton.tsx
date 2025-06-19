@@ -16,7 +16,7 @@ export function Skeleton({
         variant === 'circular' && 'rounded-full',
         variant === 'rectangular' && 'rounded-md',
         variant === 'default' && 'rounded-md',
-        className
+        className,
       )}
       {...props}
     />
@@ -25,7 +25,7 @@ export function Skeleton({
 
 export function SkeletonText({ 
   lines = 3, 
-  className 
+  className, 
 }: { 
   lines?: number; 
   className?: string;
@@ -37,7 +37,7 @@ export function SkeletonText({
           key={i}
           className={cn(
             'h-4',
-            i === lines - 1 && 'w-4/5'
+            i === lines - 1 && 'w-4/5',
           )}
         />
       ))}

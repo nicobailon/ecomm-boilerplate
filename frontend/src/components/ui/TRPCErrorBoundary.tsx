@@ -1,4 +1,5 @@
-import { Component, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { Component } from 'react';
 import { TRPCClientError } from '@trpc/client';
 
 interface Props {
@@ -29,7 +30,7 @@ export class TRPCErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback || <div>Something went wrong with the API connection.</div>;
+      return this.props.fallback ?? <div>Something went wrong with the API connection.</div>;
     }
 
     return this.props.children;

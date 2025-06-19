@@ -18,28 +18,28 @@ export class CouponService {
     const coupon = await Coupon.findOne({ code, userId, isActive: true });
 
     if (!coupon) {
-      throw new AppError("Coupon not found", 404);
+      throw new AppError('Coupon not found', 404);
     }
 
     if (coupon.expirationDate < new Date()) {
       coupon.isActive = false;
       await coupon.save();
-      throw new AppError("Coupon expired", 404);
+      throw new AppError('Coupon expired', 404);
     }
 
     return {
-      message: "Coupon is valid",
+      message: 'Coupon is valid',
       code: coupon.code,
       discountPercentage: coupon.discountPercentage,
     };
   }
 
   async applyCouponToUser(user: IUserDocument, code: string): Promise<void> {
-    const validationResult = await this.validateCoupon(user._id as string, code);
+    const validationResult = await this.validateCoupon(user._id.toString(), code);
     
     user.appliedCoupon = {
       code: validationResult.code,
-      discountPercentage: validationResult.discountPercentage
+      discountPercentage: validationResult.discountPercentage,
     };
     
     await user.save();

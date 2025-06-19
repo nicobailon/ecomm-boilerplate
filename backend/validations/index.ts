@@ -61,12 +61,12 @@ export const dateRangeSchema = z.object({
 // Pagination validation
 export const paginationSchema = z.object({
   page: z.string().optional().transform((val) => {
-    const parsed = parseInt(val || '1', 10);
-    return Math.max(1, parsed || 1);
+    const parsed = parseInt(val ?? '1', 10);
+    return Math.max(1, isNaN(parsed) ? 1 : parsed);
   }),
   limit: z.string().optional().transform((val) => {
-    const parsed = parseInt(val || '12', 10);
-    return Math.min(100, Math.max(1, parsed || 12));
+    const parsed = parseInt(val ?? '12', 10);
+    return Math.min(100, Math.max(1, isNaN(parsed) ? 12 : parsed));
   }),
   category: z.string().optional(),
 });

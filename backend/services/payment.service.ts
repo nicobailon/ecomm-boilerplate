@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { stripe } from '../lib/stripe.js';
 import { Coupon } from '../models/coupon.model.js';
 import { Order } from '../models/order.model.js';
@@ -20,14 +21,14 @@ export class PaymentService {
   async createCheckoutSession(
     user: IUserDocument,
     products: ProductCheckout[],
-    couponCode?: string
-  ) {
+    couponCode?: string,
+  ): Promise<string> {
     // Validate products exist and get server-side data
     const productIds = products.map(p => p._id);
     const validProducts = await Product.find({ _id: { $in: productIds } }).lean();
     
     if (validProducts.length !== products.length) {
-      throw new AppError("One or more products not found", 404);
+      throw new AppError('One or more products not found', 404);
     }
 
     // Calculate total amount and prepare line items
@@ -36,7 +37,7 @@ export class PaymentService {
     const checkoutProducts: CheckoutProduct[] = [];
 
     for (const requestedProduct of products) {
-      const serverProduct = validProducts.find(p => p._id.toString() === requestedProduct._id);
+      const serverProduct = validProducts.find(p => p._id.toString() === requestedProduct._id.toString());
       if (!serverProduct) {
         throw new AppError(`Product ${requestedProduct._id} not found`, 404);
       }
@@ -46,7 +47,7 @@ export class PaymentService {
 
       lineItems.push({
         price_data: {
-          currency: "usd",
+          currency: 'usd',
           product_data: {
             name: serverProduct.name,
             images: [serverProduct.image],
@@ -71,7 +72,7 @@ export class PaymentService {
       coupon = await Coupon.findOne({ 
         code: couponCode, 
         userId: user._id, 
-        isActive: true 
+        isActive: true, 
       });
       
       if (coupon) {
@@ -82,37 +83,34 @@ export class PaymentService {
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
+      payment_method_types: ['card'],
       line_items: lineItems,
-      mode: "payment",
+      mode: 'payment',
       success_url: `${process.env.CLIENT_URL}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}/purchase-cancel`,
       discounts: stripeCouponId
         ? [{ coupon: stripeCouponId }]
         : [],
       metadata: {
-        userId: (user._id as any).toString(),
-        couponCode: couponCode || "",
+        userId: user._id.toString(),
+        couponCode: couponCode ?? '',
         products: JSON.stringify(checkoutProducts),
       },
     });
 
     // Create gift coupon if order is over $200
     if (totalAmount >= 20000) {
-      await this.createGiftCoupon((user._id as any).toString());
+      await this.createGiftCoupon(user._id.toString());
     }
     
-    return {
-      sessionId: session.id,
-      totalAmount: totalAmount / 100
-    };
+    return session.id;
   }
 
-  async processCheckoutSuccess(sessionId: string) {
+  async processCheckoutSuccess(sessionId: string): Promise<{ orderId: mongoose.Types.ObjectId; totalAmount: number }> {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-    if (session.payment_status !== "paid") {
-      throw new AppError("Payment not completed", 400);
+    if (session.payment_status !== 'paid') {
+      throw new AppError('Payment not completed', 400);
     }
 
     // Deactivate coupon if used
@@ -124,12 +122,12 @@ export class PaymentService {
         },
         {
           isActive: false,
-        }
+        },
       );
     }
 
     // Create order
-    const products = JSON.parse(session.metadata?.products || "[]") as CheckoutProduct[];
+    const products = JSON.parse(session.metadata?.products ?? '[]') as CheckoutProduct[];
     const newOrder = new Order({
       user: session.metadata?.userId,
       products: products.map(product => ({
@@ -137,7 +135,7 @@ export class PaymentService {
         quantity: product.quantity,
         price: product.price,
       })),
-      totalAmount: (session.amount_total || 0) / 100,
+      totalAmount: (session.amount_total ?? 0) / 100,
       stripeSessionId: sessionId,
     });
 
@@ -145,32 +143,31 @@ export class PaymentService {
 
     return {
       orderId: newOrder._id,
-      totalAmount: newOrder.totalAmount
+      totalAmount: newOrder.totalAmount,
     };
   }
 
   private async createStripeCoupon(discountPercentage: number): Promise<string> {
     const coupon = await stripe.coupons.create({
       percent_off: discountPercentage,
-      duration: "once",
+      duration: 'once',
     });
 
     return coupon.id;
   }
 
-  private async createGiftCoupon(userId: string) {
+  private async createGiftCoupon(userId: string): Promise<void> {
     // Delete any existing gift coupon for the user
     await Coupon.findOneAndDelete({ userId });
 
     const newCoupon = new Coupon({
-      code: "GIFT" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+      code: 'GIFT' + Math.random().toString(36).substring(2, 8).toUpperCase(),
       discountPercentage: 10,
       expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
       userId: userId,
     });
 
     await newCoupon.save();
-    return newCoupon;
   }
 }
 

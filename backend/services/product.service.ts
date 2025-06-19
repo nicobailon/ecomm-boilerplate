@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Product } from '../models/product.model.js';
+import { Product, IProductDocument } from '../models/product.model.js';
 import { AppError } from '../utils/AppError.js';
 import { IProduct } from '../types/index.js';
 import { redis } from '../lib/redis.js';
@@ -10,12 +10,12 @@ import { generateUniqueSlug } from '../utils/slugify.js';
 class ProductService {
   private utapi = new UTApi();
 
-  async getAllProducts(page: number = 1, limit: number = 12, search?: string) {
+  async getAllProducts(page = 1, limit = 12, search?: string): Promise<{ products: IProductDocument[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
     // Validate and sanitize pagination parameters
     const pageNum = Math.max(1, page);
     const limitNum = Math.min(100, Math.max(1, limit));
     
-    const query: any = {};
+    const query: mongoose.FilterQuery<IProductDocument> = {};
     
     if (search) {
       query.$text = { $search: search };
@@ -33,7 +33,7 @@ class ProductService {
     
     const [products, total] = await Promise.all([
       productsQuery.skip(skip).limit(limitNum).populate('collectionId', 'name slug').lean(),
-      Product.countDocuments(query)
+      Product.countDocuments(query),
     ]);
     
     return {
@@ -42,8 +42,8 @@ class ProductService {
         page: pageNum,
         limit: limitNum,
         total,
-        pages: Math.ceil(total / limitNum)
-      }
+        pages: Math.ceil(total / limitNum),
+      },
     };
   }
 
@@ -79,7 +79,7 @@ class ProductService {
         await Collection.findByIdAndUpdate(
           collectionId,
           { $addToSet: { products: product[0]._id } },
-          { session }
+          { session },
         );
       }
       
@@ -91,7 +91,7 @@ class ProductService {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
@@ -115,7 +115,7 @@ class ProductService {
     const product = await Product.findByIdAndUpdate(
       productId,
       { name, description, price, image, collectionId },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!product) {
@@ -128,7 +128,7 @@ class ProductService {
       if (currentProduct.collectionId) {
         await Collection.findByIdAndUpdate(
           currentProduct.collectionId,
-          { $pull: { products: productId } }
+          { $pull: { products: productId } },
         );
       }
       
@@ -136,7 +136,7 @@ class ProductService {
       if (collectionId) {
         await Collection.findByIdAndUpdate(
           collectionId,
-          { $addToSet: { products: productId } }
+          { $addToSet: { products: productId } },
         );
       }
     }
@@ -153,12 +153,12 @@ class ProductService {
     
     // Delete image from UploadThing if exists
     if (product.image) {
-      const fileKey = product.image.substring(product.image.lastIndexOf("/") + 1);
+      const fileKey = product.image.substring(product.image.lastIndexOf('/') + 1);
       try {
         await this.utapi.deleteFiles([fileKey]);
-        console.log("Deleted image from UploadThing");
+        // Deleted image from UploadThing
       } catch (error) {
-        console.error("Error deleting image from UploadThing", error);
+        console.error('Error deleting image from UploadThing', error);
         // Do not block product deletion if image deletion fails
       }
     }
@@ -166,7 +166,7 @@ class ProductService {
     // Remove product from all collections
     await Collection.updateMany(
       { products: productId },
-      { $pull: { products: productId } }
+      { $pull: { products: productId } },
     );
     
     await Product.findByIdAndDelete(productId);
@@ -174,9 +174,9 @@ class ProductService {
 
   async getFeaturedProducts(): Promise<IProduct[]> {
     // Try to get from cache first
-    const cached = await redis.get("featured_products");
+    const cached = await redis.get('featured_products');
     if (cached) {
-      return JSON.parse(cached);
+      return JSON.parse(cached) as IProduct[];
     }
 
     // If not in cache, get from database
@@ -188,7 +188,7 @@ class ProductService {
     }
 
     // Cache for 1 hour
-    await redis.set("featured_products", JSON.stringify(featuredProducts), 'EX', 3600);
+    await redis.set('featured_products', JSON.stringify(featuredProducts), 'EX', 3600);
 
     return featuredProducts as unknown as IProduct[];
   }
@@ -209,7 +209,7 @@ class ProductService {
       },
     ]);
 
-    return products;
+    return products as IProduct[];
   }
 
   async getProductById(productId: string): Promise<IProduct> {
@@ -239,9 +239,9 @@ class ProductService {
   private async updateFeaturedProductsCache(): Promise<void> {
     try {
       const featuredProducts = await Product.find({ isFeatured: true }).lean();
-      await redis.set("featured_products", JSON.stringify(featuredProducts), 'EX', 3600);
+      await redis.set('featured_products', JSON.stringify(featuredProducts), 'EX', 3600);
     } catch (error) {
-      console.log("error in update cache function", error);
+      console.error('error in update cache function', error);
     }
   }
 
@@ -250,7 +250,7 @@ class ProductService {
     data: Partial<IProduct> & {
       collectionId?: string;
       collectionName?: string;
-    }
+    },
   ): Promise<{
     product: IProduct;
     collection?: ICollection;
@@ -262,7 +262,7 @@ class ProductService {
     if (data.collectionId && data.collectionName) {
       throw new AppError(
         'Provide either collectionId or collectionName, not both',
-        400
+        400,
       );
     }
     
@@ -279,14 +279,14 @@ class ProductService {
             name: data.collectionName.trim(),
             slug: await generateUniqueSlug(
               data.collectionName,
-              async (s) => !!(await Collection.findOne({ slug: s }))
+              async (s) => !!(await Collection.findOne({ slug: s })),
             ),
             description: '',
             owner: userId,
             products: [],
             isPublic: false,
           }],
-          { session }
+          { session },
         );
         newCollection = collections[0] as ICollection;
         collectionId = (newCollection._id as mongoose.Types.ObjectId).toString();
@@ -310,14 +310,14 @@ class ProductService {
           ...productData,
           collectionId,
         }],
-        { session }
+        { session },
       );
       
       if (collectionId) {
         await Collection.findByIdAndUpdate(
           collectionId,
           { $addToSet: { products: product[0]._id } },
-          { session }
+          { session },
         );
       }
       
@@ -335,7 +335,7 @@ class ProductService {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 }

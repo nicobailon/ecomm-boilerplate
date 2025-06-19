@@ -3,10 +3,10 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.test' });
 
-beforeAll(async () => {
-  console.log('Setting up tests...');
+beforeAll(() => {
+  // Setting up tests
 });
 
-afterAll(async () => {
-  console.log('Cleaning up tests...');
+afterAll(() => {
+  // Cleaning up tests
 });

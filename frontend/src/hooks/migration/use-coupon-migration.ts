@@ -11,7 +11,7 @@ export function useApplyCoupon() {
   
   const trpcMutation = trpc.coupon.applyCoupon.useMutation({
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
       if (data.cart) {
         queryClient.setQueryData(['cart'], data.cart);
       }
@@ -44,7 +44,7 @@ export function useRemoveCoupon() {
   
   const trpcMutation = trpc.coupon.removeCoupon.useMutation({
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
       if (data.cart) {
         queryClient.setQueryData(['cart'], data.cart);
       }

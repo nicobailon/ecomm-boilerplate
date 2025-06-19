@@ -5,6 +5,7 @@ import { applyCoupon, removeCoupon } from '../../controllers/coupon.controller.j
 import { couponService } from '../../services/coupon.service.js';
 import { cartService } from '../../services/cart.service.js';
 import mongoose from 'mongoose';
+import { IUserDocument } from '../../models/user.model.js';
 
 vi.mock('../../services/coupon.service.js');
 vi.mock('../../services/cart.service.js');
@@ -12,9 +13,9 @@ vi.mock('../../services/cart.service.js');
 describe('CouponController - Concurrent Usage Prevention', () => {
   let mockReq: Partial<AuthRequest>;
   let mockRes: Partial<Response>;
-  let mockUser: any;
-  let statusMock: any;
-  let jsonMock: any;
+  let mockUser: IUserDocument;
+  let statusMock: vi.Mock;
+  let jsonMock: vi.Mock;
 
   beforeEach(() => {
     mockUser = {
@@ -22,7 +23,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       email: 'test@example.com',
       appliedCoupon: null,
       save: vi.fn()
-    };
+    } as unknown as IUserDocument;
 
     jsonMock = vi.fn();
     statusMock = vi.fn().mockReturnValue({ json: jsonMock });
@@ -57,7 +58,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       };
 
       // Simulate slow database operation
-      let applyCouponResolve: any;
+      let applyCouponResolve: ((value: void) => void) | undefined;
       const applyCouponPromise = new Promise((resolve) => {
         applyCouponResolve = resolve;
       });
@@ -175,7 +176,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
         appliedCoupon: null
       };
 
-      let removeCouponResolve: any;
+      let removeCouponResolve: ((value: void) => void) | undefined;
       const removeCouponPromise = new Promise((resolve) => {
         removeCouponResolve = resolve;
       });
@@ -252,8 +253,8 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       };
 
       // Set up mocks with delays to simulate race condition
-      let applyResolve: any;
-      let removeResolve: any;
+      let applyResolve: ((value: void) => void) | undefined;
+      let removeResolve: ((value: void) => void) | undefined;
       
       const applyPromise = new Promise(resolve => { applyResolve = resolve; });
       const removePromise = new Promise(resolve => { removeResolve = resolve; });

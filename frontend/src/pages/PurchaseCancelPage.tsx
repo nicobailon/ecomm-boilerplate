@@ -1,6 +1,6 @@
-import { XCircle, ArrowLeft } from "lucide-react";
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { XCircle, ArrowLeft } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 const PurchaseCancelPage = () => {
 	return (
@@ -29,7 +29,7 @@ const PurchaseCancelPage = () => {
 					</div>
 					<div className='space-y-4'>
 						<Link
-							to={"/"}
+							to={'/'}
 							className='w-full bg-muted hover:bg-muted/80 text-foreground font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center'
 						>
 							<ArrowLeft className='mr-2' size={18} />

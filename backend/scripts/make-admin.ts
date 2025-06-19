@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const makeAdmin = async () => {
+const makeAdmin = async (): Promise<void> => {
   const email = process.argv[2];
 
   if (!email) {
@@ -33,7 +33,7 @@ const makeAdmin = async () => {
       console.error(`❌ User with email "${email}" not found`);
       console.log('\nExisting users:');
       const users = await User.find({}, 'email role').lean();
-      users.forEach((u: any) => {
+      users.forEach((u) => {
         console.log(`  - ${u.email} (${u.role})`);
       });
       process.exit(1);
@@ -63,4 +63,4 @@ const makeAdmin = async () => {
   }
 };
 
-makeAdmin();
+void makeAdmin();

@@ -1,16 +1,3 @@
-// Type definition matching the backend uploadRouter structure
-// This mirrors the backend implementation in /backend/lib/uploadthing.ts
-// Using a generic type that satisfies FileRouter constraints
-export type OurFileRouter = {
-  productImageUploader: {
-    _input: never;
-    _output: {
-      uploadedBy: string;
-      url: string;
-      key: string;
-      name: string;
-      size: number;
-    };
-  };
-  [key: string]: any; // This allows the type to satisfy FileRouter constraint
-};
+// Import the actual file router type from the backend
+// This ensures type safety between frontend and backend
+export type { OurFileRouter } from '../../../backend/lib/uploadthing';

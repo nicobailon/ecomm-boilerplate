@@ -3,6 +3,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { render } from '@/test/test-utils';
 import GiftCouponCard from './GiftCouponCard';
+import type { useUnifiedCart, useApplyCoupon, useRemoveCoupon } from '@/hooks/cart/useUnifiedCart';
 
 vi.mock('sonner', () => ({
   toast: {
@@ -18,9 +19,9 @@ const mockUseApplyCoupon = vi.fn();
 const mockUseRemoveCoupon = vi.fn();
 
 vi.mock('@/hooks/cart/useUnifiedCart', () => ({
-  useUnifiedCart: () => mockUseUnifiedCart(),
-  useApplyCoupon: () => mockUseApplyCoupon(),
-  useRemoveCoupon: () => mockUseRemoveCoupon(),
+  useUnifiedCart: () => mockUseUnifiedCart() as ReturnType<typeof useUnifiedCart>,
+  useApplyCoupon: () => mockUseApplyCoupon() as ReturnType<typeof useApplyCoupon>,
+  useRemoveCoupon: () => mockUseRemoveCoupon() as ReturnType<typeof useRemoveCoupon>,
 }));
 
 describe('GiftCouponCard', () => {
@@ -78,8 +79,8 @@ describe('GiftCouponCard', () => {
         data: { 
           appliedCoupon: { 
             code: 'SAVE20', 
-            discountPercentage: 20 
-          } 
+            discountPercentage: 20, 
+          }, 
         },
         source: 'user',
       });
@@ -95,8 +96,8 @@ describe('GiftCouponCard', () => {
         data: { 
           appliedCoupon: { 
             code: 'SAVE20', 
-            discountPercentage: 20 
-          } 
+            discountPercentage: 20, 
+          }, 
         },
         source: 'user',
       });
@@ -114,8 +115,8 @@ describe('GiftCouponCard', () => {
         data: { 
           appliedCoupon: { 
             code: 'SAVE20', 
-            discountPercentage: 20 
-          } 
+            discountPercentage: 20, 
+          }, 
         },
         source: 'user',
       });
@@ -146,8 +147,8 @@ describe('GiftCouponCard', () => {
         data: { 
           appliedCoupon: { 
             code: 'SAVE20', 
-            discountPercentage: 20 
-          } 
+            discountPercentage: 20, 
+          }, 
         },
         source: 'user',
       });
@@ -168,9 +169,9 @@ describe('GiftCouponCard', () => {
       
       const { rerender } = render(<GiftCouponCard />);
       
-      const input = screen.getByPlaceholderText('Enter code here') as HTMLInputElement;
+      const input = screen.getByPlaceholderText('Enter code here');
       await user.type(input, 'SAVE20');
-      expect(input.value).toBe('SAVE20');
+      expect((input as HTMLInputElement).value).toBe('SAVE20');
       
       mockUseApplyCoupon.mockReturnValue({
         mutate: mockApplyCouponMutate,
@@ -182,8 +183,8 @@ describe('GiftCouponCard', () => {
         data: { 
           appliedCoupon: { 
             code: 'SAVE20', 
-            discountPercentage: 20 
-          } 
+            discountPercentage: 20, 
+          }, 
         },
         source: 'user',
       });
@@ -191,7 +192,7 @@ describe('GiftCouponCard', () => {
       rerender(<GiftCouponCard />);
       
       await waitFor(() => {
-        expect(input.value).toBe('');
+        expect((input as HTMLInputElement).value).toBe('');
       });
     });
   });
@@ -237,8 +238,8 @@ describe('GiftCouponCard', () => {
         data: { 
           appliedCoupon: { 
             code: 'SAVE20', 
-            discountPercentage: 20 
-          } 
+            discountPercentage: 20, 
+          }, 
         },
         source: 'guest',
       });
@@ -282,7 +283,7 @@ describe('GiftCouponCard', () => {
       const user = userEvent.setup();
       const { rerender } = render(<GiftCouponCard />);
       
-      const input = screen.getByPlaceholderText('Enter code here') as HTMLInputElement;
+      const input = screen.getByPlaceholderText('Enter code here');
       await user.type(input, 'TESTCODE');
       
       mockUseUnifiedCart.mockReturnValue({
@@ -292,7 +293,7 @@ describe('GiftCouponCard', () => {
       
       rerender(<GiftCouponCard />);
       
-      expect(input.value).toBe('TESTCODE');
+      expect((input as HTMLInputElement).value).toBe('TESTCODE');
     });
   });
 });

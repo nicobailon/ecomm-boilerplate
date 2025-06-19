@@ -4,7 +4,7 @@ import { User } from '../models/user.model.js';
 
 dotenv.config();
 
-const migrateAppliedCoupon = async () => {
+const migrateAppliedCoupon = async (): Promise<void> => {
   try {
     const MONGO_URI = process.env.MONGO_URI;
     if (!MONGO_URI) {
@@ -20,10 +20,10 @@ const migrateAppliedCoupon = async () => {
     
     const result = await User.updateMany(
       { appliedCoupon: { $exists: false } },
-      { $set: { appliedCoupon: null } }
+      { $set: { appliedCoupon: null } },
     );
 
-    console.log(`Migration completed successfully!`);
+    console.log('Migration completed successfully!');
     console.log(`Updated ${result.modifiedCount} users with appliedCoupon: null`);
     console.log(`${result.matchedCount} users matched the criteria`);
 
@@ -42,4 +42,4 @@ const migrateAppliedCoupon = async () => {
   }
 };
 
-migrateAppliedCoupon();
+void migrateAppliedCoupon();

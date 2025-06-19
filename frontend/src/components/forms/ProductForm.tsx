@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ProductInput, productSchema } from '@/lib/validations';
+import type { ProductInput} from '@/lib/validations';
+import { productSchema } from '@/lib/validations';
 import { useProductCreation } from '@/hooks/product/useProductCreation';
 import { useCreateProduct, useUpdateProduct } from '@/hooks/migration/use-products-migration';
 import { useListCollections, useQuickCreateCollection } from '@/hooks/collections/useCollections';
@@ -16,13 +17,14 @@ import { Label } from '@/components/ui/Label';
 import { Progress } from '@/components/ui/Progress';
 import { cn } from '@/lib/utils';
 import { CheckIcon } from 'lucide-react';
-import { ProductFormProps, Product } from '@/types';
+import type { ProductFormProps, Product } from '@/types';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onSuccess }) => {
   // Detect if we're inside a modal/drawer by checking for Radix dialog context
   const inModal = mode === 'edit';
-  const productCreation = mode === 'create' ? useProductCreation() : null;
+  const productCreation = useProductCreation();
+  const productCreationData = mode === 'create' ? productCreation : null;
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
   const { data: collectionsData, isLoading: isLoadingCollections } = useListCollections({ limit: 100 });
@@ -30,7 +32,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
 
   const [imagePreview, setImagePreview] = useState<string>('');
   
-  const collections = collectionsData?.collections || [];
+  const collections = collectionsData?.collections ?? [];
   
   const {
     register,
@@ -49,29 +51,25 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
       collectionId: typeof initialData.collectionId === 'string' 
         ? initialData.collectionId 
         : initialData.collectionId?._id,
-      image: initialData.image
-    } : productCreation?.draftData || {
+      image: initialData.image,
+    } : productCreation?.draftData ?? {
       name: '',
       description: '',
       price: 0,
       collectionId: '',
-      image: ''
-    }
+      image: '',
+    },
   });
   
   const handleCreateCollection = useCallback(async (name: string) => {
-    try {
-      const newCollection = await quickCreateCollection({ 
-        name,
-        isPublic: false
-      });
-      
-      setValue('collectionId', newCollection._id as string);
-      
-      return newCollection._id as string;
-    } catch (error) {
-      throw error;
-    }
+    const newCollection = await quickCreateCollection({ 
+      name,
+      isPublic: false,
+    });
+    
+    setValue('collectionId', newCollection._id);
+    
+    return newCollection._id;
   }, [quickCreateCollection, setValue]);
 
   const watchedImage = watch('image');
@@ -88,7 +86,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
     watchedFields.name,
     watchedFields.description,
     watchedFields.price > 0,
-    watchedFields.image || imagePreview
+    watchedFields.image ?? imagePreview,
   ].filter(Boolean).length;
   const totalFields = 4;
   const progress = (completedFields / totalFields) * 100;
@@ -103,7 +101,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         collectionId: typeof initialData.collectionId === 'string' 
           ? initialData.collectionId 
           : initialData.collectionId?._id,
-        image: initialData.image
+        image: initialData.image,
       });
       if (initialData.image) {
         setImagePreview(initialData.image);
@@ -116,34 +114,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
     }
   }, [mode, initialData, reset, productCreation?.draftData]);
   
-  // Keyboard shortcuts
-  useEffect(() => {
-    // Only add listener if form is mounted
-    if (!handleSubmit) return;
-    
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // Prevent default browser shortcuts
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'Enter' || e.key === 's')) {
-        e.preventDefault();
-        
-        if (e.key === 'Enter') {
-          handleSubmit(onSubmit)();
-        } else if (e.key === 's' && mode === 'create' && productCreation) {
-          productCreation.saveDraft(getValues());
-        }
-      }
-    };
-    
-    // Use capture phase to ensure we get the event first
-    window.addEventListener('keydown', handleKeyPress, { capture: true });
-    
-    // Cleanup function
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress, { capture: true });
-    };
-  }, [handleSubmit, mode, productCreation, getValues]);
-
-  const onSubmit = async (data: ProductInput) => {
+  const onSubmit = useCallback((data: ProductInput) => {
     if (mode === 'create') {
       createProductMutation.mutate(data, {
         onSuccess: (result) => {
@@ -159,19 +130,47 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
           setImagePreview('');
           onSuccess?.(product as Product);
           
-          if (productCreation && !productCreation.bulkMode) {
+          if (productCreationData && !productCreationData.bulkMode) {
+            // Form will be closed by parent component through onSuccess callback
           }
         },
       });
     } else {
-      updateProductMutation.mutate({ id: initialData!._id, data }, {
+      updateProductMutation.mutate({ id: initialData?._id ?? '', data }, {
         onSuccess: (updatedProduct) => {
           toast.success('Product updated!');
           onSuccess?.(updatedProduct);
-        }
+        },
       });
     }
-  };
+  }, [mode, createProductMutation, updateProductMutation, initialData, reset, onSuccess, productCreationData]);
+  
+  // Keyboard shortcuts
+  useEffect(() => {
+    // Only add listener if form is mounted
+    if (!handleSubmit) return;
+    
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Prevent default browser shortcuts
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'Enter' || e.key === 's')) {
+        e.preventDefault();
+        
+        if (e.key === 'Enter') {
+          void handleSubmit(onSubmit)();
+        } else if (e.key === 's' && mode === 'create' && productCreationData) {
+          productCreationData.saveDraft(getValues());
+        }
+      }
+    };
+    
+    // Use capture phase to ensure we get the event first
+    window.addEventListener('keydown', handleKeyPress, { capture: true });
+    
+    // Cleanup function
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress, { capture: true });
+    };
+  }, [handleSubmit, mode, productCreationData, getValues, onSubmit]);
 
   return (
     <div className="space-y-6">
@@ -208,7 +207,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         <Progress value={progress} className="h-2" />
       </div>
       
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={(...args) => void handleSubmit(onSubmit)(...args)} className="space-y-6">
         <div className="relative">
           <Input
             label="Product Name"
@@ -216,7 +215,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
             {...register('name')}
             error={errors.name?.message}
             className={cn(
-              isNameValid && 'border-success focus-visible:ring-success'
+              isNameValid && 'border-success focus-visible:ring-success',
             )}
           />
           {isNameValid && (
@@ -231,7 +230,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
           placeholder="Enter product description..."
           error={errors.description?.message}
           className={cn(
-            isDescriptionValid && 'border-success focus-visible:ring-success'
+            isDescriptionValid && 'border-success focus-visible:ring-success',
           )}
         />
         {isDescriptionValid && (
@@ -247,14 +246,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
           {...register('price', { valueAsNumber: true })}
           error={errors.price?.message}
           className={cn(
-            isPriceValid && 'border-success focus-visible:ring-success'
+            isPriceValid && 'border-success focus-visible:ring-success',
           )}
         />
         {isPriceValid && (
           <CheckIcon className="absolute right-3 top-8 h-4 w-4 text-success" />
         )}
       </div>
-      
       
       {isLoadingCollections ? (
         <CreatableCollectionSelectSkeleton />
@@ -276,7 +274,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
             collections={collections.map(c => ({ 
               _id: c._id as string, 
               name: c.name, 
-              slug: c.slug 
+              slug: c.slug, 
             }))}
             isLoading={isLoadingCollections}
             label="Collection (Optional)"
@@ -292,10 +290,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         <label className="text-sm font-medium text-foreground">
           Product Image
         </label>
-        {watchedImage || imagePreview ? (
+        {(watchedImage ?? imagePreview) ? (
           <div className="space-y-2">
             <img
-              src={watchedImage || imagePreview}
+              src={watchedImage ?? imagePreview}
               alt="Preview"
               className="w-32 h-32 object-cover rounded-md border"
             />
@@ -304,7 +302,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
               variant="outline"
               size="sm"
               onClick={() => {
-                setValue('image', '', { shouldValidate: true });
+                void setValue('image', '', { shouldValidate: true });
                 setImagePreview('');
               }}
             >
@@ -318,16 +316,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
               onClientUploadComplete={(res) => {
                 if (res && res.length > 0) {
                   const uploadedFile = res[0];
-                  setValue("image", uploadedFile.url, { shouldValidate: true });
+                  setValue('image', uploadedFile.url, { shouldValidate: true });
                   setImagePreview(uploadedFile.url);
-                  toast.success("Image uploaded successfully!");
+                  toast.success('Image uploaded successfully!');
                 }
               }}
               onUploadError={(error: Error) => {
                 toast.error(`Upload Failed: ${error.message}`);
               }}
-              onUploadProgress={() => {}}
-              onUploadBegin={() => {}}
+              onUploadProgress={() => {
+                // Progress tracking not needed for this form
+              }}
+              onUploadBegin={() => {
+                // Upload begin tracking not needed for this form
+              }}
             />
             <div className="text-sm text-muted-foreground">
               or

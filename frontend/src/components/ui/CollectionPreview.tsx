@@ -12,8 +12,8 @@ export const CollectionPreview: React.FC<CollectionPreviewProps> = ({
   className,
 }) => {
   const { data: collection } = trpc.collection.getById.useQuery(
-    { id: collectionId! },
-    { enabled: !!collectionId }
+    { id: collectionId ?? '' },
+    { enabled: !!collectionId },
   );
   
   if (!collectionId || !collection) return null;

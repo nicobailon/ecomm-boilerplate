@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { 
   useCreateCollection, 
   useUpdateCollection, 
-  useSetProductsForCollection
+  useSetProductsForCollection,
 } from '@/hooks/collections/useCollections';
 
 type Collection = RouterOutputs['collection']['getById'];
@@ -30,7 +30,7 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
   const isEditMode = !!collection;
 
   useEffect(() => {
-    if (collection && collection.products) {
+    if (collection?.products) {
       // Extract product IDs from the collection, handling both string IDs and populated objects
       const productIds = collection.products.map((p) => {
         if (typeof p === 'string') {
@@ -41,9 +41,8 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
         }
         console.warn('Unexpected product format:', p);
         return '';
-      }).filter(Boolean) as string[];
+      }).filter(Boolean);
       
-      console.log('Initialized selectedProductIds:', productIds);
       setSelectedProductIds(productIds);
     } else {
       setSelectedProductIds([]);
@@ -52,7 +51,7 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
     setFormData(null);
   }, [collection, isOpen]);
 
-  const handleDetailsSubmit = async (data: {name: string; description?: string; isPublic: boolean}) => {
+  const handleDetailsSubmit = (data: {name: string; description?: string; isPublic: boolean}) => {
     if (isEditMode) {
       // In edit mode, update the collection immediately
       updateCollection.mutate(
@@ -61,7 +60,7 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
           onSuccess: () => {
             onClose();
           },
-        }
+        },
       );
     } else {
       // In create mode, store the data and move to product selection
@@ -70,32 +69,23 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
     }
   };
 
-  const handleProductsSubmit = async () => {
-    console.log('handleProductsSubmit called with selectedProductIds:', selectedProductIds);
-    
+  const handleProductsSubmit = () => {
     if (!isEditMode && formData) {
       // Create collection with selected products
-      console.log('Creating collection with products:', selectedProductIds);
       createCollection.mutate(
         { ...formData, products: selectedProductIds },
         {
           onSuccess: () => {
-            console.log('Collection created successfully');
             onClose();
           },
           onError: (error) => {
             console.error('Failed to create collection:', error);
           },
-        }
+        },
       );
     } else if (isEditMode && collection) {
       // Use the new setProducts mutation to update all products at once
       const collectionId = String(collection._id);
-      console.log('Updating collection products:', {
-        collectionId,
-        productIds: selectedProductIds,
-        productCount: selectedProductIds.length
-      });
       
       setProducts.mutate(
         {
@@ -103,14 +93,13 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
           productIds: selectedProductIds,
         },
         {
-          onSuccess: (data) => {
-            console.log('Products updated successfully:', data);
+          onSuccess: (_data) => {
             onClose();
           },
           onError: (error) => {
             console.error('Failed to update products:', error);
           },
-        }
+        },
       );
     }
   };
@@ -136,7 +125,7 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
           <>
             <CollectionForm
               mode={isEditMode ? 'edit' : 'create'}
-              initialData={collection || undefined}
+              initialData={collection ?? undefined}
               onSubmit={handleDetailsSubmit}
               isLoading={isLoading}
             />
@@ -144,11 +133,11 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
               <div className="mt-4">
                 <Button
                   variant="outline"
-                  onClick={() => setStep('products')}
+                  onClick={() => void setStep('products')}
                   className="w-full"
                   disabled={isLoading}
                 >
-                  Manage Products ({collection.products.length})
+                  Manage Products ({collection.products?.length ?? 0})
                 </Button>
               </div>
             )}
@@ -164,13 +153,13 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setStep('details')}
+                onClick={() => void setStep('details')}
                 disabled={isLoading}
               >
                 Back
               </Button>
               <Button
-                onClick={handleProductsSubmit}
+                onClick={() => void handleProductsSubmit()}
                 disabled={isLoading}
                 className="flex-1"
               >

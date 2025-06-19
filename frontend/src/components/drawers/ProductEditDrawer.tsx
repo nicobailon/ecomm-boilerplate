@@ -1,4 +1,4 @@
-import { ProductEditDrawerProps } from '@/types';
+import type { ProductEditDrawerProps } from '@/types';
 import { Drawer } from '@/components/ui/Drawer';
 import { ProductForm } from '@/components/forms/ProductForm';
 

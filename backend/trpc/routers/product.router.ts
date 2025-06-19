@@ -4,6 +4,7 @@ import { productService } from '../../services/product.service.js';
 import { createProductSchema, updateProductSchema } from '../../validations/index.js';
 import { TRPCError } from '@trpc/server';
 import { MONGODB_OBJECTID_REGEX } from '../../utils/constants.js';
+import { isAppError } from '../../utils/error-types.js';
 
 export const productRouter = router({
   list: publicProcedure
@@ -15,10 +16,11 @@ export const productRouter = router({
     .query(async ({ input }) => {
       try {
         return await productService.getAllProducts(input.page, input.limit, input.search);
-      } catch (error: any) {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to fetch products';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to fetch products',
+          message: message ?? 'Failed to fetch products',
         });
       }
     }),
@@ -27,16 +29,17 @@ export const productRouter = router({
     .query(async () => {
       try {
         return await productService.getFeaturedProducts();
-      } catch (error: any) {
-        if (error.statusCode === 404) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: error.message,
           });
         }
+        const message = error instanceof Error ? error.message : 'Failed to fetch featured products';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to fetch featured products',
+          message: message ?? 'Failed to fetch featured products',
         });
       }
     }),
@@ -45,10 +48,11 @@ export const productRouter = router({
     .query(async () => {
       try {
         return await productService.getRecommendedProducts();
-      } catch (error: any) {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to fetch recommended products';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to fetch recommended products',
+          message: message ?? 'Failed to fetch recommended products',
         });
       }
     }),
@@ -58,16 +62,17 @@ export const productRouter = router({
     .query(async ({ input }) => {
       try {
         return await productService.getProductById(input);
-      } catch (error: any) {
-        if (error.statusCode === 404) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: error.message,
           });
         }
+        const message = error instanceof Error ? error.message : 'Failed to fetch product';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to fetch product',
+          message: message ?? 'Failed to fetch product',
         });
       }
     }),
@@ -81,20 +86,20 @@ export const productRouter = router({
         .optional()
         .refine(
           (name) => !name || name.trim().length > 0,
-          'Collection name cannot be empty'
+          'Collection name cannot be empty',
         ),
     }).refine(
       (data) => !(data.collectionId && data.collectionName),
       {
         message: 'Provide either collectionId or collectionName, not both',
         path: ['collectionName'],
-      }
+      },
     ))
     .mutation(async ({ input, ctx }) => {
       try {
         const result = await productService.createProductWithCollection(
           ctx.userId,
-          input
+          input,
         );
         
         return {
@@ -102,16 +107,17 @@ export const productRouter = router({
           collection: result.collection,
           created: result.created,
         };
-      } catch (error: any) {
-        if (error.statusCode === 400) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 400) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: error.message,
           });
         }
+        const message = error instanceof Error ? error.message : 'Failed to create product';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to create product',
+          message: message ?? 'Failed to create product',
         });
       }
     }),
@@ -124,16 +130,17 @@ export const productRouter = router({
     .mutation(async ({ input }) => {
       try {
         return await productService.updateProduct(input.id, input.data);
-      } catch (error: any) {
-        if (error.statusCode === 404) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: error.message,
           });
         }
+        const message = error instanceof Error ? error.message : 'Failed to update product';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to update product',
+          message: message ?? 'Failed to update product',
         });
       }
     }),
@@ -144,16 +151,17 @@ export const productRouter = router({
       try {
         await productService.deleteProduct(input);
         return { success: true };
-      } catch (error: any) {
-        if (error.statusCode === 404) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: error.message,
           });
         }
+        const message = error instanceof Error ? error.message : 'Failed to delete product';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to delete product',
+          message: message ?? 'Failed to delete product',
         });
       }
     }),
@@ -163,16 +171,17 @@ export const productRouter = router({
     .mutation(async ({ input }) => {
       try {
         return await productService.toggleFeaturedProduct(input);
-      } catch (error: any) {
-        if (error.statusCode === 404) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: error.message,
           });
         }
+        const message = error instanceof Error ? error.message : 'Failed to toggle featured status';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to toggle featured status',
+          message: message ?? 'Failed to toggle featured status',
         });
       }
     }),

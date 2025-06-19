@@ -39,7 +39,7 @@ export const CollectionsList = ({ onEdit, className }: CollectionsListProps) => 
     );
   }
 
-  const collections = data?.collections || [];
+  const collections = data?.collections ?? [];
 
   if (collections.length === 0) {
     return (
@@ -162,7 +162,7 @@ export const CollectionsList = ({ onEdit, className }: CollectionsListProps) => 
         <div className="p-4 border-t border-border">
           <Button
             variant="outline"
-            onClick={() => setCursor(data.nextCursor || undefined)}
+            onClick={() => setCursor(data.nextCursor ?? undefined)}
             className="w-full"
           >
             Load More Collections

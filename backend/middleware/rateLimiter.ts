@@ -1,6 +1,7 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { RateLimitRequestHandler } from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
 import { redis } from '../lib/redis.js';
+import { Request } from 'express';
 
 declare module 'express' {
   interface Request {
@@ -12,19 +13,19 @@ const createRateLimiter = (options: {
   windowMs: number;
   max: number;
   message?: string;
-  keyGenerator?: (req: any) => string;
+  keyGenerator?: (req: Request) => string;
   skipSuccessfulRequests?: boolean;
-}) => {
+}): RateLimitRequestHandler => {
   const baseOptions = {
     windowMs: options.windowMs,
     max: options.max,
-    message: options.message || 'Too many requests, please try again later.',
+    message: options.message ?? 'Too many requests, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: options.keyGenerator || ((req: any) => {
-      return req.userId || req.ip || 'anonymous';
+    keyGenerator: options.keyGenerator ?? ((req: Request) => {
+      return req.userId ?? req.ip ?? 'anonymous';
     }),
-    skipSuccessfulRequests: options.skipSuccessfulRequests || false,
+    skipSuccessfulRequests: options.skipSuccessfulRequests ?? false,
   };
 
   if (redis) {

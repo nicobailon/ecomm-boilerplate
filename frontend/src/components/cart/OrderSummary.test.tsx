@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { render } from '@/test/test-utils';
 import OrderSummary from './OrderSummary';
 import { toast } from 'sonner';
+import type { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
 
 vi.mock('sonner', () => ({
   toast: {
@@ -30,7 +31,7 @@ vi.mock('react-router-dom', async () => {
 
 const mockUseUnifiedCart = vi.fn();
 vi.mock('@/hooks/cart/useUnifiedCart', () => ({
-  useUnifiedCart: () => mockUseUnifiedCart(),
+  useUnifiedCart: () => mockUseUnifiedCart() as ReturnType<typeof useUnifiedCart>,
 }));
 
 describe('OrderSummary', () => {
@@ -42,7 +43,7 @@ describe('OrderSummary', () => {
         totalAmount: 100,
         appliedCoupon: null,
         cartItems: [
-          { product: { _id: '1', price: 100 }, quantity: 1 }
+          { product: { _id: '1', price: 100 }, quantity: 1 },
         ],
       },
       source: 'user',
@@ -96,7 +97,7 @@ describe('OrderSummary', () => {
             discountPercentage: 20,
           },
           cartItems: [
-            { product: { _id: '1', price: 100 }, quantity: 1 }
+            { product: { _id: '1', price: 100 }, quantity: 1 },
           ],
         },
         source: 'user',
@@ -180,7 +181,7 @@ describe('OrderSummary', () => {
           totalAmount: 100,
           appliedCoupon: null,
           cartItems: [
-            { product: { _id: '1', price: 100 }, quantity: 1 }
+            { product: { _id: '1', price: 100 }, quantity: 1 },
           ],
         },
         source: 'guest',

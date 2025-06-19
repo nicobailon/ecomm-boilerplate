@@ -1,20 +1,20 @@
-import { BarChart, PlusCircle, ShoppingBasket, FolderOpen } from "lucide-react";
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { BarChart, PlusCircle, ShoppingBasket, FolderOpen } from 'lucide-react';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 
-import AnalyticsTab from "./AnalyticsTab";
-import { CollectionsTab } from "./CollectionsTab";
-import { ProductForm } from "../../components/forms/ProductForm";
-import ProductsList from "../../components/product/ProductsList";
-import { TransitionOverlay } from "../../components/ui/transition-overlay";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/tabs";
-import { TabId } from "../../types";
-import { useProductCreation } from "../../hooks/product/useProductCreation";
-import { useProductEditor } from "../../hooks/product/useProductEditor";
-import { ProductEditDrawer } from "../../components/drawers/ProductEditDrawer";
+import AnalyticsTab from './AnalyticsTab';
+import { CollectionsTab } from './CollectionsTab';
+import { ProductForm } from '../../components/forms/ProductForm';
+import ProductsList from '../../components/product/ProductsList';
+import { TransitionOverlay } from '../../components/ui/transition-overlay';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
+import type { TabId } from '../../types';
+import { useProductCreation } from '../../hooks/product/useProductCreation';
+import { useProductEditor } from '../../hooks/product/useProductEditor';
+import { ProductEditDrawer } from '../../components/drawers/ProductEditDrawer';
 
 const AdminPage = () => {
-	const [activeTab, setActiveTab] = useState<TabId>("create");
+	const [activeTab, setActiveTab] = useState<TabId>('create');
 	
 	// Use the product creation hook
 	const {
@@ -54,19 +54,19 @@ const AdminPage = () => {
 
 				<Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
 					<TabsList className="grid w-full max-w-lg mx-auto grid-cols-4 mb-8">
-						<TabsTrigger value="create" disabled={isNavigating} className={isNavigating && activeTab === "create" ? "animate-pulse" : ""}>
+						<TabsTrigger value="create" disabled={isNavigating} className={isNavigating && activeTab === 'create' ? 'animate-pulse' : ''}>
 							<PlusCircle className="mr-2 h-5 w-5" />
 							Create Product
 						</TabsTrigger>
-						<TabsTrigger value="products" disabled={isNavigating} className={isNavigating && activeTab === "products" ? "animate-pulse" : ""}>
+						<TabsTrigger value="products" disabled={isNavigating} className={isNavigating && activeTab === 'products' ? 'animate-pulse' : ''}>
 							<ShoppingBasket className="mr-2 h-5 w-5" />
 							Products
 						</TabsTrigger>
-						<TabsTrigger value="collections" disabled={isNavigating} className={isNavigating && activeTab === "collections" ? "animate-pulse" : ""}>
+						<TabsTrigger value="collections" disabled={isNavigating} className={isNavigating && activeTab === 'collections' ? 'animate-pulse' : ''}>
 							<FolderOpen className="mr-2 h-5 w-5" />
 							Collections
 						</TabsTrigger>
-						<TabsTrigger value="analytics" disabled={isNavigating} className={isNavigating && activeTab === "analytics" ? "animate-pulse" : ""}>
+						<TabsTrigger value="analytics" disabled={isNavigating} className={isNavigating && activeTab === 'analytics' ? 'animate-pulse' : ''}>
 							<BarChart className="mr-2 h-5 w-5" />
 							Analytics
 						</TabsTrigger>

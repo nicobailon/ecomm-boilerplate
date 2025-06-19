@@ -41,8 +41,25 @@ export interface Coupon {
   isActive: boolean;
 }
 
+export interface Collection {
+  _id: string;
+  name: string;
+  description?: string;
+  slug: string;
+  owner: string | { _id: string; name: string; email: string };
+  products: (string | Product)[];
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CollectionListResponse {
+  collections: Collection[];
+  nextCursor: string | null;
+}
+
 // API Response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -70,7 +87,6 @@ export interface DailySalesData {
   sales: number;
   revenue: number;
 }
-
 
 // Shared constants for navigation
 export const NAVIGATION_DELAY = 1500; // ms

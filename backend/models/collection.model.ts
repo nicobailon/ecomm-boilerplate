@@ -51,7 +51,7 @@ const collectionSchema = new Schema<ICollection>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 collectionSchema.index({ owner: 1, isPublic: 1 });

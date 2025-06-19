@@ -5,7 +5,7 @@ import type { Product } from '@/types';
 
 // Mock the ProductForm component
 vi.mock('@/components/forms/ProductForm', () => ({
-  ProductForm: ({ mode, initialData, onSuccess }: any) => (
+  ProductForm: ({ mode, initialData, onSuccess }: { mode: string; initialData?: { name: string }; onSuccess: () => void }) => (
     <div data-testid="product-form">
       <div>Mode: {mode}</div>
       <div>Product: {initialData?.name}</div>
@@ -73,7 +73,7 @@ describe('ProductEditDrawer', () => {
     expect(screen.getByText('Product: Test Product')).toBeInTheDocument();
   });
 
-  it('calls onClose when form submission is successful', async () => {
+  it('calls onClose when form submission is successful', () => {
     const onClose = vi.fn();
     render(<ProductEditDrawer {...defaultProps} onClose={onClose} />);
     

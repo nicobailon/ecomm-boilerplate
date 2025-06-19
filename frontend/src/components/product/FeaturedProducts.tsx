@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import { ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
-import { useAddToCart } from "@/hooks/cart/useCart";
-import { useCurrentUser } from "@/hooks/auth/useAuth";
-import { Product } from "@/types";
-import { toast } from "sonner";
+import { useEffect, useState } from 'react';
+import { ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAddToCart } from '@/hooks/cart/useCart';
+import { useCurrentUser } from '@/hooks/auth/useAuth';
+import type { Product } from '@/types';
+import { toast } from 'sonner';
 
 interface FeaturedProductsProps {
 	featuredProducts: Product[];
@@ -24,8 +24,8 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ featuredProducts })
 		};
 
 		handleResize();
-		window.addEventListener("resize", handleResize);
-		return () => window.removeEventListener("resize", handleResize);
+		window.addEventListener('resize', handleResize);
+		return () => window.removeEventListener('resize', handleResize);
 	}, []);
 
 	const nextSlide = () => {
@@ -38,7 +38,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ featuredProducts })
 
 	const handleAddToCart = (product: Product) => {
 		if (!user) {
-			toast.error("Please login to add products to cart");
+			toast.error('Please login to add products to cart');
 			return;
 		}
 		addToCart.mutate(product);
@@ -91,7 +91,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ featuredProducts })
 						onClick={prevSlide}
 						disabled={isStartDisabled}
 						className={`absolute top-1/2 -left-4 transform -translate-y-1/2 p-2 rounded-full transition-colors duration-300 ${
-							isStartDisabled ? "bg-muted cursor-not-allowed" : "bg-primary hover:bg-primary/80"
+							isStartDisabled ? 'bg-muted cursor-not-allowed' : 'bg-primary hover:bg-primary/80'
 						}`}
 					>
 						<ChevronLeft className='w-6 h-6' />
@@ -101,7 +101,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ featuredProducts })
 						onClick={nextSlide}
 						disabled={isEndDisabled}
 						className={`absolute top-1/2 -right-4 transform -translate-y-1/2 p-2 rounded-full transition-colors duration-300 ${
-							isEndDisabled ? "bg-muted cursor-not-allowed" : "bg-primary hover:bg-primary/80"
+							isEndDisabled ? 'bg-muted cursor-not-allowed' : 'bg-primary hover:bg-primary/80'
 						}`}
 					>
 						<ChevronRight className='w-6 h-6' />

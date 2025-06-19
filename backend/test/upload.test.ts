@@ -10,7 +10,7 @@ import jwt from 'jsonwebtoken';
 vi.mock('../models/user.model');
 vi.mock('uploadthing/express', () => ({
   createUploadthingExpressHandler: vi.fn(() => {
-    return (req: any, res: any) => {
+    return (req: Express.Request, res: Express.Response) => {
       // Simulate successful upload response
       res.json({
         url: 'https://uploadthing.com/f/test-file-key',

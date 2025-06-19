@@ -1,10 +1,10 @@
-import { motion } from "framer-motion";
-import { Trash, Star } from "lucide-react";
-import { useProducts, useDeleteProduct, useToggleFeatured } from "@/hooks/product/useProducts";
-import LoadingSpinner from "../ui/LoadingSpinner";
-import { useEffect } from "react";
-import { ProductsListProps } from "@/types";
-import { cn } from "@/lib/utils";
+import { motion } from 'framer-motion';
+import { Trash, Star } from 'lucide-react';
+import { useProducts, useDeleteProduct, useToggleFeatured } from '@/hooks/product/useProducts';
+import LoadingSpinner from '../ui/LoadingSpinner';
+import { useEffect } from 'react';
+import type { ProductsListProps } from '@/types';
+import { cn } from '@/lib/utils';
 
 const ProductsList = ({ highlightProductId, onHighlightComplete, onEditProduct }: ProductsListProps = {}) => {
 	const { data, isLoading } = useProducts();
@@ -28,7 +28,7 @@ const ProductsList = ({ highlightProductId, onHighlightComplete, onEditProduct }
 
 	if (isLoading) return <LoadingSpinner />;
 
-	const products = data?.data || [];
+	const products = data?.data ?? [];
 
 	return (
 		<motion.div
@@ -82,7 +82,7 @@ const ProductsList = ({ highlightProductId, onHighlightComplete, onEditProduct }
 							onClick={() => onEditProduct?.(product)}
 							className={cn(
 								'hover:bg-muted/50 transition-all duration-300 cursor-pointer',
-								highlightProductId === product._id && 'ring-2 ring-primary bg-primary/10 animate-highlight'
+								highlightProductId === product._id && 'ring-2 ring-primary bg-primary/10 animate-highlight',
 							)}
 						>
 							<td className='px-6 py-4 whitespace-nowrap'>
@@ -118,8 +118,8 @@ const ProductsList = ({ highlightProductId, onHighlightComplete, onEditProduct }
 									disabled={toggleFeatured.isPending}
 									className={`p-1 rounded-full ${
 										product.isFeatured
-											? "bg-warning text-warning-foreground"
-											: "bg-muted text-muted-foreground"
+											? 'bg-warning text-warning-foreground'
+											: 'bg-muted text-muted-foreground'
 									} hover:bg-warning/80 transition-colors duration-200 disabled:opacity-50`}
 								>
 									<Star className='h-5 w-5' />

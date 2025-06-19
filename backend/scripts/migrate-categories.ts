@@ -16,9 +16,13 @@ const categoryToCollectionMap: Record<string, string> = {
   'bags': 'Accessories',
 };
 
-async function migrateCategoriesToCollections() {
+async function migrateCategoriesToCollections(): Promise<void> {
   try {
-    await mongoose.connect(process.env.MONGO_URI!);
+    const mongoUri = process.env.MONGO_URI;
+    if (!mongoUri) {
+      throw new Error('MONGO_URI not configured');
+    }
+    await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB');
 
     const session = await mongoose.startSession();
@@ -37,12 +41,12 @@ async function migrateCategoriesToCollections() {
         
         const slug = await generateUniqueSlug(
           collectionName,
-          async (s) => !!(await Collection.findOne({ slug: s }).session(session))
+          async (s) => !!(await Collection.findOne({ slug: s }).session(session)),
         );
 
         let collection = await Collection.findOne({ 
           slug, 
-          owner: adminUser._id 
+          owner: adminUser._id, 
         }).session(session);
 
         if (!collection) {
@@ -63,7 +67,7 @@ async function migrateCategoriesToCollections() {
 
         const products = await Product.find({ 
           category,
-          collectionId: { $exists: false }
+          collectionId: { $exists: false },
         }).session(session);
 
         if (products.length > 0) {
@@ -72,13 +76,13 @@ async function migrateCategoriesToCollections() {
           await Product.updateMany(
             { _id: { $in: productIds } },
             { $set: { collectionId: collection._id } },
-            { session }
+            { session },
           );
 
           await Collection.findByIdAndUpdate(
             collection._id,
             { $addToSet: { products: { $each: productIds } } },
-            { session }
+            { session },
           );
 
           console.log(`Migrated ${products.length} products to collection ${collectionName}`);
@@ -92,14 +96,14 @@ async function migrateCategoriesToCollections() {
       
       const summary = await Collection.aggregate([
         {
-          $match: { owner: adminUser._id }
+          $match: { owner: adminUser._id },
         },
         {
           $project: {
             name: 1,
-            productCount: { $size: '$products' }
-          }
-        }
+            productCount: { $size: '$products' },
+          },
+        },
       ]);
       
       console.log('\nMigration Summary:');
@@ -111,7 +115,7 @@ async function migrateCategoriesToCollections() {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   } catch (error) {
     console.error('Migration failed:', error);
@@ -123,5 +127,5 @@ async function migrateCategoriesToCollections() {
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
-  migrateCategoriesToCollections();
+  void migrateCategoriesToCollections();
 }

@@ -13,7 +13,7 @@ export function AuthGuard({
   children, 
   requireAuth = true, 
   requireAdmin = false,
-  redirectTo = '/login' 
+  redirectTo = '/login', 
 }: AuthGuardProps) {
   const { data: user, isLoading } = useCurrentUser();
 

@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LoginInput, loginSchema } from '@/lib/validations';
+import type { LoginInput} from '@/lib/validations';
+import { loginSchema } from '@/lib/validations';
 import { useLogin } from '@/hooks/auth/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -21,7 +22,7 @@ export const LoginForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+    <form onSubmit={(...args) => void handleSubmit(onSubmit)(...args)} className="space-y-6" noValidate>
       <Input
         label="Email"
         type="email"

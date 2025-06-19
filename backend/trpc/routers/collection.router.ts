@@ -47,14 +47,14 @@ export const collectionRouter = router({
       z.object({
         id: z.string(),
         data: updateCollectionSchema,
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       try {
         const collection = await collectionService.update(
           input.id,
           ctx.userId,
-          input.data
+          input.data,
         );
         return collection;
       } catch (error) {
@@ -78,14 +78,14 @@ export const collectionRouter = router({
       z.object({
         collectionId: z.string(),
         productIds: addProductsToCollectionSchema.shape.productIds,
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       try {
         const collection = await collectionService.addProducts(
           input.collectionId,
           ctx.userId,
-          input.productIds
+          input.productIds,
         );
         return collection;
       } catch (error) {
@@ -98,14 +98,14 @@ export const collectionRouter = router({
       z.object({
         collectionId: z.string(),
         productIds: removeProductsFromCollectionSchema.shape.productIds,
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       try {
         const collection = await collectionService.removeProducts(
           input.collectionId,
           ctx.userId,
-          input.productIds
+          input.productIds,
         );
         return collection;
       } catch (error) {
@@ -118,14 +118,14 @@ export const collectionRouter = router({
       z.object({
         collectionId: z.string(),
         productIds: z.array(z.string()),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       try {
         const collection = await collectionService.setProductsForCollection(
           input.collectionId,
           ctx.userId,
-          input.productIds
+          input.productIds,
         );
         return collection;
       } catch (error) {
@@ -139,7 +139,7 @@ export const collectionRouter = router({
       try {
         const collection = await collectionService.getById(
           input.id,
-          ctx.user?._id?.toString()
+          ctx.user?._id?.toString(),
         );
         if (!collection) {
           throw new TRPCError({
@@ -159,7 +159,7 @@ export const collectionRouter = router({
       try {
         const collection = await collectionService.getBySlug(
           input.slug,
-          ctx.user?._id?.toString()
+          ctx.user?._id?.toString(),
         );
         if (!collection) {
           throw new TRPCError({
@@ -180,7 +180,7 @@ export const collectionRouter = router({
         isPublic: z.boolean().optional(),
         limit: z.number().min(1).max(100).default(20),
         cursor: z.string().optional(),
-      })
+      }),
     )
     .query(async ({ input }) => {
       try {
@@ -196,13 +196,13 @@ export const collectionRouter = router({
       z.object({
         limit: z.number().min(1).max(100).default(20),
         cursor: z.string().optional(),
-      })
+      }),
     )
     .query(async ({ input, ctx }) => {
       try {
         const result = await collectionService.getUserCollections(
           ctx.userId,
-          input
+          input,
         );
         return result;
       } catch (error) {
@@ -217,7 +217,7 @@ export const collectionRouter = router({
       try {
         const collection = await collectionService.quickCreate(
           ctx.userId,
-          input
+          input,
         );
         
         return {
@@ -238,7 +238,7 @@ export const collectionRouter = router({
       try {
         return await collectionService.checkNameAvailability(
           ctx.userId,
-          input.name
+          input.name,
         );
       } catch (error) {
         handleTRPCError(error);

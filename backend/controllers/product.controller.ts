@@ -3,24 +3,22 @@ import { AuthRequest } from '../types/express.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { productService } from '../services/product.service.js';
 
-
-
 export const getAllProducts = asyncHandler(async (req: Request, res: Response) => {
-  const { category, page = 1, limit = 12 } = req.query;
+  const { category, page = '1', limit = '12' } = req.query;
   
-  const pageNum = parseInt(String(page), 10) || 1;
-  const limitNum = parseInt(String(limit), 10) || 12;
+  const pageNum = parseInt(page as string, 10) || 1;
+  const limitNum = parseInt(limit as string, 10) || 12;
   
   const result = await productService.getAllProducts(
     pageNum, 
     limitNum, 
-    category as string | undefined
+    category as string | undefined,
   );
   
   res.json({
     success: true,
     data: result.products,
-    pagination: result.pagination
+    pagination: result.pagination,
   });
 });
 
@@ -30,7 +28,13 @@ export const getFeaturedProducts = asyncHandler(async (_req: Request, res: Respo
 });
 
 export const createProduct = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { name, description, price, image, collectionId } = req.body;
+  const { name, description, price, image, collectionId } = req.body as {
+    name: string;
+    description: string;
+    price: number;
+    image: string;
+    collectionId?: string;
+  };
 
   const product = await productService.createProduct({
     name,
@@ -44,7 +48,13 @@ export const createProduct = asyncHandler(async (req: AuthRequest, res: Response
 });
 
 export const updateProduct = asyncHandler(async (req: Request, res: Response) => {
-  const { name, description, price, image, collectionId } = req.body;
+  const { name, description, price, image, collectionId } = req.body as {
+    name: string;
+    description: string;
+    price: number;
+    image: string;
+    collectionId?: string;
+  };
   
   const product = await productService.updateProduct(req.params.id, {
     name,
@@ -59,7 +69,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response) =>
 
 export const deleteProduct = asyncHandler(async (req: Request, res: Response) => {
   await productService.deleteProduct(req.params.id);
-  res.json({ message: "Product deleted successfully" });
+  res.json({ message: 'Product deleted successfully' });
 });
 
 export const getRecommendedProducts = asyncHandler(async (_req: Request, res: Response) => {

@@ -1,4 +1,4 @@
-import { Product } from '@/types';
+import type { Product } from '@/types';
 
 const GUEST_CART_KEY = 'guest_cart_v1';
 const MAX_GUEST_CART_ITEMS = 50;
@@ -33,7 +33,7 @@ export const readGuestCart = (): GuestCartData => {
       cartItems: parsed.cartItems || [],
       subtotal: parsed.subtotal || 0,
       totalAmount: parsed.totalAmount || 0,
-      appliedCoupon: null
+      appliedCoupon: null,
     };
   } catch {
     return { cartItems: [], subtotal: 0, totalAmount: 0, appliedCoupon: null };
@@ -75,7 +75,7 @@ const recalculateTotals = (items: GuestCartItem[]): GuestCartData => {
     cartItems: items,
     subtotal,
     totalAmount: subtotal,
-    appliedCoupon: null
+    appliedCoupon: null,
   };
 };
 

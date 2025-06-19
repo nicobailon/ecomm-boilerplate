@@ -1,13 +1,13 @@
-export interface ProductEvents {
+export interface ProductEvents extends Record<string, unknown> {
   'product:created': { productId: string; timestamp: number };
-  'product:updated': { productId: string; changes: any };
+  'product:updated': { productId: string; changes: Record<string, unknown> };
   'product:deleted': { productId: string };
 }
 
-type EventCallback<T = any> = (data: T) => void;
+type EventCallback<T = unknown> = (data: T) => void;
 
-class BrowserEventEmitter<Events extends Record<string, any>> {
-  private events: Map<keyof Events, Set<EventCallback>> = new Map();
+class BrowserEventEmitter<Events extends Record<string, unknown>> {
+  private events = new Map<keyof Events, Set<EventCallback<unknown>>>();
 
   emit<K extends keyof Events>(event: K, data: Events[K]): boolean {
     const callbacks = this.events.get(event);
@@ -26,22 +26,25 @@ class BrowserEventEmitter<Events extends Record<string, any>> {
   
   on<K extends keyof Events>(
     event: K,
-    listener: EventCallback<Events[K]>
+    listener: EventCallback<Events[K]>,
   ): this {
     if (!this.events.has(event)) {
       this.events.set(event, new Set());
     }
-    this.events.get(event)!.add(listener);
+    const eventSet = this.events.get(event);
+    if (eventSet) {
+      eventSet.add(listener as EventCallback<unknown>);
+    }
     return this;
   }
   
   off<K extends keyof Events>(
     event: K,
-    listener: EventCallback<Events[K]>
+    listener: EventCallback<Events[K]>,
   ): this {
     const callbacks = this.events.get(event);
     if (callbacks) {
-      callbacks.delete(listener);
+      callbacks.delete(listener as EventCallback<unknown>);
       if (callbacks.size === 0) {
         this.events.delete(event);
       }

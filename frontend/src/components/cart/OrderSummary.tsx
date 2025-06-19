@@ -1,14 +1,14 @@
-import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
-import { MoveRight, Loader } from "lucide-react";
-import { loadStripe } from "@stripe/stripe-js";
-import { useUnifiedCart } from "@/hooks/cart/useUnifiedCart";
-import { apiClient } from "@/lib/api-client";
-import { useState } from "react";
-import { toast } from "sonner";
+import { motion } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { MoveRight, Loader } from 'lucide-react';
+import { loadStripe } from '@stripe/stripe-js';
+import { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
+import { apiClient } from '@/lib/api-client';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 const stripePromise = loadStripe(
-	"pk_test_51KZYccCoOZF2UhtOwdXQl3vcizup20zqKqT9hVUIsVzsdBrhqbUI2fE0ZdEVLdZfeHjeyFXtqaNsyCJCmZWnjNZa00PzMAjlcL"
+	'pk_test_51KZYccCoOZF2UhtOwdXQl3vcizup20zqKqT9hVUIsVzsdBrhqbUI2fE0ZdEVLdZfeHjeyFXtqaNsyCJCmZWnjNZa00PzMAjlcL',
 );
 
 const OrderSummary = () => {
@@ -16,10 +16,10 @@ const OrderSummary = () => {
 	const [isProcessing, setIsProcessing] = useState(false);
 	const navigate = useNavigate();
 
-	const subtotal = cart?.subtotal || 0;
-	const total = cart?.totalAmount || 0;
+	const subtotal = cart?.subtotal ?? 0;
+	const total = cart?.totalAmount ?? 0;
 	const coupon = cart?.appliedCoupon;
-	const cartItems = cart?.cartItems || [];
+	const cartItems = cart?.cartItems ?? [];
 
 	const savings = subtotal - total;
 	const formattedSubtotal = subtotal.toFixed(2);
@@ -28,13 +28,13 @@ const OrderSummary = () => {
 
 	const handlePayment = async () => {
 		if (cartItems.length === 0) {
-			toast.error("Your cart is empty");
+			toast.error('Your cart is empty');
 			return;
 		}
 
 		if (source === 'guest') {
-			toast.error("Please login to proceed with checkout");
-			navigate('/login');
+			toast.error('Please login to proceed with checkout');
+			void navigate('/login');
 			return;
 		}
 
@@ -43,16 +43,16 @@ const OrderSummary = () => {
 			const stripe = await stripePromise;
 			
 			if (!stripe) {
-				throw new Error("Stripe failed to load");
+				throw new Error('Stripe failed to load');
 			}
 
-			const res = await apiClient.post("/payments/create-checkout-session", {
+			const res = await apiClient.post('/payments/create-checkout-session', {
 				products: cartItems.map(item => ({
 					_id: item.product._id,
 					quantity: item.quantity,
-					price: item.product.price
+					price: item.product.price,
 				})),
-				couponCode: coupon?.code || null,
+				couponCode: coupon?.code ?? null,
 			});
 
 			const session = res.data as { id: string };
@@ -63,9 +63,10 @@ const OrderSummary = () => {
 			if (result.error) {
 				throw new Error(result.error.message);
 			}
-		} catch (error: any) {
-			toast.error(error.message || "Payment failed. Please try again.");
-			console.error("Payment error:", error);
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : 'Payment failed. Please try again.';
+			toast.error(errorMessage);
+			console.error('Payment error:', error);
 		} finally {
 			setIsProcessing(false);
 		}
@@ -110,7 +111,7 @@ const OrderSummary = () => {
 					className='flex w-full items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 focus:outline-none focus:ring-4 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed'
 					whileHover={{ scale: 1.05 }}
 					whileTap={{ scale: 0.95 }}
-					onClick={handlePayment}
+					onClick={() => void handlePayment()}
 					disabled={isProcessing || cartItems.length === 0}
 				>
 					{isProcessing ? (

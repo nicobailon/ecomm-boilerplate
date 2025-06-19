@@ -4,16 +4,18 @@ import { cartService } from '../../services/cart.service.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { MONGODB_OBJECTID_REGEX } from '../../utils/constants.js';
+import { isAppError } from '../../utils/error-types.js';
 
 export const cartRouter = router({
   get: protectedProcedure
     .query(async ({ ctx }) => {
       try {
         return await cartService.calculateCartTotals(ctx.user);
-      } catch (error: any) {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to get cart';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to get cart',
+          message: message ?? 'Failed to get cart',
         });
       }
     }),
@@ -24,16 +26,17 @@ export const cartRouter = router({
       try {
         await cartService.addToCart(ctx.user, input.productId);
         return await cartService.calculateCartTotals(ctx.user);
-      } catch (error: any) {
-        if (error.statusCode === 404) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: error.message,
           });
         }
+        const message = error instanceof Error ? error.message : 'Failed to add to cart';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to add to cart',
+          message: message ?? 'Failed to add to cart',
         });
       }
     }),
@@ -46,16 +49,17 @@ export const cartRouter = router({
       try {
         await cartService.updateQuantity(ctx.user, input.productId, input.quantity);
         return await cartService.calculateCartTotals(ctx.user);
-      } catch (error: any) {
-        if (error.statusCode === 404) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: error.message,
           });
         }
+        const message = error instanceof Error ? error.message : 'Failed to update quantity';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to update quantity',
+          message: message ?? 'Failed to update quantity',
         });
       }
     }),
@@ -66,10 +70,11 @@ export const cartRouter = router({
       try {
         await cartService.removeFromCart(ctx.user, input);
         return await cartService.calculateCartTotals(ctx.user);
-      } catch (error: any) {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to remove from cart';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to remove from cart',
+          message: message ?? 'Failed to remove from cart',
         });
       }
     }),
@@ -79,10 +84,11 @@ export const cartRouter = router({
       try {
         await cartService.removeFromCart(ctx.user);
         return await cartService.calculateCartTotals(ctx.user);
-      } catch (error: any) {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to clear cart';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to clear cart',
+          message: message ?? 'Failed to clear cart',
         });
       }
     }),

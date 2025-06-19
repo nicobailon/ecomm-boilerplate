@@ -1,6 +1,6 @@
 import { AppError } from './AppError.js';
 
-export function validateEnvVariables() {
+export function validateEnvVariables(): void {
   const requiredEnvVars = [
     'ACCESS_TOKEN_SECRET',
     'REFRESH_TOKEN_SECRET',
@@ -9,7 +9,7 @@ export function validateEnvVariables() {
     'STRIPE_SECRET_KEY',
     'CLIENT_URL',
     'NODE_ENV',
-    'UPLOADTHING_TOKEN'
+    'UPLOADTHING_TOKEN',
   ];
 
   const missingVars: string[] = [];
@@ -23,9 +23,9 @@ export function validateEnvVariables() {
   if (missingVars.length > 0) {
     throw new AppError(
       `Missing required environment variables: ${missingVars.join(', ')}`,
-      500
+      500,
     );
   }
 
-  console.log('✅ All required environment variables are set');
+  // Environment variables validated successfully
 }

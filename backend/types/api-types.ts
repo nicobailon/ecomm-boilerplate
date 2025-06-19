@@ -29,11 +29,11 @@ export interface IProduct {
 export interface IOrder {
   _id?: string;
   user: string;
-  products: Array<{
+  products: {
     product: string;
     quantity: number;
     price: number;
-  }>;
+  }[];
   totalAmount: number;
   stripeSessionId: string;
   createdAt?: Date;
@@ -51,7 +51,7 @@ export interface ICoupon {
   updatedAt?: Date;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;

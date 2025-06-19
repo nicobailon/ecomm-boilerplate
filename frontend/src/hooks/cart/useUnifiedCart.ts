@@ -1,4 +1,4 @@
-import { Product } from '@/types';
+import type { Product } from '@/types';
 import { useCurrentUser } from '../auth/useAuth';
 import { 
   useCart, 
@@ -6,13 +6,13 @@ import {
   useUpdateQuantity, 
   useRemoveFromCart,
   useApplyCoupon,
-  useRemoveCoupon 
+  useRemoveCoupon, 
 } from './useCart';
 import { 
   useGuestCart, 
   useGuestAddToCart, 
   useGuestUpdateQuantity, 
-  useGuestRemoveFromCart 
+  useGuestRemoveFromCart, 
 } from './useGuestCart';
 import { toast } from 'sonner';
 
@@ -20,10 +20,10 @@ export type CartSource = 'guest' | 'user';
 
 export interface UnifiedCartResult {
   data: {
-    cartItems: Array<{
+    cartItems: {
       product: Product;
       quantity: number;
-    }>;
+    }[];
     totalAmount: number;
     subtotal: number;
     appliedCoupon: {
@@ -46,7 +46,7 @@ export const useUnifiedCart = (): UnifiedCartResult => {
   const isGuest = !user || user.role === 'admin';
 
   const cartData = isGuest ? guestCart.data : userCart.data;
-  const totalQuantity = cartData?.cartItems?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+  const totalQuantity = cartData?.cartItems?.reduce((acc, item) => acc + item.quantity, 0) ?? 0;
 
   if (isGuest) {
     return {

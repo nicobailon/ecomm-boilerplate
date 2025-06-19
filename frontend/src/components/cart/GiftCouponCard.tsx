@@ -1,11 +1,11 @@
-import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
-import { useUnifiedCart, useApplyCoupon, useRemoveCoupon } from "@/hooks/cart/useUnifiedCart";
-import { Loader } from "lucide-react";
-import { Link } from "react-router-dom";
+import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { useUnifiedCart, useApplyCoupon, useRemoveCoupon } from '@/hooks/cart/useUnifiedCart';
+import { Loader } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const GiftCouponCard = () => {
-	const [userInputCode, setUserInputCode] = useState("");
+	const [userInputCode, setUserInputCode] = useState('');
 	const { data: cart, source } = useUnifiedCart();
 	const applyCoupon = useApplyCoupon();
 	const removeCoupon = useRemoveCoupon();
@@ -20,13 +20,13 @@ const GiftCouponCard = () => {
 
 	const handleRemoveCoupon = () => {
 		removeCoupon.mutate();
-		setUserInputCode("");
+		setUserInputCode('');
 	};
 
 	// Clear input on successful coupon application
 	useEffect(() => {
 		if (applyCoupon.isSuccess && coupon) {
-			setUserInputCode("");
+			setUserInputCode('');
 		}
 	}, [applyCoupon.isSuccess, coupon]);
 

@@ -1,11 +1,11 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import { Coupon } from '../models/coupon.model.js';
-import { User } from '../models/user.model.js';
+import { Coupon, ICouponDocument } from '../models/coupon.model.js';
+import { User, IUserDocument } from '../models/user.model.js';
 
 dotenv.config();
 
-async function listCoupons() {
+async function listCoupons(): Promise<void> {
   try {
     if (!process.env.MONGO_URI) {
       throw new Error('MONGO_URI is not defined in environment variables');
@@ -19,7 +19,7 @@ async function listCoupons() {
     const filterExpired = args.includes('--expired');
     const userEmail = args.find(arg => !arg.startsWith('--'));
 
-    let query: any = {};
+    const query: mongoose.FilterQuery<ICouponDocument> = {};
     
     if (filterActive) {
       query.isActive = true;
@@ -27,7 +27,7 @@ async function listCoupons() {
     } else if (filterExpired) {
       query.$or = [
         { isActive: false },
-        { expirationDate: { $lt: new Date() } }
+        { expirationDate: { $lt: new Date() } },
       ];
     }
 
@@ -56,16 +56,17 @@ async function listCoupons() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     for (const coupon of coupons) {
-      const user = coupon.userId as any;
+      const userDoc = coupon.userId as IUserDocument;
       const isExpired = coupon.expirationDate < new Date();
       const status = !coupon.isActive ? 'Used' : isExpired ? 'Expired' : 'Active';
       const statusColor = status === 'Active' ? '\x1b[32m' : status === 'Used' ? '\x1b[33m' : '\x1b[31m';
       const resetColor = '\x1b[0m';
+      const userEmail = userDoc && typeof userDoc === 'object' && 'email' in userDoc ? userDoc.email : 'N/A';
 
       console.log(
         `${coupon.code.padEnd(15)} | ${(coupon.discountPercentage + '%').padEnd(8)} | ` +
-        `${(user.email || 'N/A').padEnd(23)} | ${statusColor}${status.padEnd(8)}${resetColor} | ` +
-        `${coupon.expirationDate.toLocaleDateString().padEnd(14)}`
+        `${userEmail.padEnd(23)} | ${statusColor}${status.padEnd(8)}${resetColor} | ` +
+        `${coupon.expirationDate.toLocaleDateString().padEnd(14)}`,
       );
     }
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -84,4 +85,4 @@ async function listCoupons() {
   }
 }
 
-listCoupons();
+void listCoupons();

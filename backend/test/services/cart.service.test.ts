@@ -8,7 +8,7 @@ vi.mock('../../models/product.model.js');
 describe('CartService - calculateCartTotals', () => {
   let cartService: CartService;
   
-  const createMockUser = (cartItems: any[] = [], appliedCoupon: any = null) => ({
+  const createMockUser = (cartItems: Array<{ product: mongoose.Types.ObjectId; quantity: number }> = [], appliedCoupon: { code: string; discountPercentage: number } | null = null) => ({
     _id: new mongoose.Types.ObjectId(),
     email: 'test@example.com',
     cartItems,

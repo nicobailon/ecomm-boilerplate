@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useProductCreation } from './useProductCreation';
 import { useCreateProduct } from './useProducts';
 import { productEvents } from '@/lib/events';
-import { ProductInput } from '@/lib/validations';
+import type { ProductInput } from '@/lib/validations';
 import React from 'react';
 
 // Mock dependencies
@@ -60,9 +60,11 @@ describe('useProductCreation', () => {
       },
     });
 
-    return ({ children }: { children: React.ReactNode }) => (
+    const TestWrapper = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
+    TestWrapper.displayName = 'TestWrapper';
+    return TestWrapper;
   };
 
   beforeEach(() => {
@@ -160,7 +162,7 @@ describe('useProductCreation', () => {
       expect(productId!).toBe('product-123');
       expect(mockCreateProduct.mutate).toHaveBeenCalledWith(
         mockProductInput,
-        expect.any(Object)
+        expect.any(Object),
       );
       expect(result.current.sessionCount).toBe(1);
       expect(toast.success).toHaveBeenCalledWith('Product created successfully!');
@@ -179,7 +181,7 @@ describe('useProductCreation', () => {
       await expect(
         act(async () => {
           await result.current.createProduct(mockProductInput);
-        })
+        }),
       ).rejects.toThrow('Creation failed');
 
       expect(toast.error).toHaveBeenCalledWith('Failed to create product');
@@ -193,7 +195,7 @@ describe('useProductCreation', () => {
 
       const { result } = renderHook(
         () => useProductCreation({ onNavigate }),
-        { wrapper: createWrapper() }
+        { wrapper: createWrapper() },
       );
 
       await act(async () => {
@@ -230,7 +232,7 @@ describe('useProductCreation', () => {
 
       const { result } = renderHook(
         () => useProductCreation({ onNavigate }),
-        { wrapper: createWrapper() }
+        { wrapper: createWrapper() },
       );
 
       await act(async () => {
@@ -240,7 +242,7 @@ describe('useProductCreation', () => {
       expect(onNavigate).not.toHaveBeenCalled();
       expect(result.current.isNavigating).toBe(false);
       expect(toast.success).toHaveBeenCalledWith(
-        'Product created! Form ready for next product.'
+        'Product created! Form ready for next product.',
       );
     });
   });
@@ -262,7 +264,7 @@ describe('useProductCreation', () => {
 
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
         'product-creation-draft',
-        JSON.stringify(mockDraft)
+        JSON.stringify(mockDraft),
       );
       expect(toast.success).toHaveBeenCalledWith('Draft saved 💾');
     });
@@ -302,14 +304,14 @@ describe('useProductCreation', () => {
       });
 
       expect(localStorageMock.removeItem).toHaveBeenCalledWith(
-        'product-creation-draft'
+        'product-creation-draft',
       );
     });
 
     it('should not save draft when disabled', () => {
       const { result } = renderHook(
         () => useProductCreation({ enableDraft: false }),
-        { wrapper: createWrapper() }
+        { wrapper: createWrapper() },
       );
 
       act(() => {
@@ -335,7 +337,7 @@ describe('useProductCreation', () => {
 
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
         'product-bulk-mode',
-        JSON.stringify(true)
+        JSON.stringify(true),
       );
 
       act(() => {
@@ -344,14 +346,14 @@ describe('useProductCreation', () => {
 
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
         'product-bulk-mode',
-        JSON.stringify(false)
+        JSON.stringify(false),
       );
     });
 
     it('should not toggle bulk mode when disabled', () => {
       const { result } = renderHook(
         () => useProductCreation({ enableBulkMode: false }),
-        { wrapper: createWrapper() }
+        { wrapper: createWrapper() },
       );
 
       const initialSetItemCalls = localStorageMock.setItem.mock.calls.length;

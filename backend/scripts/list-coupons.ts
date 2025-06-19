@@ -56,7 +56,7 @@ async function listCoupons(): Promise<void> {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     for (const coupon of coupons) {
-      const userDoc = coupon.userId as IUserDocument;
+      const userDoc = coupon.userId as unknown as IUserDocument;
       const isExpired = coupon.expirationDate < new Date();
       const status = !coupon.isActive ? 'Used' : isExpired ? 'Expired' : 'Active';
       const statusColor = status === 'Active' ? '\x1b[32m' : status === 'Used' ? '\x1b[33m' : '\x1b[31m';

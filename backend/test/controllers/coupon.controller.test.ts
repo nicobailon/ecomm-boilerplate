@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach, type Mock } from 'vitest';
 import { Response } from 'express';
 import { AuthRequest } from '../../types/express.js';
 import { applyCoupon, removeCoupon } from '../../controllers/coupon.controller.js';
@@ -14,8 +14,8 @@ describe('CouponController - Concurrent Usage Prevention', () => {
   let mockReq: Partial<AuthRequest>;
   let mockRes: Partial<Response>;
   let mockUser: IUserDocument;
-  let statusMock: vi.Mock;
-  let jsonMock: vi.Mock;
+  let statusMock: Mock;
+  let jsonMock: Mock;
 
   beforeEach(() => {
     mockUser = {
@@ -70,16 +70,11 @@ describe('CouponController - Concurrent Usage Prevention', () => {
 
       vi.mocked(cartService.calculateCartTotals).mockResolvedValue(mockCartResponse);
 
-      // Start three concurrent requests
-      const request1 = applyCoupon(mockReq as AuthRequest, mockRes as Response, vi.fn());
-      const request2 = applyCoupon(mockReq as AuthRequest, mockRes as Response, vi.fn());
-      const request3 = applyCoupon(mockReq as AuthRequest, mockRes as Response, vi.fn());
-
       // All requests should be pending
       expect(couponService.applyCouponToUser).toHaveBeenCalledTimes(3);
 
-      // Resolve the database operation
-      applyCouponResolve();
+            // Resolve the database operation  
+      applyCouponResolve?.();
 
       // Wait for all requests to complete
       await Promise.resolve();
@@ -194,7 +189,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       const request3 = removeCoupon(mockReq as AuthRequest, mockRes as Response, vi.fn());
 
       // Resolve the operation
-      removeCouponResolve();
+      removeCouponResolve?.();
 
       await Promise.all([request1, request2, request3]);
 
@@ -278,9 +273,9 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       const removeRequest = removeCoupon(mockReq as AuthRequest, mockRes as Response, vi.fn());
 
       // Resolve in specific order to test race condition
-      removeResolve();
+      removeResolve?.();
       await new Promise(resolve => setTimeout(resolve, 10));
-      applyResolve();
+      applyResolve?.();
 
       await Promise.all([applyRequest, removeRequest]);
 

@@ -9,7 +9,7 @@ export const cartRouter = router({
   get: protectedProcedure
     .query(async ({ ctx }) => {
       try {
-        return await cartService.getCartProducts(ctx.user);
+        return await cartService.calculateCartTotals(ctx.user);
       } catch (error: any) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -22,7 +22,8 @@ export const cartRouter = router({
     .input(addToCartSchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        return await cartService.addToCart(ctx.user, input.productId);
+        await cartService.addToCart(ctx.user, input.productId);
+        return await cartService.calculateCartTotals(ctx.user);
       } catch (error: any) {
         if (error.statusCode === 404) {
           throw new TRPCError({
@@ -43,7 +44,8 @@ export const cartRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       try {
-        return await cartService.updateQuantity(ctx.user, input.productId, input.quantity);
+        await cartService.updateQuantity(ctx.user, input.productId, input.quantity);
+        return await cartService.calculateCartTotals(ctx.user);
       } catch (error: any) {
         if (error.statusCode === 404) {
           throw new TRPCError({
@@ -62,7 +64,8 @@ export const cartRouter = router({
     .input(z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'))
     .mutation(async ({ input, ctx }) => {
       try {
-        return await cartService.removeFromCart(ctx.user, input);
+        await cartService.removeFromCart(ctx.user, input);
+        return await cartService.calculateCartTotals(ctx.user);
       } catch (error: any) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -74,7 +77,8 @@ export const cartRouter = router({
   clear: protectedProcedure
     .mutation(async ({ ctx }) => {
       try {
-        return await cartService.removeFromCart(ctx.user);
+        await cartService.removeFromCart(ctx.user);
+        return await cartService.calculateCartTotals(ctx.user);
       } catch (error: any) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',

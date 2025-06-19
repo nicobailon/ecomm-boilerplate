@@ -1,14 +1,17 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { useCart, useApplyCoupon, useRemoveCoupon } from "@/hooks/cart/useCart";
+import { useState, useEffect } from "react";
+import { useUnifiedCart, useApplyCoupon, useRemoveCoupon } from "@/hooks/cart/useUnifiedCart";
+import { Loader } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const GiftCouponCard = () => {
 	const [userInputCode, setUserInputCode] = useState("");
-	const { data: cart } = useCart();
+	const { data: cart, source } = useUnifiedCart();
 	const applyCoupon = useApplyCoupon();
 	const removeCoupon = useRemoveCoupon();
 
-	const coupon = cart?.coupon;
+	const coupon = cart?.appliedCoupon;
+	const isGuest = source === 'guest';
 
 	const handleApplyCoupon = () => {
 		if (!userInputCode.trim()) return;
@@ -19,6 +22,37 @@ const GiftCouponCard = () => {
 		removeCoupon.mutate();
 		setUserInputCode("");
 	};
+
+	// Clear input on successful coupon application
+	useEffect(() => {
+		if (applyCoupon.isSuccess && coupon) {
+			setUserInputCode("");
+		}
+	}, [applyCoupon.isSuccess, coupon]);
+
+	if (isGuest) {
+		return (
+			<motion.div
+				className='space-y-4 rounded-lg border border-border bg-card p-4 shadow-sm sm:p-6'
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.5, delay: 0.2 }}
+			>
+				<div className='text-center space-y-3'>
+					<h3 className='text-lg font-medium text-foreground'>Vouchers & Gift Cards</h3>
+					<p className='text-sm text-muted-foreground'>
+						Sign in to your account to apply discount codes and save on your order.
+					</p>
+					<Link 
+						to="/login" 
+						className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 focus:outline-none focus:ring-4 focus:ring-ring"
+					>
+						Sign in to use vouchers
+					</Link>
+				</div>
+			</motion.div>
+		);
+	}
 
 	return (
 		<motion.div
@@ -41,7 +75,7 @@ const GiftCouponCard = () => {
 						placeholder='Enter code here'
 						value={userInputCode}
 						onChange={(e) => setUserInputCode(e.target.value)}
-						disabled={applyCoupon.isPending || !!coupon}
+						disabled={applyCoupon.isPending || removeCoupon.isPending || !!coupon}
 						required
 					/>
 				</div>
@@ -55,7 +89,14 @@ const GiftCouponCard = () => {
 						onClick={handleApplyCoupon}
 						disabled={applyCoupon.isPending || !userInputCode.trim()}
 					>
-						{applyCoupon.isPending ? 'Applying...' : 'Apply Code'}
+						{applyCoupon.isPending ? (
+							<>
+								<Loader className="animate-spin mr-2 h-4 w-4" />
+								Applying...
+							</>
+						) : (
+							'Apply Code'
+						)}
 					</motion.button>
 				)}
 			</div>
@@ -78,7 +119,14 @@ const GiftCouponCard = () => {
 						onClick={handleRemoveCoupon}
 						disabled={removeCoupon.isPending}
 					>
-						{removeCoupon.isPending ? 'Removing...' : 'Remove Coupon'}
+						{removeCoupon.isPending ? (
+							<>
+								<Loader className="animate-spin mr-2 h-4 w-4" />
+								Removing...
+							</>
+						) : (
+							'Remove Coupon'
+						)}
 					</motion.button>
 				</div>
 			)}

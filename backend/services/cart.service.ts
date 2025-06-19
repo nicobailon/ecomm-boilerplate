@@ -18,6 +18,16 @@ interface CartProductWithQuantity {
   quantity: number;
 }
 
+export interface CartResponse {
+  cartItems: CartProductWithQuantity[];
+  subtotal: number;
+  totalAmount: number;
+  appliedCoupon: {
+    code: string;
+    discountPercentage: number;
+  } | null;
+}
+
 export class CartService {
   async getCartProducts(user: IUserDocument): Promise<CartProductWithQuantity[]> {
     const productIds = user.cartItems.map((item: any) => item.product);
@@ -29,6 +39,28 @@ export class CartService {
     });
 
     return cartItems;
+  }
+
+  async calculateCartTotals(user: IUserDocument): Promise<CartResponse> {
+    const cartItems = await this.getCartProducts(user);
+    
+    const subtotal = cartItems.reduce((total, item) => {
+      return total + (item.price * item.quantity);
+    }, 0);
+
+    let totalAmount = subtotal;
+    
+    if (user.appliedCoupon) {
+      const discount = subtotal * (user.appliedCoupon.discountPercentage / 100);
+      totalAmount = subtotal - discount;
+    }
+
+    return {
+      cartItems,
+      subtotal: Math.round(subtotal * 100) / 100,
+      totalAmount: Math.round(totalAmount * 100) / 100,
+      appliedCoupon: user.appliedCoupon
+    };
   }
 
   async addToCart(user: IUserDocument, productId: string): Promise<CartItem[]> {

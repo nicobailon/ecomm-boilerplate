@@ -1,4 +1,5 @@
 import { Coupon, ICouponDocument } from '../models/coupon.model.js';
+import { IUserDocument } from '../models/user.model.js';
 import { AppError } from '../utils/AppError.js';
 
 interface ValidCouponResponse {
@@ -31,6 +32,22 @@ export class CouponService {
       code: coupon.code,
       discountPercentage: coupon.discountPercentage,
     };
+  }
+
+  async applyCouponToUser(user: IUserDocument, code: string): Promise<void> {
+    const validationResult = await this.validateCoupon(user._id as string, code);
+    
+    user.appliedCoupon = {
+      code: validationResult.code,
+      discountPercentage: validationResult.discountPercentage
+    };
+    
+    await user.save();
+  }
+
+  async removeCouponFromUser(user: IUserDocument): Promise<void> {
+    user.appliedCoupon = null;
+    await user.save();
   }
 }
 

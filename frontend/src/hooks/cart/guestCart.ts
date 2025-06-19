@@ -14,18 +14,18 @@ export interface GuestCartData {
   cartItems: GuestCartItem[];
   subtotal: number;
   totalAmount: number;
-  coupon: null;
+  appliedCoupon: null;
 }
 
 export const readGuestCart = (): GuestCartData => {
   if (!isClientSide()) {
-    return { cartItems: [], subtotal: 0, totalAmount: 0, coupon: null };
+    return { cartItems: [], subtotal: 0, totalAmount: 0, appliedCoupon: null };
   }
   
   try {
     const stored = localStorage.getItem(GUEST_CART_KEY);
     if (!stored) {
-      return { cartItems: [], subtotal: 0, totalAmount: 0, coupon: null };
+      return { cartItems: [], subtotal: 0, totalAmount: 0, appliedCoupon: null };
     }
     
     const parsed = JSON.parse(stored) as GuestCartData;
@@ -33,10 +33,10 @@ export const readGuestCart = (): GuestCartData => {
       cartItems: parsed.cartItems || [],
       subtotal: parsed.subtotal || 0,
       totalAmount: parsed.totalAmount || 0,
-      coupon: null
+      appliedCoupon: null
     };
   } catch {
-    return { cartItems: [], subtotal: 0, totalAmount: 0, coupon: null };
+    return { cartItems: [], subtotal: 0, totalAmount: 0, appliedCoupon: null };
   }
 };
 
@@ -75,7 +75,7 @@ const recalculateTotals = (items: GuestCartItem[]): GuestCartData => {
     cartItems: items,
     subtotal,
     totalAmount: subtotal,
-    coupon: null
+    appliedCoupon: null
   };
 };
 

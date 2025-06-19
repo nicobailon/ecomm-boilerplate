@@ -24,6 +24,15 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface Cart {
+  cartItems: (CartItem & { product: Product })[];
+  subtotal: number;
+  totalAmount: number;
+  appliedCoupon: {
+    code: string;
+    discountPercentage: number;
+  } | null;
+}
 
 export interface Coupon {
   code: string;

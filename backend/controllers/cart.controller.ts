@@ -8,24 +8,26 @@ import { cartService } from '../services/cart.service.js';
 
 export const getCartProducts = asyncHandler(async (req: AuthRequest, res: Response) => {
   const user = req.user!;
-  const cartItems = await cartService.getCartProducts(user);
-  res.json(cartItems);
+  const cartResponse = await cartService.calculateCartTotals(user);
+  res.json(cartResponse);
 });
 
 export const addToCart = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { productId } = req.body;
   const user = req.user!;
   
-  const cartItems = await cartService.addToCart(user, productId);
-  res.json({ cartItems });
+  await cartService.addToCart(user, productId);
+  const cartResponse = await cartService.calculateCartTotals(user);
+  res.json(cartResponse);
 });
 
-export const removeAllFromCart = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { productId } = req.body;
+export const removeFromCart = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const productId = req.params.productId || req.body.productId;
   const user = req.user!;
   
-  const cartItems = await cartService.removeFromCart(user, productId);
-  res.json(cartItems);
+  await cartService.removeFromCart(user, productId);
+  const cartResponse = await cartService.calculateCartTotals(user);
+  res.json(cartResponse);
 });
 
 export const updateQuantity = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -33,6 +35,7 @@ export const updateQuantity = asyncHandler(async (req: AuthRequest, res: Respons
   const { quantity } = req.body;
   const user = req.user!;
   
-  const cartItems = await cartService.updateQuantity(user, productId, quantity);
-  res.json(cartItems);
+  await cartService.updateQuantity(user, productId, quantity);
+  const cartResponse = await cartService.calculateCartTotals(user);
+  res.json(cartResponse);
 });

@@ -26,7 +26,7 @@ export interface UnifiedCartResult {
     }>;
     totalAmount: number;
     subtotal: number;
-    coupon: {
+    appliedCoupon: {
       code: string;
       discountPercentage: number;
     } | null;

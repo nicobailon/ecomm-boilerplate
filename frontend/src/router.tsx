@@ -9,9 +9,9 @@ const SignUpPage = lazy(() => import('@/pages/SignUpPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const AdminPage = lazy(() => import('@/pages/AdminPage'));
 const CartPage = lazy(() => import('@/pages/CartPage'));
+const CollectionPage = lazy(() => import('@/pages/CollectionPage'));
 const PurchaseSuccessPage = lazy(() => import('@/pages/PurchaseSuccessPage'));
 const PurchaseCancelPage = lazy(() => import('@/pages/PurchaseCancelPage'));
-const CollectionPage = lazy(() => import('@/pages/CollectionPage'));
 
 export const router = createBrowserRouter([
   {

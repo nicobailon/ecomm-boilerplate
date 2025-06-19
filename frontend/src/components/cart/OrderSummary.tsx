@@ -18,7 +18,7 @@ const OrderSummary = () => {
 
 	const subtotal = cart?.subtotal || 0;
 	const total = cart?.totalAmount || 0;
-	const coupon = cart?.coupon;
+	const coupon = cart?.appliedCoupon;
 	const cartItems = cart?.cartItems || [];
 
 	const savings = subtotal - total;

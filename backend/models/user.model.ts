@@ -10,6 +10,10 @@ export interface IUserDocument extends Document {
     product: mongoose.Types.ObjectId;
     quantity: number;
   }>;
+  appliedCoupon: {
+    code: string;
+    discountPercentage: number;
+  } | null;
   comparePassword(password: string): Promise<boolean>;
 }
 
@@ -47,6 +51,21 @@ const userSchema = new Schema<IUserDocument>(
       type: String,
       enum: ["customer", "admin"],
       default: "customer",
+    },
+    appliedCoupon: {
+      type: {
+        code: {
+          type: String,
+          required: true,
+        },
+        discountPercentage: {
+          type: Number,
+          required: true,
+          min: 0,
+          max: 100,
+        },
+      },
+      default: null,
     },
   },
   {

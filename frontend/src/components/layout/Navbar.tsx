@@ -1,5 +1,5 @@
 import { ShoppingCart, UserPlus, LogIn, LogOut, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useCurrentUser, useLogout } from '@/hooks/auth/useAuth';
 import { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
 import { ThemeToggle } from '../ui/theme-toggle';
@@ -8,6 +8,7 @@ const Navbar: React.FC = () => {
 	const { data: user } = useCurrentUser();
 	const { totalQuantity } = useUnifiedCart();
 	const logout = useLogout();
+	const location = useLocation();
 	
 	const isAdmin = user?.role === 'admin';
 	const cartItemsCount = totalQuantity;
@@ -25,13 +26,15 @@ const Navbar: React.FC = () => {
 					</Link>
 
 					<nav className='flex flex-wrap items-center gap-4'>
-						<Link
+						<NavLink
 							to={'/'}
-							className='text-muted-foreground hover:text-primary transition duration-300
-					 ease-in-out'
+							className={({ isActive }) => 
+								`${isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition duration-300
+					 ease-in-out`
+							}
 						>
 							Home
-						</Link>
+						</NavLink>
 						<Link
 							to={'/cart'}
 							className='relative group text-muted-foreground hover:text-primary transition duration-300 
@@ -49,14 +52,26 @@ const Navbar: React.FC = () => {
 							)}
 						</Link>
 						{isAdmin && (
-							<Link
-								className='bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-1 rounded-md font-medium
-								 transition duration-300 ease-in-out flex items-center'
-								to={'/secret-dashboard'}
-							>
-								<Lock className='inline-block mr-1' size={18} />
-								<span className='hidden sm:inline'>Dashboard</span>
-							</Link>
+							location.pathname === '/secret-dashboard' ? (
+								<div
+									className='bg-primary/80 cursor-default text-primary-foreground px-3 py-1 rounded-md font-medium
+									 transition duration-300 ease-in-out flex items-center'
+								>
+									<Lock className='inline-block mr-1' size={18} />
+									<span className='hidden sm:inline'>Dashboard</span>
+								</div>
+							) : (
+								<NavLink
+									className={({ isActive }) => 
+										`${isActive ? 'bg-primary/80' : 'bg-primary hover:bg-primary/90'} text-primary-foreground px-3 py-1 rounded-md font-medium
+									 transition duration-300 ease-in-out flex items-center`
+									}
+									to={'/secret-dashboard'}
+								>
+									<Lock className='inline-block mr-1' size={18} />
+									<span className='hidden sm:inline'>Dashboard</span>
+								</NavLink>
+							)
 						)}
 
 						{user ? (

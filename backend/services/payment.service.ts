@@ -5,6 +5,7 @@ import { Order } from '../models/order.model.js';
 import { Product } from '../models/product.model.js';
 import { AppError } from '../utils/AppError.js';
 import { IUserDocument } from '../models/user.model.js';
+import { couponService } from './coupon.service.js';
 
 interface ProductCheckout {
   _id: string;
@@ -69,13 +70,39 @@ export class PaymentService {
     let stripeCouponId: string | undefined;
     
     if (couponCode) {
+      // First try user-specific coupon
       coupon = await Coupon.findOne({ 
-        code: couponCode, 
+        code: couponCode.toUpperCase(), 
         userId: user._id, 
         isActive: true, 
       });
       
+      // If not found, try general discount code
+      if (!coupon) {
+        coupon = await Coupon.findOne({ 
+          code: couponCode.toUpperCase(), 
+          userId: { $exists: false }, 
+          isActive: true, 
+        });
+      }
+      
       if (coupon) {
+        // Check if expired
+        if (coupon.expirationDate < new Date()) {
+          throw new AppError('Coupon has expired', 400);
+        }
+        
+        // Check max uses
+        if (coupon.maxUses && coupon.currentUses >= coupon.maxUses) {
+          throw new AppError('Coupon has reached maximum usage limit', 400);
+        }
+        
+        // Check minimum purchase amount
+        const totalInDollars = totalAmount / 100;
+        if (coupon.minimumPurchaseAmount && totalInDollars < coupon.minimumPurchaseAmount) {
+          throw new AppError(`Minimum purchase amount of $${coupon.minimumPurchaseAmount} required`, 400);
+        }
+        
         totalAmount -= Math.round((totalAmount * coupon.discountPercentage) / 100);
         stripeCouponId = await this.createStripeCoupon(coupon.discountPercentage);
       }
@@ -113,37 +140,42 @@ export class PaymentService {
       throw new AppError('Payment not completed', 400);
     }
 
-    // Deactivate coupon if used
-    if (session.metadata?.couponCode) {
-      await Coupon.findOneAndUpdate(
-        {
-          code: session.metadata.couponCode,
-          userId: session.metadata.userId,
-        },
-        {
-          isActive: false,
-        },
-      );
+    // Use transaction to ensure atomicity between coupon usage and order creation
+    const dbSession = await mongoose.startSession();
+    let orderId: mongoose.Types.ObjectId;
+    let totalAmount: number;
+
+    try {
+      await dbSession.withTransaction(async () => {
+        // Increment coupon usage if used
+        if (session.metadata?.couponCode) {
+          await couponService.incrementUsage(session.metadata.couponCode);
+        }
+
+        // Create order
+        const products = JSON.parse(session.metadata?.products ?? '[]') as CheckoutProduct[];
+        const newOrder = new Order({
+          user: session.metadata?.userId,
+          products: products.map(product => ({
+            product: product.id,
+            quantity: product.quantity,
+            price: product.price,
+          })),
+          totalAmount: (session.amount_total ?? 0) / 100,
+          stripeSessionId: sessionId,
+        });
+
+        await newOrder.save({ session: dbSession });
+        orderId = newOrder._id;
+        totalAmount = newOrder.totalAmount;
+      });
+    } finally {
+      await dbSession.endSession();
     }
 
-    // Create order
-    const products = JSON.parse(session.metadata?.products ?? '[]') as CheckoutProduct[];
-    const newOrder = new Order({
-      user: session.metadata?.userId,
-      products: products.map(product => ({
-        product: product.id,
-        quantity: product.quantity,
-        price: product.price,
-      })),
-      totalAmount: (session.amount_total ?? 0) / 100,
-      stripeSessionId: sessionId,
-    });
-
-    await newOrder.save();
-
     return {
-      orderId: newOrder._id,
-      totalAmount: newOrder.totalAmount,
+      orderId: orderId!,
+      totalAmount: totalAmount!,
     };
   }
 

@@ -105,7 +105,7 @@ export interface NavigationState {
   highlightId?: string;
 }
 
-export type TabId = 'create' | 'products' | 'analytics' | 'collections';
+export type TabId = 'create' | 'products' | 'analytics' | 'collections' | 'discounts';
 
 // CreateProductForm callback props
 export interface CreateProductFormProps {

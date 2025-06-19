@@ -1,5 +1,11 @@
-import { router, protectedProcedure } from '../index.js';
-import { applyCouponSchema } from '../../validations/index.js';
+import { router, protectedProcedure, adminProcedure } from '../index.js';
+import { 
+  applyCouponSchema, 
+  createDiscountSchema, 
+  updateDiscountSchema, 
+  listDiscountsSchema, 
+  deleteDiscountSchema 
+} from '../../validations/index.js';
 import { couponService } from '../../services/coupon.service.js';
 import { cartService } from '../../services/cart.service.js';
 import { TRPCError } from '@trpc/server';
@@ -83,6 +89,77 @@ export const couponRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: message ?? 'Failed to remove coupon',
+        });
+      }
+    }),
+
+  // Admin procedures
+  listAll: adminProcedure
+    .input(listDiscountsSchema)
+    .query(async ({ input }) => {
+      try {
+        return await couponService.listAllDiscounts(input);
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch discounts',
+        });
+      }
+    }),
+
+  create: adminProcedure
+    .input(createDiscountSchema)
+    .mutation(async ({ input }) => {
+      try {
+        return await couponService.createDiscount(input);
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 409) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: error.message,
+          });
+        }
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create discount',
+        });
+      }
+    }),
+
+  update: adminProcedure
+    .input(updateDiscountSchema)
+    .mutation(async ({ input }) => {
+      try {
+        return await couponService.updateDiscount(input.id, input.data);
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: error.message,
+          });
+        }
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update discount',
+        });
+      }
+    }),
+
+  delete: adminProcedure
+    .input(deleteDiscountSchema)
+    .mutation(async ({ input }) => {
+      try {
+        return await couponService.deleteDiscount(input.id);
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: error.message,
+          });
+        }
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to delete discount',
         });
       }
     }),

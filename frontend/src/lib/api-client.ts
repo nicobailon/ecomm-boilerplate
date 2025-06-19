@@ -54,7 +54,7 @@ class ApiClient {
             await this.refreshToken();
             this.onRefreshSuccess();
             return this.client(originalRequest);
-          } catch (_refreshError) {
+          } catch {
             this.onRefreshFailure();
             queryClient.setQueryData(['user'], null);
             // Only redirect to login for protected routes, not for initial auth checks

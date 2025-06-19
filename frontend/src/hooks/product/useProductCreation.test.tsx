@@ -206,7 +206,7 @@ describe('useProductCreation', () => {
       expect(result.current.newProductId).toBe('product-123');
       expect(productEvents.emit).toHaveBeenCalledWith('product:created', {
         productId: 'product-123',
-        timestamp: expect.any(Number),
+        timestamp: expect.any(Number) as number,
       });
 
       // Wait for navigation delay
@@ -410,7 +410,7 @@ describe('useProductCreation', () => {
       });
 
       // Event handling is set up during hook initialization
-      expect(productEvents.on).toHaveBeenCalled();
+      expect(vi.mocked(productEvents.on)).toHaveBeenCalled();
     });
   });
 

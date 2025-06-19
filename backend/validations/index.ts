@@ -30,10 +30,6 @@ export const updateQuantitySchema = z.object({
   quantity: z.number().int('Quantity must be an integer').min(0).max(99, 'Quantity cannot exceed 99'),
 });
 
-// Coupon validations
-export const applyCouponSchema = z.object({
-  code: z.string().min(1, 'Coupon code is required').max(20, 'Coupon code is too long'),
-});
 
 // Payment validations
 export const checkoutSchema = z.object({
@@ -77,3 +73,6 @@ export const productIdParamSchema = z.object({
 });
 
 // Category param validation
+
+// Export all validations from coupon.validation.ts
+export * from './coupon.validation.js';

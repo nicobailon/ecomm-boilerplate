@@ -26,35 +26,35 @@ export class AnalyticsService {
         $group: {
           _id: null,
           totalSales: { $sum: 1 },
-          totalRevenue: { $sum: "$totalAmount" },
+          totalRevenue: { $sum: '$totalAmount' },
         },
       },
     ]);
 
-    const { totalSales, totalRevenue } = salesData[0] || { totalSales: 0, totalRevenue: 0 };
+    const { totalSales, totalRevenue } = salesData[0] ?? { totalSales: 0, totalRevenue: 0 };
 
     return {
       users: totalUsers,
       products: totalProducts,
-      totalSales,
-      totalRevenue,
+      totalSales: totalSales as number,
+      totalRevenue: totalRevenue as number,
     };
   }
 
   async getDailySalesData(startDate?: string, endDate?: string): Promise<DailySalesData[]> {
     if (!startDate || !endDate) {
-      throw new AppError("Start date and end date are required", 400);
+      throw new AppError('Start date and end date are required', 400);
     }
 
     const start = new Date(startDate);
     const end = new Date(endDate);
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      throw new AppError("Invalid date format", 400);
+      throw new AppError('Invalid date format', 400);
     }
 
     if (start > end) {
-      throw new AppError("Start date must be before end date", 400);
+      throw new AppError('Start date must be before end date', 400);
     }
 
     const dailySalesData = await Order.aggregate([
@@ -68,9 +68,9 @@ export class AnalyticsService {
       },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
           sales: { $sum: 1 },
-          revenue: { $sum: "$totalAmount" },
+          revenue: { $sum: '$totalAmount' },
         },
       },
       { $sort: { _id: 1 } },
@@ -79,22 +79,22 @@ export class AnalyticsService {
     const dateArray = this.getDatesInRange(start, end);
 
     return dateArray.map((date) => {
-      const foundData = dailySalesData.find((item) => item._id === date);
+      const foundData = dailySalesData.find((item: { _id: string; sales: number; revenue: number }) => item._id === date);
 
       return {
         date,
-        sales: foundData?.sales || 0,
-        revenue: foundData?.revenue || 0,
+        sales: foundData?.sales ?? 0,
+        revenue: foundData?.revenue ?? 0,
       };
     });
   }
 
   private getDatesInRange(startDate: Date, endDate: Date): string[] {
     const dates: string[] = [];
-    let currentDate = new Date(startDate);
+    const currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
-      dates.push(currentDate.toISOString().split("T")[0]);
+      dates.push(currentDate.toISOString().split('T')[0]);
       currentDate.setDate(currentDate.getDate() + 1);
     }
 

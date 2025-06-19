@@ -1,7 +1,7 @@
-import { ShoppingCart } from "lucide-react";
-import { useUnifiedAddToCart } from "@/hooks/cart/useUnifiedCart";
-import { Product } from "@/types";
-import { OptimizedImage } from "@/components/ui/OptimizedImage";
+import { ShoppingCart } from 'lucide-react';
+import { useUnifiedAddToCart } from '@/hooks/cart/useUnifiedCart';
+import type { Product } from '@/types';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface ProductCardProps {
 	product: Product;

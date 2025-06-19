@@ -37,7 +37,6 @@ describe('productRouter - enhanced create', () => {
         name: 'Test Product',
         description: 'Test description for the product',
         price: 99.99,
-        category: 'jeans' as const,
         image: 'https://example.com/image.jpg',
         collectionName: 'New Collection',
       };
@@ -74,7 +73,6 @@ describe('productRouter - enhanced create', () => {
         name: 'Test Product',
         description: 'Test description for the product',
         price: 99.99,
-        category: 'jeans' as const,
         image: 'https://example.com/image.jpg',
         collectionId: 'existing-collection-id',
       };

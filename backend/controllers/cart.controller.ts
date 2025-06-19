@@ -3,36 +3,52 @@ import { AuthRequest } from '../types/express.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { cartService } from '../services/cart.service.js';
 
-
-
-
 export const getCartProducts = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const user = req.user!;
-  const cartItems = await cartService.getCartProducts(user);
-  res.json(cartItems);
+  if (!req.user) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+  const user = req.user;
+  const cartResponse = await cartService.calculateCartTotals(user);
+  res.json(cartResponse);
 });
 
 export const addToCart = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { productId } = req.body;
-  const user = req.user!;
+  const { productId } = req.body as { productId: string };
+  if (!req.user) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+  const user = req.user;
   
-  const cartItems = await cartService.addToCart(user, productId);
-  res.json({ cartItems });
+  await cartService.addToCart(user, productId);
+  const cartResponse = await cartService.calculateCartTotals(user);
+  res.json(cartResponse);
 });
 
-export const removeAllFromCart = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { productId } = req.body;
-  const user = req.user!;
+export const removeFromCart = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const productId = req.params.productId || (req.body as { productId?: string }).productId;
+  if (!req.user) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+  const user = req.user;
   
-  const cartItems = await cartService.removeFromCart(user, productId);
-  res.json(cartItems);
+  await cartService.removeFromCart(user, productId);
+  const cartResponse = await cartService.calculateCartTotals(user);
+  res.json(cartResponse);
 });
 
 export const updateQuantity = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id: productId } = req.params;
-  const { quantity } = req.body;
-  const user = req.user!;
+  const { quantity } = req.body as { quantity: number };
+  if (!req.user) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+  const user = req.user;
   
-  const cartItems = await cartService.updateQuantity(user, productId, quantity);
-  res.json(cartItems);
+  await cartService.updateQuantity(user, productId, quantity);
+  const cartResponse = await cartService.calculateCartTotals(user);
+  res.json(cartResponse);
 });

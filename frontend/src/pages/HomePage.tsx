@@ -1,7 +1,7 @@
 import { useListCollections } from '@/hooks/collections/useCollections';
 import { CollectionCard } from '@/components/collections/CollectionCard';
-import FeaturedProducts from "@/components/product/FeaturedProducts";
-import { useFeaturedProducts } from "@/hooks/product/useProducts";
+import FeaturedProducts from '@/components/product/FeaturedProducts';
+import { useFeaturedProducts } from '@/hooks/product/useProducts';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const HomePage = () => {
@@ -25,7 +25,7 @@ const HomePage = () => {
 
 				<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8'>
 					{isLoadingCollections &&
-						[...Array(6)].map((_, i) => (
+						Array.from({ length: 6 }).map((_, i) => (
 							<div key={i} className="space-y-3">
 								<Skeleton className="aspect-[4/3] w-full" />
 								<Skeleton className="h-5 w-3/4" />

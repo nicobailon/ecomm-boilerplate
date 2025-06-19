@@ -4,14 +4,14 @@ export class CacheService {
   async get<T>(key: string): Promise<T | null> {
     try {
       const data = await redis.get(key);
-      return data ? JSON.parse(data) : null;
+      return data ? JSON.parse(data) as T : null;
     } catch (error) {
       console.error('Cache get error:', error);
       return null;
     }
   }
 
-  async set(key: string, value: any, ttl: number = 3600): Promise<void> {
+  async set(key: string, value: unknown, ttl = 3600): Promise<void> {
     try {
       await redis.set(key, JSON.stringify(value), 'EX', ttl);
     } catch (error) {

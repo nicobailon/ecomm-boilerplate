@@ -1,6 +1,6 @@
-import { Minus, Plus, Trash } from "lucide-react";
-import { useUnifiedUpdateQuantity, useUnifiedRemoveFromCart } from "@/hooks/cart/useUnifiedCart";
-import { CartItem as CartItemType, Product } from "@/types";
+import { Minus, Plus, Trash } from 'lucide-react';
+import { useUnifiedUpdateQuantity, useUnifiedRemoveFromCart } from '@/hooks/cart/useUnifiedCart';
+import type { CartItem as CartItemType, Product } from '@/types';
 
 interface CartItemProps {
 	item: CartItemType & { product: Product };

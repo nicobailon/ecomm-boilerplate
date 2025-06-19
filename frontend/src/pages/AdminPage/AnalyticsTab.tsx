@@ -1,9 +1,9 @@
-import { motion } from "framer-motion";
-import { Users, Package, ShoppingCart, DollarSign } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { useAnalytics } from "@/hooks/analytics/useAnalytics";
-import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import type { LucideIcon } from "lucide-react";
+import { motion } from 'framer-motion';
+import { Users, Package, ShoppingCart, DollarSign } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useAnalytics } from '@/hooks/analytics/useAnalytics';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import type { LucideIcon } from 'lucide-react';
 
 const AnalyticsTab = () => {
 	const { data, isLoading } = useAnalytics();
@@ -12,14 +12,14 @@ const AnalyticsTab = () => {
 		return <LoadingSpinner />;
 	}
 
-	const analyticsData = data?.analyticsData || {
+	const analyticsData = data?.analyticsData ?? {
 		users: 0,
 		products: 0,
 		totalSales: 0,
 		totalRevenue: 0,
 	};
 
-	const dailySalesData = data?.dailySalesData || [];
+	const dailySalesData = data?.dailySalesData ?? [];
 
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
@@ -95,7 +95,7 @@ interface AnalyticsCardProps {
 
 const AnalyticsCard = ({ title, value, icon: Icon, color }: AnalyticsCardProps) => (
 	<motion.div
-		className={`bg-card rounded-lg p-6 shadow-lg overflow-hidden relative`}
+		className={'bg-card rounded-lg p-6 shadow-lg overflow-hidden relative'}
 		initial={{ opacity: 0, y: 20 }}
 		animate={{ opacity: 1, y: 0 }}
 		transition={{ duration: 0.5 }}

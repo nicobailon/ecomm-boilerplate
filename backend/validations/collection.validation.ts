@@ -57,7 +57,7 @@ export const quickCreateCollectionSchema = z.object({
     .trim()
     .refine(
       (name) => name.length > 0,
-      'Collection name cannot be empty'
+      'Collection name cannot be empty',
     ),
   isPublic: z.boolean().optional().default(false),
 });

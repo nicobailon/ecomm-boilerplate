@@ -1,4 +1,5 @@
-import { useLayoutEffect, useState, HTMLAttributes } from 'react';
+import type { HTMLAttributes } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 interface DropdownProps extends HTMLAttributes<HTMLDivElement> {
@@ -23,7 +24,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
     if (!isOpen || !triggerRef.current) return;
     
     const updatePosition = () => {
-      const rect = triggerRef.current!.getBoundingClientRect();
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const spaceBelow = viewportHeight - rect.bottom;
       const spaceAbove = rect.top;
@@ -67,6 +69,6 @@ export const Dropdown: React.FC<DropdownProps> = ({
     >
       {children}
     </div>,
-    document.body
+    document.body,
   );
 };

@@ -38,7 +38,7 @@ export const CollectionCard = ({ collection }: CollectionCardProps) => {
       </div>
       <h3 className="mt-4 text-xl font-bold text-foreground">{collection.name}</h3>
       <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-        {collection.description || 'Explore this curated collection.'}
+        {collection.description ?? 'Explore this curated collection.'}
       </p>
     </Link>
   );

@@ -12,7 +12,7 @@ export function ThemeToggle() {
     const handleKeyPress = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
         e.preventDefault();
-        const themes: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+        const themes: ('light' | 'dark' | 'system')[] = ['light', 'dark', 'system'];
         const currentIndex = themes.indexOf(theme);
         const nextTheme = themes[(currentIndex + 1) % themes.length];
         setTheme(nextTheme);

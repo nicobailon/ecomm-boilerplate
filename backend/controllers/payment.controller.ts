@@ -10,36 +10,38 @@ interface ProductCheckout {
 }
 
 export const createCheckoutSession = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { products, couponCode }: { products: ProductCheckout[], couponCode?: string } = req.body;
+  const { products, couponCode } = req.body as { products: ProductCheckout[]; couponCode?: string };
 
   if (!Array.isArray(products) || products.length === 0) {
-    throw new AppError("Invalid or empty products array", 400);
+    throw new AppError('Invalid or empty products array', 400);
   }
 
-  const result = await paymentService.createCheckoutSession(
-    req.user!,
+  if (!req.user) {
+    throw new AppError('Unauthorized', 401);
+  }
+  const sessionId = await paymentService.createCheckoutSession(
+    req.user,
     products,
-    couponCode
+    couponCode,
   );
   
   res.status(200).json({ 
-    id: result.sessionId, 
-    totalAmount: result.totalAmount 
+    id: sessionId,
   });
 });
 
 export const checkoutSuccess = asyncHandler(async (req: Request, res: Response) => {
-  const { sessionId } = req.body;
+  const { sessionId } = req.body as { sessionId: string };
 
   if (!sessionId) {
-    throw new AppError("Session ID is required", 400);
+    throw new AppError('Session ID is required', 400);
   }
 
   const result = await paymentService.processCheckoutSuccess(sessionId);
 
   res.status(200).json({
     success: true,
-    message: "Payment successful, order created, and coupon deactivated if used.",
+    message: 'Payment successful, order created, and coupon deactivated if used.',
     orderId: result.orderId,
   });
 });

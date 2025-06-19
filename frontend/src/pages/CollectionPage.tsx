@@ -1,14 +1,14 @@
 import { useParams } from 'react-router-dom';
 import { useCollectionBySlug } from '@/hooks/collections/useCollections';
 import ProductCard from '@/components/product/ProductCard';
-import { Product } from '@/types';
+import type { Product } from '@/types';
 import { Globe, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const CollectionPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { data: collection, isLoading, isError } = useCollectionBySlug(slug || '');
+  const { data: collection, isLoading, isError } = useCollectionBySlug(slug ?? '');
 
   if (isLoading) {
     return (
@@ -21,7 +21,7 @@ const CollectionPage = () => {
           <Skeleton className="h-4 w-48 mt-4" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
+          {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="space-y-3">
               <Skeleton className="h-48 w-full" />
               <Skeleton className="h-4 w-3/4" />
@@ -39,7 +39,7 @@ const CollectionPage = () => {
         <div className="max-w-md mx-auto text-center">
           <h1 className="text-2xl font-bold mb-4">Collection Not Found</h1>
           <p className="text-muted-foreground mb-8">
-            The collection you're looking for doesn't exist or is not accessible.
+            The collection you&apos;re looking for doesn&apos;t exist or is not accessible.
           </p>
           <a href="/" className="text-primary hover:underline">
             Go back to home
@@ -53,7 +53,7 @@ const CollectionPage = () => {
   const products: Product[] = [];
   
   // Handle both populated products and product IDs
-  for (const p of collection.products || []) {
+  for (const p of collection.products ?? []) {
     if (p && typeof p === 'object') {
       // Type guard to ensure it's a Product
       const productLike = p as unknown as Record<string, unknown>;
@@ -106,7 +106,7 @@ const CollectionPage = () => {
         {products.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
-              This collection doesn't have any products yet.
+              This collection doesn&apos;t have any products yet.
             </p>
           </div>
         ) : (

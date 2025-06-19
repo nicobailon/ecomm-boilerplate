@@ -1,5 +1,6 @@
 import { FEATURE_FLAGS } from '@/lib/feature-flags';
 import { trpc } from '@/lib/trpc';
+import type { ProductInput } from '@/lib/validations';
 import { 
   useProducts as useProductsREST, 
   useFeaturedProducts as useFeaturedProductsREST,
@@ -7,18 +8,18 @@ import {
   useUpdateProduct as useUpdateProductREST,
   useDeleteProduct as useDeleteProductREST,
   useToggleFeatured as useToggleFeaturedREST,
-  useProductRecommendations as useProductRecommendationsREST
+  useProductRecommendations as useProductRecommendationsREST,
 } from '@/hooks/product/useProducts';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Product, ApiResponse } from '@/types';
+import type { Product, ApiResponse } from '@/types';
 import { apiClient } from '@/lib/api-client';
 
 export function useProducts(page = 1, limit = 12, search?: string) {
   const restQuery = useProductsREST(page, limit);
   const trpcQuery = trpc.product.list.useQuery(
     { page, limit, search },
-    { enabled: FEATURE_FLAGS.USE_TRPC_PRODUCTS }
+    { enabled: FEATURE_FLAGS.USE_TRPC_PRODUCTS },
   );
 
   if (FEATURE_FLAGS.USE_TRPC_PRODUCTS) {
@@ -59,6 +60,9 @@ export function useProductById(id: string) {
     queryKey: ['product', id],
     queryFn: async () => {
       const { data } = await apiClient.get<ApiResponse<Product>>(`/products/${id}`);
+      if (!data.data) {
+        throw new Error('Product not found');
+      }
       return data.data;
     },
     enabled: !!id && !FEATURE_FLAGS.USE_TRPC_PRODUCTS,
@@ -87,7 +91,7 @@ export function useCreateProduct() {
   
   const trpcMutation = trpc.product.create.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      void queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Product created successfully');
     },
   });
@@ -114,16 +118,16 @@ export function useUpdateProduct() {
   
   const trpcMutation = trpc.product.update.useMutation({
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['product', variables.id] });
+      void queryClient.invalidateQueries({ queryKey: ['products'] });
+      void queryClient.invalidateQueries({ queryKey: ['product', variables.id] });
       toast.success('Product updated successfully');
     },
   });
 
   if (FEATURE_FLAGS.USE_TRPC_PRODUCTS) {
     return {
-      mutate: (params: { id: string; data: any }) => trpcMutation.mutate(params),
-      mutateAsync: (params: { id: string; data: any }) => trpcMutation.mutateAsync(params),
+      mutate: (params: { id: string; data: Partial<ProductInput> }) => trpcMutation.mutate(params),
+      mutateAsync: (params: { id: string; data: Partial<ProductInput> }) => trpcMutation.mutateAsync(params),
       isLoading: trpcMutation.isPending,
       isError: trpcMutation.isError,
       error: trpcMutation.error,
@@ -142,7 +146,7 @@ export function useDeleteProduct() {
   
   const trpcMutation = trpc.product.delete.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      void queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Product deleted successfully');
     },
   });
@@ -169,7 +173,7 @@ export function useToggleFeatured() {
   
   const trpcMutation = trpc.product.toggleFeatured.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      void queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Product updated');
     },
   });

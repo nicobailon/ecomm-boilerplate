@@ -8,7 +8,7 @@ import {
 } from '@/hooks/cart/useCart';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Product } from '@/types';
+import type { Product } from '@/types';
 import { apiClient } from '@/lib/api-client';
 
 export function useCart() {
@@ -36,7 +36,7 @@ export function useAddToCart() {
   
   const trpcMutation = trpc.cart.add.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Added to cart');
     },
     onError: () => {
@@ -72,7 +72,7 @@ export function useUpdateQuantity() {
   
   const trpcMutation = trpc.cart.updateQuantity.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
   });
 
@@ -98,7 +98,7 @@ export function useRemoveFromCart() {
   
   const trpcMutation = trpc.cart.remove.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Removed from cart');
     },
   });
@@ -128,14 +128,14 @@ export function useClearCart() {
       await apiClient.delete('/cart');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Cart cleared');
     },
   });
   
   const trpcMutation = trpc.cart.clear.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Cart cleared');
     },
   });

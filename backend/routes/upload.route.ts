@@ -6,7 +6,7 @@ import { AuthRequest } from '../types/express.js';
 const router = Router();
 
 // Logging middleware for debugging upload requests
-const uploadLogger = (_req: Request, _res: Response, next: NextFunction) => {
+const uploadLogger = (_req: Request, _res: Response, next: NextFunction): void => {
   next();
 };
 
@@ -29,24 +29,24 @@ router.get('/', uploadLogger, uploadthingHandler);
 router.post('/', (req: Request, res: Response, next: NextFunction) => {
   // Check if this looks like a callback based on the path or headers
   const hasCallbackHeaders = !!(
-    req.headers['x-uploadthing-signature'] ||
-    req.headers['x-uploadthing-hook'] ||
+    req.headers['x-uploadthing-signature'] ??
+    req.headers['x-uploadthing-hook'] ??
     req.headers['x-uploadthing-api-key']
   );
   
   // If it has callback headers, skip auth
   if (hasCallbackHeaders) {
-    console.log('[UploadThing Route] Callback detected via headers, skipping auth');
+    // Callback detected via headers, skipping auth
     return uploadthingHandler(req, res, next);
   }
   
   // Otherwise, this is a client upload that needs auth
-  console.log('[UploadThing Route] Client upload detected, requiring auth');
-  protectRoute(req as AuthRequest, res, (err?: any) => {
+  // Client upload detected, requiring auth
+  void protectRoute(req as AuthRequest, res, (err?: unknown) => {
     if (err) return next(err);
     
     // Check admin access
-    adminRoute(req as AuthRequest, res, (err?: any) => {
+    void adminRoute(req as AuthRequest, res, (err?: unknown) => {
       if (err) return next(err);
       
       // User is authenticated and is admin, proceed with upload

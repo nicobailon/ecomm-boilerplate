@@ -7,15 +7,21 @@ interface TokenPayload {
   userId: string;
 }
 
-export async function createContext({ req, res }: CreateExpressContextOptions) {
+export async function createContext({ req, res }: CreateExpressContextOptions): Promise<{
+  req: CreateExpressContextOptions['req'];
+  res: CreateExpressContextOptions['res'];
+  user: IUserDocument | null;
+}> {
   let user: IUserDocument | null = null;
   
-  const token = req.cookies.accessToken;
+  const token = req.cookies.accessToken as string | undefined;
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as TokenPayload;
+      const secret = process.env.ACCESS_TOKEN_SECRET;
+      if (!secret) throw new Error('ACCESS_TOKEN_SECRET not configured');
+      const decoded = jwt.verify(token, secret) as TokenPayload;
       user = await User.findById(decoded.userId).select('-password');
-    } catch (error) {
+    } catch {
       // Invalid token, user remains null
     }
   }

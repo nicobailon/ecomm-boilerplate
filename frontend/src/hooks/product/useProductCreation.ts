@@ -2,10 +2,11 @@ import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useCreateProduct } from './useProducts';
-import { ProductInput } from '@/lib/validations';
+import type { ProductInput } from '@/lib/validations';
 import { productEvents } from '@/lib/events';
 import { useLocalStorage } from '@/hooks/utils/useLocalStorage';
-import { TabId, NAVIGATION_DELAY } from '@/types';
+import type { TabId, Product } from '@/types';
+import { NAVIGATION_DELAY } from '@/types';
 
 interface UseProductCreationState {
   isCreating: boolean;
@@ -102,13 +103,13 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
     // Emit event for extensibility
     productEvents.emit('product:created', { 
       productId, 
-      timestamp: Date.now() 
+      timestamp: Date.now(), 
     });
     
     // Show navigation feedback
     toast('Redirecting to products list...', {
       duration: navigationDelay,
-      icon: '🔄'
+      icon: '🔄',
     });
     
     // Delayed navigation
@@ -123,7 +124,7 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
   const createProduct = useCallback(async (data: ProductInput) => {
     return new Promise<string>((resolve, reject) => {
       createProductMutation.mutate(data, {
-        onSuccess: (response: any) => {
+        onSuccess: (response: Product) => {
           // Clear draft on successful creation
           if (enableDraft) {
             clearDraft();
@@ -142,10 +143,10 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
           
           resolve(response._id);
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
           toast.error('Failed to create product');
           reject(error);
-        }
+        },
       });
     });
   }, [
@@ -154,7 +155,7 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
     enableBulkMode,
     enableDraft,
     clearDraft,
-    navigateToProducts
+    navigateToProducts,
   ]);
 
   // Reset creation state
@@ -168,7 +169,7 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
   const toggleBulkMode = useCallback((enabled?: boolean) => {
     if (!enableBulkMode) return;
     
-    setBulkMode((prev: boolean) => enabled !== undefined ? enabled : !prev);
+    setBulkMode((prev: boolean) => enabled ?? !prev);
   }, [enableBulkMode, setBulkMode]);
 
   // Clear highlighted product
@@ -181,7 +182,7 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
     const handleExternalCreation = () => {
       // If this creation didn't come from this hook, we might still want to react
       // This allows for multiple product creation sources to work together
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      void queryClient.invalidateQueries({ queryKey: ['products'] });
     };
 
     productEvents.on('product:created', handleExternalCreation);

@@ -34,21 +34,21 @@ export class AuthService {
 
     const userExists = await User.findOne({ email });
     if (userExists) {
-      throw new AppError("User already exists", 400);
+      throw new AppError('User already exists', 400);
     }
     
     const user = await User.create({ name, email, password });
-    const tokens = this.generateTokens(user._id as string);
-    await this.storeRefreshToken(user._id as string, tokens.refreshToken);
+    const tokens = this.generateTokens(user._id.toString());
+    await this.storeRefreshToken(user._id.toString(), tokens.refreshToken);
 
     return {
       user: {
-        _id: user._id as string,
+        _id: user._id.toString(),
         name: user.name,
         email: user.email,
         role: user.role,
       },
-      tokens
+      tokens,
     };
   }
 
@@ -57,37 +57,43 @@ export class AuthService {
     const user = await User.findOne({ email });
 
     if (!user || !(await user.comparePassword(password))) {
-      throw new AppError("Invalid email or password", 400);
+      throw new AppError('Invalid email or password', 400);
     }
 
-    const tokens = this.generateTokens(user._id as string);
-    await this.storeRefreshToken(user._id as string, tokens.refreshToken);
+    const tokens = this.generateTokens(user._id.toString());
+    await this.storeRefreshToken(user._id.toString(), tokens.refreshToken);
 
     return {
       user: {
-        _id: user._id as string,
+        _id: user._id.toString(),
         name: user.name,
         email: user.email,
         role: user.role,
       },
-      tokens
+      tokens,
     };
   }
 
   async refreshAccessToken(refreshToken: string): Promise<string> {
     if (!refreshToken) {
-      throw new AppError("No refresh token provided", 401);
+      throw new AppError('No refresh token provided', 401);
     }
 
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!) as TokenPayload;
+    const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
+    const accessSecret = process.env.ACCESS_TOKEN_SECRET;
+    if (!refreshSecret || !accessSecret) {
+      throw new AppError('JWT secrets not configured', 500);
+    }
+    
+    const decoded = jwt.verify(refreshToken, refreshSecret) as TokenPayload;
     const storedToken = await redis.get(`refresh_token:${decoded.userId}`);
 
     if (storedToken !== refreshToken) {
-      throw new AppError("Invalid refresh token", 401);
+      throw new AppError('Invalid refresh token', 401);
     }
 
-    const accessToken = jwt.sign({ userId: decoded.userId }, process.env.ACCESS_TOKEN_SECRET!, { 
-      expiresIn: "15m" 
+    const accessToken = jwt.sign({ userId: decoded.userId }, accessSecret, { 
+      expiresIn: '15m', 
     });
 
     return accessToken;
@@ -96,9 +102,11 @@ export class AuthService {
   async logout(refreshToken: string | undefined): Promise<void> {
     if (refreshToken) {
       try {
-        const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!) as TokenPayload;
+        const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
+        if (!refreshSecret) throw new AppError('REFRESH_TOKEN_SECRET not configured', 500);
+        const decoded = jwt.verify(refreshToken, refreshSecret) as TokenPayload;
         await redis.del(`refresh_token:${decoded.userId}`);
-      } catch (error) {
+      } catch {
         // Silent fail - token might be invalid or expired
       }
     }
@@ -107,25 +115,32 @@ export class AuthService {
   async getProfile(userId: string): Promise<IUserDocument> {
     const user = await User.findById(userId).select('-password');
     if (!user) {
-      throw new AppError("User not found", 404);
+      throw new AppError('User not found', 404);
     }
     return user;
   }
 
   private generateTokens(userId: string): TokenPair {
-    const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET!, {
-      expiresIn: "15m",
+    const accessSecret = process.env.ACCESS_TOKEN_SECRET;
+    const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
+    
+    if (!accessSecret || !refreshSecret) {
+      throw new AppError('JWT secrets not configured', 500);
+    }
+    
+    const accessToken = jwt.sign({ userId }, accessSecret, {
+      expiresIn: '15m',
     });
 
-    const refreshToken = jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET!, {
-      expiresIn: "7d",
+    const refreshToken = jwt.sign({ userId }, refreshSecret, {
+      expiresIn: '7d',
     });
 
     return { accessToken, refreshToken };
   }
 
   private async storeRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    await redis.set(`refresh_token:${userId}`, refreshToken, "EX", 7 * 24 * 60 * 60);
+    await redis.set(`refresh_token:${userId}`, refreshToken, 'EX', 7 * 24 * 60 * 60);
   }
 }
 

@@ -59,7 +59,7 @@ describe('Theme Integration', () => {
     fireEvent.keyDown(window, {
       key: 'L',
       ctrlKey: true,
-      shiftKey: true
+      shiftKey: true,
     });
     
     await waitFor(() => {
@@ -85,7 +85,7 @@ describe('Theme Integration', () => {
     const hardcodedPatterns = [
       /text-(gray|emerald)-[0-9]{3}/,
       /bg-(gray|emerald|blue|red|green)-[0-9]{3}/,
-      /border-(gray|emerald|blue|red|green)-[0-9]{3}/
+      /border-(gray|emerald|blue|red|green)-[0-9]{3}/,
     ];
     
     hardcodedPatterns.forEach(pattern => {

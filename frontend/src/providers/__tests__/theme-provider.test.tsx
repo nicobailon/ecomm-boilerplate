@@ -17,7 +17,7 @@ describe('ThemeProvider', () => {
     render(
       <ThemeProvider>
         <TestComponent />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     expect(screen.getByText('system')).toBeInTheDocument();
@@ -33,7 +33,7 @@ describe('ThemeProvider', () => {
     render(
       <ThemeProvider>
         <TestComponent />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     await user.click(screen.getByText('Set Dark'));
@@ -56,7 +56,7 @@ describe('ThemeProvider', () => {
     render(
       <ThemeProvider>
         <TestComponent />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     await user.click(screen.getByText('Dark'));
@@ -79,7 +79,7 @@ describe('ThemeProvider', () => {
     render(
       <ThemeProvider>
         <div>Test</div>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     expect(window.matchMedia).toHaveBeenCalledWith('(prefers-color-scheme: dark)');
@@ -95,7 +95,7 @@ describe('ThemeProvider', () => {
     render(
       <ThemeProvider storageKey="custom-theme-key">
         <TestComponent />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     await user.click(screen.getByText('Set Dark'));
@@ -125,7 +125,7 @@ describe('ThemeProvider', () => {
     render(
       <ThemeProvider defaultTheme="system">
         <TestComponent />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     expect(screen.getByText('Theme: system')).toBeInTheDocument();

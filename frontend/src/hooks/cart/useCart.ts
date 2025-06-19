@@ -1,18 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { CartItem, Product, ApiResponse } from '@/types';
+import type { Cart, Product, ApiResponse } from '@/types';
 import { toast } from 'sonner';
 import { useCurrentUser } from '../auth/useAuth';
-
-interface CartResponse {
-  cartItems: (CartItem & { product: Product })[];
-  totalAmount: number;
-  subtotal: number;
-  coupon: {
-    code: string;
-    discountPercentage: number;
-  } | null;
-}
+import type { AxiosError } from 'axios';
 
 export const useCart = () => {
   const { data: user } = useCurrentUser();
@@ -20,8 +11,8 @@ export const useCart = () => {
   return useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
-      const { data } = await apiClient.get<ApiResponse<CartResponse>>('/cart');
-      return data.data || { cartItems: [], totalAmount: 0, subtotal: 0, coupon: null };
+      const { data } = await apiClient.get<Cart>('/cart');
+      return data ?? { cartItems: [], totalAmount: 0, subtotal: 0, appliedCoupon: null };
     },
     enabled: !!user && user.role !== 'admin', // Only fetch cart for non-admin users
     retry: false, // Don't retry if the cart fetch fails
@@ -34,7 +25,7 @@ export const useAddToCart = () => {
   return useMutation({
     mutationFn: async (product: Product | string) => {
       const productId = typeof product === 'string' ? product : product._id;
-      const { data } = await apiClient.post<ApiResponse>('/cart', { productId });
+      const { data } = await apiClient.post<Cart>('/cart', { productId });
       return data;
     },
     onMutate: async (product) => {
@@ -42,14 +33,14 @@ export const useAddToCart = () => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });
 
       // Snapshot previous value
-      const previousCart = queryClient.getQueryData<CartResponse>(['cart']);
+      const previousCart = queryClient.getQueryData<Cart>(['cart']);
 
       // Get productId and product data
       const productId = typeof product === 'string' ? product : product._id;
       const productData = typeof product === 'string' ? null : product;
 
       // Optimistically update
-      queryClient.setQueryData<CartResponse>(['cart'], (old) => {
+      queryClient.setQueryData<Cart>(['cart'], (old) => {
         if (!old) return old;
         
         const existingItem = old.cartItems.find(item => item.product._id === productId);
@@ -59,7 +50,7 @@ export const useAddToCart = () => {
             cartItems: old.cartItems.map(item =>
               item.product._id === productId
                 ? { ...item, quantity: item.quantity + 1 }
-                : item
+                : item,
             ),
           };
         }
@@ -88,7 +79,7 @@ export const useAddToCart = () => {
       toast.error('Failed to add to cart');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
     onSuccess: () => {
       toast.success('Added to cart');
@@ -101,14 +92,14 @@ export const useUpdateQuantity = () => {
 
   return useMutation({
     mutationFn: async ({ productId, quantity }: { productId: string; quantity: number }) => {
-      const { data } = await apiClient.put<ApiResponse>(`/cart/${productId}`, { quantity });
+      const { data } = await apiClient.put<Cart>(`/cart/${productId}`, { quantity });
       return data;
     },
     onMutate: async ({ productId, quantity }) => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });
-      const previousCart = queryClient.getQueryData<CartResponse>(['cart']);
+      const previousCart = queryClient.getQueryData<Cart>(['cart']);
 
-      queryClient.setQueryData<CartResponse>(['cart'], (old) => {
+      queryClient.setQueryData<Cart>(['cart'], (old) => {
         if (!old) return old;
         
         return {
@@ -116,7 +107,7 @@ export const useUpdateQuantity = () => {
           cartItems: old.cartItems.map(item =>
             item.product._id === productId
               ? { ...item, quantity }
-              : item
+              : item,
           ),
         };
       });
@@ -125,9 +116,16 @@ export const useUpdateQuantity = () => {
     },
     onError: (_err, _variables, context) => {
       queryClient.setQueryData(['cart'], context?.previousCart);
+      toast.error('Failed to update quantity');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
+    },
+    onSuccess: (data) => {
+      if (data) {
+        queryClient.setQueryData(['cart'], data);
+      }
+      toast.success('Cart updated');
     },
   });
 };
@@ -137,13 +135,14 @@ export const useRemoveFromCart = () => {
 
   return useMutation({
     mutationFn: async (productId: string) => {
-      await apiClient.delete(`/cart/${productId}`);
+      const { data } = await apiClient.delete<Cart>(`/cart/${productId}`);
+      return data;
     },
     onMutate: async (productId) => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });
-      const previousCart = queryClient.getQueryData<CartResponse>(['cart']);
+      const previousCart = queryClient.getQueryData<Cart>(['cart']);
 
-      queryClient.setQueryData<CartResponse>(['cart'], (old) => {
+      queryClient.setQueryData<Cart>(['cart'], (old) => {
         if (!old) return old;
         
         return {
@@ -158,7 +157,7 @@ export const useRemoveFromCart = () => {
       queryClient.setQueryData(['cart'], context?.previousCart);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
     onSuccess: () => {
       toast.success('Removed from cart');
@@ -171,12 +170,25 @@ export const useApplyCoupon = () => {
 
   return useMutation({
     mutationFn: async (code: string) => {
-      const { data } = await apiClient.post<ApiResponse>('/coupons/apply', { code });
+      const { data } = await apiClient.post<ApiResponse<{ success: boolean; message: string; cart: Cart }>>('/api/coupons/apply', { code });
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      toast.success('Coupon applied successfully');
+    onMutate: async (_code: string) => {
+      await queryClient.cancelQueries({ queryKey: ['cart'] });
+      const previousCart = queryClient.getQueryData<Cart>(['cart']);
+      return { previousCart };
+    },
+    onError: (error: AxiosError<{ message?: string }>, _code, context) => {
+      queryClient.setQueryData(['cart'], context?.previousCart);
+      const errorMessage = error.response?.data?.message ?? error.message ?? 'Failed to apply coupon';
+      toast.error(errorMessage);
+    },
+    onSuccess: (data) => {
+      if (data.data?.cart) {
+        queryClient.setQueryData(['cart'], data.data.cart);
+      }
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
+      toast.success(data.data?.message ?? 'Coupon applied successfully');
     },
   });
 };
@@ -186,11 +198,35 @@ export const useRemoveCoupon = () => {
 
   return useMutation({
     mutationFn: async () => {
-      await apiClient.delete('/coupons/remove');
+      const { data } = await apiClient.delete<ApiResponse<{ success: boolean; message: string; cart: Cart }>>('/api/coupons/remove');
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      toast.success('Coupon removed');
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['cart'] });
+      const previousCart = queryClient.getQueryData<Cart>(['cart']);
+      
+      // Optimistically remove coupon
+      if (previousCart) {
+        queryClient.setQueryData<Cart>(['cart'], {
+          ...previousCart,
+          appliedCoupon: null,
+          totalAmount: previousCart.subtotal,
+        });
+      }
+      
+      return { previousCart };
+    },
+    onError: (error: AxiosError<{ message?: string }>, _variables, context) => {
+      queryClient.setQueryData(['cart'], context?.previousCart);
+      const errorMessage = error.response?.data?.message ?? error.message ?? 'Failed to remove coupon';
+      toast.error(errorMessage);
+    },
+    onSuccess: (data) => {
+      if (data.data?.cart) {
+        queryClient.setQueryData(['cart'], data.data.cart);
+      }
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
+      toast.success(data.data?.message ?? 'Coupon removed');
     },
   });
 };

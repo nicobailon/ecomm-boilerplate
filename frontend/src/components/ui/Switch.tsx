@@ -13,7 +13,7 @@ const Switch = forwardRef<
       'disabled:cursor-not-allowed disabled:opacity-50',
       'data-[state=checked]:bg-primary data-[state=unchecked]:bg-input',
       'dark:data-[state=unchecked]:bg-muted',
-      className
+      className,
     )}
     {...props}
     ref={ref}
@@ -22,7 +22,7 @@ const Switch = forwardRef<
       className={cn(
         'pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-all duration-200',
         'data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0',
-        'dark:bg-foreground'
+        'dark:bg-foreground',
       )}
     />
   </SwitchPrimitives.Root>

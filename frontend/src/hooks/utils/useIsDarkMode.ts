@@ -14,6 +14,6 @@ export function useThemeInfo() {
     isDark: resolvedTheme === 'dark',
     isLight: resolvedTheme === 'light',
     isSystem: theme === 'system',
-    setTheme
+    setTheme,
   };
 }

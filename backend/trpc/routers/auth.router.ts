@@ -3,6 +3,7 @@ import { router, publicProcedure, protectedProcedure } from '../index.js';
 import { authService } from '../../services/auth.service.js';
 import { TRPCError } from '@trpc/server';
 import { signupSchema, loginSchema } from '../../validations/index.js';
+import { isAppError } from '../../utils/error-types.js';
 
 const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required'),
@@ -37,10 +38,17 @@ export const authRouter = router({
         return {
           user: result.user,
         };
-      } catch (error: any) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 400) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to sign up';
         throw new TRPCError({
-          code: error.statusCode === 400 ? 'BAD_REQUEST' : 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to sign up',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to sign up',
         });
       }
     }),
@@ -72,10 +80,17 @@ export const authRouter = router({
         return {
           user: result.user,
         };
-      } catch (error: any) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 400) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to login';
         throw new TRPCError({
-          code: error.statusCode === 400 ? 'BAD_REQUEST' : 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to login',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to login',
         });
       }
     }),
@@ -83,7 +98,7 @@ export const authRouter = router({
   logout: publicProcedure
     .mutation(async ({ ctx }) => {
       try {
-        const refreshToken = ctx.req.cookies.refreshToken;
+        const refreshToken = ctx.req.cookies.refreshToken as string | undefined;
         await authService.logout(refreshToken);
         
         // Clear cookies
@@ -91,10 +106,11 @@ export const authRouter = router({
         ctx.res.clearCookie('refreshToken');
         
         return { success: true };
-      } catch (error: any) {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to logout';
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to logout',
+          message: message ?? 'Failed to logout',
         });
       }
     }),
@@ -114,10 +130,17 @@ export const authRouter = router({
         });
 
         return { accessToken };
-      } catch (error: any) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 401) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to refresh token';
         throw new TRPCError({
-          code: error.statusCode === 401 ? 'UNAUTHORIZED' : 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to refresh token',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to refresh token',
         });
       }
     }),
@@ -125,12 +148,19 @@ export const authRouter = router({
   profile: protectedProcedure
     .query(async ({ ctx }) => {
       try {
-        const user = await authService.getProfile(ctx.user._id as string);
+        const user = await authService.getProfile(ctx.user._id.toString());
         return user;
-      } catch (error: any) {
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to get profile';
         throw new TRPCError({
-          code: error.statusCode === 404 ? 'NOT_FOUND' : 'INTERNAL_SERVER_ERROR',
-          message: error.message || 'Failed to get profile',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to get profile',
         });
       }
     }),

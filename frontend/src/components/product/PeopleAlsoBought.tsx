@@ -1,6 +1,6 @@
-import ProductCard from "./ProductCard";
-import LoadingSpinner from "../ui/LoadingSpinner";
-import { useProductRecommendations } from "@/hooks/product/useProducts";
+import ProductCard from './ProductCard';
+import LoadingSpinner from '../ui/LoadingSpinner';
+import { useProductRecommendations } from '@/hooks/product/useProducts';
 
 const PeopleAlsoBought = () => {
 	const { data: recommendations, isLoading } = useProductRecommendations();

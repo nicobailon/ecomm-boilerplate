@@ -1,10 +1,10 @@
-import { ArrowRight, CheckCircle, HandHeart } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { apiClient } from "@/lib/api-client";
-import Confetti from "react-confetti";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import LoadingSpinner from "../components/ui/LoadingSpinner";
+import { ArrowRight, CheckCircle, HandHeart } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { apiClient } from '@/lib/api-client';
+import Confetti from 'react-confetti';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const PurchaseSuccessPage = () => {
 	const [error, setError] = useState<string | null>(null);
@@ -12,30 +12,31 @@ const PurchaseSuccessPage = () => {
 
 	const checkoutSuccessMutation = useMutation({
 		mutationFn: async (sessionId: string) => {
-			const response = await apiClient.post("/payments/checkout-success", {
+			const response = await apiClient.post('/payments/checkout-success', {
 				sessionId,
 			});
 			return response.data;
 		},
 		onSuccess: () => {
 			// Clear cart cache
-			queryClient.invalidateQueries({ queryKey: ['cart'] });
+			void queryClient.invalidateQueries({ queryKey: ['cart'] });
 			queryClient.setQueryData(['cart'], { cartItems: [], totalAmount: 0, subtotal: 0, coupon: null });
 		},
-		onError: (error: any) => {
+		onError: (error) => {
 			console.error(error);
-			setError(error.response?.data?.message || "Something went wrong");
+			const errorMessage = error instanceof Error ? error.message : 'Something went wrong';
+			setError(errorMessage);
 		},
 	});
 
 	useEffect(() => {
-		const sessionId = new URLSearchParams(window.location.search).get("session_id");
+		const sessionId = new URLSearchParams(window.location.search).get('session_id');
 		if (sessionId) {
 			checkoutSuccessMutation.mutate(sessionId);
 		} else {
-			setError("No session ID found in the URL");
+			setError('No session ID found in the URL');
 		}
-	}, []);
+	}, [checkoutSuccessMutation.mutate]);
 
 	if (checkoutSuccessMutation.isPending) {
 		return <LoadingSpinner />;
@@ -48,7 +49,7 @@ const PurchaseSuccessPage = () => {
 					<h1 className='text-2xl font-bold text-destructive mb-4'>Error</h1>
 					<p className='text-muted-foreground'>{error}</p>
 					<Link
-						to={"/"}
+						to={'/'}
 						className='mt-4 inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 px-4 rounded-lg transition duration-300'
 					>
 						Go Home
@@ -79,7 +80,7 @@ const PurchaseSuccessPage = () => {
 					</h1>
 
 					<p className='text-muted-foreground text-center mb-2'>
-						Thank you for your order. {"We're"} processing it now.
+						Thank you for your order. {'We\'re'} processing it now.
 					</p>
 					<p className='text-primary text-center text-sm mb-6'>
 						Check your email for order details and updates.
@@ -104,7 +105,7 @@ const PurchaseSuccessPage = () => {
 							Thanks for trusting us!
 						</button>
 						<Link
-							to={"/"}
+							to={'/'}
 							className='w-full bg-muted hover:bg-muted/80 text-primary font-bold py-2 px-4 
             rounded-lg transition duration-300 flex items-center justify-center'
 						>

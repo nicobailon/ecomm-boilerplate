@@ -1,12 +1,13 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IOrderDocument extends Document {
+  _id: mongoose.Types.ObjectId;
   user: mongoose.Types.ObjectId;
-  products: Array<{
+  products: {
     product: mongoose.Types.ObjectId;
     quantity: number;
     price: number;
-  }>;
+  }[];
   totalAmount: number;
   stripeSessionId: string;
 }
@@ -15,14 +16,14 @@ const orderSchema = new Schema<IOrderDocument>(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
     products: [
       {
         product: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
+          ref: 'Product',
           required: true,
         },
         quantity: {
@@ -47,7 +48,7 @@ const orderSchema = new Schema<IOrderDocument>(
       unique: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 orderSchema.index({ user: 1 });

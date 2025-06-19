@@ -16,7 +16,7 @@ export const createMockSession = (): mongoose.ClientSession => {
   return session;
 };
 
-export const createSessionableQuery = <T>(result: T | null) => {
+export const createSessionableQuery = <T>(result: T | null): unknown => {
   const mockQuery = {
     session: vi.fn().mockReturnThis(),
     then: (resolve: (value: T | null) => void) => {
@@ -30,13 +30,13 @@ export const createSessionableQuery = <T>(result: T | null) => {
   return mockQuery;
 };
 
-export const createPopulatableQuery = <T>(result: T) => ({
+export const createPopulatableQuery = <T>(result: T): unknown => ({
   populate: vi.fn().mockReturnValue({
     populate: vi.fn().mockResolvedValue(result),
   }),
 });
 
-export const createSortableQuery = <T>(results: T[]) => ({
+export const createSortableQuery = <T>(results: T[]): unknown => ({
   sort: vi.fn().mockReturnValue({
     limit: vi.fn().mockReturnValue({
       populate: vi.fn().mockReturnValue({
@@ -46,11 +46,11 @@ export const createSortableQuery = <T>(results: T[]) => ({
   }),
 });
 
-export const createSelectableQuery = <T>(result: T) => ({
+export const createSelectableQuery = <T>(result: T): unknown => ({
   select: vi.fn().mockResolvedValue(result),
 });
 
-export const createChainableQuery = <T>(result: T) => ({
+export const createChainableQuery = <T>(result: T): unknown => ({
   select: vi.fn().mockReturnValue({
     session: vi.fn().mockResolvedValue(result),
   }),
@@ -61,7 +61,7 @@ export const mockObjectId = (id: string): mongoose.Types.ObjectId => ({
   equals: (otherId: unknown) => {
     if (typeof otherId === 'string') return id === otherId;
     if (otherId && typeof otherId === 'object' && 'toString' in otherId) {
-      return id === otherId.toString();
+      return id === String(otherId);
     }
     return false;
   },

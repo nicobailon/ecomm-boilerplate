@@ -30,17 +30,17 @@ export const useGuestCartSync = () => {
       try {
         await Promise.all(
           guestCart.cartItems.map((item) =>
-            addToCart.mutateAsync(item.product)
-          )
+            addToCart.mutateAsync(item.product),
+          ),
         );
 
         await clearGuestCart.mutateAsync();
         
-        queryClient.invalidateQueries({ queryKey: ['cart'] });
+        void queryClient.invalidateQueries({ queryKey: ['cart'] });
         
         toast.success(
           `Added ${guestCart.cartItems.length} item(s) to your cart`,
-          { id: toastId }
+          { id: toastId },
         );
       } catch (error) {
         console.error('Failed to sync guest cart:', error);
@@ -49,6 +49,6 @@ export const useGuestCartSync = () => {
       }
     };
 
-    syncGuestCart();
+    void syncGuestCart();
   }, [user, guestCart, addToCart, clearGuestCart, queryClient]);
 };

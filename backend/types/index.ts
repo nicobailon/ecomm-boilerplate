@@ -30,11 +30,11 @@ export interface IProduct {
 export interface IOrder {
   _id?: string;
   user: string;
-  products: Array<{
+  products: {
     product: string;
     quantity: number;
     price: number;
-  }>;
+  }[];
   totalAmount: number;
   stripeSessionId: string;
   createdAt?: Date;

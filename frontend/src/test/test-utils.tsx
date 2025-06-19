@@ -1,5 +1,6 @@
-import { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import type { RenderOptions } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from '@/providers/theme-provider';
@@ -24,9 +25,7 @@ const createTestQueryClient = () =>
 
 // Get or create shared QueryClient instance
 const getSharedQueryClient = () => {
-  if (!sharedQueryClient) {
-    sharedQueryClient = createTestQueryClient();
-  }
+  sharedQueryClient ??= createTestQueryClient();
   return sharedQueryClient;
 };
 
@@ -44,10 +43,10 @@ const customRender = (
     useSharedQueryClient = true,
     theme = 'light',
     ...renderOptions 
-  }: CustomRenderOptions = {}
+  }: CustomRenderOptions = {},
 ) => {
   // Use provided queryClient, shared instance, or create new one
-  const client = queryClient || (useSharedQueryClient ? getSharedQueryClient() : createTestQueryClient());
+  const client = queryClient ?? (useSharedQueryClient ? getSharedQueryClient() : createTestQueryClient());
   
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <ThemeProvider defaultTheme={theme}>
@@ -99,7 +98,7 @@ export function createMockApiResponse<T>(data: T, overrides = {}) {
 // Create wrapper for renderHook
 export const createWrapper = (useSharedQueryClient = true, theme: 'light' | 'dark' | 'system' = 'light') => {
   const queryClient = useSharedQueryClient ? getSharedQueryClient() : createTestQueryClient();
-  return ({ children }: { children: React.ReactNode }) => (
+  const TestWrapper = ({ children }: { children: React.ReactNode }) => (
     <ThemeProvider defaultTheme={theme}>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
@@ -108,6 +107,8 @@ export const createWrapper = (useSharedQueryClient = true, theme: 'light' | 'dar
       </BrowserRouter>
     </ThemeProvider>
   );
+  TestWrapper.displayName = 'TestWrapper';
+  return TestWrapper;
 };
 
 // Utility to reset shared QueryClient between test suites

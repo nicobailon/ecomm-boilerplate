@@ -24,6 +24,15 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface Cart {
+  cartItems: (CartItem & { product: Product })[];
+  subtotal: number;
+  totalAmount: number;
+  appliedCoupon: {
+    code: string;
+    discountPercentage: number;
+  } | null;
+}
 
 export interface Coupon {
   code: string;
@@ -32,8 +41,25 @@ export interface Coupon {
   isActive: boolean;
 }
 
+export interface Collection {
+  _id: string;
+  name: string;
+  description?: string;
+  slug: string;
+  owner: string | { _id: string; name: string; email: string };
+  products: (string | Product)[];
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CollectionListResponse {
+  collections: Collection[];
+  nextCursor: string | null;
+}
+
 // API Response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -62,7 +88,6 @@ export interface DailySalesData {
   revenue: number;
 }
 
-
 // Shared constants for navigation
 export const NAVIGATION_DELAY = 1500; // ms
 
@@ -80,7 +105,7 @@ export interface NavigationState {
   highlightId?: string;
 }
 
-export type TabId = 'create' | 'products' | 'analytics' | 'collections';
+export type TabId = 'create' | 'products' | 'analytics' | 'collections' | 'discounts';
 
 // CreateProductForm callback props
 export interface CreateProductFormProps {

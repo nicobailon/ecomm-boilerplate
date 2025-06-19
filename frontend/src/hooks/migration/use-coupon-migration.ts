@@ -9,10 +9,16 @@ export function useApplyCoupon() {
   const restMutation = useApplyCouponREST();
   const queryClient = useQueryClient();
   
-  const trpcMutation = trpc.coupon.validate.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      toast.success('Coupon applied successfully');
+  const trpcMutation = trpc.coupon.applyCoupon.useMutation({
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
+      if (data.cart) {
+        queryClient.setQueryData(['cart'], data.cart);
+      }
+      toast.success(data.message || 'Coupon applied successfully');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to apply coupon');
     },
   });
 
@@ -34,10 +40,32 @@ export function useApplyCoupon() {
 
 export function useRemoveCoupon() {
   const restMutation = useRemoveCouponREST();
+  const queryClient = useQueryClient();
   
-  // tRPC doesn't have a remove coupon endpoint, so we'll use REST for now
+  const trpcMutation = trpc.coupon.removeCoupon.useMutation({
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: ['cart'] });
+      if (data.cart) {
+        queryClient.setQueryData(['cart'], data.cart);
+      }
+      toast.success(data.message || 'Coupon removed successfully');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to remove coupon');
+    },
+  });
+  
   if (FEATURE_FLAGS.USE_TRPC_COUPONS) {
-    return restMutation;
+    return {
+      mutate: trpcMutation.mutate,
+      mutateAsync: trpcMutation.mutateAsync,
+      isLoading: trpcMutation.isPending,
+      isError: trpcMutation.isError,
+      error: trpcMutation.error,
+      data: trpcMutation.data,
+      isPending: trpcMutation.isPending,
+      isSuccess: trpcMutation.isSuccess,
+    };
   }
 
   return restMutation;

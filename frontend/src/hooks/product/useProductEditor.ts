@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Product } from '@/types';
+import type { Product } from '@/types';
 
 interface UseProductEditorReturn {
   selectedProduct: Product | null;

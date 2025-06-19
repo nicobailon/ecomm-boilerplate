@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Product } from '@/types';
+import type { Product } from '@/types';
+import type {
+  GuestCartData} from './guestCart';
 import {
   readGuestCart,
   addToGuestCart,
   updateGuestCartQuantity,
   removeFromGuestCart,
   clearGuestCart,
-  GuestCartData,
 } from './guestCart';
 
 export const useGuestCart = () => {
@@ -47,7 +48,7 @@ export const useGuestAddToCart = () => {
             cartItems: old.cartItems.map(item =>
               item.product._id === product._id
                 ? { ...item, quantity: item.quantity + 1 }
-                : item
+                : item,
             ),
           };
         }
@@ -61,13 +62,15 @@ export const useGuestAddToCart = () => {
       return { previousCart };
     },
     onError: (err, _product, context) => {
-      queryClient.setQueryData(['guestCart'], context?.previousCart);
+      if (context?.previousCart) {
+        queryClient.setQueryData(['guestCart'], context.previousCart);
+      }
       if (!(err instanceof Error && err.message.includes('Guest cart is limited'))) {
         toast.error('Failed to add to cart');
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['guestCart'] });
+      void queryClient.invalidateQueries({ queryKey: ['guestCart'] });
     },
     onSuccess: () => {
       toast.success('Added to cart');
@@ -101,7 +104,7 @@ export const useGuestUpdateQuantity = () => {
           cartItems: old.cartItems.map(item =>
             item.product._id === productId
               ? { ...item, quantity }
-              : item
+              : item,
           ),
         };
       });
@@ -112,7 +115,7 @@ export const useGuestUpdateQuantity = () => {
       queryClient.setQueryData(['guestCart'], context?.previousCart);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['guestCart'] });
+      void queryClient.invalidateQueries({ queryKey: ['guestCart'] });
     },
   });
 };
@@ -143,7 +146,7 @@ export const useGuestRemoveFromCart = () => {
       queryClient.setQueryData(['guestCart'], context?.previousCart);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['guestCart'] });
+      void queryClient.invalidateQueries({ queryKey: ['guestCart'] });
     },
     onSuccess: () => {
       toast.success('Removed from cart');
@@ -160,7 +163,7 @@ export const useGuestClearCart = () => {
       return Promise.resolve();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['guestCart'] });
+      void queryClient.invalidateQueries({ queryKey: ['guestCart'] });
     },
   });
 };

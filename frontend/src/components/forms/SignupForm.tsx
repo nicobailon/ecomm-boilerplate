@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { SignupInput, signupSchema } from '@/lib/validations';
+import type { SignupInput} from '@/lib/validations';
+import { signupSchema } from '@/lib/validations';
 import { useSignup } from '@/hooks/auth/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -21,7 +22,7 @@ export const SignupForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={(...args) => void handleSubmit(onSubmit)(...args)} className="space-y-6">
       <Input
         label="Full Name"
         type="text"

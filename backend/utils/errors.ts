@@ -10,7 +10,7 @@ export class CollectionError extends Error {
   constructor(
     public code: CollectionErrorCode,
     public message: string,
-    public statusCode: number = 400
+    public statusCode = 400,
   ) {
     super(message);
     this.name = 'CollectionError';

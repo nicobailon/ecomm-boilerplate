@@ -1,9 +1,10 @@
-import { TRPCLink } from '@trpc/client';
+import type { TRPCLink } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
 import { apiClient } from './api-client';
+import type { AppRouter } from './trpc';
 
 let isRefreshing = false;
-let refreshPromise: Promise<any> | null = null;
+let refreshPromise: Promise<unknown> | null = null;
 
 const refreshToken = async () => {
   if (isRefreshing && refreshPromise) {
@@ -20,7 +21,7 @@ const refreshToken = async () => {
   return refreshPromise;
 };
 
-export const authLink: TRPCLink<any> = () => {
+export const authLink: TRPCLink<AppRouter> = () => {
   return ({ next, op }) => {
     return observable((observer) => {
       const unsubscribe = next(op).subscribe({
@@ -29,7 +30,8 @@ export const authLink: TRPCLink<any> = () => {
         },
         error(err) {
           // Check if error is due to unauthorized
-          if (err?.data?.code === 'UNAUTHORIZED' && !op.context.skipRefresh) {
+          const errorData = err as { data?: { code?: string } };
+          if (errorData.data?.code === 'UNAUTHORIZED' && !op.context.skipRefresh) {
             // Attempt to refresh token
             refreshToken()
               .then(() => {

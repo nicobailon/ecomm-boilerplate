@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { Product, PaginatedResponse } from '@/types';
-import { ProductInput } from '@/lib/validations';
+import type { Product, PaginatedResponse } from '@/types';
+import type { ProductInput } from '@/lib/validations';
 import { toast } from 'sonner';
 
 export const useProducts = (page = 1, limit = 12) => {
@@ -13,7 +13,7 @@ export const useProducts = (page = 1, limit = 12) => {
       params.append('limit', limit.toString());
 
       const { data } = await apiClient.get<PaginatedResponse<Product>>(
-        `/products?${params.toString()}`
+        `/products?${params.toString()}`,
       );
       return data;
     },
@@ -39,7 +39,7 @@ export const useCreateProduct = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      void queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
 };
@@ -66,8 +66,8 @@ export const useUpdateProduct = () => {
           const updatedData = {
             ...data,
             data: data.data.map((product) =>
-              product._id === updatedProduct.id ? { ...product, ...updatedProduct.data } : product
-            )
+              product._id === updatedProduct.id ? { ...product, ...updatedProduct.data } : product,
+            ),
           };
           queryClient.setQueryData(queryKey, updatedData);
         }
@@ -87,7 +87,7 @@ export const useUpdateProduct = () => {
     },
     onSettled: () => {
       // Always refetch after error or success
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      void queryClient.invalidateQueries({ queryKey: ['products'] });
     },
     // Remove the default onSuccess toast to avoid duplicates
   });
@@ -101,7 +101,7 @@ export const useDeleteProduct = () => {
       await apiClient.delete(`/products/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      void queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Product deleted successfully');
     },
   });
@@ -113,12 +113,12 @@ export const useToggleFeatured = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const { data } = await apiClient.patch<Product>(
-        `/products/${id}/toggle-featured`
+        `/products/${id}/toggle-featured`,
       );
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      void queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Product updated');
     },
   });

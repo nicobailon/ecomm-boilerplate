@@ -76,7 +76,7 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
     
     const search = searchValue.toLowerCase().trim();
     return allCollections.filter(
-      (c) => c.name.toLowerCase().includes(search)
+      (c) => c.name.toLowerCase().includes(search),
     );
   }, [allCollections, searchValue]);
   
@@ -146,11 +146,15 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
   }, [isOpen]);
   
   const handleCreateWithRetry = useCallback(async (name: string): Promise<string> => {
+    if (!onCreateCollection) {
+      throw new Error('onCreateCollection is not provided');
+    }
+    
     let lastError: Error | null = null;
     
     for (let i = 0; i <= MAX_RETRIES; i++) {
       try {
-        const result = await onCreateCollection!(name);
+        const result = await onCreateCollection(name);
         setRetryCount(0);
         return result;
       } catch (error) {
@@ -158,14 +162,14 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
         
         if (i < MAX_RETRIES) {
           await new Promise((resolve) => 
-            setTimeout(resolve, Math.pow(2, i) * 1000)
+            setTimeout(resolve, Math.pow(2, i) * 1000),
           );
           setRetryCount(i + 1);
         }
       }
     }
     
-    throw lastError;
+    throw lastError ?? new Error('Failed to create collection after retries');
   }, [onCreateCollection]);
   
   const handleCreate = useCallback(async () => {
@@ -194,7 +198,7 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
       
       onChange(newId);
       setOptimisticCollections((prev) => 
-        prev.filter((c) => c._id !== tempId)
+        prev.filter((c) => c._id !== tempId),
       );
       
       closeDropdown();
@@ -202,13 +206,13 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
       // Only update state if mounted
       if (isMountedRef.current) {
         setOptimisticCollections((prev) => 
-          prev.filter((c) => c._id !== tempId)
+          prev.filter((c) => c._id !== tempId),
         );
         onChange('');
         setLocalError(error as Error);
         // Also show toast error
         if (error instanceof Error) {
-          toast.error(error.message || 'Failed to create collection');
+          toast.error(error.message ?? 'Failed to create collection');
         }
       }
     } finally {
@@ -233,21 +237,21 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
       case 'ArrowDown':
         e.preventDefault();
         setHighlightedIndex((prev) => 
-          prev < totalItems - 1 ? prev + 1 : 0
+          prev < totalItems - 1 ? prev + 1 : 0,
         );
         break;
         
       case 'ArrowUp':
         e.preventDefault();
         setHighlightedIndex((prev) => 
-          prev > 0 ? prev - 1 : totalItems - 1
+          prev > 0 ? prev - 1 : totalItems - 1,
         );
         break;
         
       case 'Enter':
         e.preventDefault();
         if (showCreateOption && highlightedIndex === filteredCollections.length) {
-          handleCreate();
+          void handleCreate();
         } else if (filteredCollections[highlightedIndex]) {
           onChange(filteredCollections[highlightedIndex]._id);
           closeDropdown();
@@ -301,13 +305,13 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
           disabled={disabled}
           className={cn(
             'w-full justify-between',
-            error && 'border-destructive focus-visible:ring-destructive'
+            error && 'border-destructive focus-visible:ring-destructive',
           )}
           onClick={() => isOpen ? closeDropdown() : openDropdown()}
           onKeyDown={handleKeyDown}
         >
           <span className={cn('truncate', !selectedCollection && 'text-muted-foreground')}>
-            {selectedCollection?.name || placeholder}
+            {selectedCollection?.name ?? placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -357,7 +361,7 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
                         'flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm',
                         'hover:bg-accent hover:text-accent-foreground',
                         value === collection._id && 'bg-accent',
-                        highlightedIndex === index && 'bg-accent'
+                        highlightedIndex === index && 'bg-accent',
                       )}
                       onClick={(e) => {
                         e.preventDefault();
@@ -369,7 +373,7 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
                       <Check
                         className={cn(
                           'mr-2 h-4 w-4',
-                          value === collection._id ? 'opacity-100' : 'opacity-0'
+                          value === collection._id ? 'opacity-100' : 'opacity-0',
                         )}
                       />
                       {collection.name}
@@ -386,12 +390,12 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
                         'hover:bg-accent hover:text-accent-foreground',
                         'border-t',
                         highlightedIndex === filteredCollections.length && 'bg-accent',
-                        isCreating && 'opacity-50 cursor-wait'
+                        isCreating && 'opacity-50 cursor-wait',
                       )}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleCreate();
+                        void handleCreate();
                       }}
                     >
                       {isCreating ? (
@@ -400,7 +404,7 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
                         <Plus className="mr-2 h-4 w-4" />
                       )}
                       <span aria-label={`Create new collection named ${searchValue}`}>
-                        Create "{searchValue}"
+                        Create &ldquo;{searchValue}&rdquo;
                         {retryCount > 0 && (
                           <span className="ml-1 text-xs text-muted-foreground">
                             (Retry {retryCount}/{MAX_RETRIES})
@@ -424,9 +428,9 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
         )}
       </div>
       
-      {(error || localError) && (
+      {(error ?? localError) && (
         <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-destructive">
-          {error || localError?.message}
+          {error ?? localError?.message}
         </p>
       )}
     </div>

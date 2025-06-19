@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 export function useClickOutside<T extends HTMLElement>(
   handler: () => void,
   isActive = true,
-  portalId?: string
+  portalId?: string,
 ) {
   const ref = useRef<T>(null);
   

@@ -61,7 +61,7 @@ describe('Drawer', () => {
     render(
       <Drawer isOpen={true} onClose={vi.fn()}>
         <div>Content only</div>
-      </Drawer>
+      </Drawer>,
     );
     
     expect(screen.getByText('Content only')).toBeInTheDocument();

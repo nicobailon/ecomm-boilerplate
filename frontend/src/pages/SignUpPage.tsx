@@ -1,7 +1,7 @@
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
-import { SignupForm } from "@/components/forms/SignupForm";
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { SignupForm } from '@/components/forms/SignupForm';
 
 const SignUpPage: React.FC = () => {
 	return (
@@ -27,7 +27,7 @@ const SignUpPage: React.FC = () => {
 					<SignupForm />
 
 					<p className='mt-8 text-center text-sm text-muted-foreground'>
-						Already have an account?{" "}
+						Already have an account?{' '}
 						<Link to='/login' className='font-medium text-primary hover:text-primary/80'>
 							Login here <ArrowRight className='inline h-4 w-4' />
 						</Link>

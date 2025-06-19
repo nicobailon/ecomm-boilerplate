@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useProducts } from '@/hooks/migration/use-products-migration';
-import { Product } from '@/types';
+import type { Product } from '@/types';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -28,17 +28,17 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
   const [page, setPage] = useState(1);
   const [localSelection, setLocalSelection] = useState<string[]>(selectedProductIds);
   
-  const { data, isLoading } = useProducts(page, 20, debouncedSearchQuery || undefined);
+  const { data, isLoading } = useProducts(page, 20, debouncedSearchQuery ?? undefined);
   
   // Handle both REST and tRPC response formats
   const products: Product[] = data 
     ? 'products' in data 
       ? (data.products as unknown as Product[])
-      : (data as {data?: Product[]}).data || []
+      : (data as {data?: Product[]}).data ?? []
     : [];
   
   const pagination = data?.pagination;
-  const totalPages = pagination?.pages || 1;
+  const totalPages = pagination?.pages ?? 1;
 
   const handleToggleProduct = (productId: string) => {
     if (showApplyButton) {
@@ -93,12 +93,12 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
     (localSelection.length !== selectedProductIds.length ||
      !localSelection.every(id => selectedProductIds.includes(id)));
 
-  const debouncedSearch = useCallback(
-    debounce((value: string) => {
+  const debouncedSearch = useMemo(
+    () => debounce((value: string) => {
       setDebouncedSearchQuery(value);
       setPage(1); // Reset to first page on search
     }, 300),
-    []
+    [],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,14 +112,14 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
 
   if (isLoading) {
     return (
-      <div className={cn("flex justify-center items-center h-64", className)}>
+      <div className={cn('flex justify-center items-center h-64', className)}>
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       {/* Search and Controls */}
       <div className="space-y-3">
         <div className="relative">

@@ -10,7 +10,7 @@ export const signupSchema = loginSchema.extend({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: 'Passwords don\'t match',
   path: ['confirmPassword'],
 });
 
@@ -35,6 +35,28 @@ export const dailySalesDataSchema = z.object({
   revenue: z.number(),
 }) satisfies z.ZodType<DailySalesData>;
 
+export const discountFormSchema = z.object({
+  code: z.string()
+    .min(3, 'Code must be at least 3 characters')
+    .transform(val => val.toUpperCase()),
+  discountPercentage: z.number()
+    .min(0, 'Discount must be at least 0%')
+    .max(100, 'Discount cannot exceed 100%'),
+  expirationDate: z.date()
+    .refine(date => date > new Date(), 'Expiration date must be in the future'),
+  isActive: z.boolean(),
+  description: z.string()
+    .max(500, 'Description cannot exceed 500 characters')
+    .optional(),
+  maxUses: z.number()
+    .min(1, 'Maximum uses must be at least 1')
+    .optional(),
+  minimumPurchaseAmount: z.number()
+    .min(0, 'Minimum purchase amount cannot be negative')
+    .optional(),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type ProductInput = z.infer<typeof productSchema>;
+export type DiscountFormInput = z.infer<typeof discountFormSchema>;

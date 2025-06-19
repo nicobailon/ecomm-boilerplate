@@ -18,13 +18,13 @@ const slideVariants = {
   left: {
     hidden: { x: '-100%' },
     visible: { x: 0 },
-    exit: { x: '-100%' }
+    exit: { x: '-100%' },
   },
   right: {
     hidden: { x: '100%' },
     visible: { x: 0 },
-    exit: { x: '100%' }
-  }
+    exit: { x: '100%' },
+  },
 };
 
 export const Drawer = React.forwardRef<HTMLDivElement, DrawerProps>(
@@ -53,23 +53,23 @@ export const Drawer = React.forwardRef<HTMLDivElement, DrawerProps>(
                   transition={{
                     type: 'spring',
                     damping: 30,
-                    stiffness: 300
+                    stiffness: 300,
                   }}
                   className={cn(
                     'fixed z-50 gap-4 bg-background p-6 shadow-lg',
                     'h-full w-full sm:max-w-lg',
                     'focus:outline-none',
                     side === 'right' ? 'right-0 top-0' : 'left-0 top-0',
-                    className
+                    className,
                   )}
                 >
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <Dialog.Title className={cn(
-                        "text-lg font-semibold text-foreground",
-                        !title && "sr-only"
+                        'text-lg font-semibold text-foreground',
+                        !title && 'sr-only',
                       )}>
-                        {title || 'Dialog'}
+                        {title ?? 'Dialog'}
                       </Dialog.Title>
                       {description && (
                         <Dialog.Description className="text-sm text-muted-foreground">
@@ -96,7 +96,7 @@ export const Drawer = React.forwardRef<HTMLDivElement, DrawerProps>(
         </AnimatePresence>
       </Dialog.Root>
     );
-  }
+  },
 );
 
 Drawer.displayName = 'Drawer';

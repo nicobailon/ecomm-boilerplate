@@ -2,14 +2,19 @@ import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IUserDocument extends Document {
+  _id: mongoose.Types.ObjectId;
   name: string;
   email: string;
   password: string;
   role: 'customer' | 'admin';
-  cartItems: Array<{
+  cartItems: {
     product: mongoose.Types.ObjectId;
     quantity: number;
-  }>;
+  }[];
+  appliedCoupon: {
+    code: string;
+    discountPercentage: number;
+  } | null;
   comparePassword(password: string): Promise<boolean>;
 }
 
@@ -17,19 +22,19 @@ const userSchema = new Schema<IUserDocument>(
   {
     name: {
       type: String,
-      required: [true, "Name is required"],
+      required: [true, 'Name is required'],
     },
     email: {
       type: String,
-      required: [true, "Email is required"],
+      required: [true, 'Email is required'],
       unique: true,
       lowercase: true,
       trim: true,
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
-      minlength: [6, "Password must be at least 6 characters long"],
+      required: [true, 'Password is required'],
+      minlength: [6, 'Password must be at least 6 characters long'],
     },
     cartItems: [
       {
@@ -39,25 +44,40 @@ const userSchema = new Schema<IUserDocument>(
         },
         product: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
+          ref: 'Product',
         },
       },
     ],
     role: {
       type: String,
-      enum: ["customer", "admin"],
-      default: "customer",
+      enum: ['customer', 'admin'],
+      default: 'customer',
+    },
+    appliedCoupon: {
+      type: {
+        code: {
+          type: String,
+          required: true,
+        },
+        discountPercentage: {
+          type: Number,
+          required: true,
+          min: 0,
+          max: 100,
+        },
+      },
+      default: null,
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 userSchema.index({ role: 1 });
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -68,7 +88,7 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-userSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
+userSchema.methods.comparePassword = async function (this: IUserDocument, password: string): Promise<boolean> {
   return bcrypt.compare(password, this.password);
 };
 

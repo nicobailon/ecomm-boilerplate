@@ -16,10 +16,10 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["node"]
+    "types": ["node", "vitest/globals"]
   },
   "include": ["backend/**/*"],
-  "exclude": ["node_modules", "dist", "frontend/**/*", "**/*.test.ts"],
+  "exclude": ["node_modules", "dist", "frontend/**/*"],
   "ts-node": {
     "esm": true
   }

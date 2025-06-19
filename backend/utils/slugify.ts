@@ -1,7 +1,6 @@
-import * as slugifyModule from 'slugify';
+import slugifyModule from 'slugify';
 
-// Handle both default and named exports
-const slugify = (slugifyModule as any).default || slugifyModule;
+const slugify = slugifyModule as unknown as (text: string, options?: { lower?: boolean; strict?: boolean; trim?: boolean }) => string;
 
 export const generateSlug = (text: string): string => {
   return slugify(text, {
@@ -13,9 +12,9 @@ export const generateSlug = (text: string): string => {
 
 export const generateUniqueSlug = async (
   text: string,
-  checkExistence: (slug: string) => Promise<boolean>
+  checkExistence: (slug: string) => Promise<boolean>,
 ): Promise<string> => {
-  let baseSlug = generateSlug(text);
+  const baseSlug = generateSlug(text);
   let slug = baseSlug;
   let counter = 1;
 

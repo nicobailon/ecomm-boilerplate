@@ -8,7 +8,17 @@ vi.mock('../../models/product.model.js');
 describe('CartService - calculateCartTotals', () => {
   let cartService: CartService;
   
-  const createMockUser = (cartItems: Array<{ product: string; quantity: number }> = [], appliedCoupon: { code: string; discountPercentage: number } | null = null) => ({
+  const createMockUser = (cartItems: Array<{ 
+    product: string; 
+    quantity: number;
+    variantId?: string;
+    variantDetails?: {
+      size?: string;
+      color?: string;
+      price: number;
+      sku?: string;
+    };
+  }> = [], appliedCoupon: { code: string; discountPercentage: number } | null = null) => ({
     _id: new mongoose.Types.ObjectId(),
     email: 'test@example.com',
     cartItems,
@@ -16,14 +26,22 @@ describe('CartService - calculateCartTotals', () => {
     save: vi.fn()
   });
 
-  const createMockProduct = (id: string, price: number, name = 'Test Product') => ({
+  const createMockProduct = (id: string, price: number, name = 'Test Product', variants: Array<{
+    variantId: string;
+    size?: string;
+    color?: string;
+    price: number;
+    inventory: number;
+    sku?: string;
+  }> = []) => ({
     _id: id,
     name,
     price,
     image: 'test.jpg',
     description: 'Test description',
     category: 'test',
-    isFeatured: false
+    isFeatured: false,
+    variants
   });
 
   beforeEach(() => {
@@ -340,6 +358,335 @@ describe('CartService - calculateCartTotals', () => {
         code: 'UPDATE15',
         discountPercentage: 15
       });
+    });
+  });
+
+  describe('variant support', () => {
+    it('should calculate cart with variant items correctly', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const user = createMockUser([
+        { 
+          product: productId, 
+          quantity: 2,
+          variantId: 'var-1',
+          variantDetails: {
+            size: 'M',
+            color: 'Blue',
+            price: 29.99,
+            sku: 'SHIRT-M-BLUE'
+          }
+        }
+      ]);
+
+      const mockProduct = createMockProduct(productId, 19.99, 'T-Shirt', [
+        { variantId: 'var-1', size: 'M', color: 'Blue', price: 29.99, inventory: 10, sku: 'SHIRT-M-BLUE' }
+      ]);
+      vi.mocked(Product.find).mockResolvedValue([mockProduct]);
+
+      const result = await cartService.calculateCartTotals(user as any);
+
+      expect(result.cartItems[0].price).toBe(29.99); // Should use variant price
+      expect(result.cartItems[0].variantId).toBe('var-1');
+      expect(result.cartItems[0].variantDetails).toEqual({
+        size: 'M',
+        color: 'Blue',
+        price: 29.99,
+        sku: 'SHIRT-M-BLUE'
+      });
+      expect(result.subtotal).toBe(59.98); // 29.99 * 2
+    });
+
+    it('should handle mixed cart with variants and non-variants', async () => {
+      const product1Id = new mongoose.Types.ObjectId().toString();
+      const product2Id = new mongoose.Types.ObjectId().toString();
+      
+      const user = createMockUser([
+        { 
+          product: product1Id, 
+          quantity: 1,
+          variantId: 'var-xl',
+          variantDetails: {
+            size: 'XL',
+            price: 35.00
+          }
+        },
+        { 
+          product: product2Id, 
+          quantity: 3
+        }
+      ]);
+
+      const mockProducts = [
+        createMockProduct(product1Id, 30.00, 'Hoodie', [
+          { variantId: 'var-xl', size: 'XL', price: 35.00, inventory: 5 }
+        ]),
+        createMockProduct(product2Id, 15.00, 'Basic Item')
+      ];
+      vi.mocked(Product.find).mockResolvedValue(mockProducts);
+
+      const result = await cartService.calculateCartTotals(user as any);
+
+      expect(result.subtotal).toBe(80.00); // (35.00 * 1) + (15.00 * 3)
+      expect(result.cartItems).toHaveLength(2);
+      expect(result.cartItems[0].price).toBe(35.00); // Variant price
+      expect(result.cartItems[1].price).toBe(15.00); // Base price
+    });
+
+    it('should fetch variant details if not cached', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const user = createMockUser([
+        { 
+          product: productId, 
+          quantity: 1,
+          variantId: 'var-red-s' // No variantDetails cached
+        }
+      ]);
+
+      const mockProduct = createMockProduct(productId, 20.00, 'Polo Shirt', [
+        { variantId: 'var-red-s', size: 'S', color: 'Red', price: 22.50, inventory: 8, sku: 'POLO-S-RED' }
+      ]);
+      vi.mocked(Product.find).mockResolvedValue([mockProduct]);
+
+      const result = await cartService.calculateCartTotals(user as any);
+
+      expect(result.cartItems[0].price).toBe(22.50);
+      expect(result.cartItems[0].variantDetails).toEqual({
+        size: 'S',
+        color: 'Red',
+        price: 22.50,
+        sku: 'POLO-S-RED'
+      });
+    });
+
+    it('should handle same product with different variants', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const user = createMockUser([
+        { 
+          product: productId, 
+          quantity: 2,
+          variantId: 'var-black-m',
+          variantDetails: { color: 'Black', size: 'M', price: 25.00 }
+        },
+        { 
+          product: productId, 
+          quantity: 1,
+          variantId: 'var-white-l',
+          variantDetails: { color: 'White', size: 'L', price: 27.00 }
+        }
+      ]);
+
+      const mockProduct = createMockProduct(productId, 20.00, 'Shirt', [
+        { variantId: 'var-black-m', size: 'M', color: 'Black', price: 25.00, inventory: 5 },
+        { variantId: 'var-white-l', size: 'L', color: 'White', price: 27.00, inventory: 3 }
+      ]);
+      vi.mocked(Product.find).mockResolvedValue([mockProduct]);
+
+      const result = await cartService.calculateCartTotals(user as any);
+
+      expect(result.cartItems).toHaveLength(2);
+      expect(result.subtotal).toBe(77.00); // (25.00 * 2) + (27.00 * 1)
+    });
+
+    it('should apply coupon discount to variant prices', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const user = createMockUser(
+        [
+          { 
+            product: productId, 
+            quantity: 2,
+            variantId: 'premium-var',
+            variantDetails: { price: 100.00, sku: 'PREMIUM-001' }
+          }
+        ],
+        { code: 'SAVE30', discountPercentage: 30 }
+      );
+
+      const mockProduct = createMockProduct(productId, 80.00, 'Premium Item', [
+        { variantId: 'premium-var', price: 100.00, inventory: 10, sku: 'PREMIUM-001' }
+      ]);
+      vi.mocked(Product.find).mockResolvedValue([mockProduct]);
+
+      const result = await cartService.calculateCartTotals(user as any);
+
+      expect(result.subtotal).toBe(200.00); // 100.00 * 2
+      expect(result.totalAmount).toBe(140.00); // 30% off
+    });
+  });
+
+  describe('addToCart with variants', () => {
+    it('should add item with variant successfully', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const mockProduct = createMockProduct(productId, 20.00, 'T-Shirt', [
+        { variantId: 'var-1', size: 'M', color: 'Blue', price: 25.00, inventory: 5, sku: 'SHIRT-M-BLUE' }
+      ]);
+      
+      vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+
+      const user = createMockUser([]);
+      await cartService.addToCart(user as any, productId, 'var-1');
+
+      expect(user.save).toHaveBeenCalled();
+      expect(user.cartItems).toHaveLength(1);
+      expect(user.cartItems[0].variantId).toBe('var-1');
+      expect(user.cartItems[0].variantDetails).toEqual({
+        size: 'M',
+        color: 'Blue',
+        price: 25.00,
+        sku: 'SHIRT-M-BLUE'
+      });
+    });
+
+    it('should reject adding out of stock variant', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const mockProduct = createMockProduct(productId, 20.00, 'T-Shirt', [
+        { variantId: 'var-1', size: 'M', color: 'Blue', price: 25.00, inventory: 0, sku: 'SHIRT-M-BLUE' }
+      ]);
+      
+      vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+
+      const user = createMockUser([]);
+      
+      await expect(cartService.addToCart(user as any, productId, 'var-1'))
+        .rejects.toThrow('out of stock');
+    });
+
+    it('should reject adding non-existent variant', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const mockProduct = createMockProduct(productId, 20.00, 'T-Shirt', [
+        { variantId: 'var-1', size: 'M', color: 'Blue', price: 25.00, inventory: 5 }
+      ]);
+      
+      vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+
+      const user = createMockUser([]);
+      
+      await expect(cartService.addToCart(user as any, productId, 'non-existent'))
+        .rejects.toThrow('Variant with ID non-existent not found');
+    });
+
+    it('should increment quantity for existing variant item', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const mockProduct = createMockProduct(productId, 20.00, 'T-Shirt', [
+        { variantId: 'var-1', size: 'M', color: 'Blue', price: 25.00, inventory: 10 }
+      ]);
+      
+      vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+
+      const user = createMockUser([
+        { 
+          product: productId, 
+          quantity: 1,
+          variantId: 'var-1',
+          variantDetails: { size: 'M', color: 'Blue', price: 25.00 }
+        }
+      ]);
+
+      await cartService.addToCart(user as any, productId, 'var-1');
+
+      expect(user.cartItems).toHaveLength(1);
+      expect(user.cartItems[0].quantity).toBe(2);
+    });
+
+    it('should check inventory limits when adding to existing', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const mockProduct = createMockProduct(productId, 20.00, 'T-Shirt', [
+        { variantId: 'var-1', size: 'M', color: 'Blue', price: 25.00, inventory: 2 }
+      ]);
+      
+      vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+
+      const user = createMockUser([
+        { 
+          product: productId, 
+          quantity: 2,
+          variantId: 'var-1'
+        }
+      ]);
+
+      await expect(cartService.addToCart(user as any, productId, 'var-1'))
+        .rejects.toThrow('Cannot add more items. Only 2 available in stock');
+    });
+  });
+
+  describe('updateQuantity with variants', () => {
+    it('should update variant item quantity', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const user = createMockUser([
+        { 
+          product: productId, 
+          quantity: 2,
+          variantId: 'var-1'
+        }
+      ]);
+
+      await cartService.updateQuantity(user as any, productId, 5, 'var-1');
+
+      expect(user.cartItems[0].quantity).toBe(5);
+      expect(user.save).toHaveBeenCalled();
+    });
+
+    it('should check inventory when updating variant quantity', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const mockProduct = createMockProduct(productId, 20.00, 'T-Shirt', [
+        { variantId: 'var-1', size: 'M', color: 'Blue', price: 25.00, inventory: 3 }
+      ]);
+      
+      vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+
+      const user = createMockUser([
+        { 
+          product: productId, 
+          quantity: 1,
+          variantId: 'var-1'
+        }
+      ]);
+
+      await expect(cartService.updateQuantity(user as any, productId, 5, 'var-1'))
+        .rejects.toThrow('Cannot update quantity. Only 3 available in stock');
+    });
+
+    it('should remove variant item when quantity is 0', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const user = createMockUser([
+        { 
+          product: productId, 
+          quantity: 2,
+          variantId: 'var-1'
+        }
+      ]);
+
+      await cartService.updateQuantity(user as any, productId, 0, 'var-1');
+
+      expect(user.cartItems).toHaveLength(0);
+    });
+  });
+
+  describe('removeFromCart with variants', () => {
+    it('should remove specific variant item', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const user = createMockUser([
+        { product: productId, quantity: 1, variantId: 'var-1' },
+        { product: productId, quantity: 2, variantId: 'var-2' },
+        { product: productId, quantity: 1 } // No variant
+      ]);
+
+      await cartService.removeFromCart(user as any, productId, 'var-1');
+
+      expect(user.cartItems).toHaveLength(2);
+      expect(user.cartItems.find(item => item.variantId === 'var-1')).toBeUndefined();
+    });
+
+    it('should remove non-variant item when variantId is not specified', async () => {
+      const productId = new mongoose.Types.ObjectId().toString();
+      const user = createMockUser([
+        { product: productId, quantity: 1, variantId: 'var-1' },
+        { product: productId, quantity: 1 } // No variant
+      ]);
+
+      await cartService.removeFromCart(user as any, productId);
+
+      expect(user.cartItems).toHaveLength(1);
+      expect(user.cartItems[0].variantId).toBe('var-1');
     });
   });
 });

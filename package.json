@@ -22,7 +22,9 @@
 		"create-coupon": "tsx backend/scripts/create-coupon.ts",
 		"list-coupons": "tsx backend/scripts/list-coupons.ts",
 		"deactivate-coupon": "tsx backend/scripts/deactivate-coupon.ts",
-		"migrate-appliedCoupon": "tsx backend/scripts/migrate-appliedCoupon.ts"
+		"migrate-appliedCoupon": "tsx backend/scripts/migrate-appliedCoupon.ts",
+		"generate-slugs": "tsx backend/scripts/generate-slugs.ts",
+		"migrate-product-slugs": "tsx backend/scripts/migrate-product-slugs.ts"
 	},
 	"keywords": [],
 	"author": "",
@@ -47,6 +49,8 @@
 		"stripe": "^16.8.0",
 		"superjson": "2.2.2",
 		"uploadthing": "^7.7.2",
+		"uuid": "^11.1.0",
+		"winston": "^3.17.0",
 		"zod": "3.25.67"
 	},
 	"devDependencies": {
@@ -60,6 +64,7 @@
 		"@types/jsonwebtoken": "^9.0.10",
 		"@types/node": "^22.15.32",
 		"@types/supertest": "^6.0.3",
+		"@types/uuid": "^10.0.0",
 		"@vitest/coverage-v8": "^3.2.3",
 		"concurrently": "^9.1.2",
 		"eslint-plugin-react-you-might-not-need-an-effect": "^0.1.5",

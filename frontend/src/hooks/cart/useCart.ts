@@ -23,32 +23,59 @@ export const useAddToCart = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (product: Product | string) => {
-      const productId = typeof product === 'string' ? product : product._id;
-      const { data } = await apiClient.post<Cart>('/cart', { productId });
+    mutationFn: async (params: { product: Product; variantId?: string } | Product | string) => {
+      // Handle different parameter formats for backward compatibility
+      let productId: string;
+      let variantId: string | undefined;
+      
+      if (typeof params === 'string') {
+        productId = params;
+      } else if ('product' in params) {
+        productId = params.product._id;
+        variantId = params.variantId;
+      } else {
+        productId = params._id;
+      }
+      
+      const { data } = await apiClient.post<Cart>('/cart', { productId, variantId });
       return data;
     },
-    onMutate: async (product) => {
+    onMutate: async (params) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['cart'] });
 
       // Snapshot previous value
       const previousCart = queryClient.getQueryData<Cart>(['cart']);
 
-      // Get productId and product data
-      const productId = typeof product === 'string' ? product : product._id;
-      const productData = typeof product === 'string' ? null : product;
+      // Extract data based on parameter format
+      let productId: string;
+      let variantId: string | undefined;
+      let productData: Product | null = null;
+      
+      if (typeof params === 'string') {
+        productId = params;
+      } else if ('product' in params) {
+        productId = params.product._id;
+        variantId = params.variantId;
+        productData = params.product;
+      } else {
+        productId = params._id;
+        productData = params;
+      }
 
       // Optimistically update
       queryClient.setQueryData<Cart>(['cart'], (old) => {
         if (!old) return old;
         
-        const existingItem = old.cartItems.find(item => item.product._id === productId);
+        const existingItem = old.cartItems.find(item => 
+          item.product._id === productId && item.variantId === variantId
+        );
+        
         if (existingItem) {
           return {
             ...old,
             cartItems: old.cartItems.map(item =>
-              item.product._id === productId
+              item.product._id === productId && item.variantId === variantId
                 ? { ...item, quantity: item.quantity + 1 }
                 : item,
             ),
@@ -64,6 +91,7 @@ export const useAddToCart = () => {
               {
                 product: productData,
                 quantity: 1,
+                variantId,
               },
             ],
           };
@@ -91,11 +119,11 @@ export const useUpdateQuantity = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ productId, quantity }: { productId: string; quantity: number }) => {
-      const { data } = await apiClient.put<Cart>(`/cart/${productId}`, { quantity });
+    mutationFn: async ({ productId, quantity, variantId }: { productId: string; quantity: number; variantId?: string }) => {
+      const { data } = await apiClient.put<Cart>(`/cart/${productId}`, { quantity, variantId });
       return data;
     },
-    onMutate: async ({ productId, quantity }) => {
+    onMutate: async ({ productId, quantity, variantId }) => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });
       const previousCart = queryClient.getQueryData<Cart>(['cart']);
 
@@ -105,7 +133,7 @@ export const useUpdateQuantity = () => {
         return {
           ...old,
           cartItems: old.cartItems.map(item =>
-            item.product._id === productId
+            item.product._id === productId && item.variantId === variantId
               ? { ...item, quantity }
               : item,
           ),
@@ -134,20 +162,31 @@ export const useRemoveFromCart = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (productId: string) => {
-      const { data } = await apiClient.delete<Cart>(`/cart/${productId}`);
+    mutationFn: async (params: { productId: string; variantId?: string } | string) => {
+      // Support both old string API and new params object
+      const productId = typeof params === 'string' ? params : params.productId;
+      const variantId = typeof params === 'string' ? undefined : params.variantId;
+      
+      const { data } = await apiClient.delete<Cart>(`/cart/${productId}`, {
+        params: variantId ? { variantId } : undefined
+      });
       return data;
     },
-    onMutate: async (productId) => {
+    onMutate: async (params) => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });
       const previousCart = queryClient.getQueryData<Cart>(['cart']);
+
+      const productId = typeof params === 'string' ? params : params.productId;
+      const variantId = typeof params === 'string' ? undefined : params.variantId;
 
       queryClient.setQueryData<Cart>(['cart'], (old) => {
         if (!old) return old;
         
         return {
           ...old,
-          cartItems: old.cartItems.filter(item => item.product._id !== productId),
+          cartItems: old.cartItems.filter(item => 
+            !(item.product._id === productId && item.variantId === variantId)
+          ),
         };
       });
 

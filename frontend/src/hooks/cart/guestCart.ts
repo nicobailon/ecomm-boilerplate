@@ -8,6 +8,13 @@ const isClientSide = () => typeof window !== 'undefined';
 export interface GuestCartItem {
   product: Product;
   quantity: number;
+  variantId?: string;
+  variantDetails?: {
+    size?: string;
+    color?: string;
+    price: number;
+    sku?: string;
+  };
 }
 
 export interface GuestCartData {
@@ -70,7 +77,11 @@ export const clearGuestCart = (): void => {
 };
 
 const recalculateTotals = (items: GuestCartItem[]): GuestCartData => {
-  const subtotal = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const subtotal = items.reduce((sum, item) => {
+    const price = item.variantDetails?.price ?? item.product.price;
+    return sum + (price * item.quantity);
+  }, 0);
+  
   return {
     cartItems: items,
     subtotal,
@@ -79,9 +90,36 @@ const recalculateTotals = (items: GuestCartItem[]): GuestCartData => {
   };
 };
 
-export const addToGuestCart = (product: Product): GuestCartData => {
+export interface AddToGuestCartParams {
+  product: Product;
+  variantId?: string;
+  variantDetails?: {
+    size?: string;
+    color?: string;
+    price: number;
+    sku?: string;
+  };
+}
+
+export const addToGuestCart = (params: AddToGuestCartParams | Product): GuestCartData => {
   const cart = readGuestCart();
-  const existingItemIndex = cart.cartItems.findIndex(item => item.product._id === product._id);
+  
+  // Handle both old and new API
+  let product: Product;
+  let variantId: string | undefined;
+  let variantDetails: GuestCartItem['variantDetails'] | undefined;
+  
+  if ('product' in params) {
+    product = params.product;
+    variantId = params.variantId;
+    variantDetails = params.variantDetails;
+  } else {
+    product = params;
+  }
+  
+  const existingItemIndex = cart.cartItems.findIndex(item => 
+    item.product._id === product._id && item.variantId === variantId
+  );
   
   if (existingItemIndex >= 0) {
     cart.cartItems[existingItemIndex].quantity += 1;
@@ -89,7 +127,7 @@ export const addToGuestCart = (product: Product): GuestCartData => {
     if (cart.cartItems.length >= MAX_GUEST_CART_ITEMS) {
       throw new Error(`Cannot add more items. Guest cart is limited to ${MAX_GUEST_CART_ITEMS} items`);
     }
-    cart.cartItems.push({ product, quantity: 1 });
+    cart.cartItems.push({ product, quantity: 1, variantId, variantDetails });
   }
   
   const updatedCart = recalculateTotals(cart.cartItems);
@@ -97,9 +135,11 @@ export const addToGuestCart = (product: Product): GuestCartData => {
   return updatedCart;
 };
 
-export const updateGuestCartQuantity = (productId: string, quantity: number): GuestCartData => {
+export const updateGuestCartQuantity = (productId: string, quantity: number, variantId?: string): GuestCartData => {
   const cart = readGuestCart();
-  const itemIndex = cart.cartItems.findIndex(item => item.product._id === productId);
+  const itemIndex = cart.cartItems.findIndex(item => 
+    item.product._id === productId && item.variantId === variantId
+  );
   
   if (itemIndex >= 0) {
     if (quantity <= 0) {
@@ -114,9 +154,11 @@ export const updateGuestCartQuantity = (productId: string, quantity: number): Gu
   return updatedCart;
 };
 
-export const removeFromGuestCart = (productId: string): GuestCartData => {
+export const removeFromGuestCart = (productId: string, variantId?: string): GuestCartData => {
   const cart = readGuestCart();
-  cart.cartItems = cart.cartItems.filter(item => item.product._id !== productId);
+  cart.cartItems = cart.cartItems.filter(item => 
+    !(item.product._id === productId && item.variantId === variantId)
+  );
   
   const updatedCart = recalculateTotals(cart.cartItems);
   writeGuestCart(updatedCart);

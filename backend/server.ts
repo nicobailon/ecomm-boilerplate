@@ -17,6 +17,7 @@ import couponRoutes from './routes/coupon.route.js';
 import paymentRoutes from './routes/payment.route.js';
 import analyticsRoutes from './routes/analytics.route.js';
 import uploadRoutes from './routes/upload.route.js';
+import inventoryRoutes from './routes/inventory.route.js';
 
 dotenv.config();
 validateEnvVariables();
@@ -59,6 +60,7 @@ app.use('/api/coupons', couponRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/uploadthing', uploadRoutes);
+app.use('/api/inventory', inventoryRoutes);
 
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '/frontend/dist')));

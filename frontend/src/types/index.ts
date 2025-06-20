@@ -15,17 +15,43 @@ export interface Product {
   image: string;
   collectionId?: string | { _id: string; name: string; slug: string };
   isFeatured: boolean;
+  slug?: string;
+  sku?: string;
+  variants?: Array<{
+    variantId: string;
+    size?: string;
+    color?: string;
+    price: number;
+    inventory: number;
+    sku?: string;
+  }>;
+  inventory?: number;
+  lowStockThreshold?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// Extended product type with inventory information
+export interface ProductWithInventory extends Product {
+  inventory?: number;
 }
 
 export interface CartItem {
   product: string | Product;
   quantity: number;
+  variantId?: string;
+  variantDetails?: {
+    size?: string;
+    color?: string;
+    price: number;
+    sku?: string;
+  };
 }
 
 export interface Cart {
-  cartItems: (CartItem & { product: Product })[];
+  cartItems: (CartItem & { 
+    product: Product;
+  })[];
   subtotal: number;
   totalAmount: number;
   appliedCoupon: {
@@ -105,7 +131,7 @@ export interface NavigationState {
   highlightId?: string;
 }
 
-export type TabId = 'create' | 'products' | 'analytics' | 'collections' | 'discounts';
+export type TabId = 'create' | 'products' | 'analytics' | 'collections' | 'discounts' | 'inventory';
 
 // CreateProductForm callback props
 export interface CreateProductFormProps {

@@ -4,15 +4,15 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { productService } from '../services/product.service.js';
 
 export const getAllProducts = asyncHandler(async (req: Request, res: Response) => {
-  const { category, page = '1', limit = '12' } = req.query;
+  const { search, page = '1', limit = '12' } = req.query;
   
   const pageNum = parseInt(page as string, 10) || 1;
   const limitNum = parseInt(limit as string, 10) || 12;
   
   const result = await productService.getAllProducts(
-    pageNum, 
-    limitNum, 
-    category as string | undefined,
+    pageNum as number, 
+    limitNum as number, 
+    search as string | undefined,
   );
   
   res.json({
@@ -28,12 +28,15 @@ export const getFeaturedProducts = asyncHandler(async (_req: Request, res: Respo
 });
 
 export const createProduct = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { name, description, price, image, collectionId } = req.body as {
+  const { name, description, price, image, collectionId, isFeatured = false, variants = [], relatedProducts = [] } = req.body as {
     name: string;
     description: string;
     price: number;
     image: string;
     collectionId?: string;
+    isFeatured?: boolean;
+    variants?: any[];
+    relatedProducts?: string[];
   };
 
   const product = await productService.createProduct({
@@ -42,18 +45,24 @@ export const createProduct = asyncHandler(async (req: AuthRequest, res: Response
     price,
     image,
     collectionId,
+    isFeatured,
+    variants,
+    relatedProducts,
   });
 
   res.status(201).json(product);
 });
 
 export const updateProduct = asyncHandler(async (req: Request, res: Response) => {
-  const { name, description, price, image, collectionId } = req.body as {
-    name: string;
-    description: string;
-    price: number;
-    image: string;
+  const { name, description, price, image, collectionId, isFeatured, variants, relatedProducts } = req.body as {
+    name?: string;
+    description?: string;
+    price?: number;
+    image?: string;
     collectionId?: string;
+    isFeatured?: boolean;
+    variants?: any[];
+    relatedProducts?: string[];
   };
   
   const product = await productService.updateProduct(req.params.id, {
@@ -62,6 +71,9 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response) =>
     price,
     image,
     collectionId,
+    isFeatured,
+    variants,
+    relatedProducts,
   });
 
   res.json(product);

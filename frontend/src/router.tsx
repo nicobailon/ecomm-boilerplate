@@ -10,6 +10,7 @@ const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const AdminPage = lazy(() => import('@/pages/AdminPage'));
 const CartPage = lazy(() => import('@/pages/CartPage'));
 const CollectionPage = lazy(() => import('@/pages/CollectionPage'));
+const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'));
 const PurchaseSuccessPage = lazy(() => import('@/pages/PurchaseSuccessPage'));
 const PurchaseCancelPage = lazy(() => import('@/pages/PurchaseCancelPage'));
 
@@ -26,6 +27,10 @@ export const router = createBrowserRouter([
       {
         path: 'collections/:slug',
         element: <CollectionPage />,
+      },
+      {
+        path: 'products/:slug',
+        element: <ProductDetailPage />,
       },
       // Auth routes (redirect to home if already logged in)
       {

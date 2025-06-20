@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ProductInput} from '@/lib/validations';
 import { productSchema } from '@/lib/validations';
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { CheckIcon } from 'lucide-react';
 import type { ProductFormProps, Product } from '@/types';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { VariantEditor } from './VariantEditor';
 
 export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onSuccess }) => {
   // Detect if we're inside a modal/drawer by checking for Radix dialog context
@@ -34,15 +35,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
   
   const collections = collectionsData?.collections ?? [];
   
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    reset,
-    getValues,
-    formState: { errors, isSubmitting },
-  } = useForm<ProductInput>({
+  const formMethods = useForm<ProductInput>({
     resolver: zodResolver(productSchema),
     defaultValues: mode === 'edit' && initialData ? {
       name: initialData.name,
@@ -52,6 +45,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         ? initialData.collectionId 
         : initialData.collectionId?._id,
       image: initialData.image,
+      variants: initialData.variants?.map(v => ({
+        label: v.label || v.size || '',
+        color: v.color || '',
+        priceAdjustment: v.price - initialData.price,
+        inventory: v.inventory,
+        sku: v.sku || '',
+      })),
     } : productCreation?.draftData ?? {
       name: '',
       description: '',
@@ -60,6 +60,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
       image: '',
     },
   });
+  
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    getValues,
+    formState: { errors, isSubmitting },
+  } = formMethods;
   
   const handleCreateCollection = useCallback(async (name: string) => {
     const newCollection = await quickCreateCollection({ 
@@ -102,6 +112,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
           ? initialData.collectionId 
           : initialData.collectionId?._id,
         image: initialData.image,
+        variants: initialData.variants?.map(v => ({
+          label: v.label || v.size || '',
+          color: v.color || '',
+          priceAdjustment: v.price - initialData.price,
+          inventory: v.inventory,
+          sku: v.sku || '',
+        })),
       });
       if (initialData.image) {
         setImagePreview(initialData.image);
@@ -115,8 +132,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
   }, [mode, initialData, reset, productCreation?.draftData]);
   
   const onSubmit = useCallback((data: ProductInput) => {
+    // Transform variants data for API
+    const transformedData = {
+      ...data,
+      variants: data.variants?.map((variant) => ({
+        variantId: `${Date.now()}-${Math.random()}`,
+        label: variant.label,
+        price: data.price + (variant.priceAdjustment || 0),
+        color: variant.color,
+        inventory: variant.inventory || 0,
+        sku: variant.sku,
+      })),
+    };
+    
     if (mode === 'create') {
-      createProductMutation.mutate(data, {
+      createProductMutation.mutate(transformedData, {
         onSuccess: (result) => {
           const isTPRCResult = 'product' in result;
           const product = isTPRCResult ? result.product : result;
@@ -136,7 +166,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         },
       });
     } else {
-      updateProductMutation.mutate({ id: initialData?._id ?? '', data }, {
+      updateProductMutation.mutate({ id: initialData?._id ?? '', data: transformedData }, {
         onSuccess: (updatedProduct) => {
           toast.success('Product updated!');
           onSuccess?.(updatedProduct);
@@ -173,23 +203,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
   }, [handleSubmit, mode, productCreationData, getValues, onSubmit]);
 
   return (
-    <div className="space-y-6">
-      {/* Bulk Mode Toggle */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">{mode === 'create' ? 'Create New Product' : 'Edit Product'}</h2>
-        {mode === 'create' && productCreation && (
-          <div className="flex items-center gap-2">
-            <Switch
-              id="bulk-mode"
-              checked={productCreation.bulkMode}
-              onCheckedChange={productCreation.toggleBulkMode}
-            />
-            <Label htmlFor="bulk-mode" className="cursor-pointer">
-              Stay on form after creation
-            </Label>
-          </div>
-        )}
-      </div>
+    <FormProvider {...formMethods}>
+      <div className="space-y-6">
+        {/* Bulk Mode Toggle */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">{mode === 'create' ? 'Create New Product' : 'Edit Product'}</h2>
+          {mode === 'create' && productCreation && (
+            <div className="flex items-center gap-2">
+              <Switch
+                id="bulk-mode"
+                checked={productCreation.bulkMode}
+                onCheckedChange={productCreation.toggleBulkMode}
+              />
+              <Label htmlFor="bulk-mode" className="cursor-pointer">
+                Stay on form after creation
+              </Label>
+            </div>
+          )}
+        </div>
       
       {/* Session Counter */}
       {mode === 'create' && productCreation?.bulkMode && productCreation.sessionCount > 0 && (
@@ -346,6 +377,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         )}
       </div>
       
+      {/* Variant Editor */}
+      <VariantEditor />
+      
       <Button
         type="submit"
         className="w-full"
@@ -362,6 +396,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         {mode === 'create' && ' • Ctrl+S (⌘+S on Mac) to save draft'}
       </p>
     </form>
-    </div>
+      </div>
+    </FormProvider>
   );
 };

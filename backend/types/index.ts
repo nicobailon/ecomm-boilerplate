@@ -23,8 +23,9 @@ export interface IProduct {
   image: string;
   collectionId?: string;
   isFeatured: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  slug?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface IOrder {
@@ -56,3 +57,5 @@ export interface TokenPair {
   accessToken: string;
   refreshToken: string;
 }
+
+export * from './product.types.js';

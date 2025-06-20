@@ -1,7 +1,11 @@
 import { router, publicProcedure, adminProcedure } from '../index.js';
 import { z } from 'zod';
 import { productService } from '../../services/product.service.js';
-import { createProductSchema, updateProductSchema } from '../../validations/index.js';
+import { 
+  createProductSchema, 
+  updateProductSchema,
+  getProductBySlugSchema
+} from '../../validations/index.js';
 import { TRPCError } from '@trpc/server';
 import { MONGODB_OBJECTID_REGEX } from '../../utils/constants.js';
 import { isAppError } from '../../utils/error-types.js';
@@ -9,13 +13,17 @@ import { isAppError } from '../../utils/error-types.js';
 export const productRouter = router({
   list: publicProcedure
     .input(z.object({
-      page: z.number().min(1).optional().default(1),
-      limit: z.number().min(1).max(100).optional().default(12),
+      page: z.number().min(1).optional().default(() => 1),
+      limit: z.number().min(1).max(100).optional().default(() => 12),
       search: z.string().optional(),
+      includeVariants: z.boolean().optional().default(false),
+      collectionId: z.string().optional(),
+      isFeatured: z.boolean().optional(),
     }))
     .query(async ({ input }) => {
       try {
-        return await productService.getAllProducts(input.page, input.limit, input.search);
+        const result = await productService.getAllProducts(input.page, input.limit, input.search);
+        return result;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to fetch products';
         throw new TRPCError({
@@ -182,6 +190,113 @@ export const productRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: message ?? 'Failed to toggle featured status',
+        });
+      }
+    }),
+
+  bySlug: publicProcedure
+    .input(getProductBySlugSchema)
+    .query(async ({ input }) => {
+      try {
+        const product = await productService.getProductBySlug(input.slug);
+        
+        return {
+          product
+        };
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to fetch product';
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to fetch product',
+        });
+      }
+    }),
+
+
+  related: publicProcedure
+    .input(z.object({
+      productId: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
+      limit: z.number().min(1).max(20).optional().default(() => 6),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const products = await productService.getRelatedProducts(input.productId, input.limit);
+        return products;
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to fetch related products';
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to fetch related products',
+        });
+      }
+    }),
+
+  checkVariantAvailability: publicProcedure
+    .input(z.object({
+      productId: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
+      variantId: z.string(),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const available = await productService.checkVariantAvailability(
+          input.productId,
+          input.variantId
+        );
+        return { available };
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to check variant availability';
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to check variant availability',
+        });
+      }
+    }),
+
+  updateVariantInventory: adminProcedure
+    .input(z.object({
+      productId: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
+      variantId: z.string(),
+      quantity: z.number().int(),
+      operation: z.enum(['increment', 'decrement', 'set']),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const variant = await productService.updateVariantInventory(
+          input.productId,
+          input.variantId,
+          input.quantity,
+          input.operation
+        );
+        return { variant };
+      } catch (error) {
+        if (isAppError(error)) {
+          throw new TRPCError({
+            code: error.statusCode === 404 ? 'NOT_FOUND' : 'BAD_REQUEST',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to update variant inventory';
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to update variant inventory',
         });
       }
     }),

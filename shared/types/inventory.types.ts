@@ -1,0 +1,119 @@
+export interface IInventoryHistory {
+  productId: string;
+  variantId?: string;
+  previousQuantity: number;
+  newQuantity: number;
+  adjustment: number;
+  reason: InventoryUpdateReason;
+  userId: string;
+  timestamp: Date;
+  metadata?: Record<string, unknown>;
+}
+
+export interface IInventoryReservation {
+  _id?: string;
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  sessionId: string;
+  userId?: string;
+  expiresAt: Date;
+  createdAt: Date;
+  type: 'cart' | 'checkout';
+}
+
+export enum StockStatus {
+  IN_STOCK = 'in_stock',
+  LOW_STOCK = 'low_stock',
+  OUT_OF_STOCK = 'out_of_stock',
+  BACKORDERED = 'backordered'
+}
+
+export type InventoryUpdateReason = 
+  | 'sale'
+  | 'return'
+  | 'restock'
+  | 'adjustment'
+  | 'damage'
+  | 'theft'
+  | 'transfer'
+  | 'reservation_expired'
+  | 'manual_correction';
+
+export interface BulkInventoryUpdate {
+  productId: string;
+  variantId?: string;
+  adjustment: number;
+  reason: InventoryUpdateReason;
+  metadata?: Record<string, unknown>;
+}
+
+export interface InventoryMetrics {
+  totalProducts: number;
+  totalValue: number;
+  outOfStockCount: number;
+  lowStockCount: number;
+  totalReserved: number;
+  turnoverRate?: number;
+  averageStockLevel?: number;
+}
+
+export interface ProductInventoryInfo {
+  productId: string;
+  variantId?: string;
+  currentStock: number;
+  reservedStock: number;
+  availableStock: number;
+  lowStockThreshold: number;
+  allowBackorder: boolean;
+  restockDate?: Date;
+  stockStatus: StockStatus;
+}
+
+export interface InventoryAdjustmentResult {
+  success: boolean;
+  previousQuantity: number;
+  newQuantity: number;
+  availableStock: number;
+  historyRecord: IInventoryHistory;
+}
+
+export interface ReservationResult {
+  success: boolean;
+  reservationId?: string;
+  availableStock: number;
+  message?: string;
+}
+
+export interface InventoryQueryParams {
+  page?: number;
+  limit?: number;
+  sortBy?: 'name' | 'stock' | 'value' | 'updatedAt';
+  sortOrder?: 'asc' | 'desc';
+  stockStatus?: StockStatus;
+  search?: string;
+}
+
+export interface LowStockAlert {
+  productId: string;
+  productName: string;
+  variantId?: string;
+  variantName?: string;
+  currentStock: number;
+  threshold: number;
+  lastRestocked?: Date;
+  restockDate?: Date;
+}
+
+export interface InventoryTurnoverData {
+  productId: string;
+  productName: string;
+  variantId?: string;
+  soldQuantity: number;
+  averageStock: number;
+  turnoverRate: number;
+  period: {
+    start: Date;
+    end: Date;
+  };
+}

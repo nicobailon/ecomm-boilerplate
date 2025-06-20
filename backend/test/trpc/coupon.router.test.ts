@@ -13,21 +13,23 @@ describe('Coupon tRPC Router', () => {
   const mockAdminUserId = 'admin123';
   
   const mockContext = {
+    req: {} as any,
+    res: {} as any,
     user: {
       _id: mockUserId,
       email: 'user@example.com',
       role: 'customer',
-    },
-    userId: mockUserId,
+    } as any,
   };
 
   const mockAdminContext = {
+    req: {} as any,
+    res: {} as any,
     user: {
       _id: mockAdminUserId,
       email: 'admin@example.com',
       role: 'admin',
-    },
-    userId: mockAdminUserId,
+    } as any,
   };
 
   beforeEach(() => {
@@ -39,8 +41,8 @@ describe('Coupon tRPC Router', () => {
       it('should list all discounts for admin', async () => {
         const mockResponse = {
           discounts: [
-            { _id: '1', code: 'DISC1', discountPercentage: 10 },
-            { _id: '2', code: 'DISC2', discountPercentage: 20 },
+            { _id: '1', code: 'DISC1', discountPercentage: 10 } as any,
+            { _id: '2', code: 'DISC2', discountPercentage: 20 } as any,
           ],
           total: 2,
         };

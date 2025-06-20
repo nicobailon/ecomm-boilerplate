@@ -33,7 +33,7 @@ const listUsers = async (): Promise<void> => {
     users.forEach((user) => {
       const email = user.email.padEnd(30);
       const role = (user.role || 'customer').padEnd(8);
-      const created = new Date(user.createdAt).toLocaleDateString();
+      const created = new Date((user as any).createdAt).toLocaleDateString();
       console.log(`${email} | ${role} | ${created}`);
     });
 

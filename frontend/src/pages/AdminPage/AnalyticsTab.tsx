@@ -2,14 +2,21 @@ import { motion } from 'framer-motion';
 import { Users, Package, ShoppingCart, DollarSign } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useAnalytics } from '@/hooks/analytics/useAnalytics';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { AnalyticsStatsSkeleton, RevenueChartSkeleton } from '@/components/ui/AnalyticsSkeleton';
 import type { LucideIcon } from 'lucide-react';
 
 const AnalyticsTab = () => {
 	const { data, isLoading } = useAnalytics();
 
 	if (isLoading) {
-		return <LoadingSpinner />;
+		return (
+			<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+				<AnalyticsStatsSkeleton />
+				<div className='mt-8'>
+					<RevenueChartSkeleton />
+				</div>
+			</div>
+		);
 	}
 
 	const analyticsData = data?.analyticsData ?? {

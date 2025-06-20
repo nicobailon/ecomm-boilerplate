@@ -14,12 +14,21 @@ export const signupSchema = loginSchema.extend({
   path: ['confirmPassword'],
 });
 
+const variantSchema = z.object({
+  label: z.string().min(1, 'Variant label is required'),
+  color: z.string().optional(),
+  priceAdjustment: z.number().default(0),
+  inventory: z.number().min(0, 'Inventory cannot be negative').default(0),
+  sku: z.string().optional(),
+});
+
 export const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   price: z.number().positive('Price must be positive'),
   collectionId: z.string().optional(),
   image: z.string().url('Invalid image URL'),
+  variants: z.array(variantSchema).optional(),
 });
 
 export const analyticsSchema = z.object({
@@ -59,4 +68,5 @@ export const discountFormSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type ProductInput = z.infer<typeof productSchema>;
+export type VariantInput = z.infer<typeof variantSchema>;
 export type DiscountFormInput = z.infer<typeof discountFormSchema>;

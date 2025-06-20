@@ -23,6 +23,13 @@ export interface UnifiedCartResult {
     cartItems: {
       product: Product;
       quantity: number;
+      variantId?: string;
+      variantDetails?: {
+        size?: string;
+        color?: string;
+        price: number;
+        sku?: string;
+      };
     }[];
     totalAmount: number;
     subtotal: number;
@@ -69,6 +76,11 @@ export const useUnifiedCart = (): UnifiedCartResult => {
   };
 };
 
+export interface AddToCartParams {
+  product: Product;
+  variantId?: string;
+}
+
 export const useUnifiedAddToCart = () => {
   const { data: user } = useCurrentUser();
   const userAddToCart = useAddToCart();
@@ -77,23 +89,23 @@ export const useUnifiedAddToCart = () => {
   const isGuestLike = !user || user.role === 'admin';
 
   return {
-    mutate: (product: Product) => {
+    mutate: (params: AddToCartParams) => {
       if (!user) {
-        guestAddToCart.mutate(product);
+        guestAddToCart.mutate(params);
       } else if (user.role === 'admin') {
         toast.error('Admins cannot add items to cart');
       } else {
-        userAddToCart.mutate(product);
+        userAddToCart.mutate(params);
       }
     },
-    mutateAsync: async (product: Product) => {
+    mutateAsync: async (params: AddToCartParams) => {
       if (!user) {
-        return guestAddToCart.mutateAsync(product);
+        return guestAddToCart.mutateAsync(params);
       } else if (user.role === 'admin') {
         toast.error('Admins cannot add items to cart');
         return Promise.reject(new Error('Admins cannot add items to cart'));
       } else {
-        return userAddToCart.mutateAsync(product);
+        return userAddToCart.mutateAsync(params);
       }
     },
     isPending: isGuestLike ? guestAddToCart.isPending : userAddToCart.isPending,
@@ -110,14 +122,14 @@ export const useUnifiedUpdateQuantity = () => {
   const isGuestLike = !user || user.role === 'admin';
 
   return {
-    mutate: (params: { productId: string; quantity: number }) => {
+    mutate: (params: { productId: string; quantity: number; variantId?: string }) => {
       if (!user || user.role === 'admin') {
         guestUpdateQuantity.mutate(params);
       } else {
         userUpdateQuantity.mutate(params);
       }
     },
-    mutateAsync: async (params: { productId: string; quantity: number }) => {
+    mutateAsync: async (params: { productId: string; quantity: number; variantId?: string }) => {
       if (!user || user.role === 'admin') {
         return guestUpdateQuantity.mutateAsync(params);
       } else {
@@ -130,6 +142,11 @@ export const useUnifiedUpdateQuantity = () => {
   };
 };
 
+export interface RemoveFromCartParams {
+  productId: string;
+  variantId?: string;
+}
+
 export const useUnifiedRemoveFromCart = () => {
   const { data: user } = useCurrentUser();
   const userRemoveFromCart = useRemoveFromCart();
@@ -138,18 +155,21 @@ export const useUnifiedRemoveFromCart = () => {
   const isGuestLike = !user || user.role === 'admin';
 
   return {
-    mutate: (productId: string) => {
+    mutate: (params: RemoveFromCartParams | string) => {
+      // Support both old string API and new params object
+      const normalizedParams = typeof params === 'string' ? { productId: params } : params;
       if (!user || user.role === 'admin') {
-        guestRemoveFromCart.mutate(productId);
+        guestRemoveFromCart.mutate(normalizedParams);
       } else {
-        userRemoveFromCart.mutate(productId);
+        userRemoveFromCart.mutate(normalizedParams);
       }
     },
-    mutateAsync: async (productId: string) => {
+    mutateAsync: async (params: RemoveFromCartParams | string) => {
+      const normalizedParams = typeof params === 'string' ? { productId: params } : params;
       if (!user || user.role === 'admin') {
-        return guestRemoveFromCart.mutateAsync(productId);
+        return guestRemoveFromCart.mutateAsync(normalizedParams);
       } else {
-        return userRemoveFromCart.mutateAsync(productId);
+        return userRemoveFromCart.mutateAsync(normalizedParams);
       }
     },
     isPending: isGuestLike ? guestRemoveFromCart.isPending : userRemoveFromCart.isPending,

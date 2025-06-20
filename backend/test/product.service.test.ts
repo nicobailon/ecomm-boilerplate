@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { productService } from '../services/product.service';
-import { Product } from '../models/product.model';
-import { Collection } from '../models/collection.model';
-import { AppError } from '../utils/AppError';
-import { generateSlug, generateUniqueSlug } from '../utils/slugify';
+import { productService } from '../services/product.service.js';
+import { Product } from '../models/product.model.js';
+import { Collection } from '../models/collection.model.js';
+import { generateSlug, generateUniqueSlug } from '../utils/slugify.js';
 import mongoose from 'mongoose';
-import { createMockSession, createSessionableQuery, mockObjectId } from './helpers/mongoose-mocks';
+import { createMockSession, createSessionableQuery, mockObjectId } from './helpers/mongoose-mocks.js';
 
 vi.mock('../models/product.model');
 vi.mock('../models/collection.model');
@@ -74,7 +73,7 @@ describe('ProductService', () => {
       expect(result.created.product).toBe(true);
       expect(result.created.collection).toBe(true);
       expect(result.product._id).toBe('product123');
-      expect(result.collection?._id.toString()).toBe('collection123');
+      expect((result.collection?._id as any).toString()).toBe('collection123');
       expect(mockSession.commitTransaction).toHaveBeenCalled();
       expect(mockSession.endSession).toHaveBeenCalled();
     });

@@ -1,5 +1,5 @@
 import { router, protectedProcedure } from '../index.js';
-import { addToCartSchema, updateQuantitySchema } from '../../validations/index.js';
+import { addToCartSchema, updateQuantitySchema, removeFromCartSchema } from '../../validations/index.js';
 import { cartService } from '../../services/cart.service.js';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
@@ -24,12 +24,12 @@ export const cartRouter = router({
     .input(addToCartSchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        await cartService.addToCart(ctx.user, input.productId);
+        await cartService.addToCart(ctx.user, input.productId, input.variantId);
         return await cartService.calculateCartTotals(ctx.user);
       } catch (error) {
-        if (isAppError(error) && error.statusCode === 404) {
+        if (isAppError(error)) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
+            code: error.statusCode === 404 ? 'NOT_FOUND' : 'BAD_REQUEST',
             message: error.message,
           });
         }
@@ -44,15 +44,16 @@ export const cartRouter = router({
   updateQuantity: protectedProcedure
     .input(updateQuantitySchema.extend({
       productId: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
+      variantId: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       try {
-        await cartService.updateQuantity(ctx.user, input.productId, input.quantity);
+        await cartService.updateQuantity(ctx.user, input.productId, input.quantity, input.variantId);
         return await cartService.calculateCartTotals(ctx.user);
       } catch (error) {
-        if (isAppError(error) && error.statusCode === 404) {
+        if (isAppError(error)) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
+            code: error.statusCode === 404 ? 'NOT_FOUND' : 'BAD_REQUEST',
             message: error.message,
           });
         }
@@ -65,10 +66,10 @@ export const cartRouter = router({
     }),
     
   remove: protectedProcedure
-    .input(z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'))
+    .input(removeFromCartSchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        await cartService.removeFromCart(ctx.user, input);
+        await cartService.removeFromCart(ctx.user, input.productId, input.variantId);
         return await cartService.calculateCartTotals(ctx.user);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to remove from cart';

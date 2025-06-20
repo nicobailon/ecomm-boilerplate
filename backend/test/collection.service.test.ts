@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CollectionService } from '../services/collection.service';
-import { Collection } from '../models/collection.model';
-import { Product } from '../models/product.model';
-import { AppError } from '../utils/appError';
-import { generateSlug, generateUniqueSlug } from '../utils/slugify';
+import { CollectionService } from '../services/collection.service.js';
+import { Collection } from '../models/collection.model.js';
+import { Product } from '../models/product.model.js';
+import { AppError } from '../utils/AppError.js';
+import { generateSlug, generateUniqueSlug } from '../utils/slugify.js';
 import mongoose from 'mongoose';
 import { 
   createMockSession, 
@@ -11,7 +11,7 @@ import {
   createPopulatableQuery,
   createSelectableQuery,
   mockObjectId
-} from './helpers/mongoose-mocks';
+} from './helpers/mongoose-mocks.js';
 
 vi.mock('../models/collection.model');
 vi.mock('../models/product.model');
@@ -87,6 +87,7 @@ describe('CollectionService', () => {
       const input = {
         name: 'My Collection',
         products: ['product1', 'invalid-product'],
+        isPublic: true,
       };
 
       const mockProducts = [{ _id: 'product1' }];
@@ -103,6 +104,7 @@ describe('CollectionService', () => {
       const input = {
         name: 'Empty Collection',
         products: [],
+        isPublic: true,
       };
 
       vi.mocked(generateUniqueSlug).mockResolvedValue('empty-collection');
@@ -146,7 +148,7 @@ describe('CollectionService', () => {
       } as any);
       vi.mocked(generateUniqueSlug).mockResolvedValue('updated-name');
 
-      const result = await collectionService.update(collectionId, userId, input);
+      await collectionService.update(collectionId, userId, input);
 
       expect(Collection.findOne).toHaveBeenCalledWith({
         _id: collectionId,
@@ -650,7 +652,7 @@ describe('CollectionService', () => {
         }) as ReturnType<typeof Collection.findById>
       );
       
-      const result = await collectionService.setProductsForCollection(
+      await collectionService.setProductsForCollection(
         collectionId,
         userId,
         newProductIds

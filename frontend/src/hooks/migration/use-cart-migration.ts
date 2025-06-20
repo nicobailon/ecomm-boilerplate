@@ -46,13 +46,36 @@ export function useAddToCart() {
 
   if (FEATURE_FLAGS.USE_TRPC_CART) {
     return {
-      mutate: (product: Product | string) => {
-        const productId = typeof product === 'string' ? product : product._id;
-        trpcMutation.mutate({ productId });
+      mutate: (params: { product: Product; variantId?: string } | Product | string) => {
+        // Handle different parameter formats
+        let productId: string;
+        let variantId: string | undefined;
+        
+        if (typeof params === 'string') {
+          productId = params;
+        } else if ('product' in params) {
+          productId = params.product._id;
+          variantId = params.variantId;
+        } else {
+          productId = params._id;
+        }
+        
+        trpcMutation.mutate({ productId, variantId });
       },
-      mutateAsync: async (product: Product | string) => {
-        const productId = typeof product === 'string' ? product : product._id;
-        return trpcMutation.mutateAsync({ productId });
+      mutateAsync: async (params: { product: Product; variantId?: string } | Product | string) => {
+        let productId: string;
+        let variantId: string | undefined;
+        
+        if (typeof params === 'string') {
+          productId = params;
+        } else if ('product' in params) {
+          productId = params.product._id;
+          variantId = params.variantId;
+        } else {
+          productId = params._id;
+        }
+        
+        return trpcMutation.mutateAsync({ productId, variantId });
       },
       isLoading: trpcMutation.isPending,
       isError: trpcMutation.isError,

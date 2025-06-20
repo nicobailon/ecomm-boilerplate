@@ -1,10 +1,14 @@
 import { IProduct } from './index.js';
+import { VariantAttributes } from '../../shared/types/variant-attributes.js';
 
 export interface IProductVariant {
   variantId: string;
   label: string;
-  size?: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
+  /** @deprecated Use attributes.size instead */
+  size?: string;
+  /** @deprecated Use attributes.color instead */
   color?: string;
+  attributes?: VariantAttributes;
   price: number;
   inventory: number;
   reservedInventory: number;
@@ -19,6 +23,7 @@ export type LegacyProductVariant = Omit<IProductVariant, 'label'> & {
 export interface IProductWithVariants extends IProduct {
   slug: string;
   variants: IProductVariant[];
+  variantTypes?: string[];
   relatedProducts?: string[] | IProduct[];
   lowStockThreshold: number;
   allowBackorder: boolean;

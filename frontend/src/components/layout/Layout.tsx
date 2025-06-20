@@ -4,9 +4,11 @@ import { Toaster } from 'sonner';
 import Navbar from './Navbar';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { useGuestCartSync } from '@/hooks/cart/useGuestCartSync';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
 function RootLayout() {
   useGuestCartSync();
+  useFeatureFlags(); // Initialize feature flags
   return (
     <div className='min-h-screen bg-background text-foreground relative overflow-hidden'>
       <div className='absolute inset-0 overflow-hidden'>

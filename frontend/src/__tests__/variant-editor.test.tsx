@@ -62,7 +62,7 @@ describe('VariantEditor', () => {
 
       expect(screen.getByText('Label')).toBeInTheDocument();
       expect(screen.getByText('Color')).toBeInTheDocument();
-      expect(screen.getByText('Price Δ')).toBeInTheDocument();
+      expect(screen.getByText('Price Adjustment')).toBeInTheDocument();
       expect(screen.getByText('Inventory')).toBeInTheDocument();
       expect(screen.getByText('SKU')).toBeInTheDocument();
       expect(screen.getByText('Actions')).toBeInTheDocument();

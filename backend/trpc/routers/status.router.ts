@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '../index.js';
-import { USE_VARIANT_LABEL } from '../../utils/featureFlags.js';
+import { USE_VARIANT_LABEL, USE_VARIANT_ATTRIBUTES } from '../../utils/featureFlags.js';
 
 export const statusRouter = router({
   flags: publicProcedure
@@ -16,12 +16,14 @@ export const statusRouter = router({
     .output(
       z.object({
         useVariantLabel: z.boolean(),
+        useVariantAttributes: z.boolean(),
         timestamp: z.string(),
       })
     )
     .query(async () => {
       return {
         useVariantLabel: USE_VARIANT_LABEL,
+        useVariantAttributes: USE_VARIANT_ATTRIBUTES,
         timestamp: new Date().toISOString(),
       };
     }),

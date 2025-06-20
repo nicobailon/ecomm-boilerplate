@@ -45,6 +45,7 @@ export interface CartItem {
     color?: string;
     price: number;
     sku?: string;
+    attributes?: Record<string, string>;
   };
 }
 

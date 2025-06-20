@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import type { ProductFormInput } from '@/lib/validations';
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { getVariantKey } from '@/types/variant';
 
 interface VariantEditorProps {
   className?: string;
@@ -270,7 +271,7 @@ export function getVariantDisplayText(variant: { label?: string; color?: string;
   return [variant.size, variant.color].filter(Boolean).join(' - ') || 'Default';
 }
 
-export function validateVariants(variants: Array<{ label?: string; inventory?: number }>) {
+export function validateVariants(variants: Array<{ label?: string; inventory?: number; attributes?: Record<string, string | undefined> }>) {
   const errors: string[] = [];
   
   // Check for required labels
@@ -292,6 +293,24 @@ export function validateVariants(variants: Array<{ label?: string; inventory?: n
   const duplicates = Array.from(labelCounts.entries()).filter(([, count]) => count > 1);
   if (duplicates.length > 0) {
     errors.push(`Duplicate labels found: ${duplicates.map(([label]) => `"${label}"`).join(', ')}`);
+  }
+  
+  // Check for duplicate attribute combinations (if using variant attributes)
+  const attributeCombinations = new Map<string, number>();
+  const hasAttributes = variants.some(v => v.attributes && Object.keys(v.attributes).length > 0);
+  
+  if (hasAttributes) {
+    variants.forEach(variant => {
+      if (variant.attributes && Object.keys(variant.attributes).length > 0) {
+        const key = getVariantKey(variant.attributes);
+        attributeCombinations.set(key, (attributeCombinations.get(key) || 0) + 1);
+      }
+    });
+    
+    const duplicateAttrs = Array.from(attributeCombinations.entries()).filter(([, count]) => count > 1);
+    if (duplicateAttrs.length > 0) {
+      errors.push('Duplicate attribute combinations found. Each variant must have a unique combination of attributes.');
+    }
   }
   
   // Check for negative inventory

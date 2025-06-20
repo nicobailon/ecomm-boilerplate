@@ -20,10 +20,13 @@ import { CheckIcon } from 'lucide-react';
 import type { ProductFormProps, Product } from '@/types';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { VariantEditor } from './VariantEditor';
+import { VariantAttributesEditor } from './VariantAttributesEditor';
+import { useFeatureFlag } from '@/hooks/useFeatureFlags';
 
 export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onSuccess }) => {
   // Detect if we're inside a modal/drawer by checking for Radix dialog context
   const inModal = mode === 'edit';
+  const useVariantAttributes = useFeatureFlag('USE_VARIANT_ATTRIBUTES');
   const productCreation = useProductCreation();
   const productCreationData = mode === 'create' ? productCreation : null;
   const createProductMutation = useCreateProduct();
@@ -45,12 +48,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         ? initialData.collectionId 
         : initialData.collectionId?._id,
       image: initialData.image,
+      variantTypes: (initialData as any).variantTypes,
       variants: initialData.variants?.map(v => ({
         label: v.label || '',
         color: v.color || '',
         priceAdjustment: v.price - initialData.price,
         inventory: v.inventory,
         sku: v.sku || '',
+        attributes: (v as any).attributes,
       })),
     } : productCreation?.draftData ?? {
       name: '',
@@ -139,12 +144,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
       price: data.price,
       image: data.image,
       collectionId: data.collectionId,
+      variantTypes: useVariantAttributes ? data.variantTypes : undefined,
       variants: data.variants?.map(variant => ({
         label: variant.label,
         color: variant.color,
         priceAdjustment: variant.priceAdjustment ?? 0,
         inventory: variant.inventory ?? 0,
         sku: variant.sku,
+        attributes: useVariantAttributes ? variant.attributes : undefined,
       })),
     };
     
@@ -383,7 +390,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
       </div>
       
       {/* Variant Editor */}
-      <VariantEditor isLoading={isSubmitting || (mode === 'create' ? createProductMutation.isPending : updateProductMutation.isPending)} />
+      {useVariantAttributes ? (
+        <VariantAttributesEditor isLoading={isSubmitting || (mode === 'create' ? createProductMutation.isPending : updateProductMutation.isPending)} />
+      ) : (
+        <VariantEditor isLoading={isSubmitting || (mode === 'create' ? createProductMutation.isPending : updateProductMutation.isPending)} />
+      )}
       
       <Button
         type="submit"

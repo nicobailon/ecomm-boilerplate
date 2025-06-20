@@ -2,10 +2,10 @@ import { router, publicProcedure, adminProcedure } from '../index.js';
 import { z } from 'zod';
 import { productService } from '../../services/product.service.js';
 import { 
-  createProductSchema, 
   updateProductSchema,
   getProductBySlugSchema,
 } from '../../validations/index.js';
+import { baseProductSchema } from '../../validations/product.validation.js';
 import { TRPCError } from '@trpc/server';
 import { MONGODB_OBJECTID_REGEX } from '../../utils/constants.js';
 import { isAppError } from '../../utils/error-types.js';
@@ -86,7 +86,7 @@ export const productRouter = router({
     }),
 
   create: adminProcedure
-    .input(createProductSchema.extend({
+    .input(baseProductSchema.extend({
       collectionId: z.string().optional(),
       collectionName: z.string()
         .min(1)
@@ -102,7 +102,33 @@ export const productRouter = router({
         message: 'Provide either collectionId or collectionName, not both',
         path: ['collectionName'],
       },
-    ))
+    ).refine((data) => {
+      // Apply the same variant attributes validation from createProductSchema
+      const USE_VARIANT_ATTRIBUTES = process.env.USE_VARIANT_ATTRIBUTES === 'true';
+      if (!USE_VARIANT_ATTRIBUTES || !data.variantTypes || data.variantTypes.length === 0) {
+        return true;
+      }
+      
+      const allowedKeys = new Set(data.variantTypes);
+      
+      for (const variant of data.variants) {
+        if (variant.attributes) {
+          for (const key of Object.keys(variant.attributes)) {
+            if (!allowedKeys.has(key)) {
+              throw new z.ZodError([{
+                code: 'custom',
+                message: `Variant attribute key '${key}' is not in variantTypes`,
+                path: ['variants', data.variants.indexOf(variant), 'attributes'],
+              }]);
+            }
+          }
+        }
+      }
+      
+      return true;
+    }, {
+      message: 'Variant attributes must match variantTypes',
+    }))
     .mutation(async ({ input, ctx }) => {
       try {
         const result = await productService.createProductWithCollection(

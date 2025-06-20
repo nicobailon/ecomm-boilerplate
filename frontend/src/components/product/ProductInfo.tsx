@@ -4,6 +4,7 @@ import { useUnifiedAddToCart } from '@/hooks/cart/useUnifiedCart';
 import { StockBadge } from '@/components/ui/StockBadge';
 import { getMaxQuantity } from '@/utils/inventory';
 import type { Product } from '@/types';
+import { cleanVariantAttributes } from '@/utils/cleanAttributes';
 
 interface IProductVariant {
   variantId: string;
@@ -14,6 +15,7 @@ interface IProductVariant {
   inventory: number;
   images: string[];
   sku?: string;
+  attributes?: Record<string, string | undefined>;
 }
 
 interface ProductInfoProps {
@@ -74,7 +76,8 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
           product,
           variantId: selectedVariant?.variantId,
           variantLabel: selectedVariant?.label,
-        } as Parameters<typeof addToCart.mutateAsync>[0]);
+          variantAttributes: cleanVariantAttributes(selectedVariant?.attributes),
+        });
       }
       onAddToCartSuccess?.();
       setQuantity(1);

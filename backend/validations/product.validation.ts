@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { PRODUCT_SIZES } from '../constants/variant-options.js'; // legacy - for backward compatibility
 import { PRODUCT_LIMITS, VARIANT_LIMITS } from '../constants/app-limits.js';
+import { USE_VARIANT_ATTRIBUTES } from '../utils/featureFlags.js';
 
 export const colorValidationSchema = z.string().refine(
   (color) => {
@@ -20,11 +21,20 @@ export const skuValidationSchema = z.string().refine(
   { message: 'SKU must contain only uppercase letters, numbers, and hyphens' },
 );
 
+// Define variant attributes schema
+const variantAttributesSchema = z.record(z.string(), z.string().optional()).optional();
+
+// Dynamic size validation based on feature flag
+const sizeValidation = USE_VARIANT_ATTRIBUTES 
+  ? z.string().optional() 
+  : z.enum(PRODUCT_SIZES).optional();
+
 export const productVariantSchema = z.object({
   variantId: z.string().min(VARIANT_LIMITS.MIN_VARIANT_ID_LENGTH, 'Variant ID is required'),
   label: z.string().min(1, 'Label is required').max(50, 'Label must be 50 characters or less'),
-  size: z.enum(PRODUCT_SIZES).optional(),
+  size: sizeValidation,
   color: colorValidationSchema.optional(),
+  attributes: variantAttributesSchema,
   price: z.number().min(PRODUCT_LIMITS.MIN_PRICE).max(PRODUCT_LIMITS.MAX_PRICE),
   inventory: z.number().int().min(PRODUCT_LIMITS.MIN_INVENTORY).max(PRODUCT_LIMITS.MAX_INVENTORY).default(0),
   images: z.array(z.string().url()).max(VARIANT_LIMITS.MAX_IMAGES_PER_VARIANT).default([]),
@@ -38,7 +48,7 @@ export const productSlugSchema = z
   .min(1, 'Slug is required')
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Invalid slug format');
 
-export const createProductSchema = z.object({
+export const baseProductSchema = z.object({
   name: z.string().min(PRODUCT_LIMITS.MIN_NAME_LENGTH).max(PRODUCT_LIMITS.MAX_NAME_LENGTH),
   description: z.string().min(PRODUCT_LIMITS.MIN_DESCRIPTION_LENGTH).max(PRODUCT_LIMITS.MAX_DESCRIPTION_LENGTH),
   price: z.number().min(PRODUCT_LIMITS.MIN_PRICE).max(PRODUCT_LIMITS.MAX_PRICE),
@@ -47,10 +57,69 @@ export const createProductSchema = z.object({
   isFeatured: z.boolean().default(false),
   slug: productSlugSchema.optional(),
   variants: z.array(productVariantSchema).max(PRODUCT_LIMITS.MAX_VARIANTS).default([]),
+  variantTypes: z.array(z.string()).optional(),
   relatedProducts: z.array(z.string()).max(PRODUCT_LIMITS.MAX_RELATED_PRODUCTS).default([]),
 });
 
-export const updateProductSchema = createProductSchema.partial();
+export const createProductSchema = baseProductSchema.refine((data) => {
+  // Validate that variant attributes keys are subset of variantTypes
+  if (!USE_VARIANT_ATTRIBUTES || !data.variantTypes || data.variantTypes.length === 0) {
+    return true;
+  }
+  
+  const allowedKeys = new Set(data.variantTypes);
+  
+  for (const variant of data.variants) {
+    if (variant.attributes) {
+      for (const key of Object.keys(variant.attributes)) {
+        if (!allowedKeys.has(key)) {
+          throw new z.ZodError([{
+            code: 'custom',
+            message: `Variant attribute key '${key}' is not in variantTypes`,
+            path: ['variants', data.variants.indexOf(variant), 'attributes'],
+          }]);
+        }
+      }
+    }
+  }
+  
+  return true;
+}, {
+  message: 'Variant attributes must match variantTypes',
+});
+
+export const updateProductSchema = baseProductSchema.partial().refine((data) => {
+  // Validate that variant attributes keys are subset of variantTypes
+  // Skip validation if feature flag is off or if variantTypes is not provided
+  if (!USE_VARIANT_ATTRIBUTES || !data.variantTypes || data.variantTypes.length === 0) {
+    return true;
+  }
+  
+  // Also skip if variants are not being updated
+  if (!data.variants || data.variants.length === 0) {
+    return true;
+  }
+  
+  const allowedKeys = new Set(data.variantTypes);
+  
+  for (const variant of data.variants) {
+    if (variant.attributes) {
+      for (const key of Object.keys(variant.attributes)) {
+        if (!allowedKeys.has(key)) {
+          throw new z.ZodError([{
+            code: 'custom',
+            message: `Variant attribute key '${key}' is not in variantTypes`,
+            path: ['variants', data.variants.indexOf(variant), 'attributes'],
+          }]);
+        }
+      }
+    }
+  }
+  
+  return true;
+}, {
+  message: 'Variant attributes must match variantTypes',
+});
 
 export const productWithVariantsSchema = z.object({
   _id: z.string(),

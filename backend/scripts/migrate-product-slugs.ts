@@ -12,11 +12,11 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 async function migrateProductSlugs(): Promise<void> {
   try {
-    const mongoUri = process.env.MONGODB_URI ?? process.env.MONGO_URI;
+    const mongoUri = process.env.MONGO_URI;
     
     if (!mongoUri) {
       console.error('❌ MongoDB URI not found in environment variables');
-      console.error('Please ensure MONGODB_URI or MONGO_URI is set in your .env file');
+      console.error('Please ensure MONGO_URI is set in your .env file');
       process.exit(1);
     }
     

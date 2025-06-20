@@ -5,6 +5,7 @@ import { AlertCircle } from 'lucide-react';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { ProductImageGallery } from '@/components/product/ProductImageGallery';
 import { ProductVariantSelector } from '@/components/product/ProductVariantSelector';
+import { ProductVariantAttributeSelector } from '@/components/product/ProductVariantAttributeSelector';
 import { ProductInfo } from '@/components/product/ProductInfo';
 import { RelatedProducts } from '@/components/product/RelatedProducts';
 import { CheckoutCallout } from '@/components/ui/CheckoutCallout';
@@ -14,6 +15,8 @@ import { useProductAnalytics } from '@/hooks/useProductAnalytics';
 import { useMetaTags } from '@/components/seo/MetaTags';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import type { Product, Collection } from '@/types';
+import type { ProductWithVariantTypes } from '@/types/variant';
+import { useFeatureFlag } from '@/hooks/useFeatureFlags';
 
 interface IProductVariant {
   variantId: string;
@@ -24,12 +27,14 @@ interface IProductVariant {
   inventory: number;
   images: string[];
   sku?: string;
+  attributes?: Record<string, string | undefined>;
 }
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [selectedVariant, setSelectedVariant] = useState<IProductVariant | null>(null);
   const [showCheckoutCallout, setShowCheckoutCallout] = useState(false);
+  const useVariantAttributes = useFeatureFlag('USE_VARIANT_ATTRIBUTES');
   
   const { data, isLoading, error } = useProduct(slug ?? '');
   const product = data?.product;
@@ -165,12 +170,25 @@ export default function ProductDetailPage() {
           {'variants' in currentProduct && currentProduct.variants && currentProduct.variants.length > 0 && (
             <div className="mt-8">
               <ErrorBoundary>
-                <ProductVariantSelector
-                  variants={currentProduct.variants}
-                  selectedVariant={selectedVariant}
-                  onVariantSelect={handleVariantSelect}
-                  basePrice={currentProduct.price}
-                />
+                {useVariantAttributes && 'variantTypes' in currentProduct && currentProduct.variantTypes && Array.isArray(currentProduct.variantTypes) ? (
+                  <ProductVariantAttributeSelector
+                    variants={((currentProduct as ProductWithVariantTypes).variants || []).map(v => ({
+                      ...v,
+                      label: v.label || 'Default'
+                    }))}
+                    variantTypes={(currentProduct as ProductWithVariantTypes).variantTypes || []}
+                    selectedVariant={selectedVariant}
+                    onVariantSelect={handleVariantSelect}
+                    basePrice={currentProduct.price}
+                  />
+                ) : (
+                  <ProductVariantSelector
+                    variants={currentProduct.variants}
+                    selectedVariant={selectedVariant}
+                    onVariantSelect={handleVariantSelect}
+                    basePrice={currentProduct.price}
+                  />
+                )}
               </ErrorBoundary>
             </div>
           )}

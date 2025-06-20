@@ -19,6 +19,7 @@ export function validateEnvVariables(): void {
   
   const optionalEnvVars = [
     'USE_VARIANT_LABEL',
+    'USE_VARIANT_ATTRIBUTES',
   ];
 
   const missingVars: string[] = [];

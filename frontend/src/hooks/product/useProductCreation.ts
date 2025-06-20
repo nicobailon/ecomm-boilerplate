@@ -130,12 +130,14 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
         price: data.price,
         image: data.image,
         collectionId: data.collectionId,
+        variantTypes: 'variantTypes' in data ? data.variantTypes : undefined,
         variants: data.variants?.map(v => ({
           label: v.label,
           color: v.color,
           priceAdjustment: 'priceAdjustment' in v && typeof v.priceAdjustment === 'number' ? v.priceAdjustment : 0,
           inventory: 'inventory' in v && typeof v.inventory === 'number' ? v.inventory : 0,
           sku: v.sku,
+          attributes: 'attributes' in v ? v.attributes : undefined,
         })),
       };
       

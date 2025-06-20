@@ -24,10 +24,12 @@ export interface UnifiedCartResult {
       quantity: number;
       variantId?: string;
       variantDetails?: {
+        label?: string;
         size?: string;
         color?: string;
         price: number;
         sku?: string;
+        attributes?: Record<string, string>;
       };
     }[];
     totalAmount: number;
@@ -78,6 +80,8 @@ export const useUnifiedCart = (): UnifiedCartResult => {
 export interface AddToCartParams {
   product: Product;
   variantId?: string;
+  variantLabel?: string;
+  variantAttributes?: Record<string, string>;
 }
 
 export const useUnifiedAddToCart = () => {

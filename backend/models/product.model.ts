@@ -1,6 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { IProductVariantDocument } from '../types/product.types.js';
-import { PRODUCT_SIZES } from '../constants/variant-options.js'; // legacy - for backward compatibility
 
 export interface IProductDocument extends Document {
   name: string;
@@ -11,6 +10,7 @@ export interface IProductDocument extends Document {
   isFeatured: boolean;
   slug: string;
   variants: IProductVariantDocument[];
+  variantTypes?: string[];
   relatedProducts?: mongoose.Types.ObjectId[];
   isDeleted?: boolean;
   lowStockThreshold: number;
@@ -31,10 +31,11 @@ const variantSchema = new Schema<IProductVariantDocument>(
     },
     size: {
       type: String,
-      enum: PRODUCT_SIZES,
+      select: false,
     },
     color: {
       type: String,
+      select: false,
     },
     price: {
       type: Number,
@@ -69,6 +70,11 @@ const variantSchema = new Schema<IProductVariantDocument>(
     },
     sku: {
       type: String,
+    },
+    attributes: {
+      type: Map,
+      of: String,
+      default: undefined,
     },
   },
   { _id: false },
@@ -136,6 +142,10 @@ const productSchema = new Schema<IProductDocument>(
     restockDate: {
       type: Date,
     },
+    variantTypes: {
+      type: [String],
+      default: undefined,
+    },
   },
   { 
     timestamps: true,
@@ -152,5 +162,13 @@ productSchema.index({ 'variants.sku': 1 });
 productSchema.index({ 'variants.label': 1 });
 productSchema.index({ relatedProducts: 1 });
 productSchema.index({ _id: 1, 'variants.variantId': 1 });
+productSchema.index({ 
+  _id: 1, 
+  'variants.attributes.size': 1, 
+  'variants.attributes.color': 1 
+});
+
+productSchema.set('toJSON', { flattenMaps: true });
+productSchema.set('toObject', { flattenMaps: true });
 
 export const Product = mongoose.model<IProductDocument>('Product', productSchema);

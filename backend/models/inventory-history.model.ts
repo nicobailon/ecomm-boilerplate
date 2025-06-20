@@ -56,7 +56,7 @@ const inventoryHistorySchema = new Schema<IInventoryHistoryDocument>(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 inventoryHistorySchema.index({ productId: 1, timestamp: -1 });
@@ -66,5 +66,5 @@ inventoryHistorySchema.index({ timestamp: -1 });
 
 export const InventoryHistory = mongoose.model<IInventoryHistoryDocument>(
   'InventoryHistory',
-  inventoryHistorySchema
+  inventoryHistorySchema,
 );

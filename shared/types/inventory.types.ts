@@ -99,6 +99,7 @@ export interface LowStockAlert {
   productName: string;
   variantId?: string;
   variantName?: string;
+  variantLabel?: string;
   currentStock: number;
   threshold: number;
   lastRestocked?: Date;

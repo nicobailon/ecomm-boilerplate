@@ -23,7 +23,7 @@ async function migrateCategoriesToCollections(): Promise<void> {
       throw new Error('MONGO_URI not configured');
     }
     await mongoose.connect(mongoUri);
-    console.log('Connected to MongoDB');
+    console.warn('Connected to MongoDB');
 
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -34,10 +34,10 @@ async function migrateCategoriesToCollections(): Promise<void> {
         throw new Error('No admin user found. Please create an admin user first.');
       }
 
-      console.log(`Using admin user: ${adminUser.email}`);
+      console.warn(`Using admin user: ${adminUser.email}`);
 
       for (const [category, collectionName] of Object.entries(categoryToCollectionMap)) {
-        console.log(`\nProcessing category: ${category} -> ${collectionName}`);
+        console.warn(`\nProcessing category: ${category} -> ${collectionName}`);
         
         const slug = await generateUniqueSlug(
           collectionName,
@@ -60,9 +60,9 @@ async function migrateCategoriesToCollections(): Promise<void> {
           }], { session });
           
           collection = collections[0];
-          console.log(`Created collection: ${collectionName}`);
+          console.warn(`Created collection: ${collectionName}`);
         } else {
-          console.log(`Collection already exists: ${collectionName}`);
+          console.warn(`Collection already exists: ${collectionName}`);
         }
 
         const products = await Product.find({ 
@@ -85,14 +85,14 @@ async function migrateCategoriesToCollections(): Promise<void> {
             { session },
           );
 
-          console.log(`Migrated ${products.length} products to collection ${collectionName}`);
+          console.warn(`Migrated ${products.length} products to collection ${collectionName}`);
         } else {
-          console.log(`No products to migrate for category ${category}`);
+          console.warn(`No products to migrate for category ${category}`);
         }
       }
       
       await session.commitTransaction();
-      console.log('\nMigration completed successfully!');
+      console.warn('\nMigration completed successfully!');
       
       const summary = await Collection.aggregate([
         {
@@ -106,9 +106,9 @@ async function migrateCategoriesToCollections(): Promise<void> {
         },
       ]);
       
-      console.log('\nMigration Summary:');
+      console.warn('\nMigration Summary:');
       summary.forEach(col => {
-        console.log(`- ${col.name}: ${col.productCount} products`);
+        console.warn(`- ${col.name}: ${col.productCount} products`);
       });
       
     } catch (error) {
@@ -122,7 +122,7 @@ async function migrateCategoriesToCollections(): Promise<void> {
     process.exit(1);
   } finally {
     await mongoose.disconnect();
-    console.log('\nDisconnected from MongoDB');
+    console.warn('\nDisconnected from MongoDB');
   }
 }
 

@@ -16,18 +16,20 @@ export const signupSchema = loginSchema.extend({
 export const addToCartSchema = z.object({
   productId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid product ID format'),
   variantId: z.string().optional(),
+  variantLabel: z.string().optional(),
 });
 
 export const updateQuantitySchema = z.object({
   quantity: z.number().int('Quantity must be an integer').min(0).max(99, 'Quantity cannot exceed 99'),
   variantId: z.string().optional(),
+  variantLabel: z.string().optional(),
 });
 
 export const removeFromCartSchema = z.object({
   productId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid product ID format'),
   variantId: z.string().optional(),
+  variantLabel: z.string().optional(),
 });
-
 
 // Payment validations
 export const checkoutSchema = z.object({
@@ -35,6 +37,7 @@ export const checkoutSchema = z.object({
     _id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid product ID format'),
     quantity: z.number().int('Quantity must be an integer').positive('Quantity must be positive'),
     variantId: z.string().optional(),
+    variantLabel: z.string().optional(),
   })).min(1, 'At least one product is required'),
   couponCode: z.string().optional(),
 });
@@ -69,6 +72,11 @@ export const paginationSchema = z.object({
 // Product ID param validation
 export const productIdParamSchema = z.object({
   id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid product ID format'),
+});
+
+// Cart product ID param validation
+export const cartProductIdParamSchema = z.object({
+  productId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid product ID format'),
 });
 
 // Category param validation

@@ -6,13 +6,13 @@ export function toProduct(doc: IProductDocument | mongoose.FlattenMaps<IProductD
   const obj = 'toObject' in doc ? doc.toObject() : doc;
   
   return {
-    _id: obj._id?.toString() || '',
+    _id: obj._id?.toString() ?? '',
     name: obj.name,
     description: obj.description,
     price: obj.price,
     image: obj.image,
     collectionId: obj.collectionId?.toString(),
-    isFeatured: obj.isFeatured || false,
+    isFeatured: obj.isFeatured ?? false,
     slug: obj.slug,
     createdAt: obj.createdAt ? new Date(obj.createdAt).toISOString() : undefined,
     updatedAt: obj.updatedAt ? new Date(obj.updatedAt).toISOString() : undefined,
@@ -23,18 +23,18 @@ export function toProductWithVariants(doc: IProductDocument | mongoose.FlattenMa
   const obj = 'toObject' in doc ? doc.toObject() : doc;
   
   return {
-    _id: obj._id?.toString() || '',
+    _id: obj._id?.toString() ?? '',
     name: obj.name,
     description: obj.description,
     price: obj.price,
     image: obj.image,
     collectionId: obj.collectionId?.toString(),
-    isFeatured: obj.isFeatured || false,
+    isFeatured: obj.isFeatured ?? false,
     slug: obj.slug,
-    variants: obj.variants || [],
-    relatedProducts: obj.relatedProducts || [],
-    lowStockThreshold: obj.lowStockThreshold || 5,
-    allowBackorder: obj.allowBackorder || false,
+    variants: obj.variants ?? [],
+    relatedProducts: obj.relatedProducts ?? [],
+    lowStockThreshold: obj.lowStockThreshold ?? 5,
+    allowBackorder: obj.allowBackorder ?? false,
     restockDate: obj.restockDate,
     createdAt: obj.createdAt ? new Date(obj.createdAt).toISOString() : undefined,
     updatedAt: obj.updatedAt ? new Date(obj.updatedAt).toISOString() : undefined,

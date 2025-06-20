@@ -1,13 +1,17 @@
+// TODO(#variant-migration): Remove after migration to label-based variants is complete
+// Legacy size constants - kept for backward compatibility during migration
 export const PRODUCT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
 export type ProductSize = typeof PRODUCT_SIZES[number];
 
+// TODO(#variant-migration): Remove after frontend removes size ordering functionality
+// Legacy size ordering - no longer needed with flexible label system
 export const SIZE_ORDER: Record<ProductSize, number> = {
   'XS': 1,
   'S': 2,
   'M': 3,
   'L': 4,
   'XL': 5,
-  'XXL': 6
+  'XXL': 6,
 };
 
 export const COLOR_PRESETS = {
@@ -30,7 +34,7 @@ export const COLOR_PRESETS = {
   coral: '#FF7F50',
   indigo: '#4B0082',
   khaki: '#F0E68C',
-  turquoise: '#40E0D0'
+  turquoise: '#40E0D0',
 } as const;
 
 export type ColorPreset = keyof typeof COLOR_PRESETS;

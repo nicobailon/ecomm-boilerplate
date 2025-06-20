@@ -42,8 +42,7 @@ export const useGuestCartSync = () => {
           `Added ${guestCart.cartItems.length} item(s) to your cart`,
           { id: toastId },
         );
-      } catch (error) {
-        console.error('Failed to sync guest cart:', error);
+      } catch {
         toast.error('Failed to sync some cart items', { id: toastId });
         hasSyncedRef.current = false;
       }

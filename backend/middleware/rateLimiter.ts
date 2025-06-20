@@ -61,7 +61,7 @@ export const strictCouponLimiter = createRateLimiter({
   message: 'Daily coupon operation limit exceeded.',
 });
 
-export const rateLimiter = (max: number, windowMinutes: number = 15) => createRateLimiter({
+export const rateLimiter = (max: number, windowMinutes = 15): RateLimitRequestHandler => createRateLimiter({
   windowMs: windowMinutes * 60 * 1000,
   max,
 });

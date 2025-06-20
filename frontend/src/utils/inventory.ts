@@ -58,12 +58,12 @@ export function shouldShowLowStockWarning(inventory: number): boolean {
   return inventory > 0 && inventory <= 5;
 }
 
-export function getInventoryPercentage(inventory: number, maxStock: number = 100): number {
+export function getInventoryPercentage(inventory: number, maxStock = 100): number {
   if (maxStock === 0) return 0;
   return Math.round((inventory / maxStock) * 100);
 }
 
-export function isLowStock(inventory: number, threshold: number = 5): boolean {
+export function isLowStock(inventory: number, threshold = 5): boolean {
   return inventory > 0 && inventory <= threshold;
 }
 

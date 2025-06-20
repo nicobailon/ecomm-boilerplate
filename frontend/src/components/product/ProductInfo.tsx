@@ -7,6 +7,7 @@ import type { Product } from '@/types';
 
 interface IProductVariant {
   variantId: string;
+  label?: string;
   size?: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
   color?: string;
   price: number;
@@ -28,10 +29,16 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
   const addToCart = useUnifiedAddToCart();
 
   const displayPrice = selectedVariant?.price ?? product.price;
-  const displayInventory = selectedVariant?.inventory ?? 0;
-  const isOutOfStock = displayInventory === 0;
   const hasVariants = 'variants' in product && Array.isArray(product.variants) && product.variants.length > 0;
   const needsVariantSelection = hasVariants && selectedVariant === null;
+  
+  // For products with variants, use selected variant inventory or 0 if none selected
+  // For products without variants, default to available (1) since they should always be purchasable
+  const displayInventory = hasVariants 
+    ? (selectedVariant?.inventory ?? 0)
+    : 1; // Default to available for simple products without variants
+    
+  const isOutOfStock = displayInventory === 0;
   const maxQuantity = getMaxQuantity(displayInventory);
   
   // Mock estimated restock date (would come from API)
@@ -50,7 +57,7 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
       const timer = setTimeout(() => setInventoryUpdateAnimation(false), 500);
       return () => clearTimeout(timer);
     }
-  }, [selectedVariant?.inventory]);
+  }, [selectedVariant]);
 
   const handleNotifyMe = () => {
     // Mock implementation - would call API
@@ -66,12 +73,13 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
         await addToCart.mutateAsync({
           product,
           variantId: selectedVariant?.variantId,
-        });
+          variantLabel: selectedVariant?.label,
+        } as Parameters<typeof addToCart.mutateAsync>[0]);
       }
       onAddToCartSuccess?.();
       setQuantity(1);
-    } catch (error) {
-      console.error('Add to cart error:', error);
+    } catch {
+      // Error is already handled by mutation hook
     }
   };
 
@@ -84,7 +92,7 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
           <p className="text-2xl font-semibold text-primary">
             ${displayPrice.toFixed(2)}
           </p>
-          {selectedVariant && (
+          {(selectedVariant ?? !hasVariants) && (
             <div className={inventoryUpdateAnimation ? 'animate-pulse' : ''}>
               <StockBadge inventory={displayInventory} showCount size="sm" />
             </div>
@@ -117,7 +125,7 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
                 onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
                 min={1}
                 max={maxQuantity}
-                className="w-16 h-8 text-center border border-input rounded-md 
+                className="w-16 h-8 text-center border border-input rounded-md bg-background text-foreground
                   focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
                 aria-label="Quantity"
               />
@@ -141,7 +149,7 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
         )}
 
         <button
-          onClick={handleAddToCart}
+          onClick={() => void handleAddToCart()}
           disabled={addToCart.isPending || isOutOfStock || needsVariantSelection}
           className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-8 py-3 
             bg-primary text-primary-foreground font-medium rounded-lg
@@ -175,7 +183,7 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
           </p>
         )}
 
-        {isOutOfStock && !needsVariantSelection && (
+        {isOutOfStock && !needsVariantSelection && hasVariants && (
           <div className="space-y-3">
             {!showNotifyButton ? (
               <button

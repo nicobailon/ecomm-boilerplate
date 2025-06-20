@@ -4,84 +4,45 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
-import { useDebounce } from '@/hooks/useDebounce';
+import { Label } from '@/components/ui/Label';
 
-interface InventoryChange {
-  id: string;
-  timestamp: string;
-  productName: string;
-  variantInfo?: string;
-  previousQuantity: number;
-  newQuantity: number;
-  changeType: 'sale' | 'restock' | 'adjustment' | 'return' | 'damage';
-  changeAmount: number;
-  userId: string;
-  userName: string;
-  reason?: string;
-  orderId?: string;
+import { useInventoryHistory } from '@/hooks/queries/useInventory';
+import { trpc } from '@/lib/trpc';
+import type { InventoryHistoryItem } from '@/types/inventory';
+import { InventoryTableLoading } from '@/components/ui/InventorySkeleton';
+import type { RouterOutputs } from '@/lib/trpc';
+
+type HistoryResponse = RouterOutputs['inventory']['getInventoryHistory'];
+type HistoryItem = NonNullable<HistoryResponse>['history'][0];
+type ProductItem = NonNullable<RouterOutputs['product']['list']>['products'][0];
+
+interface InventoryHistoryProps {
+  productId?: string;
 }
 
-// Mock data
-const mockHistory: InventoryChange[] = [
-  {
-    id: '1',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    productName: 'Classic T-Shirt',
-    variantInfo: 'Size: M',
-    previousQuantity: 5,
-    newQuantity: 3,
-    changeType: 'sale',
-    changeAmount: -2,
-    userId: 'user123',
-    userName: 'John Doe',
-    orderId: 'ORD-12345'
-  },
-  {
-    id: '2',
-    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    productName: 'Classic T-Shirt',
-    variantInfo: 'Size: L',
-    previousQuantity: 0,
-    newQuantity: 20,
-    changeType: 'restock',
-    changeAmount: 20,
-    userId: 'admin456',
-    userName: 'Admin User',
-    reason: 'Regular inventory replenishment'
-  },
-  {
-    id: '3',
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    productName: 'Denim Jeans',
-    previousQuantity: 30,
-    newQuantity: 28,
-    changeType: 'sale',
-    changeAmount: -2,
-    userId: 'user789',
-    userName: 'Jane Smith',
-    orderId: 'ORD-12344'
-  },
-  {
-    id: '4',
-    timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-    productName: 'Winter Jacket',
-    previousQuantity: 15,
-    newQuantity: 14,
-    changeType: 'damage',
-    changeAmount: -1,
-    userId: 'admin456',
-    userName: 'Admin User',
-    reason: 'Item damaged during shipping'
-  },
-];
+// Extended interface for frontend use with additional fields
+interface ExtendedInventoryHistoryItem extends InventoryHistoryItem {
+  productId: string;
+  variantId?: string;
+}
 
-export function InventoryHistory() {
+export function InventoryHistory({ productId }: InventoryHistoryProps = {}) {
   const [filterType, setFilterType] = useState<string>('all');
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'all'>('week');
   const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const [selectedProductId, setSelectedProductId] = useState<string>(productId ?? '');
+  
+  // Fetch products for selection
+  const { data: productsData } = trpc.product.list.useQuery({});
+  const products = useMemo(() => productsData?.products ?? [], [productsData?.products]);
+  
+  // Fetch inventory history
+  const { data: historyData, isLoading } = useInventoryHistory(selectedProductId ?? '', {
+    limit: 50,
+    offset: 0,
+  });
 
-  const getChangeIcon = (changeType: InventoryChange['changeType']) => {
+  const getChangeIcon = (changeType: string) => {
     switch (changeType) {
       case 'sale':
         return <ShoppingCart className="w-4 h-4" />;
@@ -96,7 +57,7 @@ export function InventoryHistory() {
     }
   };
 
-  const getChangeBadgeVariant = (changeType: InventoryChange['changeType']) => {
+  const getChangeBadgeVariant = (changeType: string) => {
     switch (changeType) {
       case 'sale':
         return 'secondary';
@@ -128,22 +89,124 @@ export function InventoryHistory() {
   };
 
   const handleExport = () => {
-    // Mock export functionality
-    alert('Exporting inventory history to CSV...');
+    if (!historyData || !filteredHistory.length) return;
+    
+    // Generate CSV content
+    const headers = ['Product Name', 'Variant', 'Change Type', 'Previous Qty', 'New Qty', 'Change Amount', 'User', 'Timestamp', 'Reason', 'Order ID'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredHistory.map(item => [
+        `"${item.productName}"`,
+        `"${item.variantId ?? 'N/A'}"`,
+        item.changeType,
+        item.previousQuantity,
+        item.newQuantity,
+        item.changeAmount,
+        `"${item.userName}"`,
+        new Date(item.timestamp).toISOString(),
+        `"${item.reason ?? 'N/A'}"`,
+        `"${item.orderId ?? 'N/A'}"`,
+      ].join(',')),
+    ].join('\n');
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `inventory-history-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Filter history based on criteria
-  const filteredHistory = useMemo(() => {
-    return mockHistory.filter(item => {
-      if (filterType !== 'all' && item.changeType !== filterType) return false;
-      if (debouncedSearchQuery && !item.productName.toLowerCase().includes(debouncedSearchQuery.toLowerCase())) return false;
-      // Additional date filtering would go here
-      return true;
-    });
-  }, [filterType, debouncedSearchQuery]);
+  const filteredHistory = useMemo((): ExtendedInventoryHistoryItem[] => {
+    if (!historyData) return [];
+    const items = historyData.history ?? [];
+    // Map backend data structure to frontend expected structure
+    return items
+      .filter((item: HistoryItem) => {
+        if (filterType !== 'all' && item.reason !== filterType) return false;
+        // Note: productName filtering not available with raw data
+        return true;
+      })
+      .map((item: HistoryItem): ExtendedInventoryHistoryItem => {
+        const itemIdRaw = item._id ?? item.id ?? '';
+        const idString = itemIdRaw ? (typeof itemIdRaw === 'string' ? itemIdRaw : (itemIdRaw as { toString(): string }).toString()) : '';
+        const metadata = item.metadata as Record<string, unknown> | undefined;
+        const userName = typeof metadata?.userName === 'string' ? metadata.userName : undefined;
+        const reason = typeof metadata?.reason === 'string' ? metadata.reason : undefined;
+        const orderId = typeof metadata?.orderId === 'string' ? metadata.orderId : undefined;
+        
+        return {
+          id: idString,
+          productId: String(item.productId),
+          variantId: item.variantId && typeof item.variantId === 'string' ? item.variantId : undefined,
+          productName: products.find((p: ProductItem) => p._id === String(item.productId))?.name ?? `Product ${String(item.productId)}`,
+          previousQuantity: Number(item.previousQuantity),
+          newQuantity: Number(item.newQuantity),
+          changeAmount: Number(item.adjustment),
+          changeType: String(item.reason) as InventoryHistoryItem['changeType'],
+          timestamp: String(item.timestamp),
+          userId: String(item.userId),
+          userName: userName ?? `User ${String(item.userId)}`,
+          reason: reason,
+          orderId: orderId,
+        };
+      });
+  }, [historyData, filterType, products]);
 
+  if (!selectedProductId) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-muted/50 rounded-lg p-6 text-center">
+          <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+          <h3 className="font-medium mb-2">Select a Product</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Choose a product to view its inventory history
+          </p>
+          <Select
+            value={selectedProductId}
+            onChange={(e) => setSelectedProductId(e.target.value)}
+            className="max-w-xs mx-auto"
+            options={[
+              { value: '', label: 'Select a product...' },
+              ...products.map((p: ProductItem) => ({
+                value: p._id ?? '',
+                label: p.name,
+              })),
+            ]}
+          />
+        </div>
+      </div>
+    );
+  }
+  
+  if (isLoading) {
+    return <InventoryTableLoading />;
+  }
+  
   return (
     <div className="space-y-6">
+      {/* Product Selector */}
+      <div className="flex items-center gap-4">
+        <Label>Product:</Label>
+        <Select
+          value={selectedProductId}
+          onChange={(e) => setSelectedProductId(e.target.value)}
+          className="w-64"
+          options={[
+            { value: '', label: 'Select a product...' },
+            ...products.map((p: ProductItem) => ({
+              value: p._id ?? '',
+              label: p.name,
+            })),
+          ]}
+        />
+      </div>
+      
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
@@ -196,7 +259,7 @@ export function InventoryHistory() {
 
       {/* History Timeline */}
       <div className="space-y-4">
-        {filteredHistory.map((change, index) => (
+        {filteredHistory.map((change: ExtendedInventoryHistoryItem, index) => (
           <div key={change.id} className="relative">
             {/* Timeline connector */}
             {index < filteredHistory.length - 1 && (
@@ -218,9 +281,9 @@ export function InventoryHistory() {
                   <div className="flex-1">
                     <h4 className="font-medium text-sm sm:text-base">
                       {change.productName}
-                      {change.variantInfo && (
+                      {change.variantId && (
                         <span className="text-muted-foreground ml-2 text-xs sm:text-sm">
-                          ({change.variantInfo})
+                          (Variant: {change.variantId})
                         </span>
                       )}
                     </h4>
@@ -256,7 +319,7 @@ export function InventoryHistory() {
                   </div>
                 </div>
 
-                {(change.reason || change.orderId) && (
+                {(change.reason ?? change.orderId) && (
                   <div className="mt-3 pt-3 border-t text-xs sm:text-sm text-muted-foreground">
                     {change.reason && <p className="break-words">Reason: {change.reason}</p>}
                     {change.orderId && (

@@ -7,14 +7,21 @@ import { UTApi } from 'uploadthing/server';
 import { Collection, ICollection } from '../models/collection.model.js';
 import { generateUniqueSlug, generateSlug } from '../utils/slugify.js';
 import { CreateProductInput, UpdateProductInput, validateUniqueVariants, validateVariantInventory } from '../validations/product.validation.js';
-import { toProduct, toProductWithVariants, toProductArray } from '../utils/type-converters.js';
+import { toProduct, toProductWithVariants, toProductArray, toProductWithVariantsArray } from '../utils/type-converters.js';
 import { CACHE_TTL, CACHE_KEYS } from '../constants/cache-config.js';
 import { PAGINATION, PRODUCT_LIMITS, RETRY_CONFIG, REDIS_SCAN_CONFIG } from '../constants/app-limits.js';
+import { getVariantOrDefault } from './helpers/variant.helper.js';
+import { USE_VARIANT_LABEL } from '../utils/featureFlags.js';
 
 class ProductService {
   private utapi = new UTApi();
 
-  async getAllProducts(page: number = PAGINATION.DEFAULT_PAGE, limit: number = PAGINATION.DEFAULT_LIMIT, search?: string): Promise<{ products: IProduct[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
+  async getAllProducts(
+    page: number = PAGINATION.DEFAULT_PAGE, 
+    limit: number = PAGINATION.DEFAULT_LIMIT, 
+    search?: string,
+    includeVariants = false,
+  ): Promise<{ products: (IProduct | IProductWithVariants)[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
     // Validate and sanitize pagination parameters
     const pageNum = Math.max(PAGINATION.DEFAULT_PAGE, page);
     const limitNum = Math.min(PAGINATION.MAX_LIMIT, Math.max(PAGINATION.MIN_LIMIT, limit));
@@ -41,7 +48,7 @@ class ProductService {
     ]);
     
     return {
-      products: toProductArray(products),
+      products: includeVariants ? toProductWithVariantsArray(products) : toProductArray(products),
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -87,8 +94,8 @@ class ProductService {
       
       // Generate slug
       const slug = await generateUniqueSlug(
-        name!,
-        async (s) => !!(await Product.findOne({ slug: s }))
+        name,
+        async (s) => !!(await Product.findOne({ slug: s })),
       );
       
       const product = await Product.create([{
@@ -167,7 +174,7 @@ class ProductService {
         async (s) => {
           const existing = await Product.findOne({ slug: s, _id: { $ne: productId } });
           return !!existing;
-        }
+        },
       );
     }
     
@@ -424,13 +431,13 @@ class ProductService {
     
     const product = await Product.findOne({ 
       slug: normalizedSlug,
-      isDeleted: { $ne: true }
+      isDeleted: { $ne: true },
     })
     .populate('collectionId', 'name slug')
     .populate({
       path: 'relatedProducts',
       select: 'name price image slug',
-      match: { isDeleted: { $ne: true } }
+      match: { isDeleted: { $ne: true } },
     })
     .lean();
     
@@ -457,10 +464,10 @@ class ProductService {
     const productObjectId = new mongoose.Types.ObjectId(productId);
     
     // Single aggregation pipeline to fetch all related products efficiently
-    const pipeline: any[] = [
+    const pipeline: mongoose.PipelineStage[] = [
       // First, get the main product
       {
-        $match: { _id: productObjectId }
+        $match: { _id: productObjectId },
       },
       // Facet to get three categories of related products
       {
@@ -477,10 +484,10 @@ class ProductService {
                       $expr: {
                         $and: [
                           { $in: ['$_id', '$$relatedIds'] },
-                          { $ne: ['$isDeleted', true] }
-                        ]
-                      }
-                    }
+                          { $ne: ['$isDeleted', true] },
+                        ],
+                      },
+                    },
                   },
                   { $limit: limit },
                   {
@@ -491,16 +498,16 @@ class ProductService {
                       image: 1,
                       price: 1,
                       slug: 1,
-                      priority: { $literal: 1 }
-                    }
-                  }
+                      priority: { $literal: 1 },
+                    },
+                  },
                 ],
-                as: 'related'
-              }
+                as: 'related',
+              },
             },
             { $unwind: { path: '$related', preserveNullAndEmptyArrays: true } },
             { $replaceRoot: { newRoot: { $ifNull: ['$related', { _id: null }] } } },
-            { $match: { _id: { $ne: null } } }
+            { $match: { _id: { $ne: null } } },
           ],
           // 2. Products from same collection
           collection: [
@@ -515,10 +522,10 @@ class ProductService {
                         $and: [
                           { $eq: ['$collectionId', '$$collectionId'] },
                           { $ne: ['$_id', productObjectId] },
-                          { $ne: ['$isDeleted', true] }
-                        ]
-                      }
-                    }
+                          { $ne: ['$isDeleted', true] },
+                        ],
+                      },
+                    },
                   },
                   { $limit: limit },
                   {
@@ -529,16 +536,16 @@ class ProductService {
                       image: 1,
                       price: 1,
                       slug: 1,
-                      priority: { $literal: 2 }
-                    }
-                  }
+                      priority: { $literal: 2 },
+                    },
+                  },
                 ],
-                as: 'related'
-              }
+                as: 'related',
+              },
             },
             { $unwind: { path: '$related', preserveNullAndEmptyArrays: true } },
             { $replaceRoot: { newRoot: { $ifNull: ['$related', { _id: null }] } } },
-            { $match: { _id: { $ne: null } } }
+            { $match: { _id: { $ne: null } } },
           ],
           // 3. Random products
           random: [
@@ -549,8 +556,8 @@ class ProductService {
                   {
                     $match: {
                       _id: { $ne: productObjectId },
-                      isDeleted: { $ne: true }
-                    }
+                      isDeleted: { $ne: true },
+                    },
                   },
                   { $sample: { size: limit } },
                   {
@@ -561,26 +568,26 @@ class ProductService {
                       image: 1,
                       price: 1,
                       slug: 1,
-                      priority: { $literal: 3 }
-                    }
-                  }
+                      priority: { $literal: 3 },
+                    },
+                  },
                 ],
-                as: 'related'
-              }
+                as: 'related',
+              },
             },
             { $unwind: { path: '$related', preserveNullAndEmptyArrays: true } },
             { $replaceRoot: { newRoot: { $ifNull: ['$related', { _id: null }] } } },
-            { $match: { _id: { $ne: null } } }
-          ]
-        }
+            { $match: { _id: { $ne: null } } },
+          ],
+        },
       },
       // Combine all results
       {
         $project: {
           allProducts: {
-            $concatArrays: ['$explicit', '$collection', '$random']
-          }
-        }
+            $concatArrays: ['$explicit', '$collection', '$random'],
+          },
+        },
       },
       { $unwind: '$allProducts' },
       { $replaceRoot: { newRoot: '$allProducts' } },
@@ -597,9 +604,9 @@ class ProductService {
           description: 1,
           image: 1,
           price: 1,
-          slug: 1
-        }
-      }
+          slug: 1,
+        },
+      },
     ];
     
     const result = await Product.aggregate(pipeline);
@@ -614,22 +621,22 @@ class ProductService {
     return result;
   }
   
-  async calculateVariantPrice(basePrice: number, variant: IProductVariant): Promise<number> {
+  calculateVariantPrice(basePrice: number, variant: IProductVariant): number {
     // For now, use variant price if specified, otherwise use base price
     return variant.price || basePrice;
   }
   
-  async checkVariantAvailability(productId: string, variantId: string): Promise<boolean> {
+  async checkVariantAvailability(productId: string, variantId?: string, variantLabel?: string): Promise<boolean> {
     const product = await Product.findById(productId);
     
     if (!product) {
       throw new AppError(`Product not found with ID: ${productId}. Cannot check variant availability`, 404);
     }
     
-    const variant = product.variants.find(v => v.variantId === variantId);
+    const { variant } = getVariantOrDefault(product.variants, variantLabel, variantId);
     
     if (!variant) {
-      throw new AppError(`Variant not found with ID: ${variantId} for product ${productId}`, 404);
+      throw new AppError(`Variant not found for product ${productId}`, 404);
     }
     
     return variant.inventory > 0;
@@ -637,10 +644,11 @@ class ProductService {
   
   async updateVariantInventory(
     productId: string, 
-    variantId: string, 
-    quantity: number,
-    operation: 'increment' | 'decrement' | 'set',
-    maxRetries = RETRY_CONFIG.MAX_INVENTORY_UPDATE_RETRIES
+    variantId?: string,
+    quantity: number = 1,
+    operation: 'increment' | 'decrement' | 'set' = 'set',
+    maxRetries = RETRY_CONFIG.MAX_INVENTORY_UPDATE_RETRIES,
+    variantLabel?: string,
   ): Promise<IProductVariant> {
     let retryCount = 0;
     
@@ -652,32 +660,51 @@ class ProductService {
           throw new AppError(`Product not found with ID: ${productId}. Cannot update variant inventory`, 404);
         }
         
-        const variantIndex = product.variants.findIndex(v => v.variantId === variantId);
+        // Map incoming size to label when flag is ON  
+        let effectiveVariantId = variantId;
+        let effectiveVariantLabel = variantLabel;
         
-        if (variantIndex === -1) {
-          throw new AppError(`Variant not found with ID: ${variantId} for product ${productId}`, 404);
+        if (USE_VARIANT_LABEL && variantId && !variantLabel) {
+          effectiveVariantLabel = variantId;
         }
         
-        const variant = product.variants[variantIndex];
+        const { variant } = getVariantOrDefault(product.variants, effectiveVariantLabel, effectiveVariantId);
+        
+        if (!variant) {
+          throw new AppError(`Variant not found for product ${productId}`, 404);
+        }
+        
+        // Find the variant index for direct update
+        const variantIndex = product.variants.findIndex(v => 
+          USE_VARIANT_LABEL && effectiveVariantLabel ? 
+            v.label === effectiveVariantLabel : 
+            v.variantId === effectiveVariantId
+        );
+        
+        if (variantIndex === -1) {
+          throw new AppError(`Variant not found for product ${productId}`, 404);
+        }
+        
+        const targetVariant = product.variants[variantIndex];
         
         switch (operation) {
           case 'increment':
-            variant.inventory += quantity;
+            targetVariant.inventory += quantity;
             break;
           case 'decrement':
-            if (variant.inventory < quantity) {
+            if (targetVariant.inventory < quantity) {
               throw new AppError(
-                `Insufficient inventory for variant ${variantId}. Available: ${variant.inventory}, Requested: ${quantity}. Please reduce the quantity or choose a different variant`, 
-                400
+                `Insufficient inventory for variant. Available: ${targetVariant.inventory}, Requested: ${quantity}. Please reduce the quantity or choose a different variant`, 
+                400,
               );
             }
-            variant.inventory -= quantity;
+            targetVariant.inventory -= quantity;
             break;
           case 'set':
             if (quantity < 0) {
               throw new AppError(`Inventory cannot be negative. Attempted to set inventory to ${quantity}`, 400);
             }
-            variant.inventory = quantity;
+            targetVariant.inventory = quantity;
             break;
         }
         
@@ -687,10 +714,10 @@ class ProductService {
         // Clear cache
         await this.clearProductCache(product.slug, productId);
         
-        return variant;
-      } catch (error: any) {
+        return targetVariant;
+      } catch (error) {
         // Handle optimistic concurrency control errors
-        if (error.name === 'VersionError' && retryCount < maxRetries - 1) {
+        if (error instanceof Error && error.name === 'VersionError' && retryCount < maxRetries - 1) {
           retryCount++;
           // Add exponential backoff
           await new Promise(resolve => setTimeout(resolve, Math.pow(RETRY_CONFIG.EXPONENTIAL_BACKOFF_BASE, retryCount) * RETRY_CONFIG.BASE_RETRY_DELAY_MS));
@@ -702,11 +729,11 @@ class ProductService {
       }
     }
     
-    throw new AppError(`Failed to update inventory for variant ${variantId} after ${maxRetries} retries due to concurrent modifications. Please try again`, 503);
+    throw new AppError(`Failed to update inventory for variant after ${maxRetries} retries due to concurrent modifications. Please try again`, 503);
   }
   
   async validateSKUUniqueness(sku: string, excludeProductId?: string): Promise<boolean> {
-    const query: any = { 'variants.sku': sku };
+    const query: mongoose.FilterQuery<IProduct> = { 'variants.sku': sku };
     
     if (excludeProductId) {
       query._id = { $ne: excludeProductId };
@@ -734,7 +761,7 @@ class ProductService {
         keysToDelete.push(...relatedKeys);
         
         // Also clear cache for products that have this product as related
-        const reverseRelatedPattern = `related:*`;
+        const reverseRelatedPattern = 'related:*';
         const allRelatedKeys = await this.scanRedisKeys(reverseRelatedPattern);
         // In production, you might want to check which ones actually contain this product
         keysToDelete.push(...allRelatedKeys);

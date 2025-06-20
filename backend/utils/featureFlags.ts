@@ -1,0 +1,1 @@
+export const USE_VARIANT_LABEL = process.env.USE_VARIANT_LABEL === 'true';

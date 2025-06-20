@@ -45,6 +45,7 @@ export const cartRouter = router({
     .input(updateQuantitySchema.extend({
       productId: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
       variantId: z.string().optional(),
+      variantLabel: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       try {

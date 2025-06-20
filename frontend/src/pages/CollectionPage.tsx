@@ -9,9 +9,9 @@ import { Switch } from '@/components/ui/Switch';
 import { Label } from '@/components/ui/Label';
 import { Select } from '@/components/ui/Select';
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { VirtualizedProductGrid, useOptimalColumnCount } from '@/components/product/VirtualizedProductGrid';
+import { VirtualizedProductGrid } from '@/components/product/VirtualizedProductGrid';
+import { useOptimalColumnCount } from '@/hooks/useOptimalColumnCount';
 import { useWindowSize } from '@/hooks/useWindowSize';
-
 
 // Type guard for product validation
 function isValidProduct(item: unknown): item is Product {
@@ -36,7 +36,94 @@ const CollectionPage = () => {
   
   // Filter states from URL params
   const hideOutOfStock = searchParams.get('hideOutOfStock') === 'true';
-  const sortBy = searchParams.get('sortBy') || 'default';
+  const sortBy = searchParams.get('sortBy') ?? 'default';
+  
+  // State for virtualized list - MUST be declared before any conditional returns
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const windowSize = useWindowSize();
+  const columnCount = useOptimalColumnCount(containerWidth);
+  
+  // Update container width on mount and window resize
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    };
+    
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, [windowSize]);
+  
+  // Prepare products data - must be before conditional returns
+  const allProducts: ProductWithInventory[] = useMemo(() => {
+    if (!collection?.products) return [];
+    
+    const products: ProductWithInventory[] = [];
+    for (const p of collection.products) {
+      if (p && typeof p === 'object' && '_id' in p) {
+        const isProduct = (
+          '_id' in p && 
+          'name' in p && 
+          'price' in p &&
+          'image' in p &&
+          typeof p._id === 'string' &&
+          typeof p.name === 'string' &&
+          typeof p.price === 'number' &&
+          typeof p.image === 'string'
+        );
+        
+        if (isProduct && isValidProduct(p)) {
+          const product: ProductWithInventory = {
+            ...p,
+            description: p.description || '',
+            collectionId: p.collectionId,
+            isFeatured: p.isFeatured || false,
+            slug: p.slug,
+            createdAt: p.createdAt || new Date().toISOString(),
+            updatedAt: p.updatedAt || new Date().toISOString(),
+          };
+          products.push(product);
+        }
+      }
+    }
+    return products;
+  }, [collection?.products]);
+  
+  // Filter and sort products
+  const { products, hiddenCount } = useMemo(() => {
+    const filteredProducts = [...allProducts];
+    
+    // Sort products by price
+    switch (sortBy) {
+      case 'priceLowToHigh':
+        filteredProducts.sort((a, b) => a.price - b.price);
+        break;
+      case 'priceHighToLow':
+        filteredProducts.sort((a, b) => b.price - a.price);
+        break;
+      default:
+        // Keep original order
+    }
+    
+    return {
+      products: filteredProducts,
+      hiddenCount: 0,
+    };
+  }, [allProducts, sortBy]);
+  
+  // Update URL params
+  const updateFilters = (key: string, value: string | boolean) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value === false || value === 'default' || !value) {
+      newParams.delete(key);
+    } else {
+      newParams.set(key, value.toString());
+    }
+    setSearchParams(newParams);
+  };
 
   if (isLoading) {
     return (
@@ -76,79 +163,6 @@ const CollectionPage = () => {
       </div>
     );
   }
-
-  // Extract populated products with proper type checking
-  const allProducts: ProductWithInventory[] = [];
-  
-  // Handle both populated products and product IDs
-  for (const p of collection.products ?? []) {
-    if (p && typeof p === 'object' && '_id' in p) {
-      // Create a proper type guard
-      const isProduct = (
-        '_id' in p && 
-        'name' in p && 
-        'price' in p &&
-        'image' in p &&
-        typeof p._id === 'string' &&
-        typeof p.name === 'string' &&
-        typeof p.price === 'number' &&
-        typeof p.image === 'string'
-      );
-      
-      if (isProduct && isValidProduct(p)) {
-        const product: ProductWithInventory = {
-          ...p,
-          description: p.description || '',
-          collectionId: p.collectionId,
-          isFeatured: p.isFeatured || false,
-          slug: p.slug,
-          createdAt: p.createdAt || new Date().toISOString(),
-          updatedAt: p.updatedAt || new Date().toISOString()
-        };
-        allProducts.push(product);
-      }
-    }
-  }
-
-  // For now, we'll rely on individual ProductCard components to fetch their own inventory
-  // This is more efficient than fetching all at once for large collections
-  const productsWithInventory = allProducts;
-
-  // Since inventory is fetched in ProductCard, we'll use a simplified approach
-  // for filtering based on the hideOutOfStock flag
-
-  // Filter and sort products
-  const { products, hiddenCount } = useMemo(() => {
-    let filteredProducts = [...productsWithInventory];
-    
-    // Sort products by price (stock sorting requires inventory data at this level)
-    switch (sortBy) {
-      case 'priceLowToHigh':
-        filteredProducts.sort((a, b) => a.price - b.price);
-        break;
-      case 'priceHighToLow':
-        filteredProducts.sort((a, b) => b.price - a.price);
-        break;
-      default:
-        // Keep original order
-    }
-    
-    return {
-      products: filteredProducts,
-      hiddenCount: 0 // Will be calculated if we implement collection-level inventory
-    };
-  }, [productsWithInventory, sortBy]);
-
-  // Update URL params
-  const updateFilters = (key: string, value: string | boolean) => {
-    const newParams = new URLSearchParams(searchParams);
-    if (value === false || value === 'default' || !value) {
-      newParams.delete(key);
-    } else {
-      newParams.set(key, value.toString());
-    }
-    setSearchParams(newParams);
-  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -233,7 +247,22 @@ const CollectionPage = () => {
           </div>
         ) : products.length > 20 ? (
           // Use virtual scrolling for large product lists
-          <VirtualizedProductList products={products} />
+          <div ref={containerRef} className="w-full">
+            {containerWidth > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <VirtualizedProductGrid
+                  products={products}
+                  columnCount={columnCount}
+                  height={windowSize.height ? windowSize.height - 400 : 600}
+                  width={containerWidth}
+                />
+              </motion.div>
+            )}
+          </div>
         ) : (
           // Use regular grid for smaller lists
           <motion.div 
@@ -267,48 +296,5 @@ const CollectionPage = () => {
     </div>
   );
 };
-
-// Virtualized product list component
-function VirtualizedProductList({ products }: { products: ProductWithInventory[] }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const windowSize = useWindowSize();
-  const columnCount = useOptimalColumnCount(containerWidth);
-  
-  // Update container width on mount and window resize
-  useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.offsetWidth);
-      }
-    };
-    
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, [windowSize]);
-  
-  // Calculate virtual grid height (use viewport height minus header/footer)
-  const gridHeight = windowSize.height ? windowSize.height - 400 : 600;
-  
-  return (
-    <div ref={containerRef} className="w-full">
-      {containerWidth > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <VirtualizedProductGrid
-            products={products}
-            columnCount={columnCount}
-            height={gridHeight}
-            width={containerWidth}
-          />
-        </motion.div>
-      )}
-    </div>
-  );
-}
 
 export default CollectionPage;

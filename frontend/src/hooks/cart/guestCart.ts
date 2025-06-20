@@ -59,8 +59,8 @@ export const writeGuestCart = (cart: GuestCartData): void => {
     
     const recalculated = recalculateTotals(cart.cartItems);
     localStorage.setItem(GUEST_CART_KEY, JSON.stringify(recalculated));
-  } catch (error) {
-    console.error('Failed to write guest cart:', error);
+  } catch {
+    // Handle error silently - localStorage may be unavailable
   }
 };
 
@@ -71,8 +71,8 @@ export const clearGuestCart = (): void => {
   
   try {
     localStorage.removeItem(GUEST_CART_KEY);
-  } catch (error) {
-    console.error('Failed to clear guest cart:', error);
+  } catch {
+    // Handle error silently - localStorage may be unavailable
   }
 };
 
@@ -118,7 +118,7 @@ export const addToGuestCart = (params: AddToGuestCartParams | Product): GuestCar
   }
   
   const existingItemIndex = cart.cartItems.findIndex(item => 
-    item.product._id === product._id && item.variantId === variantId
+    item.product._id === product._id && item.variantId === variantId,
   );
   
   if (existingItemIndex >= 0) {
@@ -138,7 +138,7 @@ export const addToGuestCart = (params: AddToGuestCartParams | Product): GuestCar
 export const updateGuestCartQuantity = (productId: string, quantity: number, variantId?: string): GuestCartData => {
   const cart = readGuestCart();
   const itemIndex = cart.cartItems.findIndex(item => 
-    item.product._id === productId && item.variantId === variantId
+    item.product._id === productId && item.variantId === variantId,
   );
   
   if (itemIndex >= 0) {
@@ -157,7 +157,7 @@ export const updateGuestCartQuantity = (productId: string, quantity: number, var
 export const removeFromGuestCart = (productId: string, variantId?: string): GuestCartData => {
   const cart = readGuestCart();
   cart.cartItems = cart.cartItems.filter(item => 
-    !(item.product._id === productId && item.variantId === variantId)
+    !(item.product._id === productId && item.variantId === variantId),
   );
   
   const updatedCart = recalculateTotals(cart.cartItems);

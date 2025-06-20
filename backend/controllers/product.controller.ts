@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../types/express.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { productService } from '../services/product.service.js';
+import { ProductVariant } from '../validations/product.validation.js';
 
 export const getAllProducts = asyncHandler(async (req: Request, res: Response) => {
   const { search, page = '1', limit = '12' } = req.query;
@@ -10,8 +11,8 @@ export const getAllProducts = asyncHandler(async (req: Request, res: Response) =
   const limitNum = parseInt(limit as string, 10) || 12;
   
   const result = await productService.getAllProducts(
-    pageNum as number, 
-    limitNum as number, 
+    pageNum, 
+    limitNum, 
     search as string | undefined,
   );
   
@@ -35,7 +36,7 @@ export const createProduct = asyncHandler(async (req: AuthRequest, res: Response
     image: string;
     collectionId?: string;
     isFeatured?: boolean;
-    variants?: any[];
+    variants?: ProductVariant[];
     relatedProducts?: string[];
   };
 
@@ -61,7 +62,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response) =>
     image?: string;
     collectionId?: string;
     isFeatured?: boolean;
-    variants?: any[];
+    variants?: ProductVariant[];
     relatedProducts?: string[];
   };
   

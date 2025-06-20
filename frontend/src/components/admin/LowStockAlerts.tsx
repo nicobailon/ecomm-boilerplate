@@ -6,6 +6,9 @@ import { Switch } from '@/components/ui/Switch';
 import { Label } from '@/components/ui/Label';
 import { InventoryBadge } from '@/components/ui/InventoryBadge';
 import { getRestockUrgency } from '@/utils/inventory';
+import { useLowStockProducts } from '@/hooks/queries/useInventory';
+import { InventoryTableLoading } from '@/components/ui/InventorySkeleton';
+import type { LowStockItem } from '@/types/inventory';
 
 interface AlertConfig {
   productId: string;
@@ -14,62 +17,74 @@ interface AlertConfig {
   enabled: boolean;
 }
 
-interface LowStockItem {
+interface ReorderListItem {
   productId: string;
+  variantId?: string;
   productName: string;
-  variantInfo?: string;
-  currentStock: number;
+  variantName?: string;
   threshold: number;
-  lastNotified?: string;
+  suggestedQuantity?: number;
+  addedAt?: string;
 }
-
-// Mock data
-const mockLowStockItems: LowStockItem[] = [
-  {
-    productId: '1',
-    productName: 'Classic T-Shirt',
-    variantInfo: 'Size: M',
-    currentStock: 3,
-    threshold: 5,
-    lastNotified: '2 hours ago'
-  },
-  {
-    productId: '2',
-    productName: 'Classic T-Shirt',
-    variantInfo: 'Size: L',
-    currentStock: 0,
-    threshold: 5,
-    lastNotified: '1 day ago'
-  },
-  {
-    productId: '3',
-    productName: 'Denim Jeans',
-    currentStock: 8,
-    threshold: 10,
-    lastNotified: 'Never'
-  }
-];
-
-const mockAlertConfigs: AlertConfig[] = [
-  { productId: '1', productName: 'Classic T-Shirt', threshold: 5, enabled: true },
-  { productId: '2', productName: 'Denim Jeans', threshold: 10, enabled: true },
-  { productId: '3', productName: 'Winter Jacket', threshold: 3, enabled: false },
-];
 
 export function LowStockAlerts() {
   const [showSettings, setShowSettings] = useState(false);
   const [globalThreshold, setGlobalThreshold] = useState(5);
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [alertConfigs, setAlertConfigs] = useState(mockAlertConfigs);
+  const [alertConfigs, setAlertConfigs] = useState<AlertConfig[]>([]);
+  const [page, setPage] = useState(1);
+  
+  // Fetch low stock products with real data
+  const { data, isLoading } = useLowStockProducts(globalThreshold, page, 20);
+  const lowStockItems = data?.alerts ?? [];
+  const totalPages = data?.totalPages ?? 1;
 
   const handleQuickRestock = (productId: string) => {
-    // Mock restock action
-    alert(`Opening restock form for product ${productId}`);
+    // Navigate to inventory management with the product selected
+    // In a real app, this would open a modal or navigate to a restock form
+    window.location.href = `/admin/inventory?productId=${productId}&action=restock`;
   };
 
   const handlePreviewEmail = () => {
-    // Mock email preview
-    alert('Email preview:\n\nSubject: Low Stock Alert - 3 items need attention\n\nDear Admin,\n\nThe following items are running low on stock...');
+    // Generate email preview content
+    const emailSubject = `Low Stock Alert - ${data?.total ?? 0} items need attention`;
+    const emailBody = `
+Dear Admin,
+
+The following items are running low on stock:
+
+${lowStockItems.slice(0, 5).map(item => 
+  `• ${item.productName}${item.variantName ? ` (${item.variantName})` : ''}: ${item.currentStock} units remaining (threshold: ${item.threshold})`,
+).join('\n')}
+${lowStockItems.length > 5 ? `\n...and ${lowStockItems.length - 5} more items` : ''}
+
+Please review and restock as necessary.
+
+Best regards,
+Inventory Management System`;
+    
+    // Open email preview in a new window
+    const previewWindow = window.open('', 'emailPreview', 'width=600,height=400');
+    if (previewWindow) {
+      previewWindow.document.write(`
+        <html>
+          <head>
+            <title>Email Preview</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              pre { white-space: pre-wrap; }
+            </style>
+          </head>
+          <body>
+            <h3>Subject: ${emailSubject}</h3>
+            <hr>
+            <pre>${emailBody}</pre>
+            <hr>
+            <button onclick="window.close()">Close Preview</button>
+          </body>
+        </html>
+      `);
+    }
   };
 
   const updateThreshold = (productId: string, newThreshold: number) => {
@@ -77,8 +92,8 @@ export function LowStockAlerts() {
       configs.map(config => 
         config.productId === productId 
           ? { ...config, threshold: newThreshold }
-          : config
-      )
+          : config,
+      ),
     );
   };
 
@@ -87,11 +102,15 @@ export function LowStockAlerts() {
       configs.map(config => 
         config.productId === productId 
           ? { ...config, enabled: !config.enabled }
-          : config
-      )
+          : config,
+      ),
     );
   };
 
+  if (isLoading) {
+    return <InventoryTableLoading />;
+  }
+  
   return (
     <div className="space-y-6">
       {/* Alert Summary */}
@@ -100,7 +119,7 @@ export function LowStockAlerts() {
           <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5" />
           <div className="flex-1">
             <h3 className="font-medium text-orange-900">
-              {mockLowStockItems.length} items are running low on stock
+              {data?.total ?? 0} items are running low on stock
             </h3>
             <p className="text-sm text-orange-700 mt-1">
               Immediate action recommended for items with critical stock levels
@@ -130,7 +149,10 @@ export function LowStockAlerts() {
                   id="global-threshold"
                   type="number"
                   value={globalThreshold}
-                  onChange={(e) => setGlobalThreshold(parseInt(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    setGlobalThreshold(isNaN(value) ? 0 : value);
+                  }}
                   className="w-24"
                   min={1}
                 />
@@ -178,7 +200,10 @@ export function LowStockAlerts() {
                     <Input
                       type="number"
                       value={config.threshold}
-                      onChange={(e) => updateThreshold(config.productId, parseInt(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        updateThreshold(config.productId, isNaN(value) ? 0 : value);
+                      }}
                       className="w-20 h-8"
                       min={1}
                       disabled={!config.enabled}
@@ -196,18 +221,18 @@ export function LowStockAlerts() {
       <div className="space-y-4">
         <h3 className="font-medium">Current Low Stock Items</h3>
         
-        {mockLowStockItems.map((item) => {
+        {lowStockItems.map((item: LowStockItem) => {
           const urgency = getRestockUrgency(item.currentStock);
           
           return (
-            <div key={`${item.productId}-${item.variantInfo}`} className="border rounded-lg p-4">
+            <div key={`${item.productId}-${item.variantName ?? item.variantId ?? 'default'}`} className="border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <h4 className="font-medium">{item.productName}</h4>
-                    {item.variantInfo && (
+                    {item.variantName && (
                       <span className="text-sm text-muted-foreground">
-                        ({item.variantInfo})
+                        ({item.variantName})
                       </span>
                     )}
                     <InventoryBadge inventory={item.currentStock} variant="admin" showCount />
@@ -215,8 +240,12 @@ export function LowStockAlerts() {
                   
                   <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                     <span>Threshold: {item.threshold} units</span>
-                    <span>•</span>
-                    <span>Last notified: {item.lastNotified}</span>
+                    {item.lastRestocked && (
+                      <>
+                        <span>•</span>
+                        <span>Last restocked: {new Date(item.lastRestocked).toLocaleDateString()}</span>
+                      </>
+                    )}
                     {urgency === 'critical' && (
                       <>
                         <span>•</span>
@@ -239,8 +268,31 @@ export function LowStockAlerts() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      // Mock add to cart for reorder
-                      alert(`Added ${item.productName} to reorder list`);
+                      // Add to reorder list (stored in localStorage for now)
+                      const reorderList = JSON.parse(localStorage.getItem('reorderList') ?? '[]') as ReorderListItem[];
+                      const existingIndex = reorderList.findIndex((r) => 
+                        r.productId === item.productId && r.variantId === item.variantId,
+                      );
+                      
+                      if (existingIndex === -1) {
+                        reorderList.push({
+                          productId: item.productId,
+                          variantId: item.variantId,
+                          productName: item.productName,
+                          variantName: item.variantName,
+                          threshold: item.threshold,
+                          suggestedQuantity: Math.max(item.threshold * 2 - item.currentStock, 10),
+                          addedAt: new Date().toISOString(),
+                        });
+                        localStorage.setItem('reorderList', JSON.stringify(reorderList));
+                        
+                        // Show success message (could be a toast in production)
+                        const message = document.createElement('div');
+                        message.textContent = `Added ${item.productName} to reorder list`;
+                        message.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; z-index: 9999;';
+                        document.body.appendChild(message);
+                        setTimeout(() => message.remove(), 3000);
+                      }
                     }}
                   >
                     <ShoppingCart className="w-4 h-4" />
@@ -251,10 +303,35 @@ export function LowStockAlerts() {
           );
         })}
 
-        {mockLowStockItems.length === 0 && (
+        {lowStockItems.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>All products are well stocked!</p>
+          </div>
+        )}
+        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-6">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              Previous
+            </Button>
+            <span className="flex items-center px-3 text-sm">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              Next
+            </Button>
           </div>
         )}
       </div>

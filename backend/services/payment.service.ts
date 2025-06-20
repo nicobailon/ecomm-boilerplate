@@ -68,17 +68,17 @@ export class PaymentService {
         const isAvailable = await inventoryService.checkAvailability(
           serverProduct._id.toString(),
           requestedProduct.variantId,
-          requestedProduct.quantity
+          requestedProduct.quantity,
         );
         
         if (!isAvailable) {
           const availableStock = await inventoryService.getAvailableInventory(
             serverProduct._id.toString(),
-            requestedProduct.variantId
+            requestedProduct.variantId,
           );
           throw new AppError(
-            `Insufficient inventory for ${serverProduct.name} (${variant.size || ''} ${variant.color || ''}). Available: ${availableStock}`,
-            400
+            `Insufficient inventory for ${serverProduct.name} (${variant.size ?? ''} ${variant.color ?? ''}). Available: ${availableStock}`,
+            400,
           );
         }
 
@@ -111,7 +111,7 @@ export class PaymentService {
             images: [serverProduct.image],
             metadata: {
               productId: requestedProduct._id,
-              variantId: requestedProduct.variantId || '',
+              variantId: requestedProduct.variantId ?? '',
             },
           },
           unit_amount: amount,
@@ -141,13 +141,11 @@ export class PaymentService {
       });
       
       // If not found, try general discount code
-      if (!coupon) {
-        coupon = await Coupon.findOne({ 
-          code: couponCode.toUpperCase(), 
-          userId: { $exists: false }, 
-          isActive: true, 
-        });
-      }
+      coupon ??= await Coupon.findOne({ 
+        code: couponCode.toUpperCase(), 
+        userId: { $exists: false }, 
+        isActive: true, 
+      });
       
       if (coupon) {
         // Check if expired
@@ -205,8 +203,8 @@ export class PaymentService {
 
     // Use transaction to ensure atomicity between coupon usage and order creation
     const dbSession = await mongoose.startSession();
-    let orderId: mongoose.Types.ObjectId;
-    let totalAmount: number;
+    let orderId: mongoose.Types.ObjectId | undefined;
+    let totalAmount: number | undefined;
 
     try {
       await dbSession.withTransaction(async () => {
@@ -241,18 +239,18 @@ export class PaymentService {
           const User = mongoose.model('User');
           const user = await User.findById(userId).session(dbSession);
           
-          if (user && user.cartItems) {
+          if (user?.cartItems) {
             for (const cartItem of user.cartItems) {
               const product = products.find(p => 
                 p.id === cartItem.product.toString() && 
-                p.variantId === cartItem.variantId
+                p.variantId === cartItem.variantId,
               );
               
               if (product && cartItem.reservationId) {
                 // Convert reservation to permanent decrement
                 await inventoryService.convertReservationToPermanent(
                   cartItem.reservationId,
-                  orderId.toString()
+                  orderId.toString(),
                 );
               }
             }
@@ -268,9 +266,13 @@ export class PaymentService {
       await dbSession.endSession();
     }
 
+    if (!orderId || totalAmount === undefined) {
+      throw new AppError('Order creation failed', 500);
+    }
+    
     return {
-      orderId: orderId!,
-      totalAmount: totalAmount!,
+      orderId,
+      totalAmount,
     };
   }
 
@@ -297,7 +299,7 @@ export class PaymentService {
     await newCoupon.save();
   }
 
-  async refundOrder(orderId: string, reason: string = 'Customer requested refund'): Promise<void> {
+  async refundOrder(orderId: string, reason = 'Customer requested refund'): Promise<void> {
     const dbSession = await mongoose.startSession();
     
     try {
@@ -330,7 +332,7 @@ export class PaymentService {
             item.quantity, // Positive adjustment to restore inventory
             'return',
             'system',
-            { orderId, reason }
+            { orderId, reason },
           );
         }
 
@@ -369,7 +371,7 @@ export class PaymentService {
             item.quantity, // Positive adjustment to restore inventory
             'return',
             userId,
-            { orderId, reason: 'Order cancelled by customer' }
+            { orderId, reason: 'Order cancelled by customer' },
           );
         }
 
@@ -392,7 +394,7 @@ export class PaymentService {
       const User = mongoose.model('User');
       const user = await User.findById(userId);
       
-      if (user && user.cartItems) {
+      if (user?.cartItems) {
         await cartService.clearCartReservations(user);
       }
     }

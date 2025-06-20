@@ -15,7 +15,7 @@ export const InventoryBadge = React.memo(function InventoryBadge({
   variant = 'collection',
   threshold = 5,
   showCount = false,
-  className
+  className,
 }: InventoryBadgeProps) {
   const status = getStockStatus(inventory);
   const colorClasses = getStockBadgeColor(status);
@@ -23,7 +23,7 @@ export const InventoryBadge = React.memo(function InventoryBadge({
   const sizeClasses = {
     collection: 'text-xs px-2 py-0.5',
     detail: 'text-sm px-3 py-1',
-    admin: 'text-sm px-2.5 py-1'
+    admin: 'text-sm px-2.5 py-1',
   };
 
   const pulseAnimation = inventory <= 3 && inventory > 0 ? 'animate-pulse' : '';
@@ -41,7 +41,7 @@ export const InventoryBadge = React.memo(function InventoryBadge({
         colorClasses,
         sizeClasses[variant],
         pulseAnimation,
-        className
+        className,
       )}
       aria-label={`Stock status: ${displayText}`}
       role="status"

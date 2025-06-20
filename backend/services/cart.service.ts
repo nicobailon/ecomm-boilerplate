@@ -64,7 +64,8 @@ export class CartService {
       if (!productMap.has(productId)) {
         productMap.set(productId, { variantIds: new Set(), cartItems: [] });
       }
-      const data = productMap.get(productId)!;
+      const data = productMap.get(productId);
+      if (!data) return; // This should never happen due to the check above
       if (item.variantId) {
         data.variantIds.add(item.variantId);
       }
@@ -81,8 +82,8 @@ export class CartService {
         image: 1,
         collectionId: 1,
         isFeatured: 1,
-        variants: 1
-      }
+        variants: 1,
+      },
     ).lean();
 
     const cartItems: CartProductWithQuantity[] = [];
@@ -201,13 +202,13 @@ export class CartService {
         const isAvailable = await inventoryService.checkAvailability(
           productId,
           variantId,
-          newQuantity
+          newQuantity,
         );
         
         if (!isAvailable) {
           const availableStock = await inventoryService.getAvailableInventory(
             productId,
-            variantId
+            variantId,
           );
           throw new AppError(`Cannot add more items. Only ${availableStock} available in stock`, 400);
         }
@@ -224,11 +225,11 @@ export class CartService {
           newQuantity,
           sessionId,
           30 * 60 * 1000, // 30 minutes
-          user._id.toString()
+          user._id.toString(),
         );
         
         if (!reservationResult.success) {
-          throw new AppError(reservationResult.message || 'Failed to reserve inventory', 400);
+          throw new AppError(reservationResult.message ?? 'Failed to reserve inventory', 400);
         }
         
         existingItem.quantity = newQuantity;
@@ -241,11 +242,11 @@ export class CartService {
           1,
           sessionId,
           30 * 60 * 1000, // 30 minutes
-          user._id.toString()
+          user._id.toString(),
         );
         
         if (!reservationResult.success) {
-          throw new AppError(reservationResult.message || 'Product out of stock', 400);
+          throw new AppError(reservationResult.message ?? 'Product out of stock', 400);
         }
         
         user.cartItems.push({ 
@@ -331,7 +332,7 @@ export class CartService {
     
     try {
       const existingItem = user.cartItems.find((item) => 
-        item.product.toString() === productId && item.variantId === variantId
+        item.product.toString() === productId && item.variantId === variantId,
       );
 
       if (!existingItem) {
@@ -360,13 +361,13 @@ export class CartService {
         const isAvailable = await inventoryService.checkAvailability(
           productId,
           variantId,
-          quantity
+          quantity,
         );
         
         if (!isAvailable) {
           const availableStock = await inventoryService.getAvailableInventory(
             productId,
-            variantId
+            variantId,
           );
           throw new AppError(`Cannot update quantity. Only ${availableStock} available in stock`, 400);
         }
@@ -383,11 +384,11 @@ export class CartService {
           quantity,
           sessionId,
           30 * 60 * 1000, // 30 minutes
-          user._id.toString()
+          user._id.toString(),
         );
         
         if (!reservationResult.success) {
-          throw new AppError(reservationResult.message || 'Failed to reserve inventory', 400);
+          throw new AppError(reservationResult.message ?? 'Failed to reserve inventory', 400);
         }
         
         existingItem.quantity = quantity;

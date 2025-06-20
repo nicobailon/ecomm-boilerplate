@@ -22,10 +22,10 @@ export function useMetaTags({
   availability,
 }: MetaTagsProps) {
   useEffect(() => {
-    const siteUrl = import.meta.env.VITE_SITE_URL || 'https://example.com';
-    const fullUrl = url ? `${siteUrl}${url}` : siteUrl;
+    const siteUrl = (import.meta.env.VITE_SITE_URL as string | undefined) ?? 'https://example.com';
+    const fullUrl: string = url ? `${siteUrl}${url}` : siteUrl;
     const defaultImage = `${siteUrl}/og-image.jpg`;
-    const ogImage = image || defaultImage;
+    const ogImage = image ?? defaultImage;
 
     document.title = title;
 

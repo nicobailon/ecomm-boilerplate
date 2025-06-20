@@ -3,14 +3,16 @@ import { FixedSizeList as List } from 'react-window';
 import { InventoryBadge } from '@/components/ui/InventoryBadge';
 import { Button } from '@/components/ui/Button';
 import { Plus, Minus } from 'lucide-react';
-import type { Product } from '@/types';
+import type { RouterOutputs } from '@/lib/trpc';
 import { useProductInventory, useUpdateInventory } from '@/hooks/queries/useInventory';
 import { InventoryBadgeLoading } from '@/components/ui/InventorySkeleton';
 
+type TRPCProduct = NonNullable<RouterOutputs['product']['list']>['products'][0];
+
 interface VirtualizedInventoryTableProps {
-  products: Product[];
+  products: TRPCProduct[];
   height: number;
-  onProductSelect?: (product: Product) => void;
+  onProductSelect?: (product: TRPCProduct) => void;
 }
 
 const ROW_HEIGHT = 80;
@@ -19,24 +21,24 @@ const ROW_HEIGHT = 80;
 const Row = React.memo(({ 
   index, 
   style, 
-  data 
+  data, 
 }: {
   index: number;
   style: React.CSSProperties;
   data: { 
-    products: Product[]; 
-    onProductSelect?: (product: Product) => void;
+    products: TRPCProduct[]; 
+    onProductSelect?: (product: TRPCProduct) => void;
   };
 }) => {
   const { products, onProductSelect } = data;
   const product = products[index];
-  const { data: inventoryData, isLoading } = useProductInventory(product._id);
+  const { data: inventoryData, isLoading } = useProductInventory(product._id ?? '');
   const updateInventory = useUpdateInventory();
   
   const handleAdjustment = (adjustment: number) => {
     if (inventoryData) {
       updateInventory.mutate({
-        productId: product._id,
+        productId: product._id ?? '',
         adjustment,
         reason: adjustment > 0 ? 'restock' : 'adjustment',
       });
@@ -60,7 +62,7 @@ const Row = React.memo(({
         />
         <div>
           <div className="font-medium text-sm">{product.name}</div>
-          <div className="text-xs text-muted-foreground">SKU: {product.sku || 'N/A'}</div>
+          <div className="text-xs text-muted-foreground">Product ID: {product._id}</div>
         </div>
       </div>
       
@@ -69,7 +71,7 @@ const Row = React.memo(({
           <InventoryBadgeLoading />
         ) : (
           <InventoryBadge 
-            inventory={inventoryData?.availableStock || 0}
+            inventory={inventoryData?.availableStock ?? 0}
             variant="admin"
             showCount
           />
@@ -77,7 +79,7 @@ const Row = React.memo(({
       </div>
       
       <div className="w-24 text-center text-sm">
-        {inventoryData?.lowStockThreshold || 10}
+        {inventoryData?.lowStockThreshold ?? 10}
       </div>
       
       <div className="w-40 flex items-center justify-center gap-2">
@@ -91,7 +93,7 @@ const Row = React.memo(({
         </Button>
         
         <span className="w-16 text-center font-mono text-sm">
-          {inventoryData?.availableStock || 0}
+          {inventoryData?.availableStock ?? 0}
         </span>
         
         <Button
@@ -112,11 +114,11 @@ Row.displayName = 'Row';
 export function VirtualizedInventoryTable({ 
   products, 
   height,
-  onProductSelect 
+  onProductSelect, 
 }: VirtualizedInventoryTableProps) {
   const itemData = React.useMemo(
     () => ({ products, onProductSelect }),
-    [products, onProductSelect]
+    [products, onProductSelect],
   );
   
   return (

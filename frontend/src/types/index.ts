@@ -17,14 +17,14 @@ export interface Product {
   isFeatured: boolean;
   slug?: string;
   sku?: string;
-  variants?: Array<{
+  variants?: {
     variantId: string;
-    size?: string;
+    label?: string;
     color?: string;
     price: number;
     inventory: number;
     sku?: string;
-  }>;
+  }[];
   inventory?: number;
   lowStockThreshold?: number;
   createdAt: string;
@@ -41,7 +41,7 @@ export interface CartItem {
   quantity: number;
   variantId?: string;
   variantDetails?: {
-    size?: string;
+    label?: string;
     color?: string;
     price: number;
     sku?: string;

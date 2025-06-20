@@ -11,16 +11,6 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
   const [selectedIndex, setSelectedIndex] = useState(0);
   const galleryRef = useRef<HTMLDivElement>(null);
 
-  if (!images || images.length === 0) {
-    return (
-      <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-        <p className="text-muted-foreground">No image available</p>
-      </div>
-    );
-  }
-
-  const selectedImage = images[selectedIndex];
-
   const handleSwipeLeft = () => {
     if (selectedIndex < images.length - 1) {
       setSelectedIndex(selectedIndex + 1);
@@ -37,6 +27,16 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
     onSwipeLeft: handleSwipeLeft,
     onSwipeRight: handleSwipeRight,
   });
+
+  if (!images || images.length === 0) {
+    return (
+      <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
+        <p className="text-muted-foreground">No image available</p>
+      </div>
+    );
+  }
+
+  const selectedImage = images[selectedIndex];
 
   return (
     <div className="space-y-4">

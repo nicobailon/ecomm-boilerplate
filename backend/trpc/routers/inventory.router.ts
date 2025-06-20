@@ -39,13 +39,15 @@ export const inventoryRouter = router({
       z.object({
         productId: z.string().min(1),
         variantId: z.string().optional(),
-      })
+        variantLabel: z.string().optional(),
+      }),
     )
     .query(async ({ input }) => {
       try {
         return await inventoryService.getProductInventoryInfo(
           input.productId,
-          input.variantId
+          input.variantId,
+          input.variantLabel,
         );
       } catch (error) {
         if (isAppError(error)) {
@@ -69,11 +71,13 @@ export const inventoryRouter = router({
         const isAvailable = await inventoryService.checkAvailability(
           input.productId,
           input.variantId,
-          input.quantity
+          input.quantity,
+          input.variantLabel,
         );
         const availableStock = await inventoryService.getAvailableInventory(
           input.productId,
-          input.variantId
+          input.variantId,
+          input.variantLabel,
         );
         return {
           isAvailable,
@@ -112,7 +116,9 @@ export const inventoryRouter = router({
           input.adjustment,
           input.reason,
           ctx.user._id.toString(),
-          input.metadata
+          input.metadata,
+          0, // retryCount
+          input.variantLabel,
         );
       } catch (error) {
         if (isAppError(error)) {
@@ -142,9 +148,9 @@ export const inventoryRouter = router({
 
         return await inventoryService.bulkUpdateInventory(
           input.updates,
-          ctx.user._id.toString()
+          ctx.user._id.toString(),
         );
-      } catch (error) {
+      } catch {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to perform bulk inventory update',
@@ -161,9 +167,9 @@ export const inventoryRouter = router({
           input.productId,
           input.variantId,
           input.limit,
-          input.offset
+          input.offset,
         );
-      } catch (error) {
+      } catch {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch inventory history',
@@ -187,7 +193,7 @@ export const inventoryRouter = router({
           page: input.page,
           totalPages: Math.ceil(alerts.length / input.limit),
         };
-      } catch (error) {
+      } catch {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch low stock products',
@@ -200,7 +206,7 @@ export const inventoryRouter = router({
     .query(async () => {
     try {
       return await inventoryService.getInventoryMetrics();
-    } catch (error) {
+    } catch {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to fetch inventory metrics',
@@ -213,7 +219,7 @@ export const inventoryRouter = router({
     .query(async () => {
     try {
       return await inventoryService.getOutOfStockProducts();
-    } catch (error) {
+    } catch {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to fetch out of stock products',
@@ -230,7 +236,7 @@ export const inventoryRouter = router({
           start: input.startDate,
           end: input.endDate,
         });
-      } catch (error) {
+      } catch {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to calculate inventory turnover',
@@ -243,10 +249,11 @@ export const inventoryRouter = router({
       z.object({
         productId: z.string().min(1),
         variantId: z.string().optional(),
+        variantLabel: z.string().optional(),
         quantity: z.number().int().positive(),
         sessionId: z.string().min(1),
         duration: z.number().int().positive().optional(),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       try {
@@ -256,7 +263,8 @@ export const inventoryRouter = router({
           input.quantity,
           input.sessionId,
           input.duration,
-          ctx.user?._id.toString()
+          ctx.user?._id.toString(),
+          input.variantLabel,
         );
       } catch (error) {
         if (isAppError(error)) {
@@ -278,7 +286,7 @@ export const inventoryRouter = router({
       try {
         await inventoryService.releaseReservation(input.reservationId);
         return { success: true };
-      } catch (error) {
+      } catch {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to release reservation',
@@ -292,7 +300,7 @@ export const inventoryRouter = router({
       try {
         await inventoryService.releaseSessionReservations(input.sessionId);
         return { success: true };
-      } catch (error) {
+      } catch {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to release session reservations',

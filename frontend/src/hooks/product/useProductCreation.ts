@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useCreateProduct } from './useProducts';
-import type { ProductInput } from '@/lib/validations';
+import type { ProductInput, ProductFormInput } from '@/lib/validations';
 import { productEvents } from '@/lib/events';
 import { useLocalStorage } from '@/hooks/utils/useLocalStorage';
 import type { TabId, Product } from '@/types';
@@ -15,7 +15,7 @@ interface UseProductCreationState {
   sessionCount: number;
   bulkMode: boolean;
   targetTab: TabId | null;
-  draftData: Partial<ProductInput> | null;
+  draftData: Partial<ProductFormInput> | null;
 }
 
 interface UseProductCreationOptions {
@@ -46,27 +46,27 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
   const [bulkMode, setBulkMode] = useLocalStorage('product-bulk-mode', false);
   
   // Draft management
-  const [draftData, setDraftData] = useState<Partial<ProductInput> | null>(() => {
+  const [draftData, setDraftData] = useState<Partial<ProductFormInput> | null>(() => {
     if (!enableDraft) return null;
     
     try {
       const draft = localStorage.getItem(DRAFT_KEY);
-      return draft ? JSON.parse(draft) : null;
+      return draft ? (JSON.parse(draft) as Partial<ProductFormInput>) : null;
     } catch {
       return null;
     }
   });
 
   // Save draft to localStorage
-  const saveDraft = useCallback((data: Partial<ProductInput>) => {
+  const saveDraft = useCallback((data: Partial<ProductFormInput>) => {
     if (!enableDraft) return;
     
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
       setDraftData(data);
       toast.success('Draft saved 💾');
-    } catch (error) {
-      console.error('Failed to save draft:', error);
+    } catch {
+      // Handle error silently - localStorage may be unavailable
     }
   }, [enableDraft]);
 
@@ -83,13 +83,13 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
     try {
       const draft = localStorage.getItem(DRAFT_KEY);
       if (draft) {
-        const data = JSON.parse(draft);
+        const data = JSON.parse(draft) as Partial<ProductFormInput>;
         setDraftData(data);
         toast.success('Draft loaded');
         return data;
       }
-    } catch (error) {
-      console.error('Failed to load draft:', error);
+    } catch {
+      // Handle error silently - localStorage may be unavailable
     }
     return null;
   }, [enableDraft]);
@@ -121,9 +121,25 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
   }, [navigationDelay, onNavigate]);
 
   // Create product handler
-  const createProduct = useCallback(async (data: ProductInput) => {
+  const createProduct = useCallback(async (data: ProductFormInput | ProductInput) => {
     return new Promise<string>((resolve, reject) => {
-      createProductMutation.mutate(data, {
+      // Ensure all required fields are present for ProductInput
+      const productData: ProductInput = {
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        image: data.image,
+        collectionId: data.collectionId,
+        variants: data.variants?.map(v => ({
+          label: v.label,
+          color: v.color,
+          priceAdjustment: 'priceAdjustment' in v && typeof v.priceAdjustment === 'number' ? v.priceAdjustment : 0,
+          inventory: 'inventory' in v && typeof v.inventory === 'number' ? v.inventory : 0,
+          sku: v.sku,
+        })),
+      };
+      
+      createProductMutation.mutate(productData, {
         onSuccess: (response: Product) => {
           // Clear draft on successful creation
           if (enableDraft) {

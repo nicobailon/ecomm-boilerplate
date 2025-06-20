@@ -12,7 +12,7 @@ async function listCoupons(): Promise<void> {
     }
 
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('Connected to MongoDB');
+    console.warn('Connected to MongoDB');
 
     const args = process.argv.slice(2);
     const filterActive = args.includes('--active');
@@ -46,14 +46,14 @@ async function listCoupons(): Promise<void> {
       .sort({ createdAt: -1 });
 
     if (coupons.length === 0) {
-      console.log('\nNo coupons found matching the criteria.');
+      console.warn('\nNo coupons found matching the criteria.');
       process.exit(0);
     }
 
-    console.log(`\nFound ${coupons.length} coupon(s):`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('Code            | Discount | User                    | Status   | Expires        ');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.warn(`\nFound ${coupons.length} coupon(s):`);
+    console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.warn('Code            | Discount | User                    | Status   | Expires        ');
+    console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     for (const coupon of coupons) {
       const userDoc = coupon.userId as unknown as IUserDocument;
@@ -63,19 +63,19 @@ async function listCoupons(): Promise<void> {
       const resetColor = '\x1b[0m';
       const userEmail = userDoc && typeof userDoc === 'object' && 'email' in userDoc ? userDoc.email : 'N/A';
 
-      console.log(
+      console.warn(
         `${coupon.code.padEnd(15)} | ${(coupon.discountPercentage + '%').padEnd(8)} | ` +
         `${userEmail.padEnd(23)} | ${statusColor}${status.padEnd(8)}${resetColor} | ` +
         `${coupon.expirationDate.toLocaleDateString().padEnd(14)}`,
       );
     }
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-    console.log('\nUsage tips:');
-    console.log('  npm run list-coupons                    # List all coupons');
-    console.log('  npm run list-coupons --active           # List only active and non-expired coupons');
-    console.log('  npm run list-coupons --expired          # List only expired or used coupons');
-    console.log('  npm run list-coupons user@example.com   # List coupons for a specific user');
+    console.warn('\nUsage tips:');
+    console.warn('  npm run list-coupons                    # List all coupons');
+    console.warn('  npm run list-coupons --active           # List only active and non-expired coupons');
+    console.warn('  npm run list-coupons --expired          # List only expired or used coupons');
+    console.warn('  npm run list-coupons user@example.com   # List coupons for a specific user');
 
   } catch (error) {
     console.error('Error listing coupons:', error);

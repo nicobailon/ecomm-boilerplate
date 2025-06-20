@@ -22,20 +22,20 @@ const logFormat = winston.format.combine(
       timestamp,
       level,
       message,
-      correlationId: correlationId || 'no-correlation-id',
+      correlationId: correlationId ?? 'no-correlation-id',
       ...metadata,
     });
-  })
+  }),
 );
 
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: process.env.LOG_LEVEL ?? 'info',
   format: logFormat,
   transports: [
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
-        winston.format.simple()
+        winston.format.simple(),
       ),
     }),
   ],
@@ -47,12 +47,12 @@ if (process.env.NODE_ENV === 'production') {
     new winston.transports.File({
       filename: 'logs/error.log',
       level: 'error',
-    })
+    }),
   );
   logger.add(
     new winston.transports.File({
       filename: 'logs/combined.log',
-    })
+    }),
   );
 }
 
@@ -60,12 +60,17 @@ export function generateCorrelationId(): string {
   return uuidv4();
 }
 
-export function createLogger(defaultMetadata?: LogMetadata) {
+export function createLogger(defaultMetadata?: LogMetadata): {
+  info: (message: string, metadata?: LogMetadata) => void;
+  error: (message: string, error?: unknown, metadata?: LogMetadata) => void;
+  warn: (message: string, metadata?: LogMetadata) => void;
+  debug: (message: string, metadata?: LogMetadata) => void;
+} {
   return {
     info: (message: string, metadata?: LogMetadata) => {
       logger.info(message, { ...defaultMetadata, ...metadata });
     },
-    error: (message: string, error?: Error | unknown, metadata?: LogMetadata) => {
+    error: (message: string, error?: unknown, metadata?: LogMetadata) => {
       const errorObj = error instanceof Error ? error : new Error(String(error));
       logger.error(message, {
         ...defaultMetadata,

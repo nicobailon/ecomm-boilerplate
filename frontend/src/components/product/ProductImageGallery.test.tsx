@@ -13,7 +13,7 @@ describe('ProductImageGallery', () => {
       <ProductImageGallery 
         images={['https://example.com/single.jpg']} 
         productName="Test Product" 
-      />
+      />,
     );
 
     expect(screen.getByAltText('Test Product - Image 1')).toBeInTheDocument();
@@ -25,7 +25,7 @@ describe('ProductImageGallery', () => {
       <ProductImageGallery 
         images={mockImages} 
         productName="Test Product" 
-      />
+      />,
     );
 
     expect(screen.getByAltText('Test Product - Image 1')).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('ProductImageGallery', () => {
       <ProductImageGallery 
         images={mockImages} 
         productName="Test Product" 
-      />
+      />,
     );
 
     const secondThumbnail = screen.getByRole('button', { name: 'View image 2' });
@@ -54,7 +54,7 @@ describe('ProductImageGallery', () => {
       <ProductImageGallery 
         images={[]} 
         productName="Test Product" 
-      />
+      />,
     );
 
     expect(screen.getByText('No image available')).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('ProductImageGallery', () => {
       <ProductImageGallery 
         images={mockImages} 
         productName="Test Product" 
-      />
+      />,
     );
 
     const dots = screen.getAllByRole('button', { name: /Go to image/ });

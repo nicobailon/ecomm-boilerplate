@@ -1,0 +1,828 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "E-Commerce Store API",
+    "description": "API documentation for the e-commerce store with variant label support",
+    "version": "2.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "support@example.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "Production server"
+    },
+    {
+      "url": "https://staging-api.example.com",
+      "description": "Staging server"
+    },
+    {
+      "url": "http://localhost:5000",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Status",
+      "description": "System status endpoints"
+    },
+    {
+      "name": "Products",
+      "description": "Product management endpoints"
+    },
+    {
+      "name": "Inventory",
+      "description": "Inventory management endpoints"
+    },
+    {
+      "name": "Cart",
+      "description": "Shopping cart operations"
+    }
+  ],
+  "paths": {
+    "/api/trpc/status.flags": {
+      "get": {
+        "tags": ["Status"],
+        "summary": "Get feature flags",
+        "description": "Returns the current feature flag configuration including variant label support status",
+        "operationId": "getFeatureFlags",
+        "responses": {
+          "200": {
+            "description": "Feature flags retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "USE_VARIANT_LABEL": {
+                      "type": "boolean",
+                      "description": "Whether variant label support is enabled",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trpc/product.checkVariantAvailability": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Check variant availability",
+        "description": "Check if a specific product variant is available. Supports both legacy variantId and new variantLabel.",
+        "operationId": "checkVariantAvailability",
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "JSON-encoded input object"
+            },
+            "example": "{\"productId\":\"507f1f77bcf86cd799439011\",\"variantLabel\":\"Medium Red\"}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability check successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "available": {
+                              "type": "boolean",
+                              "description": "Whether the variant is available"
+                            },
+                            "quantity": {
+                              "type": "integer",
+                              "description": "Available quantity"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trpc/product.updateVariantInventory": {
+      "post": {
+        "tags": ["Products"],
+        "summary": "Update variant inventory",
+        "description": "Update inventory for a specific product variant. Supports both legacy variantId and new variantLabel.",
+        "operationId": "updateVariantInventory",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "description": "The product ID",
+                    "example": "507f1f77bcf86cd799439011"
+                  },
+                  "variantId": {
+                    "type": "string",
+                    "description": "The variant ID (legacy, optional if variantLabel provided)",
+                    "example": "v1"
+                  },
+                  "variantLabel": {
+                    "type": "string",
+                    "description": "The variant label (new, optional if variantId provided)",
+                    "example": "Medium Red"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "description": "The new quantity",
+                    "example": 10
+                  },
+                  "operation": {
+                    "type": "string",
+                    "enum": ["set", "increment", "decrement"],
+                    "description": "The operation to perform",
+                    "example": "set"
+                  }
+                },
+                "required": ["productId", "quantity", "operation"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inventory updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "success": {
+                              "type": "boolean"
+                            },
+                            "newQuantity": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trpc/inventory.getProductInventory": {
+      "get": {
+        "tags": ["Inventory"],
+        "summary": "Get product inventory",
+        "description": "Get inventory information for a product or specific variant. Supports both legacy variantId and new variantLabel.",
+        "operationId": "getProductInventory",
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "JSON-encoded input object"
+            },
+            "example": "{\"productId\":\"507f1f77bcf86cd799439011\",\"variantLabel\":\"Medium Red\"}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inventory retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "productId": {
+                              "type": "string"
+                            },
+                            "variantId": {
+                              "type": "string"
+                            },
+                            "variantLabel": {
+                              "type": "string"
+                            },
+                            "quantity": {
+                              "type": "integer"
+                            },
+                            "reservedQuantity": {
+                              "type": "integer"
+                            },
+                            "availableQuantity": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trpc/inventory.checkAvailability": {
+      "get": {
+        "tags": ["Inventory"],
+        "summary": "Check inventory availability",
+        "description": "Check if requested quantity is available for a variant. Supports both legacy variantId and new variantLabel.",
+        "operationId": "checkInventoryAvailability",
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "JSON-encoded input object"
+            },
+            "example": "{\"productId\":\"507f1f77bcf86cd799439011\",\"variantLabel\":\"Medium Red\",\"quantity\":2}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability check successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "available": {
+                              "type": "boolean"
+                            },
+                            "requestedQuantity": {
+                              "type": "integer"
+                            },
+                            "availableQuantity": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trpc/inventory.updateInventory": {
+      "post": {
+        "tags": ["Inventory"],
+        "summary": "Update inventory",
+        "description": "Adjust inventory for a variant with tracking. Supports both legacy variantId and new variantLabel.",
+        "operationId": "updateInventory",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "description": "The product ID",
+                    "example": "507f1f77bcf86cd799439011"
+                  },
+                  "variantId": {
+                    "type": "string",
+                    "description": "The variant ID (legacy, optional if variantLabel provided)",
+                    "example": "v1"
+                  },
+                  "variantLabel": {
+                    "type": "string",
+                    "description": "The variant label (new, optional if variantId provided)",
+                    "example": "Medium Red"
+                  },
+                  "adjustment": {
+                    "type": "integer",
+                    "description": "The inventory adjustment (positive or negative)",
+                    "example": 5
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": ["restock", "sale", "return", "adjustment", "damage"],
+                    "description": "The reason for adjustment",
+                    "example": "restock"
+                  }
+                },
+                "required": ["productId", "adjustment", "reason"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inventory updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "success": {
+                              "type": "boolean"
+                            },
+                            "previousQuantity": {
+                              "type": "integer"
+                            },
+                            "newQuantity": {
+                              "type": "integer"
+                            },
+                            "adjustment": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trpc/inventory.reserveInventory": {
+      "post": {
+        "tags": ["Inventory"],
+        "summary": "Reserve inventory",
+        "description": "Reserve inventory for a shopping session. Supports both legacy variantId and new variantLabel.",
+        "operationId": "reserveInventory",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "description": "The product ID",
+                    "example": "507f1f77bcf86cd799439011"
+                  },
+                  "variantId": {
+                    "type": "string",
+                    "description": "The variant ID (legacy, optional if variantLabel provided)",
+                    "example": "v1"
+                  },
+                  "variantLabel": {
+                    "type": "string",
+                    "description": "The variant label (new, optional if variantId provided)",
+                    "example": "Medium Red"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "description": "The quantity to reserve",
+                    "example": 2
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "The session ID for the reservation",
+                    "example": "session123"
+                  }
+                },
+                "required": ["productId", "quantity", "sessionId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inventory reserved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "reservationId": {
+                              "type": "string"
+                            },
+                            "expiresAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trpc/cart.add": {
+      "post": {
+        "tags": ["Cart"],
+        "summary": "Add to cart",
+        "description": "Add a product variant to the shopping cart. Supports both legacy variantId and new variantLabel.",
+        "operationId": "addToCart",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "description": "The product ID",
+                    "example": "507f1f77bcf86cd799439011"
+                  },
+                  "variantId": {
+                    "type": "string",
+                    "description": "The variant ID (legacy, optional if variantLabel provided)",
+                    "example": "v1"
+                  },
+                  "variantLabel": {
+                    "type": "string",
+                    "description": "The variant label (new, optional if variantId provided)",
+                    "example": "Medium Red"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "description": "The quantity to add",
+                    "default": 1,
+                    "example": 1
+                  }
+                },
+                "required": ["productId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item added to cart successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "cartId": {
+                              "type": "string"
+                            },
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/CartItem"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trpc/cart.updateQuantity": {
+      "post": {
+        "tags": ["Cart"],
+        "summary": "Update cart item quantity",
+        "description": "Update the quantity of a variant in the cart. Supports both legacy variantId and new variantLabel.",
+        "operationId": "updateCartQuantity",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "description": "The product ID",
+                    "example": "507f1f77bcf86cd799439011"
+                  },
+                  "variantId": {
+                    "type": "string",
+                    "description": "The variant ID (legacy, optional if variantLabel provided)",
+                    "example": "v1"
+                  },
+                  "variantLabel": {
+                    "type": "string",
+                    "description": "The variant label (new, optional if variantId provided)",
+                    "example": "Medium Red"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "description": "The new quantity",
+                    "example": 3
+                  }
+                },
+                "required": ["productId", "quantity"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Quantity updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "success": {
+                              "type": "boolean"
+                            },
+                            "newQuantity": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trpc/cart.remove": {
+      "post": {
+        "tags": ["Cart"],
+        "summary": "Remove from cart",
+        "description": "Remove a variant from the cart. Supports both legacy variantId and new variantLabel.",
+        "operationId": "removeFromCart",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "description": "The product ID",
+                    "example": "507f1f77bcf86cd799439011"
+                  },
+                  "variantId": {
+                    "type": "string",
+                    "description": "The variant ID (legacy, optional if variantLabel provided)",
+                    "example": "v1"
+                  },
+                  "variantLabel": {
+                    "type": "string",
+                    "description": "The variant label (new, optional if variantId provided)",
+                    "example": "Medium Red"
+                  }
+                },
+                "required": ["productId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item removed from cart successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "success": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProductVariant": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string",
+            "description": "Unique identifier for the variant"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable label for the variant (required in new system)",
+            "example": "Medium Red"
+          },
+          "size": {
+            "type": "string",
+            "enum": ["XS", "S", "M", "L", "XL", "XXL"],
+            "description": "Legacy size field (optional, being deprecated)"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color of the variant"
+          },
+          "price": {
+            "type": "number",
+            "format": "double",
+            "description": "Price of the variant"
+          },
+          "inventory": {
+            "type": "integer",
+            "description": "Current inventory count"
+          },
+          "reservedInventory": {
+            "type": "integer",
+            "description": "Reserved inventory count"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Array of image URLs"
+          },
+          "sku": {
+            "type": "string",
+            "description": "Stock keeping unit"
+          }
+        },
+        "required": ["variantId", "label", "price", "inventory", "reservedInventory", "images"]
+      },
+      "CartItem": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "variantLabel": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantDetails": {
+            "$ref": "#/components/schemas/ProductVariant"
+          }
+        }
+      },
+      "VariantIdentifier": {
+        "type": "object",
+        "description": "Identifies a variant using either variantId (legacy) or variantLabel (new)",
+        "properties": {
+          "variantId": {
+            "type": "string",
+            "description": "The variant ID (legacy method)"
+          },
+          "variantLabel": {
+            "type": "string",
+            "description": "The variant label (new method)"
+          }
+        },
+        "oneOf": [
+          {
+            "required": ["variantId"]
+          },
+          {
+            "required": ["variantLabel"]
+          }
+        ]
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token for authentication"
+      }
+    },
+    "parameters": {
+      "ProductId": {
+        "name": "productId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "The product ID"
+      },
+      "VariantId": {
+        "name": "variantId",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "The variant ID (legacy, optional if variantLabel provided)"
+      },
+      "VariantLabel": {
+        "name": "variantLabel",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "The variant label (new, optional if variantId provided)"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

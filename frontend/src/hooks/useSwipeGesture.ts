@@ -8,7 +8,7 @@ interface SwipeOptions {
 
 export function useSwipeGesture(
   elementRef: React.RefObject<HTMLElement>,
-  { onSwipeLeft, onSwipeRight, minSwipeDistance = 50 }: SwipeOptions
+  { onSwipeLeft, onSwipeRight, minSwipeDistance = 50 }: SwipeOptions,
 ) {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);

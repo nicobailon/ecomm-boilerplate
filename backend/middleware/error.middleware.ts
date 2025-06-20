@@ -22,7 +22,7 @@ export const errorHandler = (
     const message = 'Resource not found';
     error = new AppError(message, 404);
   } else if (err.name === 'ValidationError' && err instanceof mongoose.Error.ValidationError) {
-    const messages = Object.values(err.errors).map((val) => val.message);
+    const messages = Object.values(err.errors).map((val: mongoose.Error.ValidatorError | mongoose.Error.CastError) => val.message);
     error = new AppError(messages.join(', '), 400);
   } else if ('code' in err && err.code === 11000) {
     const message = 'Duplicate field value entered';

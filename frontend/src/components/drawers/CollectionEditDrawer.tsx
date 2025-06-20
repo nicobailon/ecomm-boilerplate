@@ -39,7 +39,6 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
           // Handle populated product objects
           return String(p._id);
         }
-        console.warn('Unexpected product format:', p);
         return '';
       }).filter(Boolean);
       
@@ -78,8 +77,8 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
           onSuccess: () => {
             onClose();
           },
-          onError: (error) => {
-            console.error('Failed to create collection:', error);
+          onError: (_error) => {
+            // Error is already handled by mutation hook
           },
         },
       );
@@ -96,8 +95,8 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
           onSuccess: (_data) => {
             onClose();
           },
-          onError: (error) => {
-            console.error('Failed to update products:', error);
+          onError: (_error) => {
+            // Error is already handled by mutation hook
           },
         },
       );

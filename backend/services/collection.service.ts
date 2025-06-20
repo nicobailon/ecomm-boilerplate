@@ -87,7 +87,7 @@ export class CollectionService {
         .populate('owner', 'name email')
         .populate({
           path: 'products',
-          select: '_id name description price image category isFeatured collectionId slug'
+          select: '_id name description price image category isFeatured collectionId slug',
         });
         
       if (!populatedCollection) {
@@ -337,7 +337,7 @@ export class CollectionService {
       .populate('owner', 'name email')
       .populate({
         path: 'products',
-        select: '_id name description price image category isFeatured collectionId slug'
+        select: '_id name description price image category isFeatured collectionId slug',
       });
 
     let nextCursor: string | null = null;
@@ -501,7 +501,7 @@ export class CollectionService {
         .populate('owner', 'name email')
         .populate({
           path: 'products',
-          select: '_id name description price image category isFeatured collectionId slug'
+          select: '_id name description price image category isFeatured collectionId slug',
         });
         
       if (!populatedCollection) {

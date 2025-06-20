@@ -1,6 +1,11 @@
 import { AppError } from './AppError.js';
 
 export function validateEnvVariables(): void {
+  // Set default NODE_ENV for test environments if not set
+  if (!process.env.NODE_ENV && (process.env.VITEST === 'true' || process.env.JEST_WORKER_ID)) {
+    process.env.NODE_ENV = 'test';
+  }
+  
   const requiredEnvVars = [
     'ACCESS_TOKEN_SECRET',
     'REFRESH_TOKEN_SECRET',
@@ -10,6 +15,10 @@ export function validateEnvVariables(): void {
     'CLIENT_URL',
     'NODE_ENV',
     'UPLOADTHING_TOKEN',
+  ];
+  
+  const optionalEnvVars = [
+    'USE_VARIANT_LABEL',
   ];
 
   const missingVars: string[] = [];

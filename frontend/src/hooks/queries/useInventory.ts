@@ -1,16 +1,20 @@
 import { trpc } from '@/lib/trpc';
+import { toast } from 'sonner';
 import type { 
   InventoryHistoryOptions,
 } from '@/types/inventory';
 
 // Hook to get product inventory
-export function useProductInventory(productId: string, variantId?: string) {
+export function useProductInventory(productId: string, variantId?: string, variantLabel?: string) {
   return trpc.inventory.getProductInventory.useQuery(
-    { productId, variantId },
+    { productId, variantId, variantLabel },
     {
-      staleTime: 30 * 1000, // Consider data stale after 30 seconds
+      staleTime: 5 * 1000, // Consider data stale after 5 seconds
       gcTime: 5 * 60 * 1000, // Cache for 5 minutes
-    }
+      refetchOnWindowFocus: true, // Refetch when window regains focus
+      refetchOnMount: true, // Always refetch when component mounts
+      refetchInterval: false, // Don't poll, but refetch quickly when needed
+    },
   );
 }
 
@@ -23,13 +27,15 @@ export function useUpdateInventory() {
       // Cancel any outgoing refetches
       await utils.inventory.getProductInventory.cancel({ 
         productId: variables.productId, 
-        variantId: variables.variantId 
+        variantId: variables.variantId,
+        variantLabel: variables.variantLabel,
       });
 
       // Snapshot the previous value
       const previousData = utils.inventory.getProductInventory.getData({
         productId: variables.productId,
-        variantId: variables.variantId
+        variantId: variables.variantId,
+        variantLabel: variables.variantLabel,
       });
 
       // Optimistically update to the new value
@@ -39,34 +45,50 @@ export function useUpdateInventory() {
         const newAvailable = previousData.availableStock + adjustment;
         
         utils.inventory.getProductInventory.setData(
-          { productId: variables.productId, variantId: variables.variantId },
+          { productId: variables.productId, variantId: variables.variantId, variantLabel: variables.variantLabel },
           {
             ...previousData,
             currentStock: newInventory,
             availableStock: newAvailable,
-          }
+          },
         );
       }
 
       // Return a context object with the snapshotted value
       return { previousData };
     },
-    onError: (_, variables, context) => {
+    onSuccess: (data) => {
+      toast.success(`Inventory updated successfully. New stock: ${data.newQuantity}`);
+    },
+    onError: (error, variables, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousData) {
         utils.inventory.getProductInventory.setData(
-          { productId: variables.productId, variantId: variables.variantId },
-          context.previousData
+          { productId: variables.productId, variantId: variables.variantId, variantLabel: variables.variantLabel },
+          context.previousData,
         );
       }
+      toast.error(error.message || 'Failed to update inventory');
     },
     onSettled: (_, __, variables) => {
       // Always refetch after error or success
-      utils.inventory.getProductInventory.invalidate({
+      void utils.inventory.getProductInventory.invalidate({
         productId: variables.productId,
-        variantId: variables.variantId
+        variantId: variables.variantId,
+        variantLabel: variables.variantLabel,
       });
-      utils.inventory.getLowStockProducts.invalidate();
+      // Also invalidate without variantId to catch parent product queries
+      void utils.inventory.getProductInventory.invalidate({
+        productId: variables.productId,
+      });
+      void utils.inventory.getLowStockProducts.invalidate();
+      void utils.inventory.getInventoryMetrics.invalidate();
+      // Force immediate refetch
+      void utils.inventory.getProductInventory.refetch({
+        productId: variables.productId,
+        variantId: variables.variantId,
+        variantLabel: variables.variantLabel,
+      });
     },
   });
 }
@@ -78,7 +100,7 @@ export function useBulkUpdateInventory() {
   return trpc.inventory.bulkUpdateInventory.useMutation({
     onSuccess: () => {
       // Invalidate all inventory queries
-      utils.inventory.invalidate();
+      void utils.inventory.invalidate();
     },
   });
 }
@@ -97,12 +119,12 @@ export function useInventoryHistory(productId: string, options?: InventoryHistor
 }
 
 // Hook to get low stock products
-export function useLowStockProducts(threshold: number = 5, page: number = 1, limit: number = 20) {
+export function useLowStockProducts(threshold = 5, page = 1, limit = 20) {
   return trpc.inventory.getLowStockProducts.useQuery(
     { threshold, page, limit },
     {
       refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
-    }
+    },
   );
 }
 

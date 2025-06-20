@@ -34,7 +34,7 @@ const ProductCard = React.memo<ProductCardProps>(({ product }) => {
 			aria-labelledby={`product-${product._id}-name`}
 		>
 			<Link 
-				to={`/products/${product.slug || product._id}`}
+				to={`/products/${product.slug ?? product._id}`}
 				className='relative mx-3 mt-3 flex h-60 overflow-hidden rounded-xl'
 				aria-label={`View details for ${product.name}`}
 			>
@@ -46,7 +46,7 @@ const ProductCard = React.memo<ProductCardProps>(({ product }) => {
 				/>
 				<div className={cn(
 					'absolute inset-0',
-					isOutOfStock ? 'bg-black/40' : 'bg-black/20'
+					isOutOfStock ? 'bg-black/40' : 'bg-black/20',
 				)} />
 				{/* Inventory Badge */}
 				<div className='absolute top-2 right-2'>
@@ -63,7 +63,7 @@ const ProductCard = React.memo<ProductCardProps>(({ product }) => {
 
 			<div className='mt-4 px-5 pb-5'>
 				<Link 
-					to={`/products/${product.slug || product._id}`}
+					to={`/products/${product.slug ?? product._id}`}
 					className='hover:underline'
 				>
 					<h3 
@@ -89,7 +89,7 @@ const ProductCard = React.memo<ProductCardProps>(({ product }) => {
 						'focus:outline-none focus:ring-4 focus:ring-primary/50 disabled:opacity-50',
 						isOutOfStock 
 							? 'bg-muted text-muted-foreground cursor-not-allowed'
-							: 'bg-primary text-primary-foreground hover:bg-primary/90'
+							: 'bg-primary text-primary-foreground hover:bg-primary/90',
 					)}
 					onClick={handleAddToCart}
 					disabled={addToCart.isPending || isOutOfStock || inventoryLoading}

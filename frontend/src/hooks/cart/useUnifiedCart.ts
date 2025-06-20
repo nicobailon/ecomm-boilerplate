@@ -14,7 +14,6 @@ import {
   useGuestUpdateQuantity, 
   useGuestRemoveFromCart, 
 } from './useGuestCart';
-import { toast } from 'sonner';
 
 export type CartSource = 'guest' | 'user';
 
@@ -50,7 +49,7 @@ export const useUnifiedCart = (): UnifiedCartResult => {
   const userCart = useCart();
   const guestCart = useGuestCart();
 
-  const isGuest = !user || user.role === 'admin';
+  const isGuest = !user;
 
   const cartData = isGuest ? guestCart.data : userCart.data;
   const totalQuantity = cartData?.cartItems?.reduce((acc, item) => acc + item.quantity, 0) ?? 0;
@@ -86,14 +85,12 @@ export const useUnifiedAddToCart = () => {
   const userAddToCart = useAddToCart();
   const guestAddToCart = useGuestAddToCart();
 
-  const isGuestLike = !user || user.role === 'admin';
+  const isGuestLike = !user;
 
   return {
     mutate: (params: AddToCartParams) => {
       if (!user) {
         guestAddToCart.mutate(params);
-      } else if (user.role === 'admin') {
-        toast.error('Admins cannot add items to cart');
       } else {
         userAddToCart.mutate(params);
       }
@@ -101,9 +98,6 @@ export const useUnifiedAddToCart = () => {
     mutateAsync: async (params: AddToCartParams) => {
       if (!user) {
         return guestAddToCart.mutateAsync(params);
-      } else if (user.role === 'admin') {
-        toast.error('Admins cannot add items to cart');
-        return Promise.reject(new Error('Admins cannot add items to cart'));
       } else {
         return userAddToCart.mutateAsync(params);
       }
@@ -119,18 +113,18 @@ export const useUnifiedUpdateQuantity = () => {
   const userUpdateQuantity = useUpdateQuantity();
   const guestUpdateQuantity = useGuestUpdateQuantity();
 
-  const isGuestLike = !user || user.role === 'admin';
+  const isGuestLike = !user;
 
   return {
-    mutate: (params: { productId: string; quantity: number; variantId?: string }) => {
-      if (!user || user.role === 'admin') {
+    mutate: (params: { productId: string; quantity: number; variantId?: string; variantLabel?: string }) => {
+      if (!user) {
         guestUpdateQuantity.mutate(params);
       } else {
         userUpdateQuantity.mutate(params);
       }
     },
-    mutateAsync: async (params: { productId: string; quantity: number; variantId?: string }) => {
-      if (!user || user.role === 'admin') {
+    mutateAsync: async (params: { productId: string; quantity: number; variantId?: string; variantLabel?: string }) => {
+      if (!user) {
         return guestUpdateQuantity.mutateAsync(params);
       } else {
         return userUpdateQuantity.mutateAsync(params);
@@ -145,6 +139,7 @@ export const useUnifiedUpdateQuantity = () => {
 export interface RemoveFromCartParams {
   productId: string;
   variantId?: string;
+  variantLabel?: string;
 }
 
 export const useUnifiedRemoveFromCart = () => {
@@ -152,13 +147,13 @@ export const useUnifiedRemoveFromCart = () => {
   const userRemoveFromCart = useRemoveFromCart();
   const guestRemoveFromCart = useGuestRemoveFromCart();
 
-  const isGuestLike = !user || user.role === 'admin';
+  const isGuestLike = !user;
 
   return {
     mutate: (params: RemoveFromCartParams | string) => {
       // Support both old string API and new params object
       const normalizedParams = typeof params === 'string' ? { productId: params } : params;
-      if (!user || user.role === 'admin') {
+      if (!user) {
         guestRemoveFromCart.mutate(normalizedParams);
       } else {
         userRemoveFromCart.mutate(normalizedParams);
@@ -166,7 +161,7 @@ export const useUnifiedRemoveFromCart = () => {
     },
     mutateAsync: async (params: RemoveFromCartParams | string) => {
       const normalizedParams = typeof params === 'string' ? { productId: params } : params;
-      if (!user || user.role === 'admin') {
+      if (!user) {
         return guestRemoveFromCart.mutateAsync(normalizedParams);
       } else {
         return userRemoveFromCart.mutateAsync(normalizedParams);

@@ -2,6 +2,7 @@ import { IProduct } from './index.js';
 
 export interface IProductVariant {
   variantId: string;
+  label: string;
   size?: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
   color?: string;
   price: number;
@@ -10,6 +11,10 @@ export interface IProductVariant {
   images: string[];
   sku?: string;
 }
+
+export type LegacyProductVariant = Omit<IProductVariant, 'label'> & {
+  size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
+};
 
 export interface IProductWithVariants extends IProduct {
   slug: string;

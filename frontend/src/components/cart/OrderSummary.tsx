@@ -50,7 +50,8 @@ const OrderSummary = () => {
 				products: cartItems.map(item => ({
 					_id: item.product._id,
 					quantity: item.quantity,
-					price: item.product.price,
+					price: item.variantDetails?.price ?? item.product.price,
+					variantId: item.variantId,
 				})),
 				couponCode: coupon?.code ?? null,
 			});
@@ -66,7 +67,6 @@ const OrderSummary = () => {
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'Payment failed. Please try again.';
 			toast.error(errorMessage);
-			console.error('Payment error:', error);
 		} finally {
 			setIsProcessing(false);
 		}

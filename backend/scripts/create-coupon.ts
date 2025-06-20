@@ -12,7 +12,7 @@ async function createCoupon(): Promise<void> {
     }
 
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('Connected to MongoDB');
+    console.warn('Connected to MongoDB');
 
     const args = process.argv.slice(2);
     
@@ -40,8 +40,8 @@ async function createCoupon(): Promise<void> {
 
     const existingCoupon = await Coupon.findOne({ userId: user._id, isActive: true });
     if (existingCoupon) {
-      console.log(`User already has an active coupon: ${existingCoupon.code}`);
-      console.log('Do you want to deactivate it and create a new one? (yes/no)');
+      console.warn(`User already has an active coupon: ${existingCoupon.code}`);
+      console.warn('Do you want to deactivate it and create a new one? (yes/no)');
       
       const readline = await import('readline');
       const rl = readline.createInterface({
@@ -55,13 +55,13 @@ async function createCoupon(): Promise<void> {
       rl.close();
 
       if (answer.toLowerCase() !== 'yes') {
-        console.log('Operation cancelled');
+        console.warn('Operation cancelled');
         process.exit(0);
       }
 
       existingCoupon.isActive = false;
       await existingCoupon.save();
-      console.log(`Deactivated existing coupon: ${existingCoupon.code}`);
+      console.warn(`Deactivated existing coupon: ${existingCoupon.code}`);
     }
 
     const code = customCode || `GIFT${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -77,13 +77,13 @@ async function createCoupon(): Promise<void> {
 
     await newCoupon.save();
 
-    console.log('\n✅ Coupon created successfully!');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`Code: ${newCoupon.code}`);
-    console.log(`Discount: ${newCoupon.discountPercentage}%`);
-    console.log(`User: ${user.name} (${user.email})`);
-    console.log(`Expires: ${expirationDate.toLocaleDateString()}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.warn('\n✅ Coupon created successfully!');
+    console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.warn(`Code: ${newCoupon.code}`);
+    console.warn(`Discount: ${newCoupon.discountPercentage}%`);
+    console.warn(`User: ${user.name} (${user.email})`);
+    console.warn(`Expires: ${expirationDate.toLocaleDateString()}`);
+    console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   } catch (error) {
     console.error('Error creating coupon:', error);

@@ -15,18 +15,25 @@ const ITEM_HEIGHT = 380; // Approximate height of a ProductCard
 const ITEM_WIDTH = 280; // Approximate width of a ProductCard
 const GAP = 24; // Gap between items
 
-// Cell renderer for the virtual grid
-const Cell = React.memo(({ 
-  columnIndex, 
-  rowIndex, 
-  style, 
-  data 
-}: {
+interface CellData {
+  products: Product[];
+  columnCount: number;
+}
+
+interface CellProps {
   columnIndex: number;
   rowIndex: number;
   style: React.CSSProperties;
-  data: { products: Product[]; columnCount: number };
-}) => {
+  data: CellData;
+}
+
+// Cell renderer for the virtual grid
+const Cell = React.memo(({
+  columnIndex,
+  rowIndex,
+  style,
+  data,
+}: CellProps) => {
   const { products, columnCount } = data;
   const index = rowIndex * columnCount + columnIndex;
   
@@ -36,14 +43,19 @@ const Cell = React.memo(({
   
   const product = products[index];
   
+  const leftValue = typeof style.left === 'number' ? style.left : 0;
+  const topValue = typeof style.top === 'number' ? style.top : 0;
+  const widthValue = typeof style.width === 'number' ? style.width : 0;
+  const heightValue = typeof style.height === 'number' ? style.height : 0;
+
   return (
     <div 
       style={{
         ...style,
-        left: (style.left as number) + GAP / 2,
-        top: (style.top as number) + GAP / 2,
-        width: (style.width as number) - GAP,
-        height: (style.height as number) - GAP,
+        left: leftValue + GAP / 2,
+        top: topValue + GAP / 2,
+        width: widthValue - GAP,
+        height: heightValue - GAP,
       }}
     >
       <motion.div
@@ -64,13 +76,13 @@ export function VirtualizedProductGrid({
   products, 
   columnCount, 
   height, 
-  width 
+  width, 
 }: VirtualizedProductGridProps) {
   const rowCount = Math.ceil(products.length / columnCount);
   
-  const itemData = React.useMemo(
+  const itemData: CellData = React.useMemo(
     () => ({ products, columnCount }),
-    [products, columnCount]
+    [products, columnCount],
   );
   
   return (
@@ -89,17 +101,3 @@ export function VirtualizedProductGrid({
   );
 }
 
-// Hook to calculate optimal column count based on container width
-export function useOptimalColumnCount(containerWidth: number): number {
-  return React.useMemo(() => {
-    if (!containerWidth) return 1;
-    
-    // Calculate how many columns can fit
-    const availableWidth = containerWidth - GAP; // Account for container padding
-    const columnWidth = ITEM_WIDTH + GAP;
-    const columns = Math.floor(availableWidth / columnWidth);
-    
-    // Return at least 1 column, max based on screen size
-    return Math.max(1, Math.min(columns, 4)); // Cap at 4 columns max
-  }, [containerWidth]);
-}

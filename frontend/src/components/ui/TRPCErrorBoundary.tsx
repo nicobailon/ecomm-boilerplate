@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { Component } from 'react';
-import { TRPCClientError } from '@trpc/client';
 
 interface Props {
   children: ReactNode;
@@ -22,10 +21,8 @@ export class TRPCErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error) {
-    if (error instanceof TRPCClientError) {
-      console.error('tRPC Error:', error.message, error.data);
-    }
+  componentDidCatch(_error: Error) {
+    // tRPC error boundary handles errors silently to prevent app crashes
   }
 
   render() {

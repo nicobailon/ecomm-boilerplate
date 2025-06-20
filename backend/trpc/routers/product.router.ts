@@ -4,7 +4,7 @@ import { productService } from '../../services/product.service.js';
 import { 
   createProductSchema, 
   updateProductSchema,
-  getProductBySlugSchema
+  getProductBySlugSchema,
 } from '../../validations/index.js';
 import { TRPCError } from '@trpc/server';
 import { MONGODB_OBJECTID_REGEX } from '../../utils/constants.js';
@@ -22,7 +22,7 @@ export const productRouter = router({
     }))
     .query(async ({ input }) => {
       try {
-        const result = await productService.getAllProducts(input.page, input.limit, input.search);
+        const result = await productService.getAllProducts(input.page, input.limit, input.search, input.includeVariants);
         return result;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to fetch products';
@@ -201,7 +201,7 @@ export const productRouter = router({
         const product = await productService.getProductBySlug(input.slug);
         
         return {
-          product
+          product,
         };
       } catch (error) {
         if (isAppError(error) && error.statusCode === 404) {
@@ -217,7 +217,6 @@ export const productRouter = router({
         });
       }
     }),
-
 
   related: publicProcedure
     .input(z.object({
@@ -246,13 +245,20 @@ export const productRouter = router({
   checkVariantAvailability: publicProcedure
     .input(z.object({
       productId: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
-      variantId: z.string(),
-    }))
+      variantId: z.string().optional(),
+      variantLabel: z.string().optional(),
+    }).refine(
+      (data) => data.variantId || data.variantLabel,
+      {
+        message: 'Either variantId or variantLabel must be provided',
+      }
+    ))
     .query(async ({ input }) => {
       try {
         const available = await productService.checkVariantAvailability(
           input.productId,
-          input.variantId
+          input.variantId,
+          input.variantLabel,
         );
         return { available };
       } catch (error) {
@@ -273,17 +279,25 @@ export const productRouter = router({
   updateVariantInventory: adminProcedure
     .input(z.object({
       productId: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
-      variantId: z.string(),
+      variantId: z.string().optional(),
+      variantLabel: z.string().optional(),
       quantity: z.number().int(),
       operation: z.enum(['increment', 'decrement', 'set']),
-    }))
+    }).refine(
+      (data) => data.variantId || data.variantLabel,
+      {
+        message: 'Either variantId or variantLabel must be provided',
+      }
+    ))
     .mutation(async ({ input }) => {
       try {
         const variant = await productService.updateVariantInventory(
           input.productId,
           input.variantId,
           input.quantity,
-          input.operation
+          input.operation,
+          3, // maxRetries
+          input.variantLabel,
         );
         return { variant };
       } catch (error) {

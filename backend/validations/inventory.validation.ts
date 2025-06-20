@@ -22,6 +22,7 @@ export const stockStatusSchema = z.enum([
 export const inventoryUpdateSchema = z.object({
   productId: z.string().min(1, 'Product ID is required'),
   variantId: z.string().optional(),
+  variantLabel: z.string().optional(),
   adjustment: z.number().int('Adjustment must be an integer'),
   reason: inventoryUpdateReasonSchema,
   metadata: z.record(z.unknown()).optional(),
@@ -34,7 +35,7 @@ export const inventoryUpdateSchema = z.object({
   {
     message: 'Adjustment value is too large (max: ±10000)',
     path: ['adjustment'],
-  }
+  },
 ).refine(
   (data) => {
     // For certain reasons, only allow negative adjustments
@@ -52,7 +53,7 @@ export const inventoryUpdateSchema = z.object({
   {
     message: 'Adjustment sign does not match the reason',
     path: ['adjustment'],
-  }
+  },
 );
 
 export const bulkInventoryUpdateSchema = z.object({
@@ -71,6 +72,7 @@ export const inventoryQuerySchema = z.object({
 export const inventoryHistoryQuerySchema = z.object({
   productId: z.string().min(1, 'Product ID is required'),
   variantId: z.string().optional(),
+  variantLabel: z.string().optional(),
   limit: z.coerce.number().int().positive().max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -78,6 +80,7 @@ export const inventoryHistoryQuerySchema = z.object({
 export const inventoryReservationSchema = z.object({
   productId: z.string().min(1, 'Product ID is required'),
   variantId: z.string().optional(),
+  variantLabel: z.string().optional(),
   quantity: z.number().int().positive('Quantity must be positive'),
   sessionId: z.string().min(1, 'Session ID is required'),
   duration: z.number().int().positive().optional(),
@@ -86,6 +89,7 @@ export const inventoryReservationSchema = z.object({
 export const inventoryCheckSchema = z.object({
   productId: z.string().min(1, 'Product ID is required'),
   variantId: z.string().optional(),
+  variantLabel: z.string().optional(),
   quantity: z.number().int().positive('Quantity must be positive').default(1),
 });
 

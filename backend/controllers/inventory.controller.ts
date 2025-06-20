@@ -18,7 +18,7 @@ export const getProductInventory = asyncHandler(async (req: AuthRequest, res: Re
 
   const inventory = await inventoryService.getProductInventoryInfo(
     productId,
-    variantId as string | undefined
+    variantId as string | undefined,
   );
 
   res.json({
@@ -37,12 +37,12 @@ export const checkAvailability = asyncHandler(async (req: AuthRequest, res: Resp
   const isAvailable = await inventoryService.checkAvailability(
     validatedData.productId,
     validatedData.variantId,
-    validatedData.quantity
+    validatedData.quantity,
   );
 
   const availableStock = await inventoryService.getAvailableInventory(
     validatedData.productId,
-    validatedData.variantId
+    validatedData.variantId,
   );
 
   res.json({
@@ -66,7 +66,7 @@ export const updateInventory = asyncHandler(async (req: AuthRequest, res: Respon
     validatedData.adjustment,
     validatedData.reason,
     req.user._id.toString(),
-    validatedData.metadata
+    validatedData.metadata,
   );
 
   res.json({
@@ -84,7 +84,7 @@ export const bulkUpdateInventory = asyncHandler(async (req: AuthRequest, res: Re
 
   const results = await inventoryService.bulkUpdateInventory(
     validatedData.updates,
-    req.user._id.toString()
+    req.user._id.toString(),
   );
 
   res.json({
@@ -105,7 +105,7 @@ export const getInventoryHistory = asyncHandler(async (req: AuthRequest, res: Re
     validatedData.productId,
     validatedData.variantId,
     validatedData.limit,
-    validatedData.offset
+    validatedData.offset,
   );
 
   res.json({

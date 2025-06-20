@@ -24,9 +24,9 @@ export const useGuestAddToCart = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (params: { product: Product; variantId?: string } | Product) => {
+    mutationFn: (params: { product: Product; variantId?: string } | Product) => {
       try {
-        return addToGuestCart(params);
+        return Promise.resolve(addToGuestCart(params));
       } catch (error) {
         if (error instanceof Error && error.message.includes('Guest cart is limited')) {
           toast.error(error.message);
@@ -46,7 +46,7 @@ export const useGuestAddToCart = () => {
         if (!old) return old;
         
         const existingItem = old.cartItems.find(item => 
-          item.product._id === product._id && item.variantId === variantId
+          item.product._id === product._id && item.variantId === variantId,
         );
         
         if (existingItem) {
@@ -69,7 +69,7 @@ export const useGuestAddToCart = () => {
       return { previousCart };
     },
     onError: (err, _product, context) => {
-      if (context?.previousCart) {
+      if (context && 'previousCart' in context && context.previousCart) {
         queryClient.setQueryData(['guestCart'], context.previousCart);
       }
       if (!(err instanceof Error && err.message.includes('Guest cart is limited'))) {
@@ -103,7 +103,7 @@ export const useGuestUpdateQuantity = () => {
           return {
             ...old,
             cartItems: old.cartItems.filter(item => 
-              !(item.product._id === productId && item.variantId === variantId)
+              !(item.product._id === productId && item.variantId === variantId),
             ),
           };
         }
@@ -149,11 +149,21 @@ export const useGuestRemoveFromCart = () => {
       queryClient.setQueryData<GuestCartData>(['guestCart'], (old) => {
         if (!old) return old;
         
+        const filteredItems = old.cartItems.filter(item => 
+          !(item.product._id === productId && item.variantId === variantId),
+        );
+        
+        // Recalculate totals for optimistic update
+        const subtotal = filteredItems.reduce((sum, item) => {
+          const price = item.variantDetails?.price ?? item.product.price;
+          return sum + (price * item.quantity);
+        }, 0);
+        
         return {
           ...old,
-          cartItems: old.cartItems.filter(item => 
-            !(item.product._id === productId && item.variantId === variantId)
-          ),
+          cartItems: filteredItems,
+          subtotal,
+          totalAmount: subtotal,
         };
       });
 

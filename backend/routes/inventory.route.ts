@@ -29,14 +29,14 @@ router.post(
   '/update',
   adminRoute,
   validateRequest(inventoryUpdateSchema),
-  updateInventory
+  updateInventory,
 );
 
 router.post(
   '/bulk-update',
   adminRoute,
   validateRequest(bulkInventoryUpdateSchema),
-  bulkUpdateInventory
+  bulkUpdateInventory,
 );
 
 router.get('/history/:productId', adminRoute, getInventoryHistory);

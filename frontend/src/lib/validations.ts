@@ -70,3 +70,14 @@ export type SignupInput = z.infer<typeof signupSchema>;
 export type ProductInput = z.infer<typeof productSchema>;
 export type VariantInput = z.infer<typeof variantSchema>;
 export type DiscountFormInput = z.infer<typeof discountFormSchema>;
+
+// Form input type with optional fields for variants
+export type ProductFormInput = Omit<ProductInput, 'variants'> & {
+  variants?: Array<{
+    label: string;
+    color?: string;
+    priceAdjustment?: number;
+    inventory?: number;
+    sku?: string;
+  }>;
+};

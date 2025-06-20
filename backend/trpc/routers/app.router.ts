@@ -7,6 +7,7 @@ import { analyticsRouter } from './analytics.router.js';
 import { paymentRouter } from './payment.router.js';
 import { collectionRouter } from './collection.router.js';
 import { inventoryRouter } from './inventory.router.js';
+import { statusRouter } from './status.router.js';
 
 export const appRouter = router({
   auth: authRouter,
@@ -17,6 +18,7 @@ export const appRouter = router({
   payment: paymentRouter,
   collection: collectionRouter,
   inventory: inventoryRouter,
+  status: statusRouter,
 });
 
 export type AppRouter = typeof appRouter;

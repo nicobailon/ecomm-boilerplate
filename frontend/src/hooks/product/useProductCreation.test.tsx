@@ -4,18 +4,21 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useProductCreation } from './useProductCreation';
 import { useCreateProduct } from './useProducts';
-import { productEvents } from '@/lib/events';
 import type { ProductInput } from '@/lib/validations';
 import React from 'react';
 
 // Mock dependencies
 vi.mock('./queries/useProducts');
 vi.mock('sonner');
+const mockEmit = vi.fn();
+const mockOn = vi.fn();
+const mockOff = vi.fn();
+
 vi.mock('@/lib/events', () => ({
   productEvents: {
-    emit: vi.fn(),
-    on: vi.fn(),
-    off: vi.fn(),
+    emit: mockEmit,
+    on: mockOn,
+    off: mockOff,
   },
 }));
 
@@ -204,7 +207,7 @@ describe('useProductCreation', () => {
 
       expect(result.current.isNavigating).toBe(true);
       expect(result.current.newProductId).toBe('product-123');
-      expect(productEvents.emit).toHaveBeenCalledWith('product:created', {
+      expect(mockEmit).toHaveBeenCalledWith('product:created', {
         productId: 'product-123',
         timestamp: expect.any(Number) as number,
       });
@@ -410,7 +413,7 @@ describe('useProductCreation', () => {
       });
 
       // Event handling is set up during hook initialization
-      expect(vi.mocked(productEvents.on)).toHaveBeenCalled();
+      expect(mockOn).toHaveBeenCalled();
     });
   });
 

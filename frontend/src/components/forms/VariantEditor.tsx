@@ -4,20 +4,45 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Trash2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { ProductInput } from '@/lib/validations';
+import type { ProductFormInput } from '@/lib/validations';
+import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface VariantEditorProps {
   className?: string;
+  isLoading?: boolean;
 }
 
-export function VariantEditor({ className }: VariantEditorProps) {
-  const { control, register, formState: { errors }, watch } = useFormContext<ProductInput>();
+export function VariantEditor({ className, isLoading = false }: VariantEditorProps) {
+  const { control, register, formState: { errors }, watch } = useFormContext<ProductFormInput>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'variants',
   });
 
   const variants = watch('variants') || [];
+  const basePrice = watch('price') || 0;
+  
+  // Debounced validation state
+  const [debouncedVariants, setDebouncedVariants] = useState(variants);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Update debounced variants with delay
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedVariants(variants);
+    }, 300); // 300ms debounce
+    
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [variants]);
 
   const addVariant = () => {
     append({
@@ -28,30 +53,35 @@ export function VariantEditor({ className }: VariantEditorProps) {
       sku: '',
     });
   };
-
-  const validateUniqueLabels = (index: number, value: string) => {
+  
+  const validateUniqueLabels = useCallback((index: number, value: string) => {
     if (!value.trim()) return true; // Let required validation handle empty values
     
-    const duplicateIndex = variants.findIndex((variant, i) => 
-      i !== index && variant.label?.toLowerCase().trim() === value.toLowerCase().trim()
+    // Use debounced variants for validation to prevent race conditions
+    const normalizedValue = value.toLowerCase().trim();
+    const isDuplicate = debouncedVariants.some((variant, i) => 
+      i !== index && variant.label?.toLowerCase().trim() === normalizedValue
     );
-    return duplicateIndex === -1 || 'Label must be unique';
-  };
+    
+    return isDuplicate ? 'Label must be unique' : true;
+  }, [debouncedVariants]);
 
 
-  const getDuplicateLabels = () => {
+  // Duplicate check using debounced variants
+  const { duplicateLabels, hasDuplicates } = useMemo(() => {
     const labelCounts = new Map<string, number>();
-    variants.forEach(variant => {
+    debouncedVariants.forEach(variant => {
       if (variant.label?.trim()) {
         const label = variant.label.toLowerCase().trim();
         labelCounts.set(label, (labelCounts.get(label) || 0) + 1);
       }
     });
-    return Array.from(labelCounts.entries()).filter(([, count]) => count > 1).map(([label]) => label);
-  };
-
-  const duplicateLabels = getDuplicateLabels();
-  const hasDuplicates = duplicateLabels.length > 0;
+    const duplicates = Array.from(labelCounts.entries()).filter(([, count]) => count > 1).map(([label]) => label);
+    return {
+      duplicateLabels: duplicates,
+      hasDuplicates: duplicates.length > 0,
+    };
+  }, [debouncedVariants]);
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -69,7 +99,32 @@ export function VariantEditor({ className }: VariantEditorProps) {
         </Button>
       </div>
 
-      {fields.length === 0 ? (
+      {isLoading ? (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="bg-muted p-3">
+            <div className="flex gap-4">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-16" />
+            </div>
+          </div>
+          {fields.map((_, index) => (
+            <div key={index} className="border-t p-3">
+              <div className="flex gap-4">
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 w-24" />
+                <Skeleton className="h-10 w-24" />
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 w-10" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : fields.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border-dashed border-2">
           <p>No variants created yet</p>
           <p className="text-sm mt-1">Click "Add Variant" to create your first variant</p>
@@ -81,7 +136,8 @@ export function VariantEditor({ className }: VariantEditorProps) {
               <tr>
                 <th className="p-3 text-left font-medium">Label</th>
                 <th className="p-3 text-left font-medium">Color</th>
-                <th className="p-3 text-left font-medium">Price Δ</th>
+                <th className="p-3 text-left font-medium">Price Adjustment</th>
+                <th className="p-3 text-left font-medium">Final Price</th>
                 <th className="p-3 text-left font-medium">Inventory</th>
                 <th className="p-3 text-left font-medium">SKU</th>
                 <th className="p-3 text-center font-medium">Actions</th>
@@ -121,6 +177,18 @@ export function VariantEditor({ className }: VariantEditorProps) {
                       className="w-full"
                       aria-label={`Variant ${index + 1} price adjustment`}
                     />
+                  </td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">
+                        ${(basePrice + (variants[index]?.priceAdjustment || 0)).toFixed(2)}
+                      </span>
+                      {variants[index]?.priceAdjustment !== 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          ({(variants[index]?.priceAdjustment ?? 0) > 0 ? '+' : ''}{variants[index]?.priceAdjustment?.toFixed(2)})
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3">
                     <Input
@@ -182,7 +250,9 @@ export function VariantEditor({ className }: VariantEditorProps) {
             <p>
               <strong>Tips:</strong> 
               • Label must be unique across all variants
-              • Price Δ is added to the base product price
+              • Price adjustment is added to the base product price
+              • Final price shows what customers will pay (base + adjustment)
+              • Negative adjustments create discounted variants
               • Leave color blank if not applicable
             </p>
           </div>

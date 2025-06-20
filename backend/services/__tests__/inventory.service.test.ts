@@ -175,11 +175,19 @@ describe('InventoryService', () => {
 
   describe('updateInventory', () => {
     it('should update inventory with positive adjustment', async () => {
+      const mockProduct = {
+        _id: '507f1f77bcf86cd799439011',
+        price: 29.99,
+        variants: [{ variantId: 'v1', inventory: 10 }], // Product already has variants
+      };
+
       const updatedProduct = {
         _id: '507f1f77bcf86cd799439011',
         variants: [{ variantId: 'v1', inventory: 15 }],
       };
 
+      // Mock Product.findById to return a product with existing variants
+      vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct as unknown as ReturnType<typeof Product.findById>);
       vi.spyOn(Product, 'findOneAndUpdate').mockResolvedValue(updatedProduct as unknown as ReturnType<typeof Product.findOneAndUpdate>);
 
       vi.spyOn(InventoryHistory.prototype, 'save').mockResolvedValue({
@@ -203,6 +211,13 @@ describe('InventoryService', () => {
     });
 
     it('should fail when trying to reduce inventory below zero', async () => {
+      const mockProduct = {
+        _id: '507f1f77bcf86cd799439011',
+        price: 29.99,
+        variants: [{ variantId: 'v1', inventory: 5 }],
+      };
+      
+      vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct as unknown as ReturnType<typeof Product.findById>);
       vi.spyOn(Product, 'findOneAndUpdate').mockResolvedValue(null);
       vi.spyOn(inventoryService, 'getAvailableInventory').mockResolvedValue(5);
       
@@ -218,6 +233,13 @@ describe('InventoryService', () => {
     });
 
     it('should enforce business rules for adjustment reasons', async () => {
+      const mockProduct = {
+        _id: '507f1f77bcf86cd799439011',
+        price: 29.99,
+        variants: [{ variantId: 'v1', inventory: 5 }],
+      };
+      
+      vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct as unknown as ReturnType<typeof Product.findById>);
       vi.spyOn(inventoryService, 'getAvailableInventory').mockResolvedValue(5);
 
       await expect(

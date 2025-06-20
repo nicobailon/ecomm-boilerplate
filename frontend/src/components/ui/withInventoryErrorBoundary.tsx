@@ -6,9 +6,9 @@ import { InventoryErrorBoundary } from './InventoryErrorBoundary';
  */
 export function withInventoryErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  customFallback?: (error: Error, reset: () => void) => React.ReactNode
+  customFallback?: (error: Error, reset: () => void) => React.ReactNode,
 ) {
-  const WrappedComponent = React.forwardRef<any, P>((props, ref) => {
+  const WrappedComponent = React.forwardRef<HTMLElement, P>((props, ref) => {
     return (
       <InventoryErrorBoundary fallback={customFallback}>
         <Component {...(props as P)} ref={ref} />
@@ -16,7 +16,7 @@ export function withInventoryErrorBoundary<P extends object>(
     );
   });
 
-  WrappedComponent.displayName = `withInventoryErrorBoundary(${Component.displayName || Component.name})`;
+  WrappedComponent.displayName = `withInventoryErrorBoundary(${Component.displayName ?? Component.name})`;
 
   return WrappedComponent;
 }

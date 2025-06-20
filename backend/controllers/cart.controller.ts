@@ -29,6 +29,7 @@ export const addToCart = asyncHandler(async (req: AuthRequest, res: Response) =>
 export const removeFromCart = asyncHandler(async (req: AuthRequest, res: Response) => {
   const productId = req.params.productId || (req.body as { productId?: string; variantId?: string }).productId;
   const variantId = (req.body as { productId?: string; variantId?: string }).variantId;
+  
   if (!req.user) {
     res.status(401).json({ message: 'Unauthorized' });
     return;

@@ -1,6 +1,7 @@
 import { Minus, Plus, Trash } from 'lucide-react';
 import { useUnifiedUpdateQuantity, useUnifiedRemoveFromCart } from '@/hooks/cart/useUnifiedCart';
 import type { CartItem as CartItemType, Product } from '@/types';
+import { getVariantDisplayText } from '@/components/forms/VariantEditor';
 
 interface CartItemProps {
 	item: CartItemType & { product: Product };
@@ -12,12 +13,17 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 
 	const handleUpdateQuantity = (newQuantity: number) => {
 		if (newQuantity < 1) {
-			removeFromCart.mutate({ productId: item.product._id, variantId: item.variantId });
+			removeFromCart.mutate({ 
+				productId: item.product._id, 
+				variantId: item.variantId,
+				variantLabel: item.variantDetails?.label,
+			});
 		} else {
 			updateQuantity.mutate({ 
 				productId: item.product._id, 
 				quantity: newQuantity,
-				variantId: item.variantId 
+				variantId: item.variantId,
+				variantLabel: item.variantDetails?.label,
 			});
 		}
 	};
@@ -89,12 +95,10 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 						</h3>
 						{item.variantDetails && (
 							<div className='flex items-center gap-2 mt-1 text-sm text-muted-foreground'>
-								{item.variantDetails.size && <span>Size: {item.variantDetails.size}</span>}
-								{item.variantDetails.size && item.variantDetails.color && <span>•</span>}
-								{item.variantDetails.color && <span>Color: {item.variantDetails.color}</span>}
+								<span>{getVariantDisplayText(item.variantDetails)}</span>
 								{item.variantDetails.sku && (
 									<>
-										{(item.variantDetails.size || item.variantDetails.color) && <span>•</span>}
+										<span>•</span>
 										<span className="text-xs">SKU: {item.variantDetails.sku}</span>
 									</>
 								)}
@@ -107,7 +111,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 						<button
 							className='inline-flex items-center text-sm font-medium text-destructive
 							 hover:text-destructive/80 hover:underline disabled:opacity-50'
-							onClick={() => removeFromCart.mutate({ productId: item.product._id, variantId: item.variantId })}
+							onClick={() => removeFromCart.mutate({ productId: item.product._id, variantId: item.variantId, variantLabel: item.variantDetails?.label })}
 							disabled={removeFromCart.isPending}
 							aria-label={`Remove ${item.product.name} from cart`}
 						>

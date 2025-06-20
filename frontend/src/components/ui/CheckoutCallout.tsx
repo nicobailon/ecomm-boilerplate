@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, X } from 'lucide-react';
 
@@ -10,6 +10,13 @@ interface CheckoutCalloutProps {
 export function CheckoutCallout({ onClose, autoCloseDelay = 5000 }: CheckoutCalloutProps) {
   const [isVisible, setIsVisible] = useState(true);
 
+  const handleClose = useCallback(() => {
+    setIsVisible(false);
+    setTimeout(() => {
+      onClose?.();
+    }, 300);
+  }, [onClose]);
+
   useEffect(() => {
     if (autoCloseDelay > 0) {
       const timer = setTimeout(() => {
@@ -18,14 +25,7 @@ export function CheckoutCallout({ onClose, autoCloseDelay = 5000 }: CheckoutCall
 
       return () => clearTimeout(timer);
     }
-  }, [autoCloseDelay]);
-
-  const handleClose = () => {
-    setIsVisible(false);
-    setTimeout(() => {
-      onClose?.();
-    }, 300);
-  };
+  }, [autoCloseDelay, handleClose]);
 
   if (!isVisible) return null;
 

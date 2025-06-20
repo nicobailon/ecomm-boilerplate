@@ -4,11 +4,11 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { describe, it, expect } from 'vitest';
 import { VariantEditor, getVariantDisplayText, validateVariants } from '@/components/forms/VariantEditor';
-import { productSchema, type ProductInput } from '@/lib/validations';
+import { productSchema, type ProductFormInput } from '@/lib/validations';
 
 // Test wrapper component that provides form context
-function TestWrapper({ children, defaultValues = {} }: { children: React.ReactNode; defaultValues?: Partial<ProductInput> }) {
-  const methods = useForm<ProductInput>({
+function TestWrapper({ children, defaultValues = {} }: { children: React.ReactNode; defaultValues?: Partial<ProductFormInput> }) {
+  const methods = useForm<ProductFormInput>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: 'Test Product',

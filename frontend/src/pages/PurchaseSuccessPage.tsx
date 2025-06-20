@@ -23,20 +23,21 @@ const PurchaseSuccessPage = () => {
 			queryClient.setQueryData(['cart'], { cartItems: [], totalAmount: 0, subtotal: 0, coupon: null });
 		},
 		onError: (error) => {
-			console.error(error);
 			const errorMessage = error instanceof Error ? error.message : 'Something went wrong';
 			setError(errorMessage);
 		},
 	});
 
+	const { mutate: handleCheckoutSuccess } = checkoutSuccessMutation;
+
 	useEffect(() => {
 		const sessionId = new URLSearchParams(window.location.search).get('session_id');
 		if (sessionId) {
-			checkoutSuccessMutation.mutate(sessionId);
+			handleCheckoutSuccess(sessionId);
 		} else {
 			setError('No session ID found in the URL');
 		}
-	}, [checkoutSuccessMutation.mutate]);
+	}, [handleCheckoutSuccess]);
 
 	if (checkoutSuccessMutation.isPending) {
 		return <LoadingSpinner />;

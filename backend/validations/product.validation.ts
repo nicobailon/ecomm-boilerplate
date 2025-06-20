@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PRODUCT_SIZES } from '../constants/variant-options.js';
+import { PRODUCT_SIZES } from '../constants/variant-options.js'; // legacy - for backward compatibility
 import { PRODUCT_LIMITS, VARIANT_LIMITS } from '../constants/app-limits.js';
 
 export const colorValidationSchema = z.string().refine(
@@ -8,20 +8,21 @@ export const colorValidationSchema = z.string().refine(
     const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
     return hexRegex.test(color);
   },
-  { message: 'Invalid color format. Use hex color codes (e.g., #000000)' }
+  { message: 'Invalid color format. Use hex color codes (e.g., #000000)' },
 );
 
 export const skuValidationSchema = z.string().refine(
   (sku) => {
     if (!sku) return true;
-    const skuRegex = /^[A-Z0-9\-]+$/;
+    const skuRegex = /^[A-Z0-9-]+$/;
     return skuRegex.test(sku);
   },
-  { message: 'SKU must contain only uppercase letters, numbers, and hyphens' }
+  { message: 'SKU must contain only uppercase letters, numbers, and hyphens' },
 );
 
 export const productVariantSchema = z.object({
   variantId: z.string().min(VARIANT_LIMITS.MIN_VARIANT_ID_LENGTH, 'Variant ID is required'),
+  label: z.string().min(1, 'Label is required').max(50, 'Label must be 50 characters or less'),
   size: z.enum(PRODUCT_SIZES).optional(),
   color: colorValidationSchema.optional(),
   price: z.number().min(PRODUCT_LIMITS.MIN_PRICE).max(PRODUCT_LIMITS.MAX_PRICE),
@@ -29,6 +30,8 @@ export const productVariantSchema = z.object({
   images: z.array(z.string().url()).max(VARIANT_LIMITS.MAX_IMAGES_PER_VARIANT).default([]),
   sku: skuValidationSchema.optional(),
 });
+
+export const legacyProductVariantSchema = productVariantSchema.omit({ label: true });
 
 export const productSlugSchema = z
   .string()
@@ -84,10 +87,10 @@ export const getProductBySlugSchema = z.object({
   slug: productSlugSchema,
 });
 
-
 export const variantQuerySchema = z.object({
   includeVariants: z.boolean().optional(),
   variantId: z.string().optional(),
+  variantLabel: z.string().optional(),
 });
 
 export const productListQuerySchema = z.object({
@@ -101,25 +104,25 @@ export const productListQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
-export const validateUniqueVariants = (variants: z.infer<typeof productVariantSchema>[]) => {
-  const combinations = new Set<string>();
+export const validateUniqueVariants = (variants: z.infer<typeof productVariantSchema>[]): boolean => {
+  const labels = new Set<string>();
   
   for (const variant of variants) {
-    const key = `${variant.size || 'none'}-${variant.color || 'none'}`;
-    if (combinations.has(key)) {
+    const label = variant.label.toLowerCase().trim();
+    if (labels.has(label)) {
       throw new z.ZodError([{
         code: 'custom',
-        message: 'Duplicate variant combination found',
+        message: 'Duplicate variant label found',
         path: ['variants'],
       }]);
     }
-    combinations.add(key);
+    labels.add(label);
   }
   
   return true;
 };
 
-export const validateVariantInventory = (variants: z.infer<typeof productVariantSchema>[]) => {
+export const validateVariantInventory = (variants: z.infer<typeof productVariantSchema>[]): boolean => {
   const hasAnyInventory = variants.some((v: z.infer<typeof productVariantSchema>) => v.inventory > 0);
   
   if (variants.length > 0 && !hasAnyInventory) {
@@ -130,6 +133,7 @@ export const validateVariantInventory = (variants: z.infer<typeof productVariant
 };
 
 export type ProductVariant = z.infer<typeof productVariantSchema>;
+export type LegacyProductVariant = z.infer<typeof legacyProductVariantSchema>;
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type ProductWithVariants = z.infer<typeof productWithVariantsSchema>;

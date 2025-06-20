@@ -11,30 +11,30 @@ interface MigrationOptions {
   verbose?: boolean;
 }
 
-const generateProductSlugs = async (options: MigrationOptions = {}) => {
+const generateProductSlugs = async (options: MigrationOptions = {}): Promise<void> => {
   const { dryRun = false, verbose = false } = options;
 
   try {
     await connectDB();
-    console.log('Connected to MongoDB');
+    console.warn('Connected to MongoDB');
 
     const productsWithoutSlug = await Product.find({ 
       $or: [
         { slug: { $exists: false } },
         { slug: null },
-        { slug: '' }
-      ]
+        { slug: '' },
+      ],
     });
 
-    console.log(`Found ${productsWithoutSlug.length} products without slugs`);
+    console.warn(`Found ${productsWithoutSlug.length} products without slugs`);
 
     if (productsWithoutSlug.length === 0) {
-      console.log('No products need slug generation');
+      console.warn('No products need slug generation');
       return;
     }
 
     let updatedCount = 0;
-    const errors: Array<{ productId: string; name: string; error: string }> = [];
+    const errors: { productId: string; name: string; error: string }[] = [];
 
     for (const product of productsWithoutSlug) {
       try {
@@ -43,11 +43,11 @@ const generateProductSlugs = async (options: MigrationOptions = {}) => {
           async (slug) => {
             const existing = await Product.findOne({ slug, _id: { $ne: product._id } });
             return !!existing;
-          }
+          },
         );
 
         if (verbose) {
-          console.log(`Product: "${product.name}" -> Slug: "${slug}"`);
+          console.warn(`Product: "${product.name}" -> Slug: "${slug}"`);
         }
 
         if (!dryRun) {
@@ -60,25 +60,25 @@ const generateProductSlugs = async (options: MigrationOptions = {}) => {
         errors.push({
           productId: (product._id as mongoose.Types.ObjectId).toString(),
           name: product.name,
-          error: errorMessage
+          error: errorMessage,
         });
         console.error(`Error processing product ${product.name}:`, errorMessage);
       }
     }
 
-    console.log('\n=== Migration Summary ===');
-    console.log(`Total products processed: ${productsWithoutSlug.length}`);
+    console.warn('\n=== Migration Summary ===');
+    console.warn(`Total products processed: ${productsWithoutSlug.length}`);
     if (!dryRun) {
-      console.log(`Successfully updated: ${updatedCount}`);
-      console.log(`Errors: ${errors.length}`);
+      console.warn(`Successfully updated: ${updatedCount}`);
+      console.warn(`Errors: ${errors.length}`);
     } else {
-      console.log('DRY RUN - No changes were made');
+      console.warn('DRY RUN - No changes were made');
     }
 
     if (errors.length > 0 && verbose) {
-      console.log('\n=== Errors ===');
+      console.warn('\n=== Errors ===');
       errors.forEach(({ productId, name, error }) => {
-        console.log(`- Product ID: ${productId}, Name: ${name}, Error: ${error}`);
+        console.warn(`- Product ID: ${productId}, Name: ${name}, Error: ${error}`);
       });
     }
 
@@ -87,12 +87,12 @@ const generateProductSlugs = async (options: MigrationOptions = {}) => {
     process.exit(1);
   } finally {
     await mongoose.connection.close();
-    console.log('Database connection closed');
+    console.warn('Database connection closed');
   }
 };
 
-const printUsage = () => {
-  console.log(`
+const printUsage = (): void => {
+  console.warn(`
 Usage: npm run generate-slugs [options]
 
 Options:
@@ -107,7 +107,7 @@ Examples:
   `);
 };
 
-const main = async () => {
+const main = async (): Promise<void> => {
   const args = process.argv.slice(2);
   
   if (args.includes('--help') || args.includes('-h')) {
@@ -117,19 +117,19 @@ const main = async () => {
 
   const options: MigrationOptions = {
     dryRun: args.includes('--dry-run'),
-    verbose: args.includes('--verbose')
+    verbose: args.includes('--verbose'),
   };
 
-  console.log('Starting slug generation migration...');
+  console.warn('Starting slug generation migration...');
   if (options.dryRun) {
-    console.log('Running in DRY RUN mode - no changes will be made');
+    console.warn('Running in DRY RUN mode - no changes will be made');
   }
 
   await generateProductSlugs(options);
 };
 
 if (require.main === module) {
-  main();
+  void main();
 }
 
 export default generateProductSlugs;

@@ -87,7 +87,7 @@ const ProductsList = ({ highlightProductId, onHighlightComplete, onEditProduct }
 						<ProductRow 
 							key={product._id} 
 							product={product}
-							highlightProductId={highlightProductId || undefined}
+							highlightProductId={highlightProductId ?? undefined}
 							onEditProduct={onEditProduct}
 							onDelete={() => deleteProduct.mutate(product._id)}
 							onToggleFeatured={() => toggleFeatured.mutate(product._id)}

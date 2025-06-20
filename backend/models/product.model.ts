@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { IProductVariantDocument } from '../types/product.types.js';
-import { PRODUCT_SIZES } from '../constants/variant-options.js';
+import { PRODUCT_SIZES } from '../constants/variant-options.js'; // legacy - for backward compatibility
 
 export interface IProductDocument extends Document {
   name: string;
@@ -23,6 +23,11 @@ const variantSchema = new Schema<IProductVariantDocument>(
     variantId: {
       type: String,
       required: true,
+    },
+    label: {
+      type: String,
+      required: true,
+      maxlength: 50,
     },
     size: {
       type: String,
@@ -144,6 +149,7 @@ productSchema.index({ createdAt: -1 });
 productSchema.index({ name: 'text', description: 'text' });
 productSchema.index({ slug: 1, isDeleted: 1 });
 productSchema.index({ 'variants.sku': 1 });
+productSchema.index({ 'variants.label': 1 });
 productSchema.index({ relatedProducts: 1 });
 productSchema.index({ _id: 1, 'variants.variantId': 1 });
 

@@ -62,10 +62,11 @@ export interface LowStockItem {
   productId: string;
   productName: string;
   variantId?: string;
-  variantInfo?: string;
+  variantName?: string;
   currentStock: number;
   threshold: number;
-  urgency: 'urgent' | 'normal';
+  lastRestocked?: Date | string;
+  restockDate?: Date | string;
 }
 
 // Type guards
@@ -74,7 +75,7 @@ export function isInventoryData(data: unknown): data is InventoryData {
     typeof data === 'object' &&
     data !== null &&
     'productId' in data &&
-    'inventory' in data &&
-    'availableInventory' in data
+    'currentStock' in data &&
+    'availableStock' in data
   );
 }

@@ -490,7 +490,6 @@ interface VariantInventoryRowProps {
   productId: string;
   variant: {
     variantId: string;
-    size?: string;
     color?: string;
     label?: string;
     price: number;
@@ -519,6 +518,7 @@ function VariantInventoryRow({
     updateInventory.mutate({
       productId,
       variantId: variant.variantId,
+      variantLabel: variant.label || undefined,
       adjustment,
       reason: adjustment > 0 ? 'restock' : 'adjustment',
     });
@@ -568,6 +568,7 @@ function VariantInventoryRow({
                   updateInventory.mutate({
                     productId,
                     variantId: variant.variantId,
+                    variantLabel: variant.label || undefined,
                     adjustment,
                     reason: adjustment > 0 ? 'restock' : 'adjustment',
                   });
@@ -585,6 +586,7 @@ function VariantInventoryRow({
                 updateInventory.mutate({
                   productId,
                   variantId: variant.variantId,
+                  variantLabel: variant.label,
                   adjustment,
                   reason: adjustment > 0 ? 'restock' : 'adjustment',
                 });

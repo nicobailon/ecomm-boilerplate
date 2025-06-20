@@ -5,6 +5,9 @@ import { InventoryHistory } from '../models/inventory-history.model.js';
 import { AppError } from '../utils/AppError.js';
 import { CacheService } from './cache.service.js';
 import { createLogger, generateCorrelationId } from '../utils/logger.js';
+import { getVariantOrDefault } from './helpers/variant.helper.js';
+import { USE_VARIANT_LABEL } from '../utils/featureFlags.js';
+import { buildSafeCacheKey } from '../utils/cache-key-encoder.js';
 import {
   StockStatus,
   ReservationResult,
@@ -21,8 +24,12 @@ const CACHE_KEYS = {
   INVENTORY_METRICS: 'inventory:metrics',
   LOW_STOCK_PRODUCTS: 'inventory:low-stock',
   OUT_OF_STOCK_PRODUCTS: 'inventory:out-of-stock',
-  PRODUCT_INVENTORY: (productId: string, variantId?: string) => 
-    `inventory:product:${productId}${variantId ? `:${variantId}` : ''}`,
+  PRODUCT_INVENTORY: (productId: string, variantId?: string, variantLabel?: string) => {
+    if (USE_VARIANT_LABEL && variantLabel) {
+      return buildSafeCacheKey('inventory:product', productId, 'label', variantLabel);
+    }
+    return buildSafeCacheKey('inventory:product', productId, variantId);
+  },
 };
 
 const CACHE_TTL = {
@@ -42,16 +49,19 @@ export class InventoryService {
   async checkAvailability(
     productId: string,
     variantId?: string,
-    quantity: number = 1
+    quantity = 1,
+    variantLabel?: string,
   ): Promise<boolean> {
     // Build aggregation pipeline for atomic availability check
     const basePipeline: mongoose.PipelineStage[] = [
       { $match: { _id: new mongoose.Types.ObjectId(productId) } },
-      { $unwind: '$variants' }
+      { $unwind: '$variants' },
     ];
     
     // Add variant filter if specified
-    if (variantId) {
+    if (USE_VARIANT_LABEL && variantLabel) {
+      basePipeline.push({ $match: { 'variants.label': variantLabel } });
+    } else if (variantId) {
       basePipeline.push({ $match: { 'variants.variantId': variantId } });
     }
     
@@ -60,11 +70,11 @@ export class InventoryService {
       ? [
           { $eq: ['$productId', '$$productId'] },
           { $eq: ['$variantId', '$$variantId'] },
-          { $gt: ['$expiresAt', new Date()] }
+          { $gt: ['$expiresAt', new Date()] },
         ]
       : [
           { $eq: ['$productId', '$$productId'] },
-          { $gt: ['$expiresAt', new Date()] }
+          { $gt: ['$expiresAt', new Date()] },
         ];
     
     // Add lookup and aggregation stages
@@ -75,44 +85,44 @@ export class InventoryService {
           from: 'inventoryreservations',
           let: {
             productId: { $toString: '$_id' },
-            variantId: '$variants.variantId'
+            variantId: '$variants.variantId',
           },
           pipeline: [
             {
               $match: {
                 $expr: {
-                  $and: lookupConditions
-                }
-              }
+                  $and: lookupConditions,
+                },
+              },
             },
             {
               $group: {
                 _id: null,
-                totalReserved: { $sum: '$quantity' }
-              }
-            }
+                totalReserved: { $sum: '$quantity' },
+              },
+            },
           ],
-          as: 'reservations'
-        }
+          as: 'reservations',
+        },
       },
       {
         $group: {
           _id: null,
           totalInventory: { $sum: '$variants.inventory' },
-          totalReserved: { $sum: { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] } }
-        }
+          totalReserved: { $sum: { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] } },
+        },
       },
       {
         $project: {
           availableStock: {
-            $subtract: ['$totalInventory', '$totalReserved']
-          }
-        }
-      }
+            $subtract: ['$totalInventory', '$totalReserved'],
+          },
+        },
+      },
     ];
 
     const result = await Product.aggregate(fullPipeline);
-    const availableStock = result[0]?.availableStock || 0;
+    const availableStock = result[0]?.availableStock ?? 0;
     return availableStock >= quantity;
   }
 
@@ -122,7 +132,8 @@ export class InventoryService {
     quantity: number,
     sessionId: string,
     duration: number = 30 * 60 * 1000,
-    userId?: string
+    userId?: string,
+    variantLabel?: string,
   ): Promise<ReservationResult> {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -134,9 +145,15 @@ export class InventoryService {
         throw new AppError('Product not found', 404);
       }
 
-      // Calculate current inventory
+      // Calculate current inventory using helper
       let currentInventory = 0;
-      if (variantId) {
+      if (USE_VARIANT_LABEL && variantLabel) {
+        const { variant } = getVariantOrDefault(product.variants, variantLabel);
+        if (!variant) {
+          throw new AppError('Variant not found', 404);
+        }
+        currentInventory = variant.inventory;
+      } else if (variantId) {
         const variant = product.variants.find(v => v.variantId === variantId);
         if (!variant) {
           throw new AppError('Variant not found', 404);
@@ -163,7 +180,7 @@ export class InventoryService {
         },
       ]).session(session);
 
-      const totalReserved = existingReservations[0]?.totalReserved || 0;
+      const totalReserved = existingReservations[0]?.totalReserved ?? 0;
       const availableStock = Math.max(0, currentInventory - totalReserved);
 
       // Check if requested quantity is available
@@ -220,7 +237,7 @@ export class InventoryService {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
@@ -234,16 +251,28 @@ export class InventoryService {
 
   async getAvailableInventory(
     productId: string,
-    variantId?: string
+    variantId?: string,
+    variantLabel?: string,
   ): Promise<number> {
     const product = await Product.findById(productId);
     if (!product) {
       throw new AppError('Product not found', 404);
     }
 
+    // Handle products without variants
+    if (!product.variants || product.variants.length === 0) {
+      return 0;
+    }
+
     let totalInventory = 0;
 
-    if (variantId) {
+    if (USE_VARIANT_LABEL && variantLabel) {
+      const { variant } = getVariantOrDefault(product.variants, variantLabel);
+      if (!variant) {
+        throw new AppError('Variant not found', 404);
+      }
+      totalInventory = variant.inventory;
+    } else if (variantId) {
       const variant = product.variants.find(v => v.variantId === variantId);
       if (!variant) {
         throw new AppError('Variant not found', 404);
@@ -269,7 +298,7 @@ export class InventoryService {
       },
     ]);
 
-    const totalReserved = reservations[0]?.totalReserved || 0;
+    const totalReserved = reservations[0]?.totalReserved ?? 0;
     return Math.max(0, totalInventory - totalReserved);
   }
 
@@ -280,7 +309,8 @@ export class InventoryService {
     reason: InventoryUpdateReason,
     userId: string,
     metadata?: Record<string, unknown>,
-    retryCount: number = 0
+    retryCount = 0,
+    variantLabel?: string,
   ): Promise<InventoryAdjustmentResult> {
     const MAX_INVENTORY = 999999;
     const MAX_RETRIES = 3;
@@ -298,6 +328,28 @@ export class InventoryService {
     });
     
     try {
+      // First, check if product exists and has variants
+      const product = await Product.findById(productId);
+      if (!product) {
+        throw new AppError('Product not found', 404);
+      }
+      
+      // If product has no variants, create a default variant
+      if (!product.variants || product.variants.length === 0) {
+        product.variants = [{
+          variantId: 'default',
+          label: 'Default',
+          size: undefined,
+          color: undefined,
+          price: product.price,
+          inventory: 0,
+          reservedInventory: 0,
+          images: [],
+          sku: undefined,
+        }];
+        await product.save();
+      }
+      
       // Use atomic operation
       const updateQuery = variantId
         ? {
@@ -305,15 +357,15 @@ export class InventoryService {
             'variants.variantId': variantId,
             'variants.inventory': { 
               $gte: adjustment < 0 ? Math.abs(adjustment) : 0,
-              $lte: adjustment > 0 ? MAX_INVENTORY - adjustment : MAX_INVENTORY
-            }
+              $lte: adjustment > 0 ? MAX_INVENTORY - adjustment : MAX_INVENTORY,
+            },
           }
         : {
             _id: productId,
             'variants.0.inventory': { 
               $gte: adjustment < 0 ? Math.abs(adjustment) : 0,
-              $lte: adjustment > 0 ? MAX_INVENTORY - adjustment : MAX_INVENTORY
-            }
+              $lte: adjustment > 0 ? MAX_INVENTORY - adjustment : MAX_INVENTORY,
+            },
           };
       
       // Additional validation for sales
@@ -322,7 +374,7 @@ export class InventoryService {
         if (Math.abs(adjustment) > availableStock) {
           throw new AppError(
             `Cannot sell ${Math.abs(adjustment)} items. Only ${availableStock} available (excluding reservations)`,
-            400
+            400,
           );
         }
       }
@@ -334,16 +386,10 @@ export class InventoryService {
       const updatedProduct = await Product.findOneAndUpdate(
         updateQuery,
         updateOperation,
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       );
       
       if (!updatedProduct) {
-        // Check if product exists
-        const product = await Product.findById(productId);
-        if (!product) {
-          throw new AppError('Product not found', 404);
-        }
-        
         if (variantId) {
           const variant = product.variants.find(v => v.variantId === variantId);
           if (!variant) {
@@ -355,7 +401,7 @@ export class InventoryService {
           adjustment < 0 
             ? `Insufficient inventory. Current: ${product.variants[0]?.inventory || 0}, Requested adjustment: ${adjustment}`
             : `Inventory limit exceeded. Maximum allowed: ${MAX_INVENTORY}`,
-          400
+          400,
         );
       }
       
@@ -389,7 +435,7 @@ export class InventoryService {
       const availableStock = await this.getAvailableInventory(productId, variantId);
       
       // Invalidate cache
-      await this.invalidateInventoryCache(productId, variantId);
+      await this.invalidateInventoryCache(productId, variantId, variantLabel);
       
       const result = {
         success: true,
@@ -421,7 +467,7 @@ export class InventoryService {
           productId,
           variantId,
           retryCount,
-          error: error.message,
+          error: error,
         });
         
         // Retry the operation with exponential backoff
@@ -433,7 +479,7 @@ export class InventoryService {
           reason,
           userId,
           { ...metadata, correlationId },
-          retryCount + 1
+          retryCount + 1,
         );
       }
       
@@ -453,7 +499,7 @@ export class InventoryService {
 
   async bulkUpdateInventory(
     updates: BulkInventoryUpdate[],
-    userId: string
+    userId: string,
   ): Promise<InventoryAdjustmentResult[]> {
     const results: InventoryAdjustmentResult[] = [];
 
@@ -465,10 +511,10 @@ export class InventoryService {
           update.adjustment,
           update.reason,
           userId,
-          update.metadata
+          update.metadata,
         );
         results.push(result);
-      } catch (error) {
+      } catch {
         results.push({
           success: false,
           previousQuantity: 0,
@@ -495,9 +541,14 @@ export class InventoryService {
   async getInventoryHistory(
     productId: string,
     variantId?: string,
-    limit: number = 50,
-    offset: number = 0
-  ) {
+    limit = 50,
+    offset = 0,
+  ): Promise<{
+    history: Record<string, unknown>[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     const query: { productId: string; variantId?: string } = { productId };
     if (variantId) {
       query.variantId = variantId;
@@ -522,7 +573,7 @@ export class InventoryService {
 
   async getLowStockProducts(threshold?: number): Promise<LowStockAlert[]> {
     // Create cache key with threshold
-    const cacheKey = `${CACHE_KEYS.LOW_STOCK_PRODUCTS}:${threshold || 'default'}`;
+    const cacheKey = `${CACHE_KEYS.LOW_STOCK_PRODUCTS}:${threshold ?? 'default'}`;
     
     // Try to get from cache first
     const cached = await this.cacheService.get<LowStockAlert[]>(cacheKey);
@@ -540,8 +591,8 @@ export class InventoryService {
       // Calculate effective threshold
       {
         $addFields: {
-          effectiveThreshold: threshold ?? { $ifNull: ['$lowStockThreshold', 5] }
-        }
+          effectiveThreshold: threshold ?? { $ifNull: ['$lowStockThreshold', 5] },
+        },
       },
       
       // Lookup reservations for each variant
@@ -550,7 +601,7 @@ export class InventoryService {
           from: 'inventoryreservations',
           let: {
             productId: { $toString: '$_id' },
-            variantId: '$variants.variantId'
+            variantId: '$variants.variantId',
           },
           pipeline: [
             {
@@ -559,44 +610,44 @@ export class InventoryService {
                   $and: [
                     { $eq: ['$productId', '$$productId'] },
                     { $eq: ['$variantId', '$$variantId'] },
-                    { $gt: ['$expiresAt', new Date()] }
-                  ]
-                }
-              }
+                    { $gt: ['$expiresAt', new Date()] },
+                  ],
+                },
+              },
             },
             {
               $group: {
                 _id: null,
-                totalReserved: { $sum: '$quantity' }
-              }
-            }
+                totalReserved: { $sum: '$quantity' },
+              },
+            },
           ],
-          as: 'reservations'
-        }
+          as: 'reservations',
+        },
       },
       
       // Calculate available inventory
       {
         $addFields: {
           totalReserved: {
-            $ifNull: [{ $first: '$reservations.totalReserved' }, 0]
+            $ifNull: [{ $first: '$reservations.totalReserved' }, 0],
           },
           availableStock: {
             $subtract: [
               '$variants.inventory',
-              { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] }
-            ]
-          }
-        }
+              { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] },
+            ],
+          },
+        },
       },
       
       // Filter for low stock items
       {
         $match: {
           $expr: {
-            $lte: ['$availableStock', '$effectiveThreshold']
-          }
-        }
+            $lte: ['$availableStock', '$effectiveThreshold'],
+          },
+        },
       },
       
       // Lookup last restock history
@@ -605,7 +656,7 @@ export class InventoryService {
           from: 'inventoryhistories',
           let: {
             productId: { $toString: '$_id' },
-            variantId: '$variants.variantId'
+            variantId: '$variants.variantId',
           },
           pipeline: [
             {
@@ -614,16 +665,16 @@ export class InventoryService {
                   $and: [
                     { $eq: ['$productId', '$$productId'] },
                     { $eq: ['$variantId', '$$variantId'] },
-                    { $eq: ['$reason', 'restock'] }
-                  ]
-                }
-              }
+                    { $eq: ['$reason', 'restock'] },
+                  ],
+                },
+              },
             },
             { $sort: { timestamp: -1 } },
-            { $limit: 1 }
+            { $limit: 1 },
           ],
-          as: 'restockHistory'
-        }
+          as: 'restockHistory',
+        },
       },
       
       // Format the output
@@ -639,17 +690,17 @@ export class InventoryService {
                 $concat: [
                   { $ifNull: ['$variants.size', ''] },
                   ' ',
-                  { $ifNull: ['$variants.color', ''] }
-                ]
-              }
-            }
+                  { $ifNull: ['$variants.color', ''] },
+                ],
+              },
+            },
           },
           currentStock: '$availableStock',
           threshold: '$effectiveThreshold',
           lastRestocked: { $first: '$restockHistory.timestamp' },
-          restockDate: '$restockDate'
-        }
-      }
+          restockDate: '$restockDate',
+        },
+      },
     ];
 
     const alerts = await Product.aggregate(pipeline as mongoose.PipelineStage[]);
@@ -663,19 +714,32 @@ export class InventoryService {
 
   async getProductInventoryInfo(
     productId: string,
-    variantId?: string
+    variantId?: string,
+    variantLabel?: string,
   ): Promise<ProductInventoryInfo> {
     const product = await Product.findById(productId);
     if (!product) {
       throw new AppError('Product not found', 404);
     }
 
-    const availableStock = await this.getAvailableInventory(productId, variantId);
+    const availableStock = await this.getAvailableInventory(productId, variantId, variantLabel);
 
     let currentStock = 0;
     let reservedStock = 0;
 
-    if (variantId) {
+    // Handle products without variants
+    if (!product.variants || product.variants.length === 0) {
+      // Products without variants have 0 inventory
+      currentStock = 0;
+      reservedStock = 0;
+    } else if (USE_VARIANT_LABEL && variantLabel) {
+      const { variant } = getVariantOrDefault(product.variants, variantLabel);
+      if (!variant) {
+        throw new AppError('Variant not found', 404);
+      }
+      currentStock = variant.inventory;
+      reservedStock = variant.reservedInventory || 0;
+    } else if (variantId) {
       const variant = product.variants.find(v => v.variantId === variantId);
       if (!variant) {
         throw new AppError('Variant not found', 404);
@@ -686,14 +750,14 @@ export class InventoryService {
       currentStock = product.variants.reduce((sum, v) => sum + v.inventory, 0);
       reservedStock = product.variants.reduce(
         (sum, v) => sum + (v.reservedInventory || 0),
-        0
+        0,
       );
     }
 
     const stockStatus = this.calculateStockStatus(
       availableStock,
       product.lowStockThreshold,
-      product.allowBackorder
+      product.allowBackorder,
     );
 
     return {
@@ -712,7 +776,7 @@ export class InventoryService {
   private calculateStockStatus(
     availableStock: number,
     threshold: number,
-    allowBackorder: boolean
+    allowBackorder: boolean,
   ): StockStatus {
     if (availableStock <= 0) {
       return allowBackorder ? StockStatus.BACKORDERED : StockStatus.OUT_OF_STOCK;
@@ -725,7 +789,7 @@ export class InventoryService {
 
   async convertReservationToPermanent(
     reservationId: string,
-    orderId: string
+    orderId: string,
   ): Promise<void> {
     const correlationId = generateCorrelationId();
     const startTime = Date.now();
@@ -741,7 +805,7 @@ export class InventoryService {
 
     try {
       const reservation = await InventoryReservation.findById(reservationId).session(
-        session
+        session,
       );
       if (!reservation) {
         throw new AppError('Reservation not found', 404);
@@ -752,8 +816,8 @@ export class InventoryService {
         reservation.variantId,
         -reservation.quantity,
         'sale',
-        reservation.userId || 'system',
-        { orderId, correlationId }
+        reservation.userId ?? 'system',
+        { orderId, correlationId },
       );
 
       await reservation.deleteOne({ session });
@@ -781,7 +845,7 @@ export class InventoryService {
       
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
@@ -805,7 +869,7 @@ export class InventoryService {
           from: 'inventoryreservations',
           let: {
             productId: { $toString: '$_id' },
-            variantId: '$variants.variantId'
+            variantId: '$variants.variantId',
           },
           pipeline: [
             {
@@ -814,38 +878,38 @@ export class InventoryService {
                   $and: [
                     { $eq: ['$productId', '$$productId'] },
                     { $eq: ['$variantId', '$$variantId'] },
-                    { $gt: ['$expiresAt', new Date()] }
-                  ]
-                }
-              }
+                    { $gt: ['$expiresAt', new Date()] },
+                  ],
+                },
+              },
             },
             {
               $group: {
                 _id: null,
-                totalReserved: { $sum: '$quantity' }
-              }
-            }
+                totalReserved: { $sum: '$quantity' },
+              },
+            },
           ],
-          as: 'reservations'
-        }
+          as: 'reservations',
+        },
       },
       
       // Calculate available stock and stock status
       {
         $addFields: {
           totalReserved: {
-            $ifNull: [{ $first: '$reservations.totalReserved' }, 0]
+            $ifNull: [{ $first: '$reservations.totalReserved' }, 0],
           },
           availableStock: {
             $subtract: [
               '$variants.inventory',
-              { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] }
-            ]
+              { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] },
+            ],
           },
           stockValue: {
-            $multiply: ['$variants.inventory', '$variants.price']
-          }
-        }
+            $multiply: ['$variants.inventory', '$variants.price'],
+          },
+        },
       },
       
       // Categorize stock status
@@ -855,10 +919,10 @@ export class InventoryService {
           isLowStock: {
             $and: [
               { $gt: ['$availableStock', 0] },
-              { $lte: ['$availableStock', '$lowStockThreshold'] }
-            ]
-          }
-        }
+              { $lte: ['$availableStock', '$lowStockThreshold'] },
+            ],
+          },
+        },
       },
       
       // Group and calculate totals
@@ -868,20 +932,20 @@ export class InventoryService {
           totalProducts: { $sum: 1 },
           totalValue: { $sum: '$stockValue' },
           outOfStockCount: {
-            $sum: { $cond: ['$isOutOfStock', 1, 0] }
+            $sum: { $cond: ['$isOutOfStock', 1, 0] },
           },
           lowStockCount: {
-            $sum: { $cond: ['$isLowStock', 1, 0] }
+            $sum: { $cond: ['$isLowStock', 1, 0] },
           },
           totalReserved: {
-            $sum: { $ifNull: ['$variants.reservedInventory', 0] }
-          }
-        }
-      }
+            $sum: { $ifNull: ['$variants.reservedInventory', 0] },
+          },
+        },
+      },
     ];
 
     const results = await Product.aggregate(pipeline as mongoose.PipelineStage[]);
-    const metrics = results[0] || {
+    const metrics = results[0] ?? {
       totalProducts: 0,
       totalValue: 0,
       outOfStockCount: 0,
@@ -907,33 +971,39 @@ export class InventoryService {
       {
         $addFields: {
           variantValue: {
-            $multiply: ['$variants.inventory', '$variants.price']
-          }
-        }
+            $multiply: ['$variants.inventory', '$variants.price'],
+          },
+        },
       },
       
       // Sum all variant values
       {
         $group: {
           _id: null,
-          totalValue: { $sum: '$variantValue' }
-        }
-      }
+          totalValue: { $sum: '$variantValue' },
+        },
+      },
     ];
 
     const results = await Product.aggregate(pipeline);
-    return results[0]?.totalValue || 0;
+    return results[0]?.totalValue ?? 0;
   }
 
-  async getOutOfStockProducts() {
+  async getOutOfStockProducts(): Promise<{
+    productId: string;
+    productName: string;
+    variantId: string;
+    variantDetails: string;
+    lastInStock?: Date;
+  }[]> {
     // Try to get from cache first
-    const cached = await this.cacheService.get<Array<{
+    const cached = await this.cacheService.get<{
       productId: string;
       productName: string;
       variantId: string;
       variantDetails: string;
       lastInStock?: Date;
-    }>>(CACHE_KEYS.OUT_OF_STOCK_PRODUCTS);
+    }[]>(CACHE_KEYS.OUT_OF_STOCK_PRODUCTS);
     if (cached) {
       return cached;
     }
@@ -943,8 +1013,8 @@ export class InventoryService {
       { 
         $match: { 
           isDeleted: { $ne: true },
-          allowBackorder: { $ne: true }
-        } 
+          allowBackorder: { $ne: true },
+        }, 
       },
       
       // Unwind variants
@@ -956,7 +1026,7 @@ export class InventoryService {
           from: 'inventoryreservations',
           let: {
             productId: { $toString: '$_id' },
-            variantId: '$variants.variantId'
+            variantId: '$variants.variantId',
           },
           pipeline: [
             {
@@ -965,20 +1035,20 @@ export class InventoryService {
                   $and: [
                     { $eq: ['$productId', '$$productId'] },
                     { $eq: ['$variantId', '$$variantId'] },
-                    { $gt: ['$expiresAt', new Date()] }
-                  ]
-                }
-              }
+                    { $gt: ['$expiresAt', new Date()] },
+                  ],
+                },
+              },
             },
             {
               $group: {
                 _id: null,
-                totalReserved: { $sum: '$quantity' }
-              }
-            }
+                totalReserved: { $sum: '$quantity' },
+              },
+            },
           ],
-          as: 'reservations'
-        }
+          as: 'reservations',
+        },
       },
       
       // Calculate available stock
@@ -987,10 +1057,10 @@ export class InventoryService {
           availableStock: {
             $subtract: [
               '$variants.inventory',
-              { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] }
-            ]
-          }
-        }
+              { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] },
+            ],
+          },
+        },
       },
       
       // Filter for out of stock items
@@ -1002,7 +1072,7 @@ export class InventoryService {
           from: 'inventoryhistories',
           let: {
             productId: { $toString: '$_id' },
-            variantId: '$variants.variantId'
+            variantId: '$variants.variantId',
           },
           pipeline: [
             {
@@ -1011,16 +1081,16 @@ export class InventoryService {
                   $and: [
                     { $eq: ['$productId', '$$productId'] },
                     { $eq: ['$variantId', '$$variantId'] },
-                    { $gt: ['$newQuantity', 0] }
-                  ]
-                }
-              }
+                    { $gt: ['$newQuantity', 0] },
+                  ],
+                },
+              },
             },
             { $sort: { timestamp: -1 } },
-            { $limit: 1 }
+            { $limit: 1 },
           ],
-          as: 'lastInStockHistory'
-        }
+          as: 'lastInStockHistory',
+        },
       },
       
       // Format output
@@ -1036,14 +1106,14 @@ export class InventoryService {
                 $concat: [
                   { $ifNull: ['$variants.size', ''] },
                   ' ',
-                  { $ifNull: ['$variants.color', ''] }
-                ]
-              }
-            }
+                  { $ifNull: ['$variants.color', ''] },
+                ],
+              },
+            },
           },
-          lastInStock: { $first: '$lastInStockHistory.timestamp' }
-        }
-      }
+          lastInStock: { $first: '$lastInStockHistory.timestamp' },
+        },
+      },
     ];
 
     const results = await Product.aggregate(pipeline as mongoose.PipelineStage[]);
@@ -1054,9 +1124,8 @@ export class InventoryService {
     return results;
   }
 
-
   async getInventoryTurnover(
-    dateRange: { start: Date; end: Date }
+    dateRange: { start: Date; end: Date },
   ): Promise<InventoryTurnoverData[]> {
     const pipeline: mongoose.PipelineStage[] = [
       // Match sales within the date range
@@ -1147,10 +1216,32 @@ export class InventoryService {
     })) as InventoryTurnoverData[];
   }
 
-
-  private async invalidateInventoryCache(productId: string, variantId?: string): Promise<void> {
-    // Invalidate specific product inventory cache
-    await this.cacheService.del(CACHE_KEYS.PRODUCT_INVENTORY(productId, variantId));
+  private async invalidateInventoryCache(productId: string, variantId?: string, variantLabel?: string): Promise<void> {
+    // TODO(#variant-migration): Coordinate with frontend for cache-key patterns
+    // Invalidate all possible key combinations during dual-mode operation
+    const keysToInvalidate: string[] = [
+      // Primary key with all parameters
+      CACHE_KEYS.PRODUCT_INVENTORY(productId, variantId, variantLabel),
+    ];
+    
+    // During dual-mode, we need to invalidate both label and non-label versions
+    if (USE_VARIANT_LABEL) {
+      // Invalidate legacy key without label
+      keysToInvalidate.push(CACHE_KEYS.PRODUCT_INVENTORY(productId, variantId, undefined));
+      
+      // Invalidate variant-less keys for both label and non-label
+      if (variantLabel || variantId) {
+        keysToInvalidate.push(CACHE_KEYS.PRODUCT_INVENTORY(productId, undefined, undefined));
+      }
+    } else {
+      // In legacy mode, still invalidate label-based keys if they exist
+      if (variantLabel) {
+        keysToInvalidate.push(CACHE_KEYS.PRODUCT_INVENTORY(productId, variantId, variantLabel));
+      }
+    }
+    
+    // Invalidate all identified keys
+    await Promise.all(keysToInvalidate.map(key => this.cacheService.del(key)));
     
     // Invalidate general metrics that might be affected
     await this.cacheService.del(CACHE_KEYS.INVENTORY_METRICS);

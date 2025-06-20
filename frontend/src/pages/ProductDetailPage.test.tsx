@@ -83,7 +83,7 @@ describe('ProductDetailPage', () => {
         <Routes>
           <Route path="/products/:slug" element={<ProductDetailPage />} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
   };
 

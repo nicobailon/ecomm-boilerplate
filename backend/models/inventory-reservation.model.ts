@@ -37,15 +37,14 @@ const inventoryReservationSchema = new Schema<IInventoryReservationDocument>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 inventoryReservationSchema.index({ productId: 1, variantId: 1 });
 inventoryReservationSchema.index({ sessionId: 1 });
 inventoryReservationSchema.index({ userId: 1 });
-inventoryReservationSchema.index({ expiresAt: 1 });
 
 export const InventoryReservation = mongoose.model<IInventoryReservationDocument>(
   'InventoryReservation',
-  inventoryReservationSchema
+  inventoryReservationSchema,
 );

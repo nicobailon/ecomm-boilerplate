@@ -1,6 +1,6 @@
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { ProductInput} from '@/lib/validations';
+import type { ProductFormInput, ProductInput } from '@/lib/validations';
 import { productSchema } from '@/lib/validations';
 import { useProductCreation } from '@/hooks/product/useProductCreation';
 import { useCreateProduct, useUpdateProduct } from '@/hooks/migration/use-products-migration';
@@ -35,7 +35,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
   
   const collections = collectionsData?.collections ?? [];
   
-  const formMethods = useForm<ProductInput>({
+  const formMethods = useForm<ProductFormInput>({
     resolver: zodResolver(productSchema),
     defaultValues: mode === 'edit' && initialData ? {
       name: initialData.name,
@@ -46,7 +46,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         : initialData.collectionId?._id,
       image: initialData.image,
       variants: initialData.variants?.map(v => ({
-        label: v.label || v.size || '',
+        label: v.label || '',
         color: v.color || '',
         priceAdjustment: v.price - initialData.price,
         inventory: v.inventory,
@@ -113,7 +113,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
           : initialData.collectionId?._id,
         image: initialData.image,
         variants: initialData.variants?.map(v => ({
-          label: v.label || v.size || '',
+          label: v.label || '',
           color: v.color || '',
           priceAdjustment: v.price - initialData.price,
           inventory: v.inventory,
@@ -131,34 +131,39 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
     }
   }, [mode, initialData, reset, productCreation?.draftData]);
   
-  const onSubmit = useCallback((data: ProductInput) => {
-    // Transform variants data for API
-    const transformedData = {
-      ...data,
-      variants: data.variants?.map((variant) => ({
-        variantId: `${Date.now()}-${Math.random()}`,
+  const onSubmit = useCallback((data: ProductFormInput) => {
+    // Create properly typed data for the API with required variant fields
+    const apiData: ProductInput = {
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      image: data.image,
+      collectionId: data.collectionId,
+      variants: data.variants?.map(variant => ({
         label: variant.label,
-        price: data.price + (variant.priceAdjustment || 0),
         color: variant.color,
-        inventory: variant.inventory || 0,
+        priceAdjustment: variant.priceAdjustment ?? 0,
+        inventory: variant.inventory ?? 0,
         sku: variant.sku,
       })),
     };
     
     if (mode === 'create') {
-      createProductMutation.mutate(transformedData, {
+      createProductMutation.mutate(apiData, {
         onSuccess: (result) => {
-          const isTPRCResult = 'product' in result;
-          const product = isTPRCResult ? result.product : result;
-          const hasNewCollection = isTPRCResult && result.created?.collection;
-          
-          if (hasNewCollection && result.collection) {
-            toast.success(`Created product in new collection "${result.collection.name}"`);
+          let product: Product;
+          if ('product' in result && result.product) {
+            product = result.product as Product;
+            if ('created' in result && result.created && typeof result.created === 'object' && 'collection' in result.created) {
+              toast.success('Created product in new collection');
+            }
+          } else {
+            product = result as Product;
           }
           
           reset();
           setImagePreview('');
-          onSuccess?.(product as Product);
+          onSuccess?.(product);
           
           if (productCreationData && !productCreationData.bulkMode) {
             // Form will be closed by parent component through onSuccess callback
@@ -166,8 +171,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         },
       });
     } else {
-      updateProductMutation.mutate({ id: initialData?._id ?? '', data: transformedData }, {
-        onSuccess: (updatedProduct) => {
+      updateProductMutation.mutate({ id: initialData?._id ?? '', data: apiData }, {
+        onSuccess: (updatedProduct: Product) => {
           toast.success('Product updated!');
           onSuccess?.(updatedProduct);
         },
@@ -378,7 +383,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
       </div>
       
       {/* Variant Editor */}
-      <VariantEditor />
+      <VariantEditor isLoading={isSubmitting || (mode === 'create' ? createProductMutation.isPending : updateProductMutation.isPending)} />
       
       <Button
         type="submit"

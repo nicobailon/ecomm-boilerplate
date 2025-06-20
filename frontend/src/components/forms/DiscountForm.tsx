@@ -199,7 +199,7 @@ export const DiscountForm: React.FC<DiscountFormProps> = ({
               label="Max Uses (Optional)"
               type="number"
               {...register('maxUses', { 
-                setValueAs: (value) => value === '' ? undefined : parseInt(value), 
+                setValueAs: (value: string) => value === '' ? undefined : parseInt(value), 
               })}
               error={errors.maxUses?.message}
               placeholder="Unlimited"
@@ -215,7 +215,7 @@ export const DiscountForm: React.FC<DiscountFormProps> = ({
               label="Min Purchase (Optional)"
               type="number"
               {...register('minimumPurchaseAmount', { 
-                setValueAs: (value) => value === '' ? undefined : parseFloat(value), 
+                setValueAs: (value: string) => value === '' ? undefined : parseFloat(value), 
               })}
               error={errors.minimumPurchaseAmount?.message}
               placeholder="No minimum"

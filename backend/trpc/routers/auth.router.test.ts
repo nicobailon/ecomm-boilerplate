@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { appRouter } from './app.router.js';
 import { authService } from '../../services/auth.service.js';
 import { TRPCError } from '@trpc/server';
@@ -13,10 +13,10 @@ describe('Auth Router', () => {
   beforeEach(() => {
     cookieStore = {};
     mockResponse = {
-      cookie: vi.fn((name: string, value: string, options: any) => {
+      cookie: vi.fn((name: string, value: string, options?: any) => {
         cookieStore[name] = { value, options };
         return mockResponse as Response;
-      }),
+      }) as any,
       clearCookie: vi.fn((name: string) => {
         delete cookieStore[name];
         return mockResponse as Response;
@@ -58,7 +58,7 @@ describe('Auth Router', () => {
       expect(result.user).toEqual(mockUser);
       expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
       expect(cookieStore.accessToken.value).toBe('access123');
-      expect(cookieStore.refreshToken.value).toBe('refresh123');
+      expect(cookieStore.refresh.value).toBe('refresh123');
     });
 
     it('should throw BAD_REQUEST for existing user', async () => {
@@ -120,7 +120,7 @@ describe('Auth Router', () => {
       vi.mocked(authService.logout).mockResolvedValue();
 
       const caller = appRouter.createCaller({
-        req: { cookies: { refreshToken: 'refresh123' } } as any,
+        req: { cookies: { refresh: 'refresh123' } } as any,
         res: mockResponse as Response,
         user: null,
       });
@@ -129,11 +129,11 @@ describe('Auth Router', () => {
 
       expect(result.success).toBe(true);
       expect(mockResponse.clearCookie).toHaveBeenCalledWith('accessToken');
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith('refreshToken');
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith('refresh');
     });
   });
 
-  describe('refreshToken', () => {
+  describe('refresh', () => {
     it('should successfully refresh access token', async () => {
       vi.mocked(authService.refreshAccessToken).mockResolvedValue('newAccess789');
 
@@ -143,7 +143,7 @@ describe('Auth Router', () => {
         user: null,
       });
 
-      const result = await caller.auth.refreshToken({
+      const result = await caller.auth.refresh({
         refreshToken: 'refresh123',
       });
 
@@ -156,7 +156,7 @@ describe('Auth Router', () => {
     });
   });
 
-  describe('getProfile', () => {
+  describe('profile', () => {
     it('should get user profile when authenticated', async () => {
       const mockProfile = {
         _id: '123',
@@ -174,7 +174,7 @@ describe('Auth Router', () => {
         user: { _id: '123' } as any,
       });
 
-      const result = await caller.auth.getProfile();
+      const result = await caller.auth.profile();
 
       expect(result).toEqual(mockProfile);
     });
@@ -186,7 +186,7 @@ describe('Auth Router', () => {
         user: null,
       });
 
-      await expect(caller.auth.getProfile()).rejects.toThrow(TRPCError);
+      await expect(caller.auth.profile()).rejects.toThrow(TRPCError);
     });
   });
 });

@@ -6,12 +6,20 @@ import PeopleAlsoBought from '../components/product/PeopleAlsoBought';
 import OrderSummary from '../components/cart/OrderSummary';
 import GiftCouponCard from '../components/cart/GiftCouponCard';
 import { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { CartSkeleton } from '@/components/ui/CartSkeleton';
 
 const CartPage = () => {
 	const { data: cart, isLoading } = useUnifiedCart();
 
-	if (isLoading) return <LoadingSpinner />;
+	if (isLoading) {
+		return (
+			<div className='py-8 md:py-16'>
+				<div className='mx-auto max-w-screen-xl px-4 2xl:px-0'>
+					<CartSkeleton />
+				</div>
+			</div>
+		);
+	}
 
 	const cartItems = cart?.cartItems ?? [];
 
@@ -30,7 +38,7 @@ const CartPage = () => {
 						) : (
 							<div className='space-y-6'>
 								{cartItems.map((item) => (
-									<CartItem key={item.product._id} item={item} />
+									<CartItem key={`${item.product._id}-${item.variantId || 'default'}`} item={item} />
 								))}
 							</div>
 						)}

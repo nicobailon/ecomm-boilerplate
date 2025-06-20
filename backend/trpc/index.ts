@@ -2,7 +2,6 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { Context } from './context.js';
 import { ZodError } from 'zod';
-import mongoose from 'mongoose';
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
@@ -25,7 +24,7 @@ const isAuthed = t.middleware(({ ctx, next }) => {
   return next({
     ctx: {
       user: ctx.user,
-      userId: (ctx.user._id as mongoose.Types.ObjectId).toString(),
+      userId: (ctx.user._id).toString(),
     },
   });
 });
@@ -37,7 +36,7 @@ const isAdmin = t.middleware(({ ctx, next }) => {
   return next({
     ctx: {
       user: ctx.user,
-      userId: (ctx.user._id as mongoose.Types.ObjectId).toString(),
+      userId: (ctx.user._id).toString(),
     },
   });
 });

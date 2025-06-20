@@ -15,6 +15,7 @@ export const FEATURE_FLAGS = {
   USE_TRPC_ANALYTICS,
   USE_TRPC_COUPONS,
   USE_TRPC_PAYMENT,
+  USE_VARIANT_ATTRIBUTES: false, // Will be toggled based on backend /status route (Gate G-3)
 } as const;
 
 // Helper to check if any tRPC feature is enabled

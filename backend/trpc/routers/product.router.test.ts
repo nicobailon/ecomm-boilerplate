@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TRPCError } from '@trpc/server';
-import { appRouter } from './app.router';
-import { productService } from '../../services/product.service';
+import { appRouter } from './app.router.js';
+import { productService } from '../../services/product.service.js';
 
 vi.mock('../../services/product.service');
 
@@ -11,6 +10,9 @@ describe('productRouter - enhanced create', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     
     adminCaller = appRouter.createCaller({
       user: { _id: 'admin123', role: 'admin' },
@@ -29,6 +31,10 @@ describe('productRouter - enhanced create', () => {
         clearCookie: vi.fn(),
       },
     } as any);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('create with collection support', () => {

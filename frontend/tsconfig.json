@@ -21,12 +21,14 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@backend/*": ["../backend/*"]
+      "@backend/*": ["../backend/*"],
+      "@shared/*": ["../shared/*"]
     }
   },
   "include": [
     "src/**/*",
-    "../backend/trpc/routers/app.router.ts"
+    "../backend/trpc/routers/app.router.ts",
+    "../shared/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }

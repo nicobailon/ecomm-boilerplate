@@ -16,8 +16,8 @@ class BrowserEventEmitter<Events extends Record<string, unknown>> {
     callbacks.forEach(callback => {
       try {
         callback(data);
-      } catch (error) {
-        console.error(`Error in event listener for ${String(event)}:`, error);
+      } catch {
+        // Event listener errors are handled silently to prevent app crashes
       }
     });
     

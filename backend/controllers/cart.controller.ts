@@ -14,41 +14,43 @@ export const getCartProducts = asyncHandler(async (req: AuthRequest, res: Respon
 });
 
 export const addToCart = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { productId } = req.body as { productId: string };
+  const { productId, variantId } = req.body as { productId: string; variantId?: string };
   if (!req.user) {
     res.status(401).json({ message: 'Unauthorized' });
     return;
   }
   const user = req.user;
   
-  await cartService.addToCart(user, productId);
+  await cartService.addToCart(user, productId, variantId);
   const cartResponse = await cartService.calculateCartTotals(user);
   res.json(cartResponse);
 });
 
 export const removeFromCart = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const productId = req.params.productId || (req.body as { productId?: string }).productId;
+  const productId = req.params.productId || (req.body as { productId?: string; variantId?: string }).productId;
+  const variantId = (req.body as { productId?: string; variantId?: string }).variantId;
+  
   if (!req.user) {
     res.status(401).json({ message: 'Unauthorized' });
     return;
   }
   const user = req.user;
   
-  await cartService.removeFromCart(user, productId);
+  await cartService.removeFromCart(user, productId, variantId);
   const cartResponse = await cartService.calculateCartTotals(user);
   res.json(cartResponse);
 });
 
 export const updateQuantity = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id: productId } = req.params;
-  const { quantity } = req.body as { quantity: number };
+  const { quantity, variantId } = req.body as { quantity: number; variantId?: string };
   if (!req.user) {
     res.status(401).json({ message: 'Unauthorized' });
     return;
   }
   const user = req.user;
   
-  await cartService.updateQuantity(user, productId, quantity);
+  await cartService.updateQuantity(user, productId, quantity, variantId);
   const cartResponse = await cartService.calculateCartTotals(user);
   res.json(cartResponse);
 });

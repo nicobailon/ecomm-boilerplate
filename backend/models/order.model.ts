@@ -7,9 +7,16 @@ export interface IOrderDocument extends Document {
     product: mongoose.Types.ObjectId;
     quantity: number;
     price: number;
+    variantId?: string;
+    variantDetails?: {
+      size?: string;
+      color?: string;
+      sku?: string;
+    };
   }[];
   totalAmount: number;
   stripeSessionId: string;
+  status: 'pending' | 'completed' | 'cancelled' | 'refunded';
 }
 
 const orderSchema = new Schema<IOrderDocument>(
@@ -36,6 +43,27 @@ const orderSchema = new Schema<IOrderDocument>(
           required: true,
           min: 0,
         },
+        variantId: {
+          type: String,
+          required: false,
+        },
+        variantDetails: {
+          type: {
+            size: {
+              type: String,
+              required: false,
+            },
+            color: {
+              type: String,
+              required: false,
+            },
+            sku: {
+              type: String,
+              required: false,
+            },
+          },
+          required: false,
+        },
       },
     ],
     totalAmount: {
@@ -46,6 +74,12 @@ const orderSchema = new Schema<IOrderDocument>(
     stripeSessionId: {
       type: String,
       unique: true,
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'completed', 'cancelled', 'refunded'],
+      default: 'completed',
+      required: true,
     },
   },
   { timestamps: true },

@@ -24,9 +24,9 @@ export const useGuestAddToCart = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (product: Product) => {
+    mutationFn: (params: { product: Product; variantId?: string } | Product) => {
       try {
-        return addToGuestCart(product);
+        return Promise.resolve(addToGuestCart(params));
       } catch (error) {
         if (error instanceof Error && error.message.includes('Guest cart is limited')) {
           toast.error(error.message);
@@ -34,19 +34,26 @@ export const useGuestAddToCart = () => {
         throw error;
       }
     },
-    onMutate: async (product) => {
+    onMutate: async (params) => {
       await queryClient.cancelQueries({ queryKey: ['guestCart'] });
       const previousCart = queryClient.getQueryData<GuestCartData>(['guestCart']);
+
+      // Extract product and variant info
+      const product = 'product' in params ? params.product : params;
+      const variantId = 'product' in params ? params.variantId : undefined;
 
       queryClient.setQueryData<GuestCartData>(['guestCart'], (old) => {
         if (!old) return old;
         
-        const existingItem = old.cartItems.find(item => item.product._id === product._id);
+        const existingItem = old.cartItems.find(item => 
+          item.product._id === product._id && item.variantId === variantId,
+        );
+        
         if (existingItem) {
           return {
             ...old,
             cartItems: old.cartItems.map(item =>
-              item.product._id === product._id
+              item.product._id === product._id && item.variantId === variantId
                 ? { ...item, quantity: item.quantity + 1 }
                 : item,
             ),
@@ -55,14 +62,14 @@ export const useGuestAddToCart = () => {
         
         return {
           ...old,
-          cartItems: [...old.cartItems, { product, quantity: 1 }],
+          cartItems: [...old.cartItems, { product, quantity: 1, variantId }],
         };
       });
 
       return { previousCart };
     },
     onError: (err, _product, context) => {
-      if (context?.previousCart) {
+      if (context && 'previousCart' in context && context.previousCart) {
         queryClient.setQueryData(['guestCart'], context.previousCart);
       }
       if (!(err instanceof Error && err.message.includes('Guest cart is limited'))) {
@@ -82,10 +89,10 @@ export const useGuestUpdateQuantity = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) => {
-      return Promise.resolve(updateGuestCartQuantity(productId, quantity));
+    mutationFn: ({ productId, quantity, variantId }: { productId: string; quantity: number; variantId?: string }) => {
+      return Promise.resolve(updateGuestCartQuantity(productId, quantity, variantId));
     },
-    onMutate: async ({ productId, quantity }) => {
+    onMutate: async ({ productId, quantity, variantId }) => {
       await queryClient.cancelQueries({ queryKey: ['guestCart'] });
       const previousCart = queryClient.getQueryData<GuestCartData>(['guestCart']);
 
@@ -95,14 +102,16 @@ export const useGuestUpdateQuantity = () => {
         if (quantity <= 0) {
           return {
             ...old,
-            cartItems: old.cartItems.filter(item => item.product._id !== productId),
+            cartItems: old.cartItems.filter(item => 
+              !(item.product._id === productId && item.variantId === variantId),
+            ),
           };
         }
         
         return {
           ...old,
           cartItems: old.cartItems.map(item =>
-            item.product._id === productId
+            item.product._id === productId && item.variantId === variantId
               ? { ...item, quantity }
               : item,
           ),
@@ -124,19 +133,37 @@ export const useGuestRemoveFromCart = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (productId: string) => {
-      return Promise.resolve(removeFromGuestCart(productId));
+    mutationFn: (params: { productId: string; variantId?: string } | string) => {
+      // Support both old string API and new params object
+      const productId = typeof params === 'string' ? params : params.productId;
+      const variantId = typeof params === 'string' ? undefined : params.variantId;
+      return Promise.resolve(removeFromGuestCart(productId, variantId));
     },
-    onMutate: async (productId) => {
+    onMutate: async (params) => {
       await queryClient.cancelQueries({ queryKey: ['guestCart'] });
       const previousCart = queryClient.getQueryData<GuestCartData>(['guestCart']);
+
+      const productId = typeof params === 'string' ? params : params.productId;
+      const variantId = typeof params === 'string' ? undefined : params.variantId;
 
       queryClient.setQueryData<GuestCartData>(['guestCart'], (old) => {
         if (!old) return old;
         
+        const filteredItems = old.cartItems.filter(item => 
+          !(item.product._id === productId && item.variantId === variantId),
+        );
+        
+        // Recalculate totals for optimistic update
+        const subtotal = filteredItems.reduce((sum, item) => {
+          const price = item.variantDetails?.price ?? item.product.price;
+          return sum + (price * item.quantity);
+        }, 0);
+        
         return {
           ...old,
-          cartItems: old.cartItems.filter(item => item.product._id !== productId),
+          cartItems: filteredItems,
+          subtotal,
+          totalAmount: subtotal,
         };
       });
 

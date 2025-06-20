@@ -1,11 +1,20 @@
 import ProductCard from './ProductCard';
-import LoadingSpinner from '../ui/LoadingSpinner';
+import { ProductGridSkeleton } from '../ui/ProductCardSkeleton';
 import { useProductRecommendations } from '@/hooks/product/useProducts';
 
 const PeopleAlsoBought = () => {
 	const { data: recommendations, isLoading } = useProductRecommendations();
 
-	if (isLoading) return <LoadingSpinner />;
+	if (isLoading) {
+		return (
+			<div className='mt-8'>
+				<h3 className='text-2xl font-semibold text-primary'>People also bought</h3>
+				<div className='mt-6'>
+					<ProductGridSkeleton count={3} />
+				</div>
+			</div>
+		);
+	}
 
 	if (!recommendations || recommendations.length === 0) {
 		return null;

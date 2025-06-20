@@ -30,13 +30,11 @@ const collectionSchema = new Schema<ICollection>(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true,
     },
     owner: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     products: [
       {

@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { DiscountsTableSkeleton } from '@/components/ui/DiscountsSkeleton';
 import { useListDiscounts, useDeleteDiscount } from '../../hooks/queries/useDiscounts';
 import { DiscountEditDrawer } from '../../components/drawers/DiscountEditDrawer';
 import { ConfirmDialog } from '../../components/ui/AlertDialog';
@@ -94,7 +94,7 @@ const DiscountsTab = () => {
     );
   };
   
-  if (isLoading) return <LoadingSpinner />;
+  if (isLoading) return <DiscountsTableSkeleton />;
   
   return (
     <div className="space-y-6">

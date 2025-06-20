@@ -4,19 +4,18 @@ import {
   createDiscountSchema, 
   updateDiscountSchema, 
   listDiscountsSchema, 
-  deleteDiscountSchema 
+  deleteDiscountSchema, 
 } from '../../validations/index.js';
 import { couponService } from '../../services/coupon.service.js';
 import { cartService } from '../../services/cart.service.js';
 import { TRPCError } from '@trpc/server';
 import { isAppError } from '../../utils/error-types.js';
-import mongoose from 'mongoose';
 
 export const couponRouter = router({
   getMyCoupon: protectedProcedure
     .query(async ({ ctx }) => {
       try {
-        return await couponService.getCoupon((ctx.user._id as mongoose.Types.ObjectId).toString());
+        return await couponService.getCoupon((ctx.user._id).toString());
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to get coupon';
         throw new TRPCError({
@@ -30,7 +29,7 @@ export const couponRouter = router({
     .input(applyCouponSchema)
     .mutation(async ({ input, ctx }) => {
       try {
-        return await couponService.validateCoupon((ctx.user._id as mongoose.Types.ObjectId).toString(), input.code);
+        return await couponService.validateCoupon((ctx.user._id).toString(), input.code);
       } catch (error) {
         if (isAppError(error) && error.statusCode === 404) {
           throw new TRPCError({
@@ -99,7 +98,7 @@ export const couponRouter = router({
     .query(async ({ input }) => {
       try {
         return await couponService.listAllDiscounts(input);
-      } catch (error) {
+      } catch {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch discounts',

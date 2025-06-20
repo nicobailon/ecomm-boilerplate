@@ -1,6 +1,6 @@
 import { FEATURE_FLAGS } from '@/lib/feature-flags';
 import { trpc } from '@/lib/trpc';
-import type { ProductInput } from '@/lib/validations';
+import type { ProductInput, ProductFormInput } from '@/lib/validations';
 import { 
   useProducts as useProductsREST, 
   useFeaturedProducts as useFeaturedProductsREST,
@@ -98,8 +98,16 @@ export function useCreateProduct() {
 
   if (FEATURE_FLAGS.USE_TRPC_PRODUCTS) {
     return {
-      mutate: trpcMutation.mutate,
-      mutateAsync: trpcMutation.mutateAsync,
+      mutate: (data: ProductFormInput | ProductInput) => {
+        // Cast to match API expectations
+        const apiData = data as Parameters<typeof trpcMutation.mutate>[0];
+        trpcMutation.mutate(apiData);
+      },
+      mutateAsync: async (data: ProductFormInput | ProductInput) => {
+        // Cast to match API expectations
+        const apiData = data as Parameters<typeof trpcMutation.mutateAsync>[0];
+        return trpcMutation.mutateAsync(apiData);
+      },
       isLoading: trpcMutation.isPending,
       isError: trpcMutation.isError,
       error: trpcMutation.error,
@@ -126,8 +134,16 @@ export function useUpdateProduct() {
 
   if (FEATURE_FLAGS.USE_TRPC_PRODUCTS) {
     return {
-      mutate: (params: { id: string; data: Partial<ProductInput> }) => trpcMutation.mutate(params),
-      mutateAsync: (params: { id: string; data: Partial<ProductInput> }) => trpcMutation.mutateAsync(params),
+      mutate: (params: { id: string; data: Partial<ProductFormInput> | Partial<ProductInput> }) => {
+        // Transform the data to match API expectations
+        const apiData = params.data as Parameters<typeof trpcMutation.mutate>[0]['data'];
+        trpcMutation.mutate({ id: params.id, data: apiData });
+      },
+      mutateAsync: async (params: { id: string; data: Partial<ProductFormInput> | Partial<ProductInput> }) => {
+        // Transform the data to match API expectations
+        const apiData = params.data as Parameters<typeof trpcMutation.mutateAsync>[0]['data'];
+        return trpcMutation.mutateAsync({ id: params.id, data: apiData });
+      },
       isLoading: trpcMutation.isPending,
       isError: trpcMutation.isError,
       error: trpcMutation.error,

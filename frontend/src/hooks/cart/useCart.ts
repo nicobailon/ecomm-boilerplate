@@ -5,50 +5,166 @@ import { toast } from 'sonner';
 import { useCurrentUser } from '../auth/useAuth';
 import type { AxiosError } from 'axios';
 
+// Backend response type for cart items
+interface BackendCartItem {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  collectionId?: string;
+  isFeatured: boolean;
+  quantity: number;
+  variantId?: string;
+  variantDetails?: {
+    label?: string;
+    size?: string;
+    color?: string;
+    price: number;
+    sku?: string;
+  };
+  slug?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface BackendCartResponse {
+  cartItems: BackendCartItem[];
+  totalAmount: number;
+  subtotal: number;
+  appliedCoupon: {
+    code: string;
+    discountPercentage: number;
+  } | null;
+}
+
+// Helper function to transform backend cart response to frontend format
+const transformCartResponse = (data: BackendCartResponse): Cart => {
+  if (!data || !data.cartItems) {
+    return { cartItems: [], totalAmount: 0, subtotal: 0, appliedCoupon: null };
+  }
+
+  const transformedItems = data.cartItems.map((item) => {
+    const { _id, name, description, price, image, collectionId, isFeatured, quantity, variantId, variantDetails, slug, createdAt, updatedAt } = item;
+    
+    return {
+      product: {
+        _id,
+        name,
+        description,
+        price,
+        image,
+        collectionId,
+        isFeatured,
+        slug: slug ?? '',
+        createdAt: createdAt ?? '',
+        updatedAt: updatedAt ?? '',
+      } as Product,
+      quantity,
+      variantId,
+      variantDetails,
+    };
+  });
+  
+  return {
+    cartItems: transformedItems,
+    totalAmount: data.totalAmount ?? 0,
+    subtotal: data.subtotal ?? 0,
+    appliedCoupon: data.appliedCoupon ?? null,
+  };
+};
+
 export const useCart = () => {
   const { data: user } = useCurrentUser();
   
   return useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
-      const { data } = await apiClient.get<Cart>('/cart');
-      return data ?? { cartItems: [], totalAmount: 0, subtotal: 0, appliedCoupon: null };
+      const { data } = await apiClient.get<BackendCartResponse>('/cart');
+      return transformCartResponse(data);
     },
-    enabled: !!user && user.role !== 'admin', // Only fetch cart for non-admin users
+    enabled: !!user, // Only fetch cart for authenticated users
     retry: false, // Don't retry if the cart fetch fails
   });
 };
+
+/**
+ * Parameters for adding items to cart.
+ * 
+ * @example
+ * // Recommended format with explicit variant
+ * addToCart({ product, variantId: 'variant-123', variantLabel: 'Large Blue' })
+ * 
+ * @deprecated The Product and string overloads are deprecated and will be removed in v2.0.
+ * Use the object format with explicit product, variantId, and variantLabel instead.
+ */
+type AddToCartParams = 
+  | { product: Product; variantId?: string; variantLabel?: string }  // New format with explicit variant
+  | Product                                    // @deprecated Legacy format - product only
+  | string;                                   // @deprecated Legacy format - product ID only
 
 export const useAddToCart = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (product: Product | string) => {
-      const productId = typeof product === 'string' ? product : product._id;
-      const { data } = await apiClient.post<Cart>('/cart', { productId });
-      return data;
+    mutationFn: async (params: AddToCartParams) => {
+      // Handle different parameter formats for backward compatibility
+      let productId: string;
+      let variantId: string | undefined;
+      
+      if (typeof params === 'string') {
+        // @deprecated - direct product ID string will be removed in v2.0
+        console.warn('useAddToCart: Passing product ID as string is deprecated. Use { product, variantId?, variantLabel? } format instead.');
+        productId = params;
+      } else if ('product' in params) {
+        productId = params.product._id;
+        variantId = params.variantId;
+      } else {
+        // @deprecated - direct Product object will be removed in v2.0
+        console.warn('useAddToCart: Passing Product object directly is deprecated. Use { product, variantId?, variantLabel? } format instead.');
+        productId = params._id;
+      }
+      
+      const variantLabel = typeof params === 'object' && 'variantLabel' in params ? params.variantLabel : undefined;
+      const { data } = await apiClient.post<BackendCartResponse>('/cart', { productId, variantId, variantLabel });
+      return transformCartResponse(data);
     },
-    onMutate: async (product) => {
+    onMutate: async (params: AddToCartParams) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['cart'] });
 
       // Snapshot previous value
       const previousCart = queryClient.getQueryData<Cart>(['cart']);
 
-      // Get productId and product data
-      const productId = typeof product === 'string' ? product : product._id;
-      const productData = typeof product === 'string' ? null : product;
+      // Extract data based on parameter format
+      let productId: string;
+      let variantId: string | undefined;
+      let productData: Product | null = null;
+      
+      if (typeof params === 'string') {
+        productId = params;
+      } else if ('product' in params) {
+        productId = params.product._id;
+        variantId = params.variantId;
+        productData = params.product;
+      } else {
+        productId = params._id;
+        productData = params;
+      }
 
       // Optimistically update
       queryClient.setQueryData<Cart>(['cart'], (old) => {
         if (!old) return old;
         
-        const existingItem = old.cartItems.find(item => item.product._id === productId);
+        const existingItem = old.cartItems.find(item => 
+          item.product._id === productId && item.variantId === variantId,
+        );
+        
         if (existingItem) {
           return {
             ...old,
             cartItems: old.cartItems.map(item =>
-              item.product._id === productId
+              item.product._id === productId && item.variantId === variantId
                 ? { ...item, quantity: item.quantity + 1 }
                 : item,
             ),
@@ -64,6 +180,7 @@ export const useAddToCart = () => {
               {
                 product: productData,
                 quantity: 1,
+                variantId,
               },
             ],
           };
@@ -91,11 +208,11 @@ export const useUpdateQuantity = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ productId, quantity }: { productId: string; quantity: number }) => {
-      const { data } = await apiClient.put<Cart>(`/cart/${productId}`, { quantity });
-      return data;
+    mutationFn: async ({ productId, quantity, variantId, variantLabel }: { productId: string; quantity: number; variantId?: string; variantLabel?: string }) => {
+      const { data } = await apiClient.put<BackendCartResponse>(`/cart/${productId}`, { quantity, variantId, variantLabel });
+      return transformCartResponse(data);
     },
-    onMutate: async ({ productId, quantity }) => {
+    onMutate: async ({ productId, quantity, variantId }) => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });
       const previousCart = queryClient.getQueryData<Cart>(['cart']);
 
@@ -105,7 +222,7 @@ export const useUpdateQuantity = () => {
         return {
           ...old,
           cartItems: old.cartItems.map(item =>
-            item.product._id === productId
+            item.product._id === productId && item.variantId === variantId
               ? { ...item, quantity }
               : item,
           ),
@@ -130,24 +247,45 @@ export const useUpdateQuantity = () => {
   });
 };
 
+// Explicit type union for remove from cart parameters
+type RemoveFromCartParams = 
+  | { productId: string; variantId?: string; variantLabel?: string }  // New format with explicit variant
+  | string;                                     // Legacy format - product ID only
+
 export const useRemoveFromCart = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (productId: string) => {
-      const { data } = await apiClient.delete<Cart>(`/cart/${productId}`);
-      return data;
+    mutationFn: async (params: RemoveFromCartParams) => {
+      // Support both old string API and new params object
+      const productId = typeof params === 'string' ? params : params.productId;
+      const variantId = typeof params === 'string' ? undefined : params.variantId;
+      const variantLabel = typeof params === 'string' ? undefined : params.variantLabel;
+      
+      // Backend expects variantId in request body for the DELETE /cart/:productId endpoint
+      const requestConfig: any = {};
+      if (variantId !== undefined || variantLabel !== undefined) {
+        requestConfig.data = { variantId, variantLabel };
+      }
+      
+      const { data } = await apiClient.delete<BackendCartResponse>(`/cart/${productId}`, requestConfig);
+      return transformCartResponse(data);
     },
-    onMutate: async (productId) => {
+    onMutate: async (params: RemoveFromCartParams) => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });
       const previousCart = queryClient.getQueryData<Cart>(['cart']);
+
+      const productId = typeof params === 'string' ? params : params.productId;
+      const variantId = typeof params === 'string' ? undefined : params.variantId;
 
       queryClient.setQueryData<Cart>(['cart'], (old) => {
         if (!old) return old;
         
         return {
           ...old,
-          cartItems: old.cartItems.filter(item => item.product._id !== productId),
+          cartItems: old.cartItems.filter(item => 
+            !(item.product._id === productId && item.variantId === variantId),
+          ),
         };
       });
 
@@ -170,8 +308,20 @@ export const useApplyCoupon = () => {
 
   return useMutation({
     mutationFn: async (code: string) => {
-      const { data } = await apiClient.post<ApiResponse<{ success: boolean; message: string; cart: Cart }>>('/api/coupons/apply', { code });
-      return data;
+      const { data } = await apiClient.post<ApiResponse<{ success: boolean; message: string; cart: BackendCartResponse }>>('/coupons/apply', { code });
+      
+      // Transform the cart in the response if it exists
+      if (data.data?.cart) {
+        return {
+          ...data,
+          data: {
+            ...data.data,
+            cart: transformCartResponse(data.data.cart),
+          },
+        };
+      }
+      
+      return data as unknown as ApiResponse<{ success: boolean; message: string; cart: Cart }>;
     },
     onMutate: async (_code: string) => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });
@@ -198,8 +348,20 @@ export const useRemoveCoupon = () => {
 
   return useMutation({
     mutationFn: async () => {
-      const { data } = await apiClient.delete<ApiResponse<{ success: boolean; message: string; cart: Cart }>>('/api/coupons/remove');
-      return data;
+      const { data } = await apiClient.delete<ApiResponse<{ success: boolean; message: string; cart: BackendCartResponse }>>('/coupons/remove');
+      
+      // Transform the cart in the response if it exists
+      if (data.data?.cart) {
+        return {
+          ...data,
+          data: {
+            ...data.data,
+            cart: transformCartResponse(data.data.cart),
+          },
+        };
+      }
+      
+      return data as unknown as ApiResponse<{ success: boolean; message: string; cart: Cart }>;
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });

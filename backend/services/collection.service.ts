@@ -85,7 +85,10 @@ export class CollectionService {
       // Return the populated collection
       const populatedCollection = await Collection.findById(collection._id)
         .populate('owner', 'name email')
-        .populate('products');
+        .populate({
+          path: 'products',
+          select: '_id name description price image category isFeatured collectionId slug',
+        });
         
       if (!populatedCollection) {
         throw new AppError('Failed to load collection after creation', 500);
@@ -277,7 +280,7 @@ export class CollectionService {
       .populate({
         path: 'products',
         model: 'Product',
-        select: '_id name description price image category isFeatured collectionId',
+        select: '_id name description price image category isFeatured collectionId slug',
         match: { _id: { $exists: true } }, // Only populate existing products
       })
       .lean(); // Use lean for better performance and easier debugging
@@ -332,7 +335,10 @@ export class CollectionService {
       .sort({ _id: -1 })
       .limit(limit + 1)
       .populate('owner', 'name email')
-      .populate('products');
+      .populate({
+        path: 'products',
+        select: '_id name description price image category isFeatured collectionId slug',
+      });
 
     let nextCursor: string | null = null;
 
@@ -493,7 +499,10 @@ export class CollectionService {
       
       const populatedCollection = await Collection.findById(collection._id)
         .populate('owner', 'name email')
-        .populate('products');
+        .populate({
+          path: 'products',
+          select: '_id name description price image category isFeatured collectionId slug',
+        });
         
       if (!populatedCollection) {
         throw new AppError('Failed to load collection after creation', 500);

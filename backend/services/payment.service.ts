@@ -6,16 +6,26 @@ import { Product } from '../models/product.model.js';
 import { AppError } from '../utils/AppError.js';
 import { IUserDocument } from '../models/user.model.js';
 import { couponService } from './coupon.service.js';
+import { inventoryService } from './inventory.service.js';
+import { cartService } from './cart.service.js';
 
 interface ProductCheckout {
   _id: string;
   quantity: number;
+  variantId?: string;
+  reservationId?: string;
 }
 
 interface CheckoutProduct {
   id: string;
   quantity: number;
   price: number;
+  variantId?: string;
+  variantDetails?: {
+    size?: string;
+    color?: string;
+    sku?: string;
+  };
 }
 
 export class PaymentService {
@@ -43,15 +53,66 @@ export class PaymentService {
         throw new AppError(`Product ${requestedProduct._id} not found`, 404);
       }
 
-      const amount = Math.round(serverProduct.price * 100);
+      let productPrice = serverProduct.price;
+      let productName = serverProduct.name;
+      let variantDetails: CheckoutProduct['variantDetails'];
+
+      // Handle variant pricing and validation
+      if (requestedProduct.variantId) {
+        const variant = serverProduct.variants?.find(v => v.variantId === requestedProduct.variantId);
+        if (!variant) {
+          throw new AppError(`Variant ${requestedProduct.variantId} not found for product ${serverProduct.name}`, 404);
+        }
+
+        // Check inventory availability using inventory service
+        const isAvailable = await inventoryService.checkAvailability(
+          serverProduct._id.toString(),
+          requestedProduct.variantId,
+          requestedProduct.quantity,
+        );
+        
+        if (!isAvailable) {
+          const availableStock = await inventoryService.getAvailableInventory(
+            serverProduct._id.toString(),
+            requestedProduct.variantId,
+          );
+          throw new AppError(
+            `Insufficient inventory for ${serverProduct.name} (${variant.size ?? ''} ${variant.color ?? ''}). Available: ${availableStock}`,
+            400,
+          );
+        }
+
+        // Use variant price if available
+        productPrice = variant.price;
+        
+        // Add variant details to product name
+        const variantInfo = [];
+        if (variant.size) variantInfo.push(`Size: ${variant.size}`);
+        if (variant.color) variantInfo.push(`Color: ${variant.color}`);
+        if (variantInfo.length > 0) {
+          productName += ` (${variantInfo.join(', ')})`;
+        }
+
+        variantDetails = {
+          size: variant.size,
+          color: variant.color,
+          sku: variant.sku,
+        };
+      }
+
+      const amount = Math.round(productPrice * 100);
       totalAmount += amount * requestedProduct.quantity;
 
       lineItems.push({
         price_data: {
           currency: 'usd',
           product_data: {
-            name: serverProduct.name,
+            name: productName,
             images: [serverProduct.image],
+            metadata: {
+              productId: requestedProduct._id,
+              variantId: requestedProduct.variantId ?? '',
+            },
           },
           unit_amount: amount,
         },
@@ -61,7 +122,9 @@ export class PaymentService {
       checkoutProducts.push({
         id: requestedProduct._id,
         quantity: requestedProduct.quantity,
-        price: serverProduct.price,
+        price: productPrice,
+        variantId: requestedProduct.variantId,
+        variantDetails,
       });
     }
 
@@ -78,13 +141,11 @@ export class PaymentService {
       });
       
       // If not found, try general discount code
-      if (!coupon) {
-        coupon = await Coupon.findOne({ 
-          code: couponCode.toUpperCase(), 
-          userId: { $exists: false }, 
-          isActive: true, 
-        });
-      }
+      coupon ??= await Coupon.findOne({ 
+        code: couponCode.toUpperCase(), 
+        userId: { $exists: false }, 
+        isActive: true, 
+      });
       
       if (coupon) {
         // Check if expired
@@ -142,8 +203,8 @@ export class PaymentService {
 
     // Use transaction to ensure atomicity between coupon usage and order creation
     const dbSession = await mongoose.startSession();
-    let orderId: mongoose.Types.ObjectId;
-    let totalAmount: number;
+    let orderId: mongoose.Types.ObjectId | undefined;
+    let totalAmount: number | undefined;
 
     try {
       await dbSession.withTransaction(async () => {
@@ -160,6 +221,8 @@ export class PaymentService {
             product: product.id,
             quantity: product.quantity,
             price: product.price,
+            variantId: product.variantId,
+            variantDetails: product.variantDetails,
           })),
           totalAmount: (session.amount_total ?? 0) / 100,
           stripeSessionId: sessionId,
@@ -168,14 +231,48 @@ export class PaymentService {
         await newOrder.save({ session: dbSession });
         orderId = newOrder._id;
         totalAmount = newOrder.totalAmount;
+
+        // Convert reservations to permanent inventory decrements
+        const userId = session.metadata?.userId;
+        if (userId) {
+          // Get user to access cart items with reservation IDs
+          const User = mongoose.model('User');
+          const user = await User.findById(userId).session(dbSession);
+          
+          if (user?.cartItems) {
+            for (const cartItem of user.cartItems) {
+              const product = products.find(p => 
+                p.id === cartItem.product.toString() && 
+                p.variantId === cartItem.variantId,
+              );
+              
+              if (product && cartItem.reservationId) {
+                // Convert reservation to permanent decrement
+                await inventoryService.convertReservationToPermanent(
+                  cartItem.reservationId,
+                  orderId.toString(),
+                );
+              }
+            }
+            
+            // Clear the user's cart after successful payment
+            user.cartItems = [];
+            user.appliedCoupon = null;
+            await user.save({ session: dbSession });
+          }
+        }
       });
     } finally {
       await dbSession.endSession();
     }
 
+    if (!orderId || totalAmount === undefined) {
+      throw new AppError('Order creation failed', 500);
+    }
+    
     return {
-      orderId: orderId!,
-      totalAmount: totalAmount!,
+      orderId,
+      totalAmount,
     };
   }
 
@@ -200,6 +297,107 @@ export class PaymentService {
     });
 
     await newCoupon.save();
+  }
+
+  async refundOrder(orderId: string, reason = 'Customer requested refund'): Promise<void> {
+    const dbSession = await mongoose.startSession();
+    
+    try {
+      await dbSession.withTransaction(async () => {
+        const order = await Order.findById(orderId).session(dbSession);
+        if (!order) {
+          throw new AppError('Order not found', 404);
+        }
+
+        if (order.status === 'refunded') {
+          throw new AppError('Order already refunded', 400);
+        }
+
+        // Process refund through Stripe
+        if (order.stripeSessionId) {
+          const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
+          if (session.payment_intent) {
+            await stripe.refunds.create({
+              payment_intent: session.payment_intent as string,
+              reason: 'requested_by_customer',
+            });
+          }
+        }
+
+        // Restore inventory for each product
+        for (const item of order.products) {
+          await inventoryService.updateInventory(
+            item.product.toString(),
+            item.variantId,
+            item.quantity, // Positive adjustment to restore inventory
+            'return',
+            'system',
+            { orderId, reason },
+          );
+        }
+
+        // Update order status
+        order.status = 'refunded';
+        await order.save({ session: dbSession });
+      });
+    } finally {
+      await dbSession.endSession();
+    }
+  }
+
+  async cancelOrder(orderId: string, userId: string): Promise<void> {
+    const dbSession = await mongoose.startSession();
+    
+    try {
+      await dbSession.withTransaction(async () => {
+        const order = await Order.findById(orderId).session(dbSession);
+        if (!order) {
+          throw new AppError('Order not found', 404);
+        }
+
+        if (order.user.toString() !== userId) {
+          throw new AppError('Unauthorized to cancel this order', 403);
+        }
+
+        if (order.status !== 'pending') {
+          throw new AppError('Only pending orders can be cancelled', 400);
+        }
+
+        // Restore inventory for each product
+        for (const item of order.products) {
+          await inventoryService.updateInventory(
+            item.product.toString(),
+            item.variantId,
+            item.quantity, // Positive adjustment to restore inventory
+            'return',
+            userId,
+            { orderId, reason: 'Order cancelled by customer' },
+          );
+        }
+
+        // Update order status
+        order.status = 'cancelled';
+        await order.save({ session: dbSession });
+      });
+    } finally {
+      await dbSession.endSession();
+    }
+  }
+
+  async handlePaymentFailure(sessionId: string): Promise<void> {
+    // Get user ID from session metadata
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const userId = session.metadata?.userId;
+    
+    if (userId) {
+      // Release all cart reservations for the user
+      const User = mongoose.model('User');
+      const user = await User.findById(userId);
+      
+      if (user?.cartItems) {
+        await cartService.clearCartReservations(user);
+      }
+    }
   }
 }
 

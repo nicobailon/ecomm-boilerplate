@@ -17,35 +17,42 @@ const listUsers = async (): Promise<void> => {
 
   try {
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ Connected to MongoDB\n');
+    console.warn('✅ Connected to MongoDB\n');
 
     const users = await User.find({}, 'email role createdAt').lean();
+    
+    interface UserProjection {
+      email: string;
+      role?: string;
+      createdAt: Date;
+    }
 
     if (users.length === 0) {
-      console.log('No users found in the database');
+      console.warn('No users found in the database');
       process.exit(0);
     }
 
-    console.log(`Found ${users.length} users:\n`);
-    console.log('Email                          | Role     | Created');
-    console.log('---------------------------------------------------');
+    console.warn(`Found ${users.length} users:\n`);
+    console.warn('Email                          | Role     | Created');
+    console.warn('---------------------------------------------------');
     
     users.forEach((user) => {
-      const email = user.email.padEnd(30);
-      const role = (user.role || 'customer').padEnd(8);
-      const created = new Date(user.createdAt).toLocaleDateString();
-      console.log(`${email} | ${role} | ${created}`);
+      const userTyped = user as unknown as UserProjection;
+      const email = userTyped.email.padEnd(30);
+      const role = (userTyped.role ?? 'customer').padEnd(8);
+      const created = new Date(userTyped.createdAt).toLocaleDateString();
+      console.warn(`${email} | ${role} | ${created}`);
     });
 
-    const adminCount = users.filter((u: any) => u.role === 'admin').length;
-    console.log(`\n📊 Summary: ${adminCount} admin(s), ${users.length - adminCount} customer(s)`);
+    const adminCount = users.filter(u => (u as unknown as UserProjection).role === 'admin').length;
+    console.warn(`\n📊 Summary: ${adminCount} admin(s), ${users.length - adminCount} customer(s)`);
 
   } catch (error) {
     console.error('❌ Error:', error);
     process.exit(1);
   } finally {
     await mongoose.disconnect();
-    console.log('\n✅ Disconnected from MongoDB');
+    console.warn('\n✅ Disconnected from MongoDB');
   }
 };
 

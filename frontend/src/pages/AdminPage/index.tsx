@@ -1,10 +1,11 @@
-import { BarChart, PlusCircle, ShoppingBasket, FolderOpen, Tag } from 'lucide-react';
+import { BarChart, PlusCircle, ShoppingBasket, FolderOpen, Tag, Package } from 'lucide-react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
 import AnalyticsTab from './AnalyticsTab';
 import { CollectionsTab } from './CollectionsTab';
 import DiscountsTab from './DiscountsTab';
+import { InventoryTab } from './InventoryTab';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { DiscountErrorFallback } from '../../components/discount/DiscountErrorFallback';
 import { ProductForm } from '../../components/forms/ProductForm';
@@ -56,7 +57,7 @@ const AdminPage = () => {
 				</motion.h1>
 
 				<Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-					<TabsList className="grid w-full max-w-lg mx-auto grid-cols-5 mb-8">
+					<TabsList className="grid w-full max-w-2xl mx-auto grid-cols-6 mb-8">
 						<TabsTrigger value="create" disabled={isNavigating} className={isNavigating && activeTab === 'create' ? 'animate-pulse' : ''}>
 							<PlusCircle className="mr-2 h-5 w-5" />
 							Create Product
@@ -76,6 +77,10 @@ const AdminPage = () => {
 						<TabsTrigger value="discounts" disabled={isNavigating} className={isNavigating && activeTab === 'discounts' ? 'animate-pulse' : ''}>
 							<Tag className="mr-2 h-5 w-5" />
 							Discounts
+						</TabsTrigger>
+						<TabsTrigger value="inventory" disabled={isNavigating} className={isNavigating && activeTab === 'inventory' ? 'animate-pulse' : ''}>
+							<Package className="mr-2 h-5 w-5" />
+							Inventory
 						</TabsTrigger>
 					</TabsList>
 
@@ -147,6 +152,17 @@ const AdminPage = () => {
 								>
 									<DiscountsTab />
 								</ErrorBoundary>
+							</motion.div>
+						</TabsContent>
+						
+						<TabsContent value="inventory">
+							<motion.div
+								initial={{ opacity: 0, x: 20 }}
+								animate={{ opacity: 1, x: 0 }}
+								exit={{ opacity: 0, x: -20 }}
+								transition={{ duration: 0.2 }}
+							>
+								<InventoryTab />
 							</motion.div>
 						</TabsContent>
 					</div>

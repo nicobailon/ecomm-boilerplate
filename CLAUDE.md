@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Bash Guidelines
+Always make sure to kill all processes that you initiate in the current codebase when you are done with a task. It's likely that the user already has an instance of `npm run dev:all` running already that you can leave running.
+
 ## Development Commands
 
 ### Full-Stack Development

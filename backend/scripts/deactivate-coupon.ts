@@ -11,7 +11,7 @@ async function deactivateCoupon(): Promise<void> {
     }
 
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('Connected to MongoDB');
+    console.warn('Connected to MongoDB');
 
     const args = process.argv.slice(2);
     
@@ -31,18 +31,18 @@ async function deactivateCoupon(): Promise<void> {
     }
 
     if (!coupon.isActive) {
-      console.log(`Coupon "${code}" is already inactive`);
+      console.warn(`Coupon "${code}" is already inactive`);
       process.exit(0);
     }
 
     coupon.isActive = false;
     await coupon.save();
 
-    console.log('\n✅ Coupon deactivated successfully!');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`Code: ${coupon.code}`);
-    console.log('Status: Inactive');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.warn('\n✅ Coupon deactivated successfully!');
+    console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.warn(`Code: ${coupon.code}`);
+    console.warn('Status: Inactive');
+    console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   } catch (error) {
     console.error('Error deactivating coupon:', error);

@@ -14,12 +14,28 @@ export const signupSchema = loginSchema.extend({
   path: ['confirmPassword'],
 });
 
+const variantSchema = z.object({
+  label: z.string().min(1, 'Variant label is required'),
+  color: z.string().optional(),
+  priceAdjustment: z.number().default(0),
+  inventory: z.number().min(0, 'Inventory cannot be negative').default(0),
+  sku: z.string().optional(),
+  attributes: z.record(z.string()).optional(),
+});
+
+const variantTypeSchema = z.object({
+  name: z.string().min(1, 'Variant type name is required'),
+  values: z.array(z.string().min(1)).min(1, 'At least one value is required'),
+});
+
 export const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   price: z.number().positive('Price must be positive'),
   collectionId: z.string().optional(),
   image: z.string().url('Invalid image URL'),
+  variantTypes: z.array(variantTypeSchema).optional(),
+  variants: z.array(variantSchema).optional(),
 });
 
 export const analyticsSchema = z.object({
@@ -59,4 +75,22 @@ export const discountFormSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type ProductInput = z.infer<typeof productSchema>;
+export type VariantInput = z.infer<typeof variantSchema>;
+export type VariantTypeInput = z.infer<typeof variantTypeSchema>;
 export type DiscountFormInput = z.infer<typeof discountFormSchema>;
+
+// Form input type with optional fields for variants
+export type ProductFormInput = Omit<ProductInput, 'variants' | 'variantTypes'> & {
+  variantTypes?: Array<{
+    name: string;
+    values: string[];
+  }>;
+  variants?: Array<{
+    label: string;
+    color?: string;
+    priceAdjustment?: number;
+    inventory?: number;
+    sku?: string;
+    attributes?: Record<string, string>;
+  }>;
+};

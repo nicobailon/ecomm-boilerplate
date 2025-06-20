@@ -1,6 +1,7 @@
 import { Minus, Plus, Trash } from 'lucide-react';
 import { useUnifiedUpdateQuantity, useUnifiedRemoveFromCart } from '@/hooks/cart/useUnifiedCart';
 import type { CartItem as CartItemType, Product } from '@/types';
+import { getVariantDisplayText } from '@/components/forms/VariantEditor';
 
 interface CartItemProps {
 	item: CartItemType & { product: Product };
@@ -12,11 +13,23 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 
 	const handleUpdateQuantity = (newQuantity: number) => {
 		if (newQuantity < 1) {
-			removeFromCart.mutate(item.product._id);
+			removeFromCart.mutate({ 
+				productId: item.product._id, 
+				variantId: item.variantId,
+				variantLabel: item.variantDetails?.label,
+			});
 		} else {
-			updateQuantity.mutate({ productId: item.product._id, quantity: newQuantity });
+			updateQuantity.mutate({ 
+				productId: item.product._id, 
+				quantity: newQuantity,
+				variantId: item.variantId,
+				variantLabel: item.variantDetails?.label,
+			});
 		}
 	};
+	
+	// Use variant price if available, otherwise use product price
+	const displayPrice = item.variantDetails?.price ?? item.product.price;
 
 	return (
 		<article 
@@ -65,27 +78,40 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 					<div className='text-end md:order-4 md:w-32'>
 						<p 
 							className='text-base font-bold text-primary'
-							aria-label={`Total price: $${(item.product.price * item.quantity).toFixed(2)}`}
+							aria-label={`Total price: $${(displayPrice * item.quantity).toFixed(2)}`}
 						>
-							${(item.product.price * item.quantity).toFixed(2)}
+							${(displayPrice * item.quantity).toFixed(2)}
 						</p>
 					</div>
 				</div>
 
 				<div className='w-full min-w-0 flex-1 space-y-4 md:order-2 md:max-w-md'>
-					<h3 
-						id={`cart-item-${item.product._id}`}
-						className='text-base font-medium text-foreground hover:text-primary hover:underline'
-					>
-						{item.product.name}
-					</h3>
+					<div>
+						<h3 
+							id={`cart-item-${item.product._id}`}
+							className='text-base font-medium text-foreground hover:text-primary hover:underline'
+						>
+							{item.product.name}
+						</h3>
+						{item.variantDetails && (
+							<div className='flex items-center gap-2 mt-1 text-sm text-muted-foreground'>
+								<span>{getVariantDisplayText(item.variantDetails)}</span>
+								{item.variantDetails.sku && (
+									<>
+										<span>•</span>
+										<span className="text-xs">SKU: {item.variantDetails.sku}</span>
+									</>
+								)}
+							</div>
+						)}
+					</div>
 					<p className='text-sm text-muted-foreground'>{item.product.description}</p>
 
 					<div className='flex items-center gap-4'>
 						<button
 							className='inline-flex items-center text-sm font-medium text-destructive
 							 hover:text-destructive/80 hover:underline disabled:opacity-50'
-							onClick={() => removeFromCart.mutate(item.product._id)}
+							onClick={() => removeFromCart.mutate({ productId: item.product._id, variantId: item.variantId, variantLabel: item.variantDetails?.label })}
 							disabled={removeFromCart.isPending}
 							aria-label={`Remove ${item.product.name} from cart`}
 						>

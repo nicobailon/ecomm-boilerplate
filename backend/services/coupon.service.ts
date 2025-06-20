@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Coupon, ICouponDocument } from '../models/coupon.model.js';
 import { IUserDocument } from '../models/user.model.js';
 import { AppError } from '../utils/AppError.js';
@@ -27,9 +28,7 @@ export class CouponService {
     let coupon = await Coupon.findOne({ code: upperCode, userId, isActive: true });
     
     // If not found, try to find a general discount code
-    if (!coupon) {
-      coupon = await Coupon.findOne({ code: upperCode, userId: { $exists: false }, isActive: true });
-    }
+    coupon ??= await Coupon.findOne({ code: upperCode, userId: { $exists: false }, isActive: true });
 
     if (!coupon) {
       throw new AppError('Coupon not found', 404);
@@ -77,7 +76,7 @@ export class CouponService {
   async listAllDiscounts(options: ListDiscountsInput): Promise<ListDiscountsResponse> {
     const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc', isActive } = options;
     
-    const query: any = {};
+    const query: mongoose.FilterQuery<ICouponDocument> = {};
     if (isActive !== undefined) query.isActive = isActive;
     
     const [discounts, total] = await Promise.all([
@@ -86,7 +85,7 @@ export class CouponService {
         .limit(limit)
         .skip((page - 1) * limit)
         .lean(),
-      Coupon.countDocuments(query)
+      Coupon.countDocuments(query),
     ]);
     
     return { discounts, total };
@@ -130,14 +129,14 @@ export class CouponService {
       await coupon.save();
       return { 
         success: true, 
-        message: 'Discount has been deactivated (has existing uses)' 
+        message: 'Discount has been deactivated (has existing uses)', 
       };
     }
 
     await Coupon.findByIdAndDelete(id);
     return { 
       success: true, 
-      message: 'Discount has been permanently deleted' 
+      message: 'Discount has been permanently deleted', 
     };
   }
 
@@ -151,16 +150,16 @@ export class CouponService {
         isActive: true,
         $or: [
           { maxUses: { $exists: false } },
-          { $expr: { $lt: ['$currentUses', '$maxUses'] } }
-        ]
+          { $expr: { $lt: ['$currentUses', '$maxUses'] } },
+        ],
       },
       { 
-        $inc: { currentUses: 1 }
+        $inc: { currentUses: 1 },
       },
       { 
         new: true,
-        runValidators: true
-      }
+        runValidators: true,
+      },
     );
     
     if (!result) {

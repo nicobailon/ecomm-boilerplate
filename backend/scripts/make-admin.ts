@@ -14,7 +14,7 @@ const makeAdmin = async (): Promise<void> => {
 
   if (!email) {
     console.error('❌ Please provide an email address');
-    console.log('Usage: npm run make-admin <email>');
+    console.warn('Usage: npm run make-admin <email>');
     process.exit(1);
   }
 
@@ -25,33 +25,33 @@ const makeAdmin = async (): Promise<void> => {
 
   try {
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ Connected to MongoDB');
+    console.warn('✅ Connected to MongoDB');
 
     const user = await User.findOne({ email });
 
     if (!user) {
       console.error(`❌ User with email "${email}" not found`);
-      console.log('\nExisting users:');
+      console.warn('\nExisting users:');
       const users = await User.find({}, 'email role').lean();
       users.forEach((u) => {
-        console.log(`  - ${u.email} (${u.role})`);
+        console.warn(`  - ${u.email} (${u.role})`);
       });
       process.exit(1);
     }
 
     if (user.role === 'admin') {
-      console.log(`ℹ️  User "${email}" is already an admin`);
+      console.warn(`ℹ️  User "${email}" is already an admin`);
       process.exit(0);
     }
 
     user.role = 'admin';
     await user.save();
 
-    console.log(`✅ Successfully promoted "${email}" to admin`);
-    console.log('\nCurrent admins:');
-    const admins = await User.find({ role: 'admin' }, 'email').lean();
-    admins.forEach((admin: any) => {
-      console.log(`  - ${admin.email}`);
+    console.warn(`✅ Successfully promoted "${email}" to admin`);
+    console.warn('\nCurrent admins:');
+    const admins = await User.find({ role: 'admin' }, 'email').lean() as { email: string }[];
+    admins.forEach((admin) => {
+      console.warn(`  - ${admin.email}`);
     });
 
   } catch (error) {
@@ -59,7 +59,7 @@ const makeAdmin = async (): Promise<void> => {
     process.exit(1);
   } finally {
     await mongoose.disconnect();
-    console.log('\n✅ Disconnected from MongoDB');
+    console.warn('\n✅ Disconnected from MongoDB');
   }
 };
 

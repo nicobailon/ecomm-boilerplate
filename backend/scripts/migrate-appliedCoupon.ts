@@ -12,27 +12,27 @@ const migrateAppliedCoupon = async (): Promise<void> => {
       process.exit(1);
     }
 
-    console.log('Connecting to MongoDB...');
+    console.warn('Connecting to MongoDB...');
     await mongoose.connect(MONGO_URI);
-    console.log('Connected to MongoDB');
+    console.warn('Connected to MongoDB');
 
-    console.log('Starting migration to add appliedCoupon field to users...');
+    console.warn('Starting migration to add appliedCoupon field to users...');
     
     const result = await User.updateMany(
       { appliedCoupon: { $exists: false } },
       { $set: { appliedCoupon: null } },
     );
 
-    console.log('Migration completed successfully!');
-    console.log(`Updated ${result.modifiedCount} users with appliedCoupon: null`);
-    console.log(`${result.matchedCount} users matched the criteria`);
+    console.warn('Migration completed successfully!');
+    console.warn(`Updated ${result.modifiedCount} users with appliedCoupon: null`);
+    console.warn(`${result.matchedCount} users matched the criteria`);
 
     const sampleUser = await User.findOne({});
     if (sampleUser) {
-      console.log('\nSample user after migration:');
-      console.log('- ID:', sampleUser._id);
-      console.log('- Email:', sampleUser.email);
-      console.log('- Applied Coupon:', sampleUser.appliedCoupon);
+      console.warn('\nSample user after migration:');
+      console.warn('- ID:', sampleUser._id);
+      console.warn('- Email:', sampleUser.email);
+      console.warn('- Applied Coupon:', sampleUser.appliedCoupon);
     }
 
     process.exit(0);

@@ -1,7 +1,11 @@
 import { router, publicProcedure, adminProcedure } from '../index.js';
 import { z } from 'zod';
 import { productService } from '../../services/product.service.js';
-import { createProductSchema, updateProductSchema } from '../../validations/index.js';
+import { 
+  updateProductSchema,
+  getProductBySlugSchema,
+} from '../../validations/index.js';
+import { baseProductSchema } from '../../validations/product.validation.js';
 import { TRPCError } from '@trpc/server';
 import { MONGODB_OBJECTID_REGEX } from '../../utils/constants.js';
 import { isAppError } from '../../utils/error-types.js';
@@ -9,13 +13,17 @@ import { isAppError } from '../../utils/error-types.js';
 export const productRouter = router({
   list: publicProcedure
     .input(z.object({
-      page: z.number().min(1).optional().default(1),
-      limit: z.number().min(1).max(100).optional().default(12),
+      page: z.number().min(1).optional().default(() => 1),
+      limit: z.number().min(1).max(100).optional().default(() => 12),
       search: z.string().optional(),
+      includeVariants: z.boolean().optional().default(false),
+      collectionId: z.string().optional(),
+      isFeatured: z.boolean().optional(),
     }))
     .query(async ({ input }) => {
       try {
-        return await productService.getAllProducts(input.page, input.limit, input.search);
+        const result = await productService.getAllProducts(input.page, input.limit, input.search, input.includeVariants);
+        return result;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to fetch products';
         throw new TRPCError({
@@ -78,7 +86,7 @@ export const productRouter = router({
     }),
 
   create: adminProcedure
-    .input(createProductSchema.extend({
+    .input(baseProductSchema.extend({
       collectionId: z.string().optional(),
       collectionName: z.string()
         .min(1)
@@ -94,7 +102,33 @@ export const productRouter = router({
         message: 'Provide either collectionId or collectionName, not both',
         path: ['collectionName'],
       },
-    ))
+    ).refine((data) => {
+      // Apply the same variant attributes validation from createProductSchema
+      const USE_VARIANT_ATTRIBUTES = process.env.USE_VARIANT_ATTRIBUTES === 'true';
+      if (!USE_VARIANT_ATTRIBUTES || !data.variantTypes || data.variantTypes.length === 0) {
+        return true;
+      }
+      
+      const allowedKeys = new Set(data.variantTypes);
+      
+      for (const variant of data.variants) {
+        if (variant.attributes) {
+          for (const key of Object.keys(variant.attributes)) {
+            if (!allowedKeys.has(key)) {
+              throw new z.ZodError([{
+                code: 'custom',
+                message: `Variant attribute key '${key}' is not in variantTypes`,
+                path: ['variants', data.variants.indexOf(variant), 'attributes'],
+              }]);
+            }
+          }
+        }
+      }
+      
+      return true;
+    }, {
+      message: 'Variant attributes must match variantTypes',
+    }))
     .mutation(async ({ input, ctx }) => {
       try {
         const result = await productService.createProductWithCollection(
@@ -182,6 +216,127 @@ export const productRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: message ?? 'Failed to toggle featured status',
+        });
+      }
+    }),
+
+  bySlug: publicProcedure
+    .input(getProductBySlugSchema)
+    .query(async ({ input }) => {
+      try {
+        const product = await productService.getProductBySlug(input.slug);
+        
+        return {
+          product,
+        };
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to fetch product';
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to fetch product',
+        });
+      }
+    }),
+
+  related: publicProcedure
+    .input(z.object({
+      productId: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
+      limit: z.number().min(1).max(20).optional().default(() => 6),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const products = await productService.getRelatedProducts(input.productId, input.limit);
+        return products;
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to fetch related products';
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to fetch related products',
+        });
+      }
+    }),
+
+  checkVariantAvailability: publicProcedure
+    .input(z.object({
+      productId: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
+      variantId: z.string().optional(),
+      variantLabel: z.string().optional(),
+    }).refine(
+      (data) => data.variantId || data.variantLabel,
+      {
+        message: 'Either variantId or variantLabel must be provided',
+      }
+    ))
+    .query(async ({ input }) => {
+      try {
+        const available = await productService.checkVariantAvailability(
+          input.productId,
+          input.variantId,
+          input.variantLabel,
+        );
+        return { available };
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to check variant availability';
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to check variant availability',
+        });
+      }
+    }),
+
+  updateVariantInventory: adminProcedure
+    .input(z.object({
+      productId: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
+      variantId: z.string().optional(),
+      variantLabel: z.string().optional(),
+      quantity: z.number().int(),
+      operation: z.enum(['increment', 'decrement', 'set']),
+    }).refine(
+      (data) => data.variantId || data.variantLabel,
+      {
+        message: 'Either variantId or variantLabel must be provided',
+      }
+    ))
+    .mutation(async ({ input }) => {
+      try {
+        const variant = await productService.updateVariantInventory(
+          input.productId,
+          input.variantId,
+          input.quantity,
+          input.operation,
+          3, // maxRetries
+          input.variantLabel,
+        );
+        return { variant };
+      } catch (error) {
+        if (isAppError(error)) {
+          throw new TRPCError({
+            code: error.statusCode === 404 ? 'NOT_FOUND' : 'BAD_REQUEST',
+            message: error.message,
+          });
+        }
+        const message = error instanceof Error ? error.message : 'Failed to update variant inventory';
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to update variant inventory',
         });
       }
     }),

@@ -5,6 +5,9 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./backend/test/setup.ts'],
+    env: {
+      NODE_ENV: 'test'
+    },
     coverage: {
       include: ['backend/**/*.ts'],
       exclude: ['backend/**/*.test.ts', 'backend/types/**']

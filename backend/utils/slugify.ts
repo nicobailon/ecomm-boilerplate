@@ -1,6 +1,4 @@
-import slugifyModule from 'slugify';
-
-const slugify = slugifyModule as unknown as (text: string, options?: { lower?: boolean; strict?: boolean; trim?: boolean }) => string;
+import slugify from 'slugify';
 
 export const generateSlug = (text: string): string => {
   return slugify(text, {

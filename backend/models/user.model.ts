@@ -10,6 +10,14 @@ export interface IUserDocument extends Document {
   cartItems: {
     product: mongoose.Types.ObjectId;
     quantity: number;
+    variantId?: string;
+    variantDetails?: {
+      size?: string;
+      color?: string;
+      price: number;
+      sku?: string;
+    };
+    reservationId?: string;
   }[];
   appliedCoupon: {
     code: string;
@@ -46,6 +54,35 @@ const userSchema = new Schema<IUserDocument>(
           type: mongoose.Schema.Types.ObjectId,
           ref: 'Product',
         },
+        variantId: {
+          type: String,
+          required: false,
+        },
+        variantDetails: {
+          type: {
+            size: {
+              type: String,
+              required: false,
+            },
+            color: {
+              type: String,
+              required: false,
+            },
+            price: {
+              type: Number,
+              required: true,
+            },
+            sku: {
+              type: String,
+              required: false,
+            },
+          },
+          required: false,
+        },
+        reservationId: {
+          type: String,
+          required: false,
+        },
       },
     ],
     role: {
@@ -75,6 +112,7 @@ const userSchema = new Schema<IUserDocument>(
 );
 
 userSchema.index({ role: 1 });
+userSchema.index({ 'cartItems.product': 1, 'cartItems.variantId': 1 });
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();

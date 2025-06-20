@@ -4,7 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "outDir": "./dist",
-    "rootDir": "./backend",
+    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -18,7 +18,7 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["backend/**/*"],
+  "include": ["backend/**/*", "shared/**/*"],
   "exclude": ["node_modules", "dist", "frontend/**/*"],
   "ts-node": {
     "esm": true

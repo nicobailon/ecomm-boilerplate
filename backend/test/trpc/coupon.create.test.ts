@@ -8,26 +8,29 @@ vi.mock('../../services/coupon.service.js');
 
 describe('coupon.create tRPC endpoint', () => {
   const mockAdminContext = {
+    req: {} as any,
+    res: {} as any,
     user: {
       _id: 'admin123',
       email: 'admin@test.com',
       role: 'admin',
-    },
-    userId: 'admin123',
+    } as any,
   };
 
   const mockUserContext = {
+    req: {} as any,
+    res: {} as any,
     user: {
       _id: 'user123',
       email: 'user@test.com',
       role: 'customer',
-    },
-    userId: 'user123',
+    } as any,
   };
 
   const mockUnauthContext = {
+    req: {} as any,
+    res: {} as any,
     user: null,
-    userId: null,
   };
 
   const validInput = {

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
-import { appRouter } from './app.router';
-import { collectionService } from '../../services/collection.service';
+import { appRouter } from './app.router.js';
+import { collectionService } from '../../services/collection.service.js';
 
 vi.mock('../../services/collection.service');
 

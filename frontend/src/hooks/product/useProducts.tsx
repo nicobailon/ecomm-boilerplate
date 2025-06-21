@@ -111,7 +111,7 @@ export const useDeleteProduct = () => {
 export const useToggleFeatured = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await apiClient.patch<Product>(
         `/products/toggle-featured/${id}`,
@@ -182,8 +182,8 @@ export const useToggleFeatured = () => {
         <div className="flex flex-col gap-1">
           <span>
             {updatedProduct.isFeatured
-              ? `"${updatedProduct.name}" added to homepage carousel`
-              : `"${updatedProduct.name}" removed from homepage carousel`}
+              ? `${updatedProduct.name} added to homepage carousel`
+              : `${updatedProduct.name} removed from homepage carousel`}
           </span>
           <a
             href="/"
@@ -203,6 +203,8 @@ export const useToggleFeatured = () => {
       void queryClient.invalidateQueries({ queryKey: ['products', 'featured'] });
     },
   });
+
+  return mutation;
 };
 
 export const useProductRecommendations = () => {
@@ -215,7 +217,10 @@ export const useProductRecommendations = () => {
   });
 };
 
+// Type for featured product selector
+export type ProductSelector = (product: Product) => boolean;
+
 // Selector helper for featured products
-export const isFeaturedSelector = (product: Product): boolean => {
+export const isFeaturedSelector: ProductSelector = (product) => {
   return product.isFeatured === true;
 };

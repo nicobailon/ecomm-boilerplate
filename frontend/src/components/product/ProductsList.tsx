@@ -224,7 +224,7 @@ function ProductRow({ product, highlightProductId, onEditProduct, onDelete, onTo
 				<button
 					onClick={handleToggleFeatured}
 					disabled={isToggling}
-					data-testid="toggle-feature-button"
+					data-testid="toggle-feature"
 					className={cn(
 						'p-1 rounded-full transition-all duration-200',
 						product.isFeatured

@@ -124,7 +124,8 @@ describe('ProductsList - Featured Products', () => {
       renderWithProviders(<ProductsList />);
 
       await waitFor(() => {
-        expect(screen.getByText('2 featured products in homepage carousel')).toBeInTheDocument();
+        const featuredCount = screen.getByTestId('featured-count');
+        expect(featuredCount).toHaveTextContent('2 featured products in homepage carousel');
       });
     });
 
@@ -138,21 +139,24 @@ describe('ProductsList - Featured Products', () => {
       renderWithProviders(<ProductsList />);
 
       await waitFor(() => {
-        expect(screen.getByText('1 featured product in homepage carousel')).toBeInTheDocument();
+        const featuredCount = screen.getByTestId('featured-count');
+        expect(featuredCount).toHaveTextContent('1 featured product in homepage carousel');
       });
     });
 
-    it('should display 0 featured products when none are featured', async () => {
+    it('should hide banner when no products are featured', async () => {
       mockUseFeaturedProducts.mockReturnValue({
         data: [],
         isLoading: false,
         error: null,
       } as any);
 
-      renderWithProviders(<ProductsList />);
+      const { container } = renderWithProviders(<ProductsList />);
 
       await waitFor(() => {
-        expect(screen.getByText('0 featured products in homepage carousel')).toBeInTheDocument();
+        // Banner should not be rendered when count is 0
+        const banner = container.querySelector('[data-testid="featured-count"]');
+        expect(banner).not.toBeInTheDocument();
       });
     });
 
@@ -197,12 +201,15 @@ describe('ProductsList - Featured Products', () => {
         expect(screen.getByText('Product 2')).toBeInTheDocument();
       });
 
-      // Find the non-featured product's star button
-      const starButtons = screen.getAllByTitle('Add to homepage carousel');
-      expect(starButtons).toHaveLength(1);
+      // Find all toggle buttons
+      const toggleButtons = screen.getAllByTestId('toggle-feature');
+      
+      // Find the non-featured product's button (Product 2)
+      const nonFeaturedButton = toggleButtons[1]; // Product 2 is at index 1
+      expect(nonFeaturedButton).toHaveAttribute('title', 'Add to homepage carousel');
 
       // Click the star
-      await user.click(starButtons[0]);
+      await user.click(nonFeaturedButton);
 
       // Verify the mutation was called with the correct product ID
       expect(toggleMutate).toHaveBeenCalledWith('2');
@@ -229,11 +236,13 @@ describe('ProductsList - Featured Products', () => {
         expect(screen.getByText('Product 1')).toBeInTheDocument();
       });
 
-      // Find a star button and click it
-      const starButton = screen.getAllByTitle('Remove from homepage carousel')[0];
+      // Find a featured product's toggle button and click it
+      const toggleButtons = screen.getAllByTestId('toggle-feature');
+      const featuredButton = toggleButtons[0]; // Product 1 is featured
+      expect(featuredButton).toHaveAttribute('title', 'Remove from homepage carousel');
       
       // Click starts the async operation
-      await user.click(starButton);
+      await user.click(featuredButton);
       
       // Verify the mutation was called
       expect(toggleMutate).toHaveBeenCalledWith('1');
@@ -276,19 +285,22 @@ describe('ProductsList - Featured Products', () => {
       const { rerender } = renderWithProviders(<ProductsList />);
 
       await waitFor(() => {
-        expect(screen.getByText('2 featured products in homepage carousel')).toBeInTheDocument();
+        const featuredCount = screen.getByTestId('featured-count');
+        expect(featuredCount).toHaveTextContent('2 featured products in homepage carousel');
       });
 
       // Click non-featured product star
-      const addButton = screen.getByTitle('Add to homepage carousel');
-      await user.click(addButton);
+      const toggleButtons = screen.getAllByTestId('toggle-feature');
+      const nonFeaturedButton = toggleButtons[1]; // Product 2 is not featured
+      await user.click(nonFeaturedButton);
 
       // Simulate re-render after optimistic update
       rerender(<ProductsList />);
 
       await waitFor(() => {
         // Banner should show 3 featured products now
-        expect(screen.getByText('3 featured products in homepage carousel')).toBeInTheDocument();
+        const featuredCount = screen.getByTestId('featured-count');
+        expect(featuredCount).toHaveTextContent('3 featured products in homepage carousel');
       });
     });
   });

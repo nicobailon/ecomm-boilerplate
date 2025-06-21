@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShoppingCart } from 'lucide-react';
 import CartItem from '../components/cart/CartItem';
-import PeopleAlsoBought from '../components/product/PeopleAlsoBought';
 import OrderSummary from '../components/cart/OrderSummary';
 import GiftCouponCard from '../components/cart/GiftCouponCard';
 import { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
@@ -42,7 +41,6 @@ const CartPage = () => {
 								))}
 							</div>
 						)}
-						{cartItems.length > 0 && <PeopleAlsoBought />}
 					</motion.div>
 
 					{cartItems.length > 0 && (

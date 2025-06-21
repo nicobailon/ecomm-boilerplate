@@ -37,7 +37,7 @@ export const API_ENDPOINTS = {
     BASE: '/products',
     FEATURED: '/products/featured',
     RECOMMENDATIONS: '/products/recommendations',
-    TOGGLE_FEATURED: (id: string) => `/products/${id}/toggle-featured`,
+    TOGGLE_FEATURED: (id: string) => `/products/toggle-featured/${id}`,
   },
   CART: {
     BASE: '/cart',

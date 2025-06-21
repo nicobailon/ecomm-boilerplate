@@ -8,7 +8,6 @@ import {
   useUpdateProduct as useUpdateProductREST,
   useDeleteProduct as useDeleteProductREST,
   useToggleFeatured as useToggleFeaturedREST,
-  useProductRecommendations as useProductRecommendationsREST,
 } from '@/hooks/product/useProducts';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -208,24 +207,5 @@ export function useToggleFeatured() {
   }
 
   return restMutation;
-}
-
-export function useProductRecommendations() {
-  const restQuery = useProductRecommendationsREST();
-  const trpcQuery = trpc.product.recommended.useQuery(undefined, {
-    enabled: FEATURE_FLAGS.USE_TRPC_PRODUCTS,
-  });
-
-  if (FEATURE_FLAGS.USE_TRPC_PRODUCTS) {
-    return {
-      data: trpcQuery.data,
-      isLoading: trpcQuery.isLoading,
-      error: trpcQuery.error,
-      isError: trpcQuery.isError,
-      refetch: trpcQuery.refetch,
-    };
-  }
-
-  return restQuery;
 }
 

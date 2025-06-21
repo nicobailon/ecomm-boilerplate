@@ -5,6 +5,7 @@ import { useUnifiedAddToCart } from '@/hooks/cart/useUnifiedCart';
 import type { Product } from '@/types';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { InventoryBadge } from '@/components/ui/InventoryBadge';
+import { FeaturedBadge } from '@/components/ui/FeaturedBadge';
 import { cn } from '@/lib/utils';
 import { useProductInventory } from '@/hooks/queries/useInventory';
 import { InventoryBadgeLoading } from '@/components/ui/InventorySkeleton';
@@ -48,16 +49,23 @@ const ProductCard = React.memo<ProductCardProps>(({ product }) => {
 					'absolute inset-0',
 					isOutOfStock ? 'bg-black/40' : 'bg-black/20',
 				)} />
-				{/* Inventory Badge */}
-				<div className='absolute top-2 right-2'>
-					{inventoryLoading ? (
-						<InventoryBadgeLoading />
-					) : (
-						<InventoryBadge 
-							inventory={totalInventory}
-							variant='collection'
-						/>
+				{/* Badges */}
+				<div className='absolute top-2 left-2 right-2 flex justify-between items-start'>
+					{/* Featured Badge */}
+					{product.isFeatured && (
+						<FeaturedBadge size='sm' />
 					)}
+					{/* Inventory Badge */}
+					<div className={cn(product.isFeatured ? '' : 'ml-auto')}>
+						{inventoryLoading ? (
+							<InventoryBadgeLoading />
+						) : (
+							<InventoryBadge 
+								inventory={totalInventory}
+								variant='collection'
+							/>
+						)}
+					</div>
 				</div>
 			</Link>
 

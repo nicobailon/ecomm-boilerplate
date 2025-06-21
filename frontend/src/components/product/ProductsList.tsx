@@ -14,13 +14,13 @@ const FeaturedCountBanner = () => {
 	const { data: featuredProducts, isLoading } = useFeaturedProducts();
 	const count = React.useMemo(() => featuredProducts?.length ?? 0, [featuredProducts]);
 	
-	if (isLoading) return null;
+	if (isLoading || count === 0) return null;
 	
 	return (
 		<div className="mb-4 flex items-center justify-between bg-muted/50 rounded-lg p-3">
 			<div className="flex items-center gap-2">
 				<Star className="h-5 w-5 text-warning fill-warning" />
-				<span className="text-sm font-medium">
+				<span className="text-sm font-medium" data-testid="featured-count">
 					{count} featured product{count !== 1 ? 's' : ''} in homepage carousel
 				</span>
 			</div>
@@ -224,6 +224,7 @@ function ProductRow({ product, highlightProductId, onEditProduct, onDelete, onTo
 				<button
 					onClick={handleToggleFeatured}
 					disabled={isToggling}
+					data-testid="toggle-feature-button"
 					className={cn(
 						'p-1 rounded-full transition-all duration-200',
 						product.isFeatured

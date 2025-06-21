@@ -3,6 +3,7 @@ import { apiClient } from '@/lib/api-client';
 import type { Product, PaginatedResponse } from '@/types';
 import type { ProductInput } from '@/lib/validations';
 import { toast } from 'sonner';
+import React from 'react';
 
 export const useProducts = (page = 1, limit = 12) => {
   return useQuery({
@@ -113,13 +114,93 @@ export const useToggleFeatured = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const { data } = await apiClient.patch<Product>(
-        `/products/${id}/toggle-featured`,
+        `/products/toggle-featured/${id}`,
       );
       return data;
     },
-    onSuccess: () => {
+    onMutate: async (id) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['products'] });
+      
+      // Snapshot all product queries
+      const productQueries = queryClient.getQueriesData<PaginatedResponse<Product>>({ queryKey: ['products'] });
+      const featuredQuery = queryClient.getQueryData<Product[]>(['products', 'featured']);
+      
+      // Optimistically update all product lists
+      productQueries.forEach(([queryKey, data]) => {
+        if (data?.data) {
+          const updatedData = {
+            ...data,
+            data: data.data.map((product) =>
+              product._id === id ? { ...product, isFeatured: !product.isFeatured } : product
+            ),
+          };
+          queryClient.setQueryData(queryKey, updatedData);
+        }
+      });
+      
+      // Find the product to get its data for featured list update
+      let toggledProduct: Product | undefined;
+      productQueries.forEach(([, data]) => {
+        if (data?.data && !toggledProduct) {
+          toggledProduct = data.data.find(p => p._id === id);
+        }
+      });
+      
+      // Optimistically update featured products list
+      if (featuredQuery && toggledProduct) {
+        const isCurrentlyFeatured = toggledProduct.isFeatured;
+        if (isCurrentlyFeatured) {
+          // Remove from featured
+          queryClient.setQueryData(['products', 'featured'], 
+            featuredQuery.filter(p => p._id !== id)
+          );
+        } else {
+          // Add to featured
+          queryClient.setQueryData(['products', 'featured'], 
+            [...featuredQuery, { ...toggledProduct, isFeatured: true }]
+          );
+        }
+      }
+      
+      return { previousQueries: productQueries, previousFeatured: featuredQuery };
+    },
+    onError: (_err, _id, context) => {
+      // Rollback on error
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      if (context?.previousFeatured) {
+        queryClient.setQueryData(['products', 'featured'], context.previousFeatured);
+      }
+      toast.error('Failed to update featured status');
+    },
+    onSuccess: (updatedProduct) => {
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <span>
+            {updatedProduct.isFeatured
+              ? `"${updatedProduct.name}" added to homepage carousel`
+              : `"${updatedProduct.name}" removed from homepage carousel`}
+          </span>
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs underline hover:no-underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            View on homepage →
+          </a>
+        </div>,
+      );
+    },
+    onSettled: () => {
+      // Always refetch to ensure consistency
       void queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Product updated');
+      void queryClient.invalidateQueries({ queryKey: ['products', 'featured'] });
     },
   });
 };
@@ -132,4 +213,9 @@ export const useProductRecommendations = () => {
       return data;
     },
   });
+};
+
+// Selector helper for featured products
+export const isFeaturedSelector = (product: Product): boolean => {
+  return product.isFeatured === true;
 };

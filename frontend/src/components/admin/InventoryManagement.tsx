@@ -469,7 +469,7 @@ function ProductInventoryRow({
         </td>
       </tr>
       {/* Variant rows */}
-      {hasVariants && isExpanded && product.variants && product.variants.map((variant) => (
+      {hasVariants && isExpanded && product.variants?.map((variant) => (
         <VariantInventoryRow
           key={`${product._id}-${variant.variantId}`}
           productId={product._id ?? ''}
@@ -512,13 +512,21 @@ function VariantInventoryRow({
   onSaveEdit,
   onCancelEdit,
 }: VariantInventoryRowProps) {
+  const { data: inventoryData, isLoading } = useProductInventory(
+    productId,
+    variant.variantId,
+    variant.label,
+  );
   const updateInventory = useUpdateInventory();
+  
+  // Use real-time inventory data if available, fallback to variant data
+  const currentInventory = inventoryData?.availableStock ?? variant.inventory;
   
   const handleQuickAdjust = (adjustment: number) => {
     updateInventory.mutate({
       productId,
       variantId: variant.variantId,
-      variantLabel: variant.label || undefined,
+      variantLabel: variant.label ?? undefined,
       adjustment,
       reason: adjustment > 0 ? 'restock' : 'adjustment',
     });
@@ -546,14 +554,18 @@ function VariantInventoryRow({
         </div>
       </td>
       <td className="p-4 text-center">
-        <InventoryBadge inventory={variant.inventory} variant="admin" />
+        {isLoading ? (
+          <div className="animate-pulse bg-muted h-6 w-20 mx-auto rounded" />
+        ) : (
+          <InventoryBadge inventory={currentInventory} variant="admin" />
+        )}
       </td>
       <td className="p-4 text-center">
         {isEditing ? (
           <div className="flex items-center justify-center gap-2">
             <Input
               type="number"
-              value={tempValues[cellKey] ?? variant.inventory}
+              value={tempValues[cellKey] ?? currentInventory}
               onChange={(e) => {
                 const newValue = parseInt(e.target.value) || 0;
                 onStartEdit(cellKey, newValue);
@@ -563,12 +575,12 @@ function VariantInventoryRow({
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  const newValue = tempValues[cellKey] ?? variant.inventory;
-                  const adjustment = newValue - variant.inventory;
+                  const newValue = tempValues[cellKey] ?? currentInventory;
+                  const adjustment = newValue - currentInventory;
                   updateInventory.mutate({
                     productId,
                     variantId: variant.variantId,
-                    variantLabel: variant.label || undefined,
+                    variantLabel: variant.label ?? undefined,
                     adjustment,
                     reason: adjustment > 0 ? 'restock' : 'adjustment',
                   });
@@ -581,8 +593,8 @@ function VariantInventoryRow({
               size="sm"
               variant="ghost"
               onClick={() => {
-                const newValue = tempValues[cellKey] ?? variant.inventory;
-                const adjustment = newValue - variant.inventory;
+                const newValue = tempValues[cellKey] ?? currentInventory;
+                const adjustment = newValue - currentInventory;
                 updateInventory.mutate({
                   productId,
                   variantId: variant.variantId,
@@ -605,9 +617,9 @@ function VariantInventoryRow({
           </div>
         ) : (
           <div className="flex items-center justify-center gap-2">
-            <span className="font-semibold">{variant.inventory}</span>
+            <span className="font-semibold">{currentInventory}</span>
             <button
-              onClick={() => onStartEdit(cellKey, variant.inventory)}
+              onClick={() => onStartEdit(cellKey, currentInventory)}
               className="p-1 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <Edit2 className="w-3 h-3" />
@@ -621,7 +633,7 @@ function VariantInventoryRow({
             size="sm"
             variant="ghost"
             onClick={() => handleQuickAdjust(-1)}
-            disabled={updateInventory.isPending || variant.inventory === 0}
+            disabled={updateInventory.isPending || currentInventory === 0 || isLoading}
             title={updateInventory.isPending ? 'Updating...' : 'Decrease by 1'}
           >
             {updateInventory.isPending ? (
@@ -634,7 +646,7 @@ function VariantInventoryRow({
             size="sm"
             variant="ghost"
             onClick={() => handleQuickAdjust(1)}
-            disabled={updateInventory.isPending}
+            disabled={updateInventory.isPending || isLoading}
             title={updateInventory.isPending ? 'Updating...' : 'Increase by 1'}
           >
             {updateInventory.isPending ? (

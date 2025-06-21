@@ -5,6 +5,7 @@ import { StockBadge } from '@/components/ui/StockBadge';
 import { getMaxQuantity } from '@/utils/inventory';
 import type { Product } from '@/types';
 import { cleanVariantAttributes } from '@/utils/cleanAttributes';
+import { useProductInventory } from '@/hooks/queries/useInventory';
 
 interface IProductVariant {
   variantId: string;
@@ -34,11 +35,15 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
   const hasVariants = 'variants' in product && Array.isArray(product.variants) && product.variants.length > 0;
   const needsVariantSelection = hasVariants && selectedVariant === null;
   
-  // For products with variants, use selected variant inventory or 0 if none selected
-  // For products without variants, default to available (1) since they should always be purchasable
-  const displayInventory = hasVariants 
-    ? (selectedVariant?.inventory ?? 0)
-    : 1; // Default to available for simple products without variants
+  // Fetch real inventory data from backend
+  const { data: inventoryData, isLoading: inventoryLoading } = useProductInventory(
+    product._id,
+    selectedVariant?.variantId,
+    selectedVariant?.label
+  );
+  
+  // Use real inventory data from backend, default to 0 while loading
+  const displayInventory = inventoryData?.availableStock ?? 0;
     
   const isOutOfStock = displayInventory === 0;
   const maxQuantity = getMaxQuantity(displayInventory);
@@ -95,7 +100,7 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
           <p className="text-2xl font-semibold text-primary">
             ${displayPrice.toFixed(2)}
           </p>
-          {(selectedVariant ?? !hasVariants) && (
+          {(selectedVariant ?? !hasVariants) && !inventoryLoading && (
             <div className={inventoryUpdateAnimation ? 'animate-pulse' : ''}>
               <StockBadge inventory={displayInventory} showCount size="sm" />
             </div>
@@ -153,13 +158,15 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
 
         <button
           onClick={() => void handleAddToCart()}
-          disabled={addToCart.isPending || isOutOfStock || needsVariantSelection}
+          disabled={addToCart.isPending || isOutOfStock || needsVariantSelection || inventoryLoading}
           className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-8 py-3 
             bg-primary text-primary-foreground font-medium rounded-lg
             hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed
             transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           aria-label={
-            needsVariantSelection
+            inventoryLoading
+              ? 'Loading inventory...'
+              : needsVariantSelection
               ? 'Please select a variant'
               : isOutOfStock
               ? 'Out of stock'
@@ -168,7 +175,9 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
         >
           <ShoppingCart className="w-5 h-5" aria-hidden="true" />
           <span>
-            {addToCart.isPending
+            {inventoryLoading
+              ? 'Checking Stock...'
+              : addToCart.isPending
               ? 'Adding...'
               : needsVariantSelection
               ? 'Select Options'

@@ -4,8 +4,6 @@ import {
   checkAvailability,
   updateInventory,
   bulkUpdateInventory,
-  getInventoryHistory,
-  getLowStockProducts,
   getInventoryMetrics,
   getOutOfStockProducts,
   getInventoryTurnover,
@@ -39,8 +37,6 @@ router.post(
   bulkUpdateInventory,
 );
 
-router.get('/history/:productId', adminRoute, getInventoryHistory);
-router.get('/low-stock', adminRoute, getLowStockProducts);
 router.get('/metrics', adminRoute, getInventoryMetrics);
 router.get('/out-of-stock', adminRoute, getOutOfStockProducts);
 router.get('/turnover', adminRoute, getInventoryTurnover);

@@ -45,6 +45,21 @@ vi.mock('mongoose', async (importOriginal) => {
 vi.mock('../../models/product.model.js');
 vi.mock('../../models/user.model.js');
 
+// Mock inventory service
+vi.mock('../inventory.service.js', () => ({
+  inventoryService: {
+    checkAvailability: vi.fn().mockResolvedValue(true),
+    getAvailableInventory: vi.fn().mockResolvedValue(10),
+    reserveInventory: vi.fn().mockResolvedValue({
+      success: true,
+      reservationId: 'reservation123',
+      reservedQuantity: 1,
+    }),
+    releaseReservation: vi.fn().mockResolvedValue(true),
+    releaseSessionReservations: vi.fn().mockResolvedValue(true),
+  },
+}));
+
 describe('CartService', () => {
   let mockUser: IUserDocument;
   let mockSession: any;
@@ -133,9 +148,18 @@ describe('CartService', () => {
         session: vi.fn().mockResolvedValue(product),
       } as any));
 
+      // Mock inventory check to return false for out of stock
+      const { inventoryService } = await import('../inventory.service.js');
+      vi.mocked(inventoryService.checkAvailability).mockResolvedValueOnce(false);
+      vi.mocked(inventoryService.getAvailableInventory).mockResolvedValueOnce(0);
+      vi.mocked(inventoryService.reserveInventory).mockResolvedValueOnce({
+        success: false,
+        message: 'Variant var1 is out of stock',
+      } as any);
+      
       await expect(
         cartService.addToCart(mockUser, productId, 'var1')
-      ).rejects.toThrow('Variant (M) (Red) is out of stock');
+      ).rejects.toThrow('Variant var1 is out of stock');
     });
 
     it('should use variant price in calculations', async () => {
@@ -178,12 +202,24 @@ describe('CartService', () => {
         _id: new mongoose.Types.ObjectId(productId),
         name: 'Simple Product',
         price: 50,
-        // No variants array
+        description: 'A simple product',
+        image: 'simple.jpg',
+        isFeatured: false,
+        variants: [], // Empty variants array
       };
 
       vi.mocked(Product.findById).mockImplementation(() => ({
         session: vi.fn().mockResolvedValue(product),
       } as any));
+      
+      // Mock inventory check for product without variants
+      const { inventoryService } = await import('../inventory.service.js');
+      vi.mocked(inventoryService.checkAvailability).mockResolvedValue(true);
+      vi.mocked(inventoryService.reserveInventory).mockResolvedValue({
+        success: true,
+        reservationId: 'reservation123',
+        reservedQuantity: 1,
+      });
 
       await cartService.addToCart(mockUser, productId);
       
@@ -217,6 +253,11 @@ describe('CartService', () => {
       // Mock the atomic update to succeed (validates but doesn't decrement)
       vi.mocked(Product.findOneAndUpdate).mockResolvedValue(product);
 
+      // Mock inventory check to fail
+      const { inventoryService } = await import('../inventory.service.js');
+      vi.mocked(inventoryService.checkAvailability).mockResolvedValueOnce(false);
+      vi.mocked(inventoryService.getAvailableInventory).mockResolvedValueOnce(2);
+      
       await expect(
         cartService.addToCart(mockUser, productId, 'var1')
       ).rejects.toThrow('Cannot add more items. Only 2 available in stock');
@@ -244,6 +285,11 @@ describe('CartService', () => {
         session: vi.fn().mockResolvedValue(product),
       } as any));
 
+      // Mock inventory check to fail for quantity update
+      const { inventoryService } = await import('../inventory.service.js');
+      vi.mocked(inventoryService.checkAvailability).mockResolvedValueOnce(false);
+      vi.mocked(inventoryService.getAvailableInventory).mockResolvedValueOnce(3);
+      
       await expect(
         cartService.updateQuantity(mockUser, productId, 5, 'var1')
       ).rejects.toThrow('Cannot update quantity. Only 3 available in stock');

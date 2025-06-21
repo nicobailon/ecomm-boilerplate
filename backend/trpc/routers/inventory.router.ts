@@ -5,9 +5,7 @@ import { createRateLimiter } from '../middleware/rateLimiter.js';
 import {
   inventoryUpdateSchema,
   bulkInventoryUpdateSchema,
-  inventoryHistoryQuerySchema,
   inventoryCheckSchema,
-  lowStockQuerySchema,
   inventoryTurnoverQuerySchema,
 } from '../../validations/inventory.validation.js';
 import { TRPCError } from '@trpc/server';
@@ -158,48 +156,6 @@ export const inventoryRouter = router({
       }
     }),
 
-  getInventoryHistory: adminProcedure
-    .use(inventoryQueryLimiter)
-    .input(inventoryHistoryQuerySchema)
-    .query(async ({ input }) => {
-      try {
-        return await inventoryService.getInventoryHistory(
-          input.productId,
-          input.variantId,
-          input.limit,
-          input.offset,
-        );
-      } catch {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to fetch inventory history',
-        });
-      }
-    }),
-
-  getLowStockProducts: adminProcedure
-    .use(inventoryQueryLimiter)
-    .input(lowStockQuerySchema)
-    .query(async ({ input }) => {
-      try {
-        const alerts = await inventoryService.getLowStockProducts(input.threshold);
-        const startIndex = (input.page - 1) * input.limit;
-        const endIndex = startIndex + input.limit;
-        const paginatedAlerts = alerts.slice(startIndex, endIndex);
-
-        return {
-          alerts: paginatedAlerts,
-          total: alerts.length,
-          page: input.page,
-          totalPages: Math.ceil(alerts.length / input.limit),
-        };
-      } catch {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to fetch low stock products',
-        });
-      }
-    }),
 
   getInventoryMetrics: adminProcedure
     .use(inventoryQueryLimiter)

@@ -161,3 +161,42 @@ export interface ProductFormProps {
   initialData?: Product;
   onSuccess?: (product: Product) => void;
 }
+
+/**
+ * FormVariant represents the variant data structure used in the form UI.
+ * This is what users see and interact with when creating/editing variants.
+ * The variantId is optional because new variants won't have it initially - it's generated before submission.
+ */
+export interface FormVariant {
+  variantId?: string; // Optional because new variants won't have it initially
+  label: string;
+  priceAdjustment?: number; // Optional with default 0 in schema
+  inventory: number;
+  sku?: string;
+}
+
+/**
+ * VariantSubmission represents the data structure that must be sent to the backend.
+ * This matches the backend's expectations for variant data.
+ * The key differences from FormVariant are:
+ * - variantId is required
+ * - price is absolute (not an adjustment)
+ * - color is optional for backward compatibility
+ */
+export interface VariantSubmission {
+  variantId: string; // Required for submission
+  label: string;
+  color?: string; // Keep optional for backward compatibility
+  price: number; // Absolute price, not adjustment
+  inventory: number;
+  sku?: string;
+}
+
+/**
+ * VariantTransform is a function type that converts a FormVariant to a VariantSubmission.
+ * This transformation includes:
+ * - Generating variantId if missing
+ * - Converting priceAdjustment to absolute price using basePrice
+ * - Adding optional color field for backward compatibility
+ */
+export type VariantTransform = (variant: FormVariant, basePrice: number) => VariantSubmission;

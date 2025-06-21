@@ -6,9 +6,7 @@ import { AppError } from '../utils/AppError.js';
 import {
   inventoryUpdateSchema,
   bulkInventoryUpdateSchema,
-  inventoryHistoryQuerySchema,
   inventoryCheckSchema,
-  lowStockQuerySchema,
   inventoryTurnoverQuerySchema,
 } from '../validations/inventory.validation.js';
 
@@ -90,44 +88,6 @@ export const bulkUpdateInventory = asyncHandler(async (req: AuthRequest, res: Re
   res.json({
     success: true,
     results,
-  });
-});
-
-export const getInventoryHistory = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const validatedData = inventoryHistoryQuerySchema.parse({
-    productId: req.params.productId,
-    variantId: req.query.variantId,
-    limit: req.query.limit,
-    offset: req.query.offset,
-  });
-
-  const history = await inventoryService.getInventoryHistory(
-    validatedData.productId,
-    validatedData.variantId,
-    validatedData.limit,
-    validatedData.offset,
-  );
-
-  res.json({
-    success: true,
-    ...history,
-  });
-});
-
-export const getLowStockProducts = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const validatedData = lowStockQuerySchema.parse(req.query);
-
-  const alerts = await inventoryService.getLowStockProducts(validatedData.threshold);
-  const startIndex = (validatedData.page - 1) * validatedData.limit;
-  const endIndex = startIndex + validatedData.limit;
-  const paginatedAlerts = alerts.slice(startIndex, endIndex);
-
-  res.json({
-    success: true,
-    alerts: paginatedAlerts,
-    total: alerts.length,
-    page: validatedData.page,
-    totalPages: Math.ceil(alerts.length / validatedData.limit),
   });
 });
 

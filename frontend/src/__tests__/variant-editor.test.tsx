@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { describe, it, expect } from 'vitest';
-import { VariantEditor, getVariantDisplayText, validateVariants } from '@/components/forms/VariantEditor';
+import { VariantEditor } from '@/components/forms/VariantEditor';
 import { productSchema, type ProductFormInput } from '@/lib/validations';
 
 // Test wrapper component that provides form context
@@ -45,8 +45,8 @@ describe('VariantEditor', () => {
       const defaultValues = {
         variants: [
           {
+            variantId: 'small-123456',
             label: 'Small',
-            color: 'Red',
             priceAdjustment: 0,
             inventory: 10,
             sku: 'TEST-S-R',
@@ -61,11 +61,43 @@ describe('VariantEditor', () => {
       );
 
       expect(screen.getByText('Label')).toBeInTheDocument();
-      expect(screen.getByText('Color')).toBeInTheDocument();
       expect(screen.getByText('Price Adjustment')).toBeInTheDocument();
       expect(screen.getByText('Inventory')).toBeInTheDocument();
       expect(screen.getByText('SKU')).toBeInTheDocument();
       expect(screen.getByText('Actions')).toBeInTheDocument();
+    });
+
+    it('should NOT render color field anywhere in the component', () => {
+      const defaultValues = {
+        variants: [
+          {
+            variantId: 'test-123456',
+            label: 'Test Variant',
+            priceAdjustment: 0,
+            inventory: 10,
+            sku: 'TEST-VAR',
+          },
+        ],
+      };
+
+      render(
+        <TestWrapper defaultValues={defaultValues}>
+          <VariantEditor />
+        </TestWrapper>
+      );
+
+      // Check that no color-related text is in the document
+      expect(screen.queryByText('Color')).not.toBeInTheDocument();
+      expect(screen.queryByText('color')).not.toBeInTheDocument();
+      
+      // Check that no color input field exists
+      expect(screen.queryByPlaceholderText(/color/i)).not.toBeInTheDocument();
+      
+      // Check table headers don't include color
+      const headers = screen.getAllByRole('columnheader');
+      headers.forEach(header => {
+        expect(header.textContent?.toLowerCase()).not.toContain('color');
+      });
     });
   });
 
@@ -83,7 +115,34 @@ describe('VariantEditor', () => {
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText('e.g., Small, Medium, Large')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('e.g., Red, Blue, Green')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('0.00')).toBeInTheDocument(); // Price adjustment field
+      });
+    });
+
+    it('should generate variant ID on blur when label is entered', async () => {
+      const user = userEvent.setup();
+      
+      render(
+        <TestWrapper>
+          <VariantEditor />
+        </TestWrapper>
+      );
+
+      await user.click(screen.getByRole('button', { name: /add variant/i }));
+
+      // Initially, variantId should be empty
+      const hiddenInput = document.querySelector('input[name="variants.0.variantId"]') as HTMLInputElement;
+      expect(hiddenInput).toBeInTheDocument();
+      expect(hiddenInput.value).toBe('');
+
+      // Type a label and blur to trigger ID generation
+      const labelInput = screen.getByPlaceholderText('e.g., Small, Medium, Large');
+      await user.type(labelInput, 'Small');
+      await user.tab(); // Blur the input
+
+      await waitFor(() => {
+        // Now variantId should be generated based on the label
+        expect(hiddenInput.value).toMatch(/^small-[a-zA-Z0-9_-]{6}$/);
       });
     });
 
@@ -105,6 +164,40 @@ describe('VariantEditor', () => {
         expect(labelInputs).toHaveLength(2);
       });
     });
+
+    it('should preserve existing variant IDs during edits', async () => {
+      const user = userEvent.setup();
+      const defaultValues = {
+        variants: [
+          {
+            variantId: 'existing-variant-123',
+            label: 'Small',
+            priceAdjustment: 0,
+            inventory: 10,
+            sku: 'TEST-S',
+          },
+        ],
+      };
+
+      render(
+        <TestWrapper defaultValues={defaultValues}>
+          <VariantEditor />
+        </TestWrapper>
+      );
+
+      // Check that the hidden input contains the existing variant ID
+      const hiddenInput = document.querySelector('input[name="variants.0.variantId"]') as HTMLInputElement;
+      expect(hiddenInput).toBeInTheDocument();
+      expect(hiddenInput.value).toBe('existing-variant-123');
+
+      // Edit the label
+      const labelInput = screen.getByDisplayValue('Small');
+      await user.clear(labelInput);
+      await user.type(labelInput, 'Extra Small');
+
+      // The variant ID should still be preserved in the hidden input
+      expect(hiddenInput.value).toBe('existing-variant-123');
+    });
   });
 
   describe('Removing Variants', () => {
@@ -113,8 +206,8 @@ describe('VariantEditor', () => {
       const defaultValues = {
         variants: [
           {
+            variantId: 'small-123456',
             label: 'Small',
-            color: 'Red',
             priceAdjustment: 0,
             inventory: 10,
             sku: 'TEST-S-R',
@@ -197,7 +290,6 @@ describe('VariantEditor', () => {
       await user.click(screen.getByRole('button', { name: /add variant/i }));
 
       expect(screen.getByLabelText('Variant 1 label')).toBeInTheDocument();
-      expect(screen.getByLabelText('Variant 1 color')).toBeInTheDocument();
       expect(screen.getByLabelText('Variant 1 price adjustment')).toBeInTheDocument();
       expect(screen.getByLabelText('Variant 1 inventory')).toBeInTheDocument();
       expect(screen.getByLabelText('Variant 1 SKU')).toBeInTheDocument();
@@ -205,103 +297,3 @@ describe('VariantEditor', () => {
   });
 });
 
-describe('getVariantDisplayText', () => {
-  it('should prioritize label over size/color', () => {
-    const variant = {
-      label: 'Extra Large',
-      size: 'XL',
-      color: 'Blue',
-    };
-
-    expect(getVariantDisplayText(variant)).toBe('Extra Large - Blue');
-  });
-
-  it('should fall back to size and color when no label', () => {
-    const variant = {
-      size: 'Medium',
-      color: 'Red',
-    };
-
-    expect(getVariantDisplayText(variant)).toBe('Medium - Red');
-  });
-
-  it('should return just label when no color', () => {
-    const variant = {
-      label: 'Standard',
-    };
-
-    expect(getVariantDisplayText(variant)).toBe('Standard');
-  });
-
-  it('should return Default for empty variant', () => {
-    const variant = {};
-
-    expect(getVariantDisplayText(variant)).toBe('Default');
-  });
-});
-
-describe('validateVariants', () => {
-  it('should validate successful case', () => {
-    const variants = [
-      { label: 'Small', inventory: 10 },
-      { label: 'Medium', inventory: 15 },
-      { label: 'Large', inventory: 20 },
-    ];
-
-    const result = validateVariants(variants);
-
-    expect(result.isValid).toBe(true);
-    expect(result.errors).toHaveLength(0);
-  });
-
-  it('should detect missing labels', () => {
-    const variants = [
-      { label: 'Small', inventory: 10 },
-      { label: '', inventory: 15 },
-      { inventory: 20 },
-    ];
-
-    const result = validateVariants(variants);
-
-    expect(result.isValid).toBe(false);
-    expect(result.errors).toContain('All variants must have a label');
-  });
-
-  it('should detect duplicate labels', () => {
-    const variants = [
-      { label: 'Small', inventory: 10 },
-      { label: 'SMALL', inventory: 15 }, // Case insensitive duplicate
-      { label: 'Large', inventory: 20 },
-    ];
-
-    const result = validateVariants(variants);
-
-    expect(result.isValid).toBe(false);
-    expect(result.errors.some(error => error.includes('Duplicate labels found'))).toBe(true);
-  });
-
-  it('should detect negative inventory', () => {
-    const variants = [
-      { label: 'Small', inventory: -5 },
-      { label: 'Medium', inventory: 15 },
-    ];
-
-    const result = validateVariants(variants);
-
-    expect(result.isValid).toBe(false);
-    expect(result.errors).toContain('Inventory cannot be negative');
-  });
-
-  it('should handle multiple validation errors', () => {
-    const variants = [
-      { label: '', inventory: -5 },
-      { label: 'Medium', inventory: 15 },
-      { label: 'medium', inventory: 10 }, // Duplicate
-    ];
-
-    const result = validateVariants(variants);
-
-    expect(result.isValid).toBe(false);
-    expect(result.errors.length).toBeGreaterThan(1);
-  });
-});

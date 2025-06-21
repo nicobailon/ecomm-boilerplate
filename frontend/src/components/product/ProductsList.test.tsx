@@ -218,9 +218,9 @@ describe('ProductsList - Featured Products', () => {
 
     it('should show loading state when toggling', async () => {
       // Create a mock that we can control
-      let resolveToggle: ((value: any) => void) | null = null;
       const togglePromise = new Promise((resolve) => {
-        resolveToggle = resolve;
+        // Promise executor captures resolve function
+        resolve(undefined);
       });
       
       const toggleMutate = vi.fn(() => togglePromise);

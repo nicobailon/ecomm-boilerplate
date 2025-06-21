@@ -3,7 +3,6 @@ import { apiClient } from '@/lib/api-client';
 import type { Product, PaginatedResponse } from '@/types';
 import type { ProductInput } from '@/lib/validations';
 import { toast } from 'sonner';
-import React from 'react';
 
 export const useProducts = (page = 1, limit = 12) => {
   return useQuery({
@@ -219,6 +218,7 @@ export const useProductRecommendations = () => {
 
 // Type for featured product selector
 export type ProductSelector = (product: Product) => boolean;
+export type IsFeaturedSelector = ProductSelector;
 
 // Selector helper for featured products
 export const isFeaturedSelector: ProductSelector = (product) => {

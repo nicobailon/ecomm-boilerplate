@@ -77,7 +77,7 @@ export class PaymentService {
             requestedProduct.variantId,
           );
           throw new AppError(
-            `Insufficient inventory for ${serverProduct.name} (${variant.size ?? ''} ${variant.color ?? ''}). Available: ${availableStock}`,
+            `Insufficient inventory for ${serverProduct.name} (${variant.label ?? ''}). Available: ${availableStock}`,
             400,
           );
         }

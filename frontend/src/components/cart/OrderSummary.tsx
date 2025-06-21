@@ -6,9 +6,22 @@ import { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
 import { apiClient } from '@/lib/api-client';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
+
+interface CheckoutProduct {
+	_id: string;
+	quantity: number;
+	variantId?: string;
+	variantLabel?: string;
+}
+
+interface CheckoutRequest {
+	products: CheckoutProduct[];
+	couponCode?: string;
+}
 
 const stripePromise = loadStripe(
-	'pk_test_51KZYccCoOZF2UhtOwdXQl3vcizup20zqKqT9hVUIsVzsdBrhqbUI2fE0ZdEVLdZfeHjeyFXtqaNsyCJCmZWnjNZa00PzMAjlcL',
+	import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51KZYccCoOZF2UhtOwdXQl3vcizup20zqKqT9hVUIsVzsdBrhqbUI2fE0ZdEVLdZfeHjeyFXtqaNsyCJCmZWnjNZa00PzMAjlcL',
 );
 
 const OrderSummary = () => {
@@ -46,15 +59,21 @@ const OrderSummary = () => {
 				throw new Error('Stripe failed to load');
 			}
 
-			const res = await apiClient.post('/payments/create-checkout-session', {
+			const checkoutData: CheckoutRequest = {
 				products: cartItems.map(item => ({
 					_id: item.product._id,
 					quantity: item.quantity,
-					price: item.variantDetails?.price ?? item.product.price,
 					variantId: item.variantId,
+					variantLabel: item.variantDetails?.label,
 				})),
-				couponCode: coupon?.code ?? null,
-			});
+			};
+
+			// Only include couponCode if we have a coupon
+			if (coupon?.code) {
+				checkoutData.couponCode = coupon.code;
+			}
+
+			const res = await apiClient.post('/payments/create-checkout-session', checkoutData);
 
 			const session = res.data as { id: string };
 			const result = await stripe.redirectToCheckout({
@@ -65,7 +84,26 @@ const OrderSummary = () => {
 				throw new Error(result.error.message);
 			}
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : 'Payment failed. Please try again.';
+			let errorMessage = 'Payment failed. Please try again.';
+			
+			// Handle validation errors with details
+			if (isAxiosError(error)) {
+				if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+					const validationErrors = error.response.data.errors
+						.map((err: { field: string; message: string }) => `${err.field}: ${err.message}`)
+						.join(', ');
+					errorMessage = `Validation error: ${validationErrors}`;
+				} else if (error.response?.data?.error) {
+					errorMessage = error.response.data.error;
+				} else if (error.response?.data?.message) {
+					errorMessage = error.response.data.message;
+				}
+				console.error('Checkout error:', error.response?.data);
+			} else if (error instanceof Error) {
+				errorMessage = error.message;
+				console.error('Checkout error:', error);
+			}
+			
 			toast.error(errorMessage);
 		} finally {
 			setIsProcessing(false);

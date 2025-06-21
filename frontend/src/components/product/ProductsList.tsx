@@ -1,13 +1,40 @@
 import { motion } from 'framer-motion';
-import { Trash, Star, AlertTriangle } from 'lucide-react';
-import { useProducts, useDeleteProduct, useToggleFeatured } from '@/hooks/product/useProducts';
+import { Trash, Star, AlertTriangle, Info } from 'lucide-react';
+import { useProducts, useDeleteProduct, useToggleFeatured, useFeaturedProducts } from '@/hooks/product/useProducts';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { useEffect } from 'react';
+import * as React from 'react';
 import type { ProductsListProps, Product } from '@/types';
 import { cn } from '@/lib/utils';
 import { InventoryBadge } from '@/components/ui/InventoryBadge';
 import { useProductInventory } from '@/hooks/queries/useInventory';
 import { InventoryBadgeLoading } from '@/components/ui/InventorySkeleton';
+
+const FeaturedCountBanner = () => {
+	const { data: featuredProducts, isLoading } = useFeaturedProducts();
+	const count = React.useMemo(() => featuredProducts?.length ?? 0, [featuredProducts]);
+	
+	if (isLoading) return null;
+	
+	return (
+		<div className="mb-4 flex items-center justify-between bg-muted/50 rounded-lg p-3">
+			<div className="flex items-center gap-2">
+				<Star className="h-5 w-5 text-warning fill-warning" />
+				<span className="text-sm font-medium">
+					{count} featured product{count !== 1 ? 's' : ''} in homepage carousel
+				</span>
+			</div>
+			<a 
+				href="/" 
+				className="text-sm text-primary hover:underline"
+				target="_blank"
+				rel="noopener noreferrer"
+			>
+				Preview homepage →
+			</a>
+		</div>
+	);
+};
 
 const ProductsList = ({ highlightProductId, onHighlightComplete, onEditProduct }: ProductsListProps = {}) => {
 	const { data, isLoading } = useProducts();
@@ -34,12 +61,14 @@ const ProductsList = ({ highlightProductId, onHighlightComplete, onEditProduct }
 	const products = data?.data ?? [];
 
 	return (
-		<motion.div
-			className='bg-card shadow-lg rounded-lg overflow-hidden max-w-4xl mx-auto'
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.8 }}
-		>
+		<>
+			<FeaturedCountBanner />
+			<motion.div
+				className='bg-card shadow-lg rounded-lg overflow-hidden max-w-4xl mx-auto'
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.8 }}
+			>
 			<table className=' min-w-full divide-y divide-border'>
 				<thead className='bg-muted'>
 					<tr>
@@ -71,7 +100,7 @@ const ProductsList = ({ highlightProductId, onHighlightComplete, onEditProduct }
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider'
 						>
-							Featured
+							Featured <span title="Featured products appear in the homepage carousel"><Info className="inline-block w-3 h-3 ml-1 cursor-help" /></span>
 						</th>
 						<th
 							scope='col'
@@ -95,7 +124,8 @@ const ProductsList = ({ highlightProductId, onHighlightComplete, onEditProduct }
 					))}
 				</tbody>
 			</table>
-		</motion.div>
+			</motion.div>
+		</>
 	);
 };
 
@@ -110,11 +140,22 @@ interface ProductRowProps {
 
 function ProductRow({ product, highlightProductId, onEditProduct, onDelete, onToggleFeatured }: ProductRowProps) {
 	const { data: inventoryData, isLoading: inventoryLoading } = useProductInventory(product._id);
+	const [isToggling, setIsToggling] = React.useState(false);
 	
 	// Calculate real inventory values
 	const inventory = inventoryData?.availableStock ?? 0;
 	const isLowStock = inventory > 0 && inventory <= (inventoryData?.lowStockThreshold ?? 10);
 	const hasVariants = product.variants && product.variants.length > 0;
+	
+	const handleToggleFeatured = async (e: React.MouseEvent) => {
+		e.stopPropagation();
+		setIsToggling(true);
+		try {
+			await onToggleFeatured();
+		} finally {
+			setIsToggling(false);
+		}
+	};
 	
 	return (
 		<tr 
@@ -181,17 +222,24 @@ function ProductRow({ product, highlightProductId, onEditProduct, onDelete, onTo
 			</td>
 			<td className='px-6 py-4 whitespace-nowrap'>
 				<button
-					onClick={(e) => {
-						e.stopPropagation();
-						onToggleFeatured();
-					}}
-					className={`p-1 rounded-full ${
+					onClick={handleToggleFeatured}
+					disabled={isToggling}
+					className={cn(
+						'p-1 rounded-full transition-all duration-200',
 						product.isFeatured
-							? 'bg-warning text-warning-foreground'
-							: 'bg-muted text-muted-foreground'
-					} hover:bg-warning/80 transition-colors duration-200`}
+							? 'bg-warning text-warning-foreground hover:bg-warning/80 ring-2 ring-warning/40'
+							: 'bg-muted text-muted-foreground hover:bg-warning/80',
+						isToggling && 'opacity-50 cursor-not-allowed animate-pulse'
+					)}
+					title={product.isFeatured ? 'Remove from homepage carousel' : 'Add to homepage carousel'}
 				>
-					<Star className='h-5 w-5' />
+					<Star 
+						className={cn(
+							'h-5 w-5 transition-transform',
+							isToggling && 'animate-spin',
+							product.isFeatured && 'fill-current'
+						)} 
+					/>
 				</button>
 			</td>
 			<td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>

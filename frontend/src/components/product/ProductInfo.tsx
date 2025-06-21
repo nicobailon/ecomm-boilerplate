@@ -29,7 +29,7 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
   const [quantity, setQuantity] = useState(1);
   const [showNotifyButton, setShowNotifyButton] = useState(false);
   const [inventoryUpdateAnimation, setInventoryUpdateAnimation] = useState(false);
-  const addToCart = useUnifiedAddToCart();
+  const addToCart = useUnifiedAddToCart({ showToast: false });
 
   const displayPrice = selectedVariant?.price ?? product.price;
   const hasVariants = 'variants' in product && Array.isArray(product.variants) && product.variants.length > 0;

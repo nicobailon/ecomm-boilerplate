@@ -84,10 +84,10 @@ export interface AddToCartParams {
   variantAttributes?: Record<string, string>;
 }
 
-export const useUnifiedAddToCart = () => {
+export const useUnifiedAddToCart = (options?: { showToast?: boolean }) => {
   const { data: user } = useCurrentUser();
-  const userAddToCart = useAddToCart();
-  const guestAddToCart = useGuestAddToCart();
+  const userAddToCart = useAddToCart(options);
+  const guestAddToCart = useGuestAddToCart(options);
 
   const isGuestLike = !user;
 

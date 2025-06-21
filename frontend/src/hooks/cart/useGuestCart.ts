@@ -20,8 +20,9 @@ export const useGuestCart = () => {
   });
 };
 
-export const useGuestAddToCart = () => {
+export const useGuestAddToCart = (options?: { showToast?: boolean }) => {
   const queryClient = useQueryClient();
+  const showToast = options?.showToast ?? true;
 
   return useMutation({
     mutationFn: (params: { product: Product; variantId?: string } | Product) => {
@@ -80,7 +81,9 @@ export const useGuestAddToCart = () => {
       void queryClient.invalidateQueries({ queryKey: ['guestCart'] });
     },
     onSuccess: () => {
-      toast.success('Added to cart');
+      if (showToast) {
+        toast.success('Added to cart');
+      }
     },
   });
 };

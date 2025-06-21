@@ -299,19 +299,24 @@ class ProductService {
   }
 
   async toggleFeaturedProduct(productId: string): Promise<IProduct> {
-    const product = await Product.findById(productId);
+    // First get the current product to check its featured status
+    const currentProduct = await Product.findById(productId);
     
-    if (!product) {
+    if (!currentProduct) {
       throw new AppError(`Product not found with ID: ${productId}. Cannot toggle featured status`, 404);
     }
     
-    product.isFeatured = !product.isFeatured;
-    const updatedProduct = await product.save();
+    // Update only the isFeatured field without triggering full validation
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      { isFeatured: !currentProduct.isFeatured },
+      { new: true, runValidators: false }
+    );
     
     // Update cache
     await this.updateFeaturedProductsCache();
     
-    return toProduct(updatedProduct);
+    return toProduct(updatedProduct!);
   }
 
   private async updateFeaturedProductsCache(): Promise<void> {

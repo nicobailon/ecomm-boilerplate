@@ -164,7 +164,7 @@ export const useToggleFeatured = () => {
       
       return { previousQueries: productQueries, previousFeatured: featuredQuery };
     },
-    onError: (_err, _id, context) => {
+    onError: (err, _id, context) => {
       // Rollback on error
       if (context?.previousQueries) {
         context.previousQueries.forEach(([queryKey, data]) => {
@@ -174,6 +174,7 @@ export const useToggleFeatured = () => {
       if (context?.previousFeatured) {
         queryClient.setQueryData(['products', 'featured'], context.previousFeatured);
       }
+      console.error('Toggle featured error:', err);
       toast.error('Failed to update featured status');
     },
     onSuccess: (updatedProduct) => {

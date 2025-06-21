@@ -9,11 +9,12 @@ const router = Router();
 router.get('/', validateQuery(paginationSchema), productController.getAllProducts);
 router.get('/featured', productController.getFeaturedProducts);
 router.get('/recommendations', productController.getRecommendedProducts);
-router.get('/:id', validateParams(productIdParamSchema), productController.getProduct);
 
 router.post('/', protectRoute, adminRoute, validateBody(createProductSchema), productController.createProduct);
+router.patch('/toggle-featured/:id', protectRoute, adminRoute, validateParams(productIdParamSchema), productController.toggleFeaturedProduct);
 router.patch('/:id', protectRoute, adminRoute, validateParams(productIdParamSchema), validateBody(updateProductSchema), productController.updateProduct);
 router.delete('/:id', protectRoute, adminRoute, validateParams(productIdParamSchema), productController.deleteProduct);
-router.patch('/toggle-featured/:id', protectRoute, adminRoute, validateParams(productIdParamSchema), productController.toggleFeaturedProduct);
+
+router.get('/:id', validateParams(productIdParamSchema), productController.getProduct);
 
 export default router;

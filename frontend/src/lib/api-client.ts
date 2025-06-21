@@ -27,7 +27,8 @@ class ApiClient {
 
         // Don't attempt to refresh for auth endpoints, public endpoints, or if it's already a retry
         const isPublicEndpoint = originalRequest.url?.includes('/products') && 
-                                !originalRequest.url?.includes('/admin');
+                                !originalRequest.url?.includes('/admin') &&
+                                !originalRequest.url?.includes('/toggle-featured');
         
         if (error.response?.status === 401 && 
             !originalRequest._retry && 

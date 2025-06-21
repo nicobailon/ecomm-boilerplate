@@ -19,6 +19,7 @@ import { Progress } from '@/components/ui/Progress';
 import { cn } from '@/lib/utils';
 import { CheckIcon } from 'lucide-react';
 import type { ProductFormProps, Product } from '@/types';
+import type { ProductWithVariantTypes, ProductVariantWithAttributes } from '@/types/variant';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { VariantEditor } from './VariantEditor';
 import { VariantAttributesEditor } from './VariantAttributesEditor';
@@ -51,15 +52,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         ? initialData.collectionId 
         : initialData.collectionId?._id,
       image: initialData.image,
-      variantTypes: (initialData as any).variantTypes,
+      variantTypes: 'variantTypes' in initialData ? (initialData as ProductWithVariantTypes).variantTypes : undefined,
       variants: initialData.variants?.map(v => ({
         variantId: v.variantId,
-        label: v.label || '',
-        color: v.color || '',
+        label: v.label ?? '',
+        color: v.color ?? '',
         priceAdjustment: roundToCents(v.price - initialData.price),
         inventory: v.inventory,
-        sku: v.sku || '',
-        attributes: (v as any).attributes,
+        reservedInventory: v.reservedInventory ?? 0, // NEW: Keep existing reservedInventory value
+        images: v.images ?? [], // NEW: Keep existing images
+        sku: v.sku ?? '',
+        attributes: 'attributes' in v ? (v as ProductVariantWithAttributes).attributes : undefined,
       })),
     } : productCreation?.draftData ?? {
       name: '',
@@ -105,9 +108,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
       const recalculatedVariants = recalculatePriceAdjustments(
         watchedVariants as (FormVariant & { variantId?: string })[],
         previousPrice,
-        watchedPrice
+        watchedPrice,
       );
-      setValue('variants', recalculatedVariants as any);
+      setValue('variants', recalculatedVariants);
       setPreviousPrice(watchedPrice);
     }
   }, [watchedPrice, previousPrice, watchedVariants, setValue]);
@@ -141,12 +144,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         image: initialData.image,
         variants: initialData.variants?.map(v => ({
           variantId: v.variantId,
-          label: v.label || '',
-          color: v.color || '',
+          label: v.label ?? '',
+          color: v.color ?? '',
           priceAdjustment: roundToCents(v.price - initialData.price),
           inventory: v.inventory,
-          sku: v.sku || '',
-          attributes: (v as any).attributes,
+          reservedInventory: v.reservedInventory ?? 0, // NEW: Keep existing reservedInventory value
+          images: v.images ?? [], // NEW: Keep existing images
+          sku: v.sku ?? '',
+          attributes: 'attributes' in v ? (v as ProductVariantWithAttributes).attributes : undefined,
         })),
       });
       if (initialData.image) {
@@ -174,8 +179,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
       return submission;
     });
 
-    // Log for debugging
-    console.log('Submitting variants:', transformedVariants);
+    // Transform data for submission
 
     // Create properly typed data for the API with required variant fields
     const apiData: ProductInput = {
@@ -198,7 +202,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
               toast.success('Created product in new collection');
             }
           } else {
-            product = result as Product;
+            product = result;
           }
           
           reset();
@@ -218,7 +222,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         },
       });
     }
-  }, [mode, createProductMutation, updateProductMutation, initialData, reset, onSuccess, productCreationData]);
+  }, [mode, createProductMutation, updateProductMutation, initialData, reset, onSuccess, productCreationData, useVariantAttributes]);
   
   // Keyboard shortcuts
   useEffect(() => {

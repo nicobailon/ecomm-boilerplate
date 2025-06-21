@@ -27,6 +27,8 @@ describe('variant-transform', () => {
         label: 'Large',
         price: 110,
         inventory: 50,
+        reservedInventory: 0,
+        images: [],
         sku: 'SKU-L',
       });
     });
@@ -98,7 +100,7 @@ describe('variant-transform', () => {
       const formVariant: FormVariant = {
         label: 'No Inventory',
         priceAdjustment: 0,
-        inventory: undefined as any,
+        inventory: undefined as unknown as number,
       };
       const basePrice = 50;
 
@@ -121,6 +123,38 @@ describe('variant-transform', () => {
       expect(result.variantId).toMatch(/^[a-zA-Z0-9_-]{6}$/);
       expect(result.label).toBe('');
     });
+
+    it('should include reservedInventory and images in submission', () => {
+      const formVariant: FormVariant = {
+        label: 'Test Variant',
+        priceAdjustment: 10,
+        inventory: 20,
+        reservedInventory: 5,
+        images: ['image1.jpg', 'image2.jpg'],
+        sku: 'TEST-SKU',
+      };
+      const basePrice = 100;
+
+      const result = transformFormVariantToSubmission(formVariant, basePrice);
+
+      expect(result.reservedInventory).toBe(5);
+      expect(result.images).toEqual(['image1.jpg', 'image2.jpg']);
+    });
+
+    it('should default reservedInventory and images when not provided', () => {
+      const formVariant: FormVariant = {
+        label: 'Test Variant',
+        priceAdjustment: 10,
+        inventory: 20,
+        sku: 'TEST-SKU',
+      };
+      const basePrice = 100;
+
+      const result = transformFormVariantToSubmission(formVariant, basePrice);
+
+      expect(result.reservedInventory).toBe(0);
+      expect(result.images).toEqual([]);
+    });
   });
 
   describe('transformSubmissionToFormVariant', () => {
@@ -130,6 +164,8 @@ describe('variant-transform', () => {
         label: 'Extra Large',
         price: 120,
         inventory: 25,
+        reservedInventory: 0,
+        images: [],
         sku: 'SKU-XL',
       };
       const basePrice = 100;
@@ -141,6 +177,8 @@ describe('variant-transform', () => {
         label: 'Extra Large',
         priceAdjustment: 20,
         inventory: 25,
+        reservedInventory: 0,
+        images: [],
         sku: 'SKU-XL',
       });
     });
@@ -151,6 +189,8 @@ describe('variant-transform', () => {
         label: 'Clearance',
         price: 75,
         inventory: 5,
+        reservedInventory: 0,
+        images: [],
         sku: 'SKU-CLR',
       };
       const basePrice = 100;
@@ -166,6 +206,8 @@ describe('variant-transform', () => {
         label: 'Precise',
         price: 100.999,
         inventory: 10,
+        reservedInventory: 0,
+        images: [],
         sku: 'SKU-P',
       };
       const basePrice = 99.449;
@@ -298,7 +340,7 @@ describe('variant-transform', () => {
       ];
       
       const results = emptyLabelVariants.map(v => 
-        transformFormVariantToSubmission(v, 100)
+        transformFormVariantToSubmission(v, 100),
       );
       
       // All IDs should meet minimum length requirement

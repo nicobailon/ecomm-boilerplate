@@ -33,7 +33,7 @@ describe('VariantEditor', () => {
       render(
         <TestWrapper>
           <VariantEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText('Product Variants')).toBeInTheDocument();
@@ -57,7 +57,7 @@ describe('VariantEditor', () => {
       render(
         <TestWrapper defaultValues={defaultValues}>
           <VariantEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText('Label')).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe('VariantEditor', () => {
       render(
         <TestWrapper defaultValues={defaultValues}>
           <VariantEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Check that no color-related text is in the document
@@ -108,7 +108,7 @@ describe('VariantEditor', () => {
       render(
         <TestWrapper>
           <VariantEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await user.click(screen.getByRole('button', { name: /add variant/i }));
@@ -125,7 +125,7 @@ describe('VariantEditor', () => {
       render(
         <TestWrapper>
           <VariantEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await user.click(screen.getByRole('button', { name: /add variant/i }));
@@ -152,7 +152,7 @@ describe('VariantEditor', () => {
       render(
         <TestWrapper>
           <VariantEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Add first variant
@@ -182,7 +182,7 @@ describe('VariantEditor', () => {
       render(
         <TestWrapper defaultValues={defaultValues}>
           <VariantEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Check that the hidden input contains the existing variant ID
@@ -218,7 +218,7 @@ describe('VariantEditor', () => {
       render(
         <TestWrapper defaultValues={defaultValues}>
           <VariantEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const deleteButton = screen.getByRole('button', { name: /remove variant 1/i });
@@ -237,7 +237,7 @@ describe('VariantEditor', () => {
       render(
         <TestWrapper>
           <VariantEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Add two variants
@@ -261,7 +261,7 @@ describe('VariantEditor', () => {
       render(
         <TestWrapper>
           <VariantEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await user.click(screen.getByRole('button', { name: /add variant/i }));
@@ -284,7 +284,7 @@ describe('VariantEditor', () => {
       render(
         <TestWrapper>
           <VariantEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await user.click(screen.getByRole('button', { name: /add variant/i }));

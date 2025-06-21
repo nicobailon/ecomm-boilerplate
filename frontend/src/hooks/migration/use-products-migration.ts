@@ -125,8 +125,11 @@ export function useUpdateProduct() {
   
   const trpcMutation = trpc.product.update.useMutation({
     onSuccess: (_, variables) => {
+      // Invalidate all product-related queries
       void queryClient.invalidateQueries({ queryKey: ['products'] });
       void queryClient.invalidateQueries({ queryKey: ['product', variables.id] });
+      // Also invalidate featured products in case the update affected that
+      void queryClient.invalidateQueries({ queryKey: ['products', 'featured'] });
       toast.success('Product updated successfully');
     },
   });

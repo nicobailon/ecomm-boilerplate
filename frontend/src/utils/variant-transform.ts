@@ -4,26 +4,30 @@ import { roundToCents } from './price-utils';
 
 export function transformFormVariantToSubmission(
   variant: FormVariant & { variantId?: string },
-  basePrice: number
+  basePrice: number,
 ): VariantSubmission {
   return {
-    variantId: variant.variantId || generateVariantId(variant.label),
+    variantId: variant.variantId ?? generateVariantId(variant.label),
     label: variant.label,
     price: roundToCents(basePrice + (variant.priceAdjustment ?? 0)),
     inventory: variant.inventory ?? 0,
-    sku: variant.sku || '',
+    reservedInventory: variant.reservedInventory ?? 0,
+    images: variant.images ?? [],
+    sku: variant.sku ?? '',
   };
 }
 
 export function transformSubmissionToFormVariant(
   variant: VariantSubmission,
-  basePrice: number
+  basePrice: number,
 ): FormVariant & { variantId: string } {
   return {
     variantId: variant.variantId,
     label: variant.label,
     priceAdjustment: roundToCents(variant.price - basePrice),
     inventory: variant.inventory,
+    reservedInventory: variant.reservedInventory ?? 0,
+    images: variant.images ?? [],
     sku: variant.sku,
   };
 }
@@ -31,7 +35,7 @@ export function transformSubmissionToFormVariant(
 export function recalculatePriceAdjustments(
   variants: (FormVariant & { variantId?: string })[],
   oldBasePrice: number,
-  newBasePrice: number
+  newBasePrice: number,
 ): (FormVariant & { variantId?: string })[] {
   return variants.map(variant => {
     const absolutePrice = oldBasePrice + (variant.priceAdjustment ?? 0);

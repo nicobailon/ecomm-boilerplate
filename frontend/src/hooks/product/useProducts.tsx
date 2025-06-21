@@ -85,9 +85,13 @@ export const useUpdateProduct = () => {
       }
       toast.error('Update failed. Your changes have been rolled back.');
     },
-    onSettled: () => {
+    onSettled: (_data, _error, variables) => {
       // Always refetch after error or success
       void queryClient.invalidateQueries({ queryKey: ['products'] });
+      // Also invalidate the specific product cache
+      void queryClient.invalidateQueries({ queryKey: ['product', variables.id] });
+      // Also invalidate featured products in case the update affected that
+      void queryClient.invalidateQueries({ queryKey: ['products', 'featured'] });
     },
     // Remove the default onSuccess toast to avoid duplicates
   });
@@ -131,7 +135,7 @@ export const useToggleFeatured = () => {
           const updatedData = {
             ...data,
             data: data.data.map((product) =>
-              product._id === id ? { ...product, isFeatured: !product.isFeatured } : product
+              product._id === id ? { ...product, isFeatured: !product.isFeatured } : product,
             ),
           };
           queryClient.setQueryData(queryKey, updatedData);
@@ -152,12 +156,12 @@ export const useToggleFeatured = () => {
         if (isCurrentlyFeatured) {
           // Remove from featured
           queryClient.setQueryData(['products', 'featured'], 
-            featuredQuery.filter(p => p._id !== id)
+            featuredQuery.filter(p => p._id !== id),
           );
         } else {
           // Add to featured
           queryClient.setQueryData(['products', 'featured'], 
-            [...featuredQuery, { ...toggledProduct, isFeatured: true }]
+            [...featuredQuery, { ...toggledProduct, isFeatured: true }],
           );
         }
       }

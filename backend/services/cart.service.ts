@@ -9,6 +9,7 @@ interface CartItem {
   quantity: number;
   variantId?: string;
   variantDetails?: {
+    label?: string;
     size?: string;
     color?: string;
     price: number;
@@ -28,6 +29,7 @@ interface CartProductWithQuantity {
   quantity: number;
   variantId?: string;
   variantDetails?: {
+    label?: string;
     size?: string;
     color?: string;
     price: number;
@@ -101,13 +103,14 @@ export class CartService {
       
       // Get the base price, or use variant price if available
       let price = product.price;
-      let variantDetails = cartItem.variantDetails;
+      let variantDetails: CartItem['variantDetails'] = cartItem.variantDetails;
       
       // If variantId is specified but no cached details, fetch variant info
       if (cartItem.variantId && !variantDetails) {
         const variant = product.variants?.find(v => v.variantId === cartItem.variantId);
         if (variant) {
           variantDetails = {
+            label: variant.label,
             size: variant.size,
             color: variant.color,
             price: variant.price,
@@ -158,7 +161,7 @@ export class CartService {
     };
   }
 
-  async addToCart(user: IUserDocument, productId: string, variantId?: string): Promise<CartItem[]> {
+  async addToCart(user: IUserDocument, productId: string, variantId?: string, variantLabel?: string): Promise<CartItem[]> {
     const session = await mongoose.startSession();
     session.startTransaction();
     
@@ -179,6 +182,7 @@ export class CartService {
         }
         
         variantDetails = {
+          label: variantLabel ?? variant.label,
           size: variant.size,
           color: variant.color,
           price: variant.price,

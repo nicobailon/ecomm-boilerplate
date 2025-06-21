@@ -23,6 +23,8 @@ export interface Product {
     color?: string;
     price: number;
     inventory: number;
+    reservedInventory?: number;
+    images?: string[];
     sku?: string;
   }[];
   inventory?: number;
@@ -172,6 +174,8 @@ export interface FormVariant {
   label: string;
   priceAdjustment?: number; // Optional with default 0 in schema
   inventory: number;
+  reservedInventory?: number; // Optional with default 0
+  images?: string[]; // Optional with default empty array
   sku?: string;
 }
 
@@ -189,6 +193,8 @@ export interface VariantSubmission {
   color?: string; // Keep optional for backward compatibility
   price: number; // Absolute price, not adjustment
   inventory: number;
+  reservedInventory: number; // Required for backend
+  images: string[]; // Required for backend
   sku?: string;
 }
 

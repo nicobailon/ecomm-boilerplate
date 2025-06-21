@@ -3,12 +3,24 @@ import { ProductEditDrawer } from './ProductEditDrawer';
 import { vi } from 'vitest';
 import type { Product } from '@/types';
 
+// Mock the useProductById hook with a simple implementation
+vi.mock('@/hooks/migration/use-products-migration', () => ({
+  useProductById: vi.fn(() => ({
+    data: null,
+    isLoading: false,
+    error: null,
+    isError: false,
+    refetch: vi.fn(),
+  })),
+}));
+
 // Mock the ProductForm component
 vi.mock('@/components/forms/ProductForm', () => ({
-  ProductForm: ({ mode, initialData, onSuccess }: { mode: string; initialData?: { name: string }; onSuccess: () => void }) => (
+  ProductForm: ({ mode, initialData, onSuccess }: { mode: string; initialData?: { name: string; variants?: any[] }; onSuccess: () => void }) => (
     <div data-testid="product-form">
       <div>Mode: {mode}</div>
       <div>Product: {initialData?.name}</div>
+      <div>Variants: {initialData?.variants?.length ?? 0}</div>
       <button onClick={onSuccess}>Save Product</button>
     </div>
   ),
@@ -24,6 +36,11 @@ vi.mock('@/components/ui/Drawer', () => ({
         {children}
       </div>
     ) : null,
+}));
+
+// Mock the LoadingSpinner component
+vi.mock('@/components/ui/LoadingSpinner', () => ({
+  default: () => <div data-testid="loading-spinner">Loading...</div>,
 }));
 
 describe('ProductEditDrawer', () => {
@@ -44,12 +61,17 @@ describe('ProductEditDrawer', () => {
     onClose: vi.fn(),
   };
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders when open with product', () => {
     render(<ProductEditDrawer {...defaultProps} />);
     
     expect(screen.getByTestId('drawer')).toBeInTheDocument();
     expect(screen.getByText('Edit Product: Test Product')).toBeInTheDocument();
     expect(screen.getByText('Update product details and save changes')).toBeInTheDocument();
+    expect(screen.getByTestId('product-form')).toBeInTheDocument();
   });
 
   it('does not render when product is null', () => {

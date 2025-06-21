@@ -7,13 +7,11 @@ import { AppError } from '../utils/AppError.js';
 import { IUserDocument } from '../models/user.model.js';
 import { couponService } from './coupon.service.js';
 import { inventoryService } from './inventory.service.js';
-import { cartService } from './cart.service.js';
 
 interface ProductCheckout {
   _id: string;
   quantity: number;
   variantId?: string;
-  reservationId?: string;
 }
 
 interface CheckoutProduct {
@@ -28,15 +26,29 @@ interface CheckoutProduct {
   };
 }
 
+interface InventoryAdjustment {
+  productId: string;
+  productName: string;
+  variantDetails?: string;
+  requestedQuantity: number;
+  adjustedQuantity: number;
+  availableStock: number;
+}
+
+interface CheckoutSessionResult {
+  sessionId: string;
+  adjustments: InventoryAdjustment[];
+}
+
 export class PaymentService {
   async createCheckoutSession(
     user: IUserDocument,
     products: ProductCheckout[],
     couponCode?: string,
-  ): Promise<string> {
+  ): Promise<CheckoutSessionResult> {
     // Validate products exist and get server-side data
     const productIds = products.map(p => p._id);
-    const validProducts = await Product.find({ _id: { $in: productIds } }).lean();
+    const validProducts = await Product.find({ _id: { $in: productIds } });
     
     if (validProducts.length !== products.length) {
       throw new AppError('One or more products not found', 404);
@@ -46,9 +58,10 @@ export class PaymentService {
     let totalAmount = 0;
     const lineItems = [];
     const checkoutProducts: CheckoutProduct[] = [];
+    const adjustments: InventoryAdjustment[] = [];
 
     for (const requestedProduct of products) {
-      const serverProduct = validProducts.find(p => p._id.toString() === requestedProduct._id.toString());
+      const serverProduct = validProducts.find(p => String(p._id) === requestedProduct._id);
       if (!serverProduct) {
         throw new AppError(`Product ${requestedProduct._id} not found`, 404);
       }
@@ -64,33 +77,46 @@ export class PaymentService {
           throw new AppError(`Variant ${requestedProduct.variantId} not found for product ${serverProduct.name}`, 404);
         }
 
-        // Check inventory availability using inventory service
-        const isAvailable = await inventoryService.checkAvailability(
-          serverProduct._id.toString(),
+        // Check and adjust inventory availability using inventory service
+        const availableStock = await inventoryService.getAvailableInventory(
+          String(serverProduct._id),
           requestedProduct.variantId,
-          requestedProduct.quantity,
         );
         
-        if (!isAvailable) {
-          const availableStock = await inventoryService.getAvailableInventory(
-            serverProduct._id.toString(),
-            requestedProduct.variantId,
-          );
-          throw new AppError(
-            `Insufficient inventory for ${serverProduct.name} (${variant.label ?? ''}). Available: ${availableStock}`,
-            400,
-          );
+        // Determine actual quantity that can be fulfilled
+        let actualQuantity = requestedProduct.quantity;
+        const variantInfoStr = variant.label ? ` (${variant.label})` : '';
+        
+        if (availableStock === 0) {
+          // Skip this item entirely if out of stock
+          continue;
+        } else if (availableStock < requestedProduct.quantity) {
+          // Adjust quantity to available stock
+          actualQuantity = availableStock;
+          
+          // Track the adjustment
+          adjustments.push({
+            productId: String(serverProduct._id),
+            productName: serverProduct.name,
+            variantDetails: variantInfoStr,
+            requestedQuantity: requestedProduct.quantity,
+            adjustedQuantity: actualQuantity,
+            availableStock: availableStock,
+          });
         }
+        
+        // Update the requested quantity for processing
+        requestedProduct.quantity = actualQuantity;
 
         // Use variant price if available
         productPrice = variant.price;
         
         // Add variant details to product name
-        const variantInfo = [];
-        if (variant.size) variantInfo.push(`Size: ${variant.size}`);
-        if (variant.color) variantInfo.push(`Color: ${variant.color}`);
-        if (variantInfo.length > 0) {
-          productName += ` (${variantInfo.join(', ')})`;
+        const variantInfoArr = [];
+        if (variant.size) variantInfoArr.push(`Size: ${variant.size}`);
+        if (variant.color) variantInfoArr.push(`Color: ${variant.color}`);
+        if (variantInfoArr.length > 0) {
+          productName += ` (${variantInfoArr.join(', ')})`;
         }
 
         variantDetails = {
@@ -98,6 +124,35 @@ export class PaymentService {
           color: variant.color,
           sku: variant.sku,
         };
+      } else {
+        // Handle non-variant products
+        const availableStock = await inventoryService.getAvailableInventory(
+          String(serverProduct._id),
+        );
+        
+        // Determine actual quantity that can be fulfilled
+        let actualQuantity = requestedProduct.quantity;
+        
+        if (availableStock === 0) {
+          // Skip this item entirely if out of stock
+          continue;
+        } else if (availableStock < requestedProduct.quantity) {
+          // Adjust quantity to available stock
+          actualQuantity = availableStock;
+          
+          // Track the adjustment
+          adjustments.push({
+            productId: String(serverProduct._id),
+            productName: serverProduct.name,
+            variantDetails: undefined,
+            requestedQuantity: requestedProduct.quantity,
+            adjustedQuantity: actualQuantity,
+            availableStock: availableStock,
+          });
+        }
+        
+        // Update the requested quantity for processing
+        requestedProduct.quantity = actualQuantity;
       }
 
       const amount = Math.round(productPrice * 100);
@@ -126,6 +181,11 @@ export class PaymentService {
         variantId: requestedProduct.variantId,
         variantDetails,
       });
+    }
+
+    // Check if we have any items after adjustments
+    if (lineItems.length === 0) {
+      throw new AppError('All items in your cart are currently out of stock', 400);
     }
 
     // Handle coupon if provided
@@ -191,7 +251,10 @@ export class PaymentService {
       await this.createGiftCoupon(user._id.toString());
     }
     
-    return session.id;
+    return {
+      sessionId: session.id,
+      adjustments,
+    };
   }
 
   async processCheckoutSuccess(sessionId: string): Promise<{ orderId: mongoose.Types.ObjectId; totalAmount: number }> {
@@ -232,30 +295,25 @@ export class PaymentService {
         orderId = newOrder._id;
         totalAmount = newOrder.totalAmount;
 
-        // Convert reservations to permanent inventory decrements
+        // Decrement inventory for each product
+        for (const product of products) {
+          await inventoryService.updateInventory(
+            product.id,
+            product.variantId,
+            -product.quantity,
+            'sale',
+            session.metadata?.userId ?? 'system',
+            { orderId: String(orderId) },
+          );
+        }
+        
+        // Clear the user's cart after successful payment
         const userId = session.metadata?.userId;
         if (userId) {
-          // Get user to access cart items with reservation IDs
-          const User = mongoose.model('User');
+          const { User } = await import('../models/user.model.js');
           const user = await User.findById(userId).session(dbSession);
           
-          if (user?.cartItems) {
-            for (const cartItem of user.cartItems) {
-              const product = products.find(p => 
-                p.id === cartItem.product.toString() && 
-                p.variantId === cartItem.variantId,
-              );
-              
-              if (product && cartItem.reservationId) {
-                // Convert reservation to permanent decrement
-                await inventoryService.convertReservationToPermanent(
-                  cartItem.reservationId,
-                  orderId.toString(),
-                );
-              }
-            }
-            
-            // Clear the user's cart after successful payment
+          if (user) {
             user.cartItems = [];
             user.appliedCoupon = null;
             await user.save({ session: dbSession });
@@ -384,21 +442,6 @@ export class PaymentService {
     }
   }
 
-  async handlePaymentFailure(sessionId: string): Promise<void> {
-    // Get user ID from session metadata
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    const userId = session.metadata?.userId;
-    
-    if (userId) {
-      // Release all cart reservations for the user
-      const User = mongoose.model('User');
-      const user = await User.findById(userId);
-      
-      if (user?.cartItems) {
-        await cartService.clearCartReservations(user);
-      }
-    }
-  }
 }
 
 export const paymentService = new PaymentService();

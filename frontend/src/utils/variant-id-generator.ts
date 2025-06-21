@@ -35,7 +35,7 @@ export function generateVariantId(label: string): string {
  * Batch generates variant IDs for multiple variants
  * Ensures all IDs are unique within the batch
  */
-export function generateVariantIds(variants: Array<{ label: string }>): Map<number, string> {
+export function generateVariantIds(variants: { label: string }[]): Map<number, string> {
   const idMap = new Map<number, string>();
   const usedIds = new Set<string>();
   

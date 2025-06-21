@@ -68,7 +68,7 @@ export function getVariantKey(attributes: VariantAttribute): string {
     .map(([k, v]) => {
       // Escape delimiters to avoid collisions
       const escapedKey = k.replace(/[:|]/g, '_');
-      const escapedValue = (v || '').replace(/[:|]/g, '_');
+      const escapedValue = (v ?? '').replace(/[:|]/g, '_');
       return `${escapedKey}:${escapedValue}`;
     })
     .join('|');

@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ThemeProvider, useTheme } from '../theme-provider';
+import { ThemeProvider } from '../theme-provider';
+import { useTheme } from '@/hooks/useTheme';
 
 describe('ThemeProvider', () => {
   beforeEach(() => {

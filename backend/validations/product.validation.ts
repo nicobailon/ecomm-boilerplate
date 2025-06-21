@@ -41,6 +41,20 @@ export const productVariantSchema = z.object({
   sku: skuValidationSchema.optional(),
 });
 
+// Variant schema for updates - without defaults that might override existing values
+export const updateProductVariantSchema = z.object({
+  variantId: z.string().min(VARIANT_LIMITS.MIN_VARIANT_ID_LENGTH, 'Variant ID is required'),
+  label: z.string().min(1, 'Label is required').max(50, 'Label must be 50 characters or less'),
+  size: sizeValidation,
+  color: colorValidationSchema.optional(),
+  attributes: variantAttributesSchema,
+  price: z.number().min(PRODUCT_LIMITS.MIN_PRICE).max(PRODUCT_LIMITS.MAX_PRICE),
+  inventory: z.number().int().min(PRODUCT_LIMITS.MIN_INVENTORY).max(PRODUCT_LIMITS.MAX_INVENTORY), // No default
+  reservedInventory: z.number().int().min(0).optional(), // Optional to preserve existing value
+  images: z.array(z.string().url()).max(VARIANT_LIMITS.MAX_IMAGES_PER_VARIANT).optional(), // Optional, no default
+  sku: skuValidationSchema.optional(),
+});
+
 export const legacyProductVariantSchema = productVariantSchema.omit({ label: true });
 
 export const productSlugSchema = z
@@ -88,7 +102,10 @@ export const createProductSchema = baseProductSchema.refine((data) => {
   message: 'Variant attributes must match variantTypes',
 });
 
-export const updateProductSchema = baseProductSchema.partial().refine((data) => {
+// Update product schema with special handling for variants
+export const updateProductSchema = baseProductSchema.omit({ variants: true }).partial().extend({
+  variants: z.array(updateProductVariantSchema).max(PRODUCT_LIMITS.MAX_VARIANTS).optional(),
+}).refine((data) => {
   // Validate that variant attributes keys are subset of variantTypes
   // Skip validation if feature flag is off or if variantTypes is not provided
   if (!USE_VARIANT_ATTRIBUTES || !data.variantTypes || data.variantTypes.length === 0) {
@@ -173,7 +190,7 @@ export const productListQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
-export const validateUniqueVariants = (variants: z.infer<typeof productVariantSchema>[]): boolean => {
+export const validateUniqueVariants = (variants: (z.infer<typeof productVariantSchema> | z.infer<typeof updateProductVariantSchema>)[]): boolean => {
   const labels = new Set<string>();
   
   for (const variant of variants) {
@@ -191,8 +208,8 @@ export const validateUniqueVariants = (variants: z.infer<typeof productVariantSc
   return true;
 };
 
-export const validateVariantInventory = (variants: z.infer<typeof productVariantSchema>[]): boolean => {
-  const hasAnyInventory = variants.some((v: z.infer<typeof productVariantSchema>) => v.inventory > 0);
+export const validateVariantInventory = (variants: (z.infer<typeof productVariantSchema> | z.infer<typeof updateProductVariantSchema>)[]): boolean => {
+  const hasAnyInventory = variants.some(v => v.inventory > 0);
   
   if (variants.length > 0 && !hasAnyInventory) {
     console.warn('Product has variants but no inventory');

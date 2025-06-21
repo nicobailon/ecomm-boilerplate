@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useMemo } from 'react';
 import { getStockMessage } from '@/utils/inventory';
-import { getVariantDisplayText } from '@/components/forms/VariantEditor';
+import { getVariantDisplayText } from '@/utils/variant-helpers';
 
 // Helper to determine if a color is light (needs dark text)
 function isLightColor(color: string): boolean {
@@ -36,7 +36,6 @@ interface ProductVariantSelectorProps {
   onVariantSelect: (variant: IProductVariant) => void;
   basePrice: number;
 }
-
 
 export function ProductVariantSelector({
   variants,
@@ -144,8 +143,8 @@ export function ProductVariantSelector({
                     {hasColor && (
                       <span
                         className={cn(
-                          "w-3 h-3 rounded-full border flex-shrink-0",
-                          isLightColor(variant.color || '') ? "border-gray-400" : "border-border"
+                          'w-3 h-3 rounded-full border flex-shrink-0',
+                          isLightColor(variant.color ?? '') ? 'border-gray-400' : 'border-border',
                         )}
                         style={{ backgroundColor: variant.color }}
                         aria-hidden="true"
@@ -153,9 +152,9 @@ export function ProductVariantSelector({
                       />
                     )}
                     <span className={cn(
-                      "truncate text-xs sm:text-sm",
+                      'truncate text-xs sm:text-sm',
                       // If this is a color-only variant with light color and selected, ensure readable text
-                      isSelected && isColorOnly && isLightColor(variant.color || '') && "text-gray-900"
+                      isSelected && isColorOnly && isLightColor(variant.color ?? '') && 'text-gray-900',
                     )}>
                       {isColorOnly ? `Color: ${variant.color}` : displayText}
                     </span>

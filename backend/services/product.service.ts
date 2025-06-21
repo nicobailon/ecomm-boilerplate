@@ -178,9 +178,42 @@ class ProductService {
       );
     }
     
+    // Build update object only with defined fields to avoid overwriting with undefined
+    const updateFields: Partial<IProductWithVariants> = {};
+    if (name !== undefined) updateFields.name = name;
+    if (description !== undefined) updateFields.description = description;
+    if (price !== undefined) updateFields.price = price;
+    if (image !== undefined) updateFields.image = image;
+    if (collectionId !== undefined) updateFields.collectionId = collectionId;
+    if (relatedProducts !== undefined) updateFields.relatedProducts = relatedProducts;
+    if (slug !== undefined) updateFields.slug = slug;
+    
+    // Special handling for variants to ensure inventory is preserved
+    if (variants !== undefined) {
+      updateFields.variants = variants.map((v): IProductVariant => {
+        // Extract properties with proper type checking
+        const images = v && typeof v === 'object' && 'images' in v && Array.isArray(v.images)
+          ? v.images
+          : [];
+        
+        // Create a new object to avoid spread of potentially error-typed value
+        return {
+          variantId: v.variantId,
+          label: v.label,
+          size: v.size,
+          color: v.color,
+          attributes: v.attributes,
+          price: v.price,
+          inventory: v.inventory,
+          images,
+          sku: v.sku,
+        };
+      });
+    }
+    
     const product = await Product.findByIdAndUpdate(
       productId,
-      { name, description, price, image, collectionId, variants, relatedProducts, slug },
+      updateFields,
       { new: true, runValidators: true },
     );
 

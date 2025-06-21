@@ -172,11 +172,11 @@ export default function ProductDetailPage() {
               <ErrorBoundary>
                 {useVariantAttributes && 'variantTypes' in currentProduct && currentProduct.variantTypes && Array.isArray(currentProduct.variantTypes) ? (
                   <ProductVariantAttributeSelector
-                    variants={((currentProduct as ProductWithVariantTypes).variants || []).map(v => ({
+                    variants={((currentProduct as ProductWithVariantTypes).variants ?? []).map(v => ({
                       ...v,
-                      label: v.label || 'Default'
+                      label: v.label ?? 'Default',
                     }))}
-                    variantTypes={(currentProduct as ProductWithVariantTypes).variantTypes || []}
+                    variantTypes={(currentProduct as ProductWithVariantTypes).variantTypes ?? []}
                     selectedVariant={selectedVariant}
                     onVariantSelect={handleVariantSelect}
                     basePrice={currentProduct.price}

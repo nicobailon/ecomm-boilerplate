@@ -53,17 +53,6 @@ const variantSchema = new Schema<IProductVariantDocument>(
         message: 'Inventory must be a whole number',
       },
     },
-    reservedInventory: {
-      type: Number,
-      min: 0,
-      max: 999999,
-      required: true,
-      default: 0,
-      validate: {
-        validator: Number.isInteger,
-        message: 'Reserved inventory must be a whole number',
-      },
-    },
     images: {
       type: [String],
       default: [],

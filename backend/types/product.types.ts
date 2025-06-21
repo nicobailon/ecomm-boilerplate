@@ -11,7 +11,6 @@ export interface IProductVariant {
   attributes?: VariantAttributes;
   price: number;
   inventory: number;
-  reservedInventory: number;
   images: string[];
   sku?: string;
 }

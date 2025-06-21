@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useTheme } from '@/providers/theme-provider';
+import { useTheme } from '@/hooks/useTheme';
 
 export function ThemeAnnouncement() {
   const { resolvedTheme } = useTheme();

@@ -1,18 +1,17 @@
-import { lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import RootLayout from '@/components/layout/Layout';
 import { AuthGuard } from '@/components/auth/AuthGuard';
-
-// Lazy load pages for code splitting
-const HomePage = lazy(() => import('@/pages/HomePage'));
-const SignUpPage = lazy(() => import('@/pages/SignUpPage'));
-const LoginPage = lazy(() => import('@/pages/LoginPage'));
-const AdminPage = lazy(() => import('@/pages/AdminPage'));
-const CartPage = lazy(() => import('@/pages/CartPage'));
-const CollectionPage = lazy(() => import('@/pages/CollectionPage'));
-const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'));
-const PurchaseSuccessPage = lazy(() => import('@/pages/PurchaseSuccessPage'));
-const PurchaseCancelPage = lazy(() => import('@/pages/PurchaseCancelPage'));
+import {
+  HomePage,
+  SignUpPage,
+  LoginPage,
+  AdminPage,
+  CartPage,
+  CollectionPage,
+  ProductDetailPage,
+  PurchaseSuccessPage,
+  PurchaseCancelPage,
+} from '@/pages';
 
 export const router = createBrowserRouter([
   {

@@ -1,4 +1,5 @@
 import express from 'express';
+import { createServer } from 'http';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -10,6 +11,8 @@ import { securityMiddleware, authRateLimit, trpcRateLimit } from './middleware/s
 import { validateEnvVariables } from './utils/validateEnv.js';
 import { createContext } from './trpc/context.js';
 import { appRouter } from './trpc/routers/app.router.js';
+import { websocketService } from './lib/websocket.js';
+import { inventoryMonitor } from './services/inventory-monitor.service.js';
 import authRoutes from './routes/auth.route.js';
 import productRoutes from './routes/product.route.js';
 import cartRoutes from './routes/cart.route.js';
@@ -72,7 +75,19 @@ if (process.env.NODE_ENV === 'production') {
 
 app.use(errorHandler);
 
-app.listen(PORT, '0.0.0.0', () => {
+// Create HTTP server for WebSocket support
+const httpServer = createServer(app);
+
+// Initialize WebSocket service and inventory monitor
+httpServer.listen(PORT, '0.0.0.0', async () => {
   console.error('Server is running on http://localhost:' + PORT);
-  void connectDB();
+  
+  try {
+    await connectDB();
+    await websocketService.initialize(httpServer);
+    await inventoryMonitor.startMonitoring();
+    console.log('Real-time inventory monitoring started');
+  } catch (error) {
+    console.error('Failed to initialize services:', error);
+  }
 });

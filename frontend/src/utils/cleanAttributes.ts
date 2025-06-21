@@ -1,5 +1,5 @@
 export function cleanVariantAttributes(
-  attributes?: Record<string, string | undefined>
+  attributes?: Record<string, string | undefined>,
 ): Record<string, string> | undefined {
   if (!attributes) return undefined;
   

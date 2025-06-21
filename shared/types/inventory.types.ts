@@ -10,18 +10,6 @@ export interface IInventoryHistory {
   metadata?: Record<string, unknown>;
 }
 
-export interface IInventoryReservation {
-  _id?: string;
-  productId: string;
-  variantId?: string;
-  quantity: number;
-  sessionId: string;
-  userId?: string;
-  expiresAt: Date;
-  createdAt: Date;
-  type: 'cart' | 'checkout';
-}
-
 export enum StockStatus {
   IN_STOCK = 'in_stock',
   LOW_STOCK = 'low_stock',
@@ -37,7 +25,6 @@ export type InventoryUpdateReason =
   | 'damage'
   | 'theft'
   | 'transfer'
-  | 'reservation_expired'
   | 'manual_correction';
 
 export interface BulkInventoryUpdate {
@@ -53,7 +40,6 @@ export interface InventoryMetrics {
   totalValue: number;
   outOfStockCount: number;
   lowStockCount: number;
-  totalReserved: number;
   turnoverRate?: number;
   averageStockLevel?: number;
 }
@@ -62,7 +48,6 @@ export interface ProductInventoryInfo {
   productId: string;
   variantId?: string;
   currentStock: number;
-  reservedStock: number;
   availableStock: number;
   lowStockThreshold: number;
   allowBackorder: boolean;
@@ -76,13 +61,6 @@ export interface InventoryAdjustmentResult {
   newQuantity: number;
   availableStock: number;
   historyRecord: IInventoryHistory;
-}
-
-export interface ReservationResult {
-  success: boolean;
-  reservationId?: string;
-  availableStock: number;
-  message?: string;
 }
 
 export interface InventoryQueryParams {

@@ -5,18 +5,47 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProductForm } from './ProductForm';
 import { transformFormVariantToSubmission } from '@/utils/variant-transform';
 import type { Product } from '@/types';
+import type { ProductInput } from '@/lib/validations';
+
+// Define types for variant transform mocks
+interface FormVariant {
+  variantId?: string;
+  label: string;
+  priceAdjustment?: number;
+  inventory?: number;
+  sku?: string;
+}
+
+interface VariantSubmission {
+  variantId: string;
+  label: string;
+  price: number;
+  inventory: number;
+  sku: string;
+}
+
+// Type for the actual product submission data after variant transformation
+type ProductSubmissionData = Omit<ProductInput, 'variants'> & {
+  variants?: VariantSubmission[];
+};
+
+// Type for update product mutation
+interface UpdateProductArgs {
+  productId: string;
+  data: ProductSubmissionData;
+}
 
 // Mock dependencies
 vi.mock('@/utils/variant-transform', () => ({
-  transformFormVariantToSubmission: vi.fn((variant, basePrice) => ({
-    variantId: variant.variantId || `${variant.label.toLowerCase()}-123456`,
+  transformFormVariantToSubmission: vi.fn((variant: FormVariant, basePrice: number): VariantSubmission => ({
+    variantId: variant.variantId ?? `${variant.label.toLowerCase()}-123456`,
     label: variant.label,
     price: parseFloat((basePrice + (variant.priceAdjustment ?? 0)).toFixed(2)),
     inventory: variant.inventory ?? 0,
-    sku: variant.sku || '',
+    sku: variant.sku ?? '',
   })),
   transformSubmissionToFormVariant: vi.fn(),
-  recalculatePriceAdjustments: vi.fn((variants) => variants),
+  recalculatePriceAdjustments: vi.fn(<T extends readonly unknown[]>(variants: T): T => variants),
 }));
 vi.mock('@/hooks/product/useProductCreation', () => ({
   useProductCreation: () => ({
@@ -65,8 +94,12 @@ vi.mock('sonner', () => ({
 }));
 
 // Mock UploadButton component
+interface UploadButtonProps {
+  onClientUploadComplete: (files: { url: string }[]) => void;
+}
+
 vi.mock('@/lib/uploadthing', () => ({
-  UploadButton: ({ onClientUploadComplete }: any) => (
+  UploadButton: ({ onClientUploadComplete }: UploadButtonProps) => (
     <button
       type="button"
       onClick={() =>
@@ -80,9 +113,9 @@ vi.mock('@/lib/uploadthing', () => ({
 
 describe('ProductForm - Variant Submission', () => {
   let queryClient: QueryClient;
-  let mockCreateProduct: any;
-  let mockUpdateProduct: any;
-  let mockTransformVariant: any;
+  let mockCreateProduct: ReturnType<typeof vi.fn>;
+  let mockUpdateProduct: ReturnType<typeof vi.fn>;
+  let mockTransformVariant: ReturnType<typeof vi.fn>;
 
   const createWrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
@@ -100,15 +133,15 @@ describe('ProductForm - Variant Submission', () => {
     // Setup mocks
     mockCreateProduct = vi.fn();
     mockUpdateProduct = vi.fn();
-    mockTransformVariant = vi.fn((variant, basePrice) => ({
-      variantId: variant.variantId || `${variant.label.toLowerCase()}-123456`,
+    mockTransformVariant = vi.fn((variant: FormVariant, basePrice: number): VariantSubmission => ({
+      variantId: variant.variantId ?? `${variant.label.toLowerCase()}-123456`,
       label: variant.label,
       price: parseFloat((basePrice + (variant.priceAdjustment ?? 0)).toFixed(2)),
       inventory: variant.inventory ?? 0,
-      sku: variant.sku || '',
+      sku: variant.sku ?? '',
     }));
     
-    (transformFormVariantToSubmission as any).mockImplementation(mockTransformVariant);
+    vi.mocked(transformFormVariantToSubmission).mockImplementation(mockTransformVariant);
     
     // Clear and reassign mocks
     mockCreateProductMutate.mockClear();
@@ -140,7 +173,7 @@ describe('ProductForm - Variant Submission', () => {
 
       await waitFor(() => {
         expect(mockCreateProduct).toHaveBeenCalled();
-        const callArgs = mockCreateProduct.mock.calls[0][0];
+        const callArgs = mockCreateProduct.mock.calls[0]?.[0] as ProductSubmissionData | undefined;
         console.log('Create product called with:', callArgs);
         
         // Since VariantEditor is not part of this test and we're not adding variants
@@ -176,7 +209,7 @@ describe('ProductForm - Variant Submission', () => {
 
       const user = userEvent.setup();
       render(<ProductForm mode="edit" initialData={existingProduct} />, { 
-        wrapper: createWrapper 
+        wrapper: createWrapper,
       });
 
       // Change the product name to trigger a save
@@ -195,10 +228,10 @@ describe('ProductForm - Variant Submission', () => {
 
       await waitFor(() => {
         expect(mockUpdateProduct).toHaveBeenCalled();
-        const callArgs = mockUpdateProduct.mock.calls[0][0];
+        const callArgs = mockUpdateProduct.mock.calls[0]?.[0] as UpdateProductArgs | undefined;
         
         // Check that existing variant IDs are preserved
-        expect(callArgs.data.variants[0].variantId).toBe('existing-variant-id-1');
+        expect(callArgs?.data.variants?.[0]?.variantId).toBe('existing-variant-id-1');
         // Transform should be called but should preserve existing ID
         expect(mockTransformVariant).toHaveBeenCalled();
       });
@@ -257,11 +290,11 @@ describe('ProductForm - Variant Submission', () => {
 
       await waitFor(() => {
         expect(mockCreateProduct).toHaveBeenCalled();
-        const callArgs = mockCreateProduct.mock.calls[0][0];
+        const callArgs = mockCreateProduct.mock.calls[0]?.[0] as ProductSubmissionData | undefined;
         
         // If variants exist, check price calculation
-        if (callArgs.variants && callArgs.variants.length > 0) {
-          callArgs.variants.forEach((variant: any) => {
+        if (callArgs?.variants && callArgs.variants.length > 0) {
+          callArgs.variants.forEach((variant) => {
             expect(variant).toHaveProperty('price');
             expect(variant).not.toHaveProperty('priceAdjustment');
             expect(typeof variant.price).toBe('number');
@@ -318,7 +351,7 @@ describe('ProductForm - Variant Submission', () => {
 
       const user = userEvent.setup();
       render(<ProductForm mode="edit" initialData={productWithNegativeAdjustment} />, { 
-        wrapper: createWrapper 
+        wrapper: createWrapper,
       });
 
       // Submit without changes to test the transformation
@@ -327,23 +360,23 @@ describe('ProductForm - Variant Submission', () => {
 
       await waitFor(() => {
         expect(mockUpdateProduct).toHaveBeenCalled();
-        const callArgs = mockUpdateProduct.mock.calls[0][0];
+        const callArgs = mockUpdateProduct.mock.calls[0]?.[0] as UpdateProductArgs | undefined;
         
         // Check that price is absolute and positive
-        expect(callArgs.data.variants[0].price).toBe(80);
-        expect(callArgs.data.variants[0].price).toBeGreaterThanOrEqual(0);
+        expect(callArgs?.data.variants?.[0].price).toBe(80);
+        expect(callArgs?.data.variants?.[0].price).toBeGreaterThanOrEqual(0);
       });
     });
   });
 
   describe('Edge Cases', () => {
-    it('should handle empty variant label by generating ID', async () => {
-      mockTransformVariant.mockImplementation((variant: any, basePrice: any) => ({
+    it('should handle empty variant label by generating ID', () => {
+      mockTransformVariant.mockImplementation((variant: FormVariant, basePrice: number): VariantSubmission => ({
         variantId: variant.label ? `${variant.label.toLowerCase()}-123456` : 'default-123456',
-        label: variant.label || '',
+        label: variant.label ?? '',
         price: parseFloat((basePrice + (variant.priceAdjustment ?? 0)).toFixed(2)),
         inventory: variant.inventory ?? 0,
-        sku: variant.sku || '',
+        sku: variant.sku ?? '',
       }));
 
       // Test would verify that empty labels still get valid IDs
@@ -369,7 +402,7 @@ describe('ProductForm - Variant Submission', () => {
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith(
           'Submitting variants:',
-          expect.any(Array)
+          expect.any(Array),
         );
       });
 

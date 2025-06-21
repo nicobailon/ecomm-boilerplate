@@ -40,7 +40,7 @@ interface BackendCartResponse {
 
 // Helper function to transform backend cart response to frontend format
 const transformCartResponse = (data: BackendCartResponse): Cart => {
-  if (!data || !data.cartItems) {
+  if (!data?.cartItems) {
     return { cartItems: [], totalAmount: 0, subtotal: 0, appliedCoupon: null };
   }
 

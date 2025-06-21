@@ -3,12 +3,13 @@ import { generateVariantId } from './variant-id-generator';
 import { roundToCents } from './price-utils';
 
 export function transformFormVariantToSubmission(
-  variant: FormVariant & { variantId?: string },
+  variant: FormVariant & { variantId?: string; color?: string },
   basePrice: number,
 ): VariantSubmission {
   return {
     variantId: variant.variantId ?? generateVariantId(variant.label),
     label: variant.label,
+    color: variant.color, // Include color if present
     price: roundToCents(basePrice + (variant.priceAdjustment ?? 0)),
     inventory: variant.inventory ?? 0,
     reservedInventory: variant.reservedInventory ?? 0,

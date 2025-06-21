@@ -15,7 +15,6 @@ interface CartItem {
     price: number;
     sku?: string;
   };
-  reservationId?: string;
 }
 
 interface CartProductWithQuantity {
@@ -47,16 +46,17 @@ export interface CartResponse {
   } | null;
 }
 
+interface CartAdjustment {
+  productId: string;
+  productName: string;
+  variantDetails?: string;
+  requestedQuantity: number;
+  adjustedQuantity: number;
+  availableStock: number;
+  removed: boolean;
+}
+
 export class CartService {
-  async clearCartReservations(user: IUserDocument): Promise<void> {
-    const sessionId = user._id.toString();
-    await inventoryService.releaseSessionReservations(sessionId);
-    
-    // Also clear reservation IDs from cart items
-    for (const item of user.cartItems) {
-      item.reservationId = undefined;
-    }
-  }
   async getCartProducts(user: IUserDocument): Promise<CartProductWithQuantity[]> {
     // Group by unique products to minimize queries
     const productMap = new Map<string, { variantIds: Set<string>, cartItems: typeof user.cartItems[0][] }>();
@@ -92,14 +92,17 @@ export class CartService {
     
     // Process each cart item to ensure we handle all items including different variants
     for (const cartItem of user.cartItems) {
-      const product = products.find(p => p._id.toString() === cartItem.product.toString());
+      const product = products.find(p => {
+        // MongoDB ObjectId has toString() method
+        return (p._id as unknown as { toString(): string }).toString() === cartItem.product.toString();
+      });
       
       if (!product) {
         // Skip if product not found (might have been deleted)
         continue;
       }
       
-      const productIdStr = product._id.toString();
+      const productIdStr = (product._id as unknown as { toString(): string }).toString();
       
       // Get the base price, or use variant price if available
       let price = product.price;
@@ -190,9 +193,6 @@ export class CartService {
         };
       }
 
-      // Generate session ID for cart (use user ID for logged-in users)
-      const sessionId = user._id.toString();
-
       // Find existing item with same product and variant combination
       const existingItem = user.cartItems.find(
         (item) => item.product.toString() === productId && item.variantId === variantId,
@@ -200,65 +200,14 @@ export class CartService {
 
       if (existingItem) {
         // Update quantity for existing item
-        const newQuantity = existingItem.quantity + 1;
-        
-        // Check availability using inventory service
-        const isAvailable = await inventoryService.checkAvailability(
-          productId,
-          variantId,
-          newQuantity,
-        );
-        
-        if (!isAvailable) {
-          const availableStock = await inventoryService.getAvailableInventory(
-            productId,
-            variantId,
-          );
-          throw new AppError(`Cannot add more items. Only ${availableStock} available in stock`, 400);
-        }
-        
-        // Update or create reservation
-        if (existingItem.reservationId) {
-          // Release old reservation and create new one with updated quantity
-          await inventoryService.releaseReservation(existingItem.reservationId);
-        }
-        
-        const reservationResult = await inventoryService.reserveInventory(
-          productId,
-          variantId,
-          newQuantity,
-          sessionId,
-          30 * 60 * 1000, // 30 minutes
-          user._id.toString(),
-        );
-        
-        if (!reservationResult.success) {
-          throw new AppError(reservationResult.message ?? 'Failed to reserve inventory', 400);
-        }
-        
-        existingItem.quantity = newQuantity;
-        existingItem.reservationId = reservationResult.reservationId;
+        existingItem.quantity = existingItem.quantity + 1;
       } else {
-        // For new items, create reservation
-        const reservationResult = await inventoryService.reserveInventory(
-          productId,
-          variantId,
-          1,
-          sessionId,
-          30 * 60 * 1000, // 30 minutes
-          user._id.toString(),
-        );
-        
-        if (!reservationResult.success) {
-          throw new AppError(reservationResult.message ?? 'Product out of stock', 400);
-        }
-        
+        // Add new item to cart
         user.cartItems.push({ 
           product: new mongoose.Types.ObjectId(productId), 
           quantity: 1,
           variantId,
           variantDetails,
-          reservationId: reservationResult.reservationId,
         });
       }
 
@@ -280,33 +229,9 @@ export class CartService {
     
     try {
       if (!productId) {
-        // Clear entire cart and release all reservations
-        for (const item of user.cartItems) {
-          if (item.reservationId) {
-            await inventoryService.releaseReservation(item.reservationId);
-          }
-        }
+        // Clear entire cart
         user.cartItems = [];
       } else {
-        // Find items to remove and release their reservations
-        const itemsToRemove = user.cartItems.filter((item) => {
-          const matchesProduct = item.product.toString() === productId;
-          // If variantId is specified, match both product and variant
-          // If no variantId, only remove items without variantId (backward compatibility)
-          if (variantId !== undefined) {
-            return matchesProduct && item.variantId === variantId;
-          } else {
-            return matchesProduct && !item.variantId;
-          }
-        });
-        
-        // Release reservations for items being removed
-        for (const item of itemsToRemove) {
-          if (item.reservationId) {
-            await inventoryService.releaseReservation(item.reservationId);
-          }
-        }
-        
         // Remove items from cart
         user.cartItems = user.cartItems.filter((item) => {
           const matchesProduct = item.product.toString() === productId;
@@ -343,14 +268,7 @@ export class CartService {
         throw new AppError('Product not found in cart', 404);
       }
 
-      const sessionId = user._id.toString();
-
       if (quantity === 0) {
-        // Release reservation and remove item
-        if (existingItem.reservationId) {
-          await inventoryService.releaseReservation(existingItem.reservationId);
-        }
-        
         // Remove item if quantity is 0
         user.cartItems = user.cartItems.filter((item) => {
           const matchesProduct = item.product.toString() === productId;
@@ -361,48 +279,165 @@ export class CartService {
           }
         });
       } else {
-        // Check availability for new quantity
-        const isAvailable = await inventoryService.checkAvailability(
-          productId,
-          variantId,
-          quantity,
-        );
-        
-        if (!isAvailable) {
-          const availableStock = await inventoryService.getAvailableInventory(
-            productId,
-            variantId,
-          );
-          throw new AppError(`Cannot update quantity. Only ${availableStock} available in stock`, 400);
-        }
-        
-        // Release old reservation if exists
-        if (existingItem.reservationId) {
-          await inventoryService.releaseReservation(existingItem.reservationId);
-        }
-        
-        // Create new reservation with updated quantity
-        const reservationResult = await inventoryService.reserveInventory(
-          productId,
-          variantId,
-          quantity,
-          sessionId,
-          30 * 60 * 1000, // 30 minutes
-          user._id.toString(),
-        );
-        
-        if (!reservationResult.success) {
-          throw new AppError(reservationResult.message ?? 'Failed to reserve inventory', 400);
-        }
-        
+        // Update quantity
         existingItem.quantity = quantity;
-        existingItem.reservationId = reservationResult.reservationId;
       }
 
       await user.save({ session });
       await session.commitTransaction();
       
       return user.cartItems;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  async validateCartInventory(user: IUserDocument): Promise<CartAdjustment[]> {
+    const adjustments: CartAdjustment[] = [];
+    
+    // Get product details for all cart items
+    const productIds = user.cartItems.map(item => item.product);
+    const products = await Product.find({ _id: { $in: productIds } });
+    
+    // Create a map for quick product lookup
+    const productMap = new Map(products.map(p => [(p._id as unknown as { toString(): string }).toString(), p]));
+    
+    for (const cartItem of user.cartItems) {
+      const product = productMap.get(cartItem.product.toString());
+      if (!product) {
+        // Product no longer exists
+        adjustments.push({
+          productId: cartItem.product.toString(),
+          productName: 'Product not found',
+          variantDetails: undefined,
+          requestedQuantity: cartItem.quantity,
+          adjustedQuantity: 0,
+          availableStock: 0,
+          removed: true,
+        });
+        continue;
+      }
+      
+      // Get available inventory
+      const availableStock = await inventoryService.getAvailableInventory(
+        (product._id as unknown as { toString(): string }).toString(),
+        cartItem.variantId,
+      );
+      
+      // Build variant details string for display
+      let variantDetails: string | undefined;
+      if (cartItem.variantId && cartItem.variantDetails) {
+        const details = [];
+        if (cartItem.variantDetails.size) details.push(`Size: ${cartItem.variantDetails.size}`);
+        if (cartItem.variantDetails.color) details.push(`Color: ${cartItem.variantDetails.color}`);
+        variantDetails = details.length > 0 ? details.join(', ') : cartItem.variantDetails.label;
+      }
+      
+      if (availableStock === 0) {
+        adjustments.push({
+          productId: (product._id as unknown as { toString(): string }).toString(),
+          productName: product.name,
+          variantDetails,
+          requestedQuantity: cartItem.quantity,
+          adjustedQuantity: 0,
+          availableStock: 0,
+          removed: true,
+        });
+      } else if (availableStock < cartItem.quantity) {
+        adjustments.push({
+          productId: (product._id as unknown as { toString(): string }).toString(),
+          productName: product.name,
+          variantDetails,
+          requestedQuantity: cartItem.quantity,
+          adjustedQuantity: availableStock,
+          availableStock,
+          removed: false,
+        });
+      }
+    }
+    
+    return adjustments;
+  }
+
+  async adjustCartToAvailableInventory(user: IUserDocument): Promise<CartAdjustment[]> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      const adjustments: CartAdjustment[] = [];
+      
+      // Get product details for all cart items
+      const productIds = user.cartItems.map(item => item.product);
+      const products = await Product.find({ _id: { $in: productIds } }).session(session);
+      
+      // Create a map for quick product lookup
+      const productMap = new Map(products.map(p => [(p._id as unknown as { toString(): string }).toString(), p]));
+      
+      // Track items to keep after adjustment
+      const itemsToKeep: typeof user.cartItems = [];
+      
+      for (const cartItem of user.cartItems) {
+        const product = productMap.get(cartItem.product.toString());
+        if (!product) {
+          // Product no longer exists, skip it
+          continue;
+        }
+        
+        // Get available inventory
+        const availableStock = await inventoryService.getAvailableInventory(
+          (product._id as unknown as { toString(): string }).toString(),
+          cartItem.variantId,
+        );
+        
+        // Build variant details string for display
+        let variantDetails: string | undefined;
+        if (cartItem.variantId && cartItem.variantDetails) {
+          const details = [];
+          if (cartItem.variantDetails.size) details.push(`Size: ${cartItem.variantDetails.size}`);
+          if (cartItem.variantDetails.color) details.push(`Color: ${cartItem.variantDetails.color}`);
+          variantDetails = details.length > 0 ? details.join(', ') : cartItem.variantDetails.label;
+        }
+        
+        if (availableStock === 0) {
+          // Remove item completely
+          adjustments.push({
+            productId: (product._id as unknown as { toString(): string }).toString(),
+            productName: product.name,
+            variantDetails,
+            requestedQuantity: cartItem.quantity,
+            adjustedQuantity: 0,
+            availableStock: 0,
+            removed: true,
+          });
+        } else if (availableStock < cartItem.quantity) {
+          // Adjust quantity down
+          adjustments.push({
+            productId: (product._id as unknown as { toString(): string }).toString(),
+            productName: product.name,
+            variantDetails,
+            requestedQuantity: cartItem.quantity,
+            adjustedQuantity: availableStock,
+            availableStock,
+            removed: false,
+          });
+          
+          cartItem.quantity = availableStock;
+          itemsToKeep.push(cartItem);
+        } else {
+          // Quantity is fine, keep as is
+          itemsToKeep.push(cartItem);
+        }
+      }
+      
+      // Update user's cart with adjusted items
+      user.cartItems = itemsToKeep;
+      await user.save({ session });
+      await session.commitTransaction();
+      
+      return adjustments;
     } catch (error) {
       await session.abortTransaction();
       throw error;

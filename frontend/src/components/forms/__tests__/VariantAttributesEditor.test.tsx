@@ -34,7 +34,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText('Variant Types')).toBeInTheDocument();
@@ -47,7 +47,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText('No variants created yet')).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const typeNameInput = screen.getByPlaceholderText('Type name (e.g., Size)');
@@ -85,7 +85,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const addButton = screen.getByRole('button', { name: /add type/i });
@@ -98,7 +98,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const typeNameInput = screen.getByPlaceholderText('Type name (e.g., Size)');
@@ -123,7 +123,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       const typeNameInput = screen.getByPlaceholderText('Type name (e.g., Size)');
@@ -145,7 +145,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Add Size type
@@ -193,7 +193,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper defaultValues={defaultValues}>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Check table headers - use getAllByText for duplicate texts
@@ -230,7 +230,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper defaultValues={defaultValues}>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Check auto-generated label
@@ -270,7 +270,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper defaultValues={defaultValues}>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Should show duplicate badge
@@ -283,7 +283,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByRole('button', { name: /add variant manually/i })).toBeInTheDocument();
@@ -295,7 +295,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await user.type(screen.getByPlaceholderText('Type name (e.g., Size)'), 'Size');
@@ -313,7 +313,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper>
           <VariantAttributesEditor isLoading />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       // Check for skeleton elements by their class
@@ -339,7 +339,7 @@ describe('VariantAttributesEditor', () => {
       render(
         <TestWrapper defaultValues={defaultValues}>
           <VariantAttributesEditor />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText('Tips:')).toBeInTheDocument();

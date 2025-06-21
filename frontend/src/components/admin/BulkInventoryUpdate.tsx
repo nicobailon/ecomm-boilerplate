@@ -304,7 +304,7 @@ Winter-Jacket,10,`}
                           <td className="p-3 text-sm font-mono">{item.sku}</td>
                           <td className="p-3 text-sm">{item.productName}</td>
                           <td className="p-3 text-sm text-muted-foreground">
-                            {item.variantLabel || 'Default'}
+                            {item.variantLabel ?? 'Default'}
                           </td>
                           <td className="p-3 text-sm text-center">{item.currentInventory}</td>
                           <td className="p-3 text-sm text-center font-medium">{item.newInventory}</td>

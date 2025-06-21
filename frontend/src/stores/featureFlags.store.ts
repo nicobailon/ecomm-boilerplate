@@ -10,7 +10,7 @@ interface FeatureFlagsState {
   setFlags: (flags: Partial<FeatureFlagsState['flags']>) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
-  fetchFeatureFlags: () => Promise<void>;
+  fetchFeatureFlags: () => void;
 }
 
 export const useFeatureFlagsStore = create<FeatureFlagsState>()(
@@ -27,7 +27,7 @@ export const useFeatureFlagsStore = create<FeatureFlagsState>()(
         })),
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
-      fetchFeatureFlags: async () => {
+      fetchFeatureFlags: () => {
         set({ isLoading: true, error: null });
         // Note: This is called from the store, not a React component
         // We'll need to use the tRPC client directly or move this to a hook
@@ -39,6 +39,6 @@ export const useFeatureFlagsStore = create<FeatureFlagsState>()(
     }),
     {
       name: 'feature-flags-store',
-    }
-  )
+    },
+  ),
 );

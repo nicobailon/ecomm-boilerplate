@@ -5,33 +5,47 @@ import { toast } from 'sonner';
 import { useProductCreation } from './useProductCreation';
 import { useCreateProduct } from './useProducts';
 import type { ProductInput } from '@/lib/validations';
+import type { Product } from '@/types';
+import type { UseMutationResult } from '@tanstack/react-query';
 import React from 'react';
 
 // Mock dependencies
-vi.mock('./queries/useProducts');
+vi.mock('./useProducts');
 vi.mock('sonner');
-const mockEmit = vi.fn();
-const mockOn = vi.fn();
-const mockOff = vi.fn();
 
-vi.mock('@/lib/events', () => ({
-  productEvents: {
-    emit: mockEmit,
-    on: mockOn,
-    off: mockOff,
-  },
-}));
+vi.mock('@/lib/events', () => {
+  const mockEmit = vi.fn();
+  const mockOn = vi.fn();
+  const mockOff = vi.fn();
+  
+  return {
+    productEvents: {
+      emit: mockEmit,
+      on: mockOn,
+      off: mockOff,
+    },
+  };
+});
+
+// Get mocked functions from the module
+const { productEvents } = await import('@/lib/events');
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const mockEmit = vi.mocked(productEvents.emit);
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const mockOn = vi.mocked(productEvents.on);
 
 // Mock useLocalStorage
+type SetValue<T> = React.Dispatch<React.SetStateAction<T>>;
+
 vi.mock('@/hooks/utils/useLocalStorage', () => ({
-  useLocalStorage: vi.fn((key: string, initialValue: any) => {
-    const [value, setValue] = React.useState(() => {
+  useLocalStorage: vi.fn(<T,>(key: string, initialValue: T): [T, SetValue<T>] => {
+    const [value, setValue] = React.useState<T>(() => {
       const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : initialValue;
+      return stored ? JSON.parse(stored) as T : initialValue;
     });
     
-    const setStoredValue = (newValue: any) => {
-      const valueToStore = typeof newValue === 'function' ? newValue(value) : newValue;
+    const setStoredValue: SetValue<T> = (newValue) => {
+      const valueToStore = typeof newValue === 'function' ? (newValue as (prev: T) => T)(value) : newValue;
       localStorage.setItem(key, JSON.stringify(valueToStore));
       setValue(valueToStore);
     };
@@ -51,9 +65,22 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 });
 
+// Type for mock mutation  
+type CreateProductMutationResult = UseMutationResult<Product, Error, ProductInput, unknown>;
+
+interface MutateOptions {
+  onSuccess?: (data: Product) => void;
+  onError?: (error: Error) => void;
+}
+
+interface MockMutation {
+  mutate: ReturnType<typeof vi.fn<(data: ProductInput, options?: MutateOptions) => void>>;
+  isPending: boolean;
+}
+
 describe('useProductCreation', () => {
   let queryClient: QueryClient;
-  let mockCreateProduct: any;
+  let mockCreateProduct: MockMutation;
 
   const createWrapper = () => {
     queryClient = new QueryClient({
@@ -81,7 +108,23 @@ describe('useProductCreation', () => {
       mutate: vi.fn(),
       isPending: false,
     };
-    (useCreateProduct as any).mockReturnValue(mockCreateProduct);
+    vi.mocked(useCreateProduct).mockReturnValue({
+      ...mockCreateProduct,
+      mutateAsync: vi.fn(),
+      data: undefined,
+      error: null,
+      isError: false,
+      isSuccess: false,
+      isIdle: true,
+      variables: undefined,
+      status: 'idle',
+      reset: vi.fn(),
+      context: undefined,
+      failureCount: 0,
+      failureReason: null,
+      isPaused: false,
+      submittedAt: 0,
+    } as CreateProductMutationResult);
   });
 
   describe('Initial State', () => {
@@ -105,7 +148,7 @@ describe('useProductCreation', () => {
         description: 'Test Description',
         price: 99.99,
       };
-      localStorageMock.getItem.mockImplementation((key) => {
+      localStorageMock.getItem.mockImplementation((key: string) => {
         if (key === 'product-creation-draft') return JSON.stringify(mockDraft);
         return null;
       });
@@ -118,7 +161,7 @@ describe('useProductCreation', () => {
     });
 
     it('should load bulk mode preference from localStorage', () => {
-      localStorageMock.getItem.mockImplementation((key) => {
+      localStorageMock.getItem.mockImplementation((key: string) => {
         if (key === 'product-bulk-mode') return JSON.stringify(true);
         return null;
       });
@@ -139,18 +182,21 @@ describe('useProductCreation', () => {
       image: 'https://example.com/image.jpg',
     };
 
-    const mockProductResponse = {
+    const mockProductResponse: Product = {
       _id: 'product-123',
-      ...mockProductInput,
+      name: mockProductInput.name,
+      description: mockProductInput.description,
+      price: mockProductInput.price,
+      image: mockProductInput.image,
       isFeatured: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     it('should create product successfully', async () => {
-      mockCreateProduct.mutate.mockImplementation((_data: any, options: any) => {
+      mockCreateProduct.mutate.mockImplementation((_data: ProductInput, options?: MutateOptions) => {
         // Simulate async success
-        setTimeout(() => options.onSuccess(mockProductResponse), 0);
+        setTimeout(() => options?.onSuccess?.(mockProductResponse), 0);
       });
 
       const { result } = renderHook(() => useProductCreation(), {
@@ -173,8 +219,8 @@ describe('useProductCreation', () => {
 
     it('should handle product creation error', async () => {
       const mockError = new Error('Creation failed');
-      mockCreateProduct.mutate.mockImplementation((_data: any, options: any) => {
-        options.onError(mockError);
+      mockCreateProduct.mutate.mockImplementation((_data: ProductInput, options?: MutateOptions) => {
+        options?.onError?.(mockError);
       });
 
       const { result } = renderHook(() => useProductCreation(), {
@@ -192,8 +238,8 @@ describe('useProductCreation', () => {
 
     it('should navigate to products tab after creation when bulk mode is off', async () => {
       const onNavigate = vi.fn();
-      mockCreateProduct.mutate.mockImplementation((_data: any, options: any) => {
-        options.onSuccess(mockProductResponse);
+      mockCreateProduct.mutate.mockImplementation((_data: ProductInput, options?: MutateOptions) => {
+        options?.onSuccess?.(mockProductResponse);
       });
 
       const { result } = renderHook(
@@ -209,7 +255,7 @@ describe('useProductCreation', () => {
       expect(result.current.newProductId).toBe('product-123');
       expect(mockEmit).toHaveBeenCalledWith('product:created', {
         productId: 'product-123',
-        timestamp: expect.any(Number) as number,
+        timestamp: expect.any(Number) as unknown,
       });
 
       // Wait for navigation delay
@@ -224,13 +270,13 @@ describe('useProductCreation', () => {
 
     it('should stay on form when bulk mode is enabled', async () => {
       const onNavigate = vi.fn();
-      localStorageMock.getItem.mockImplementation((key) => {
+      localStorageMock.getItem.mockImplementation((key: string) => {
         if (key === 'product-bulk-mode') return JSON.stringify(true);
         return null;
       });
 
-      mockCreateProduct.mutate.mockImplementation((_data: any, options: any) => {
-        options.onSuccess(mockProductResponse);
+      mockCreateProduct.mutate.mockImplementation((_data: ProductInput, options?: MutateOptions) => {
+        options?.onSuccess?.(mockProductResponse);
       });
 
       const { result } = renderHook(
@@ -273,7 +319,7 @@ describe('useProductCreation', () => {
     });
 
     it('should load draft from localStorage', () => {
-      localStorageMock.getItem.mockImplementation((key) => {
+      localStorageMock.getItem.mockImplementation((key: string) => {
         if (key === 'product-creation-draft') return JSON.stringify(mockDraft);
         return null;
       });
@@ -291,7 +337,7 @@ describe('useProductCreation', () => {
     });
 
     it('should clear draft from localStorage', () => {
-      localStorageMock.getItem.mockImplementation((key) => {
+      localStorageMock.getItem.mockImplementation((key: string) => {
         if (key === 'product-creation-draft') return JSON.stringify(mockDraft);
         return null;
       });
@@ -373,8 +419,18 @@ describe('useProductCreation', () => {
 
   describe('State Management', () => {
     it('should clear highlight', async () => {
-      mockCreateProduct.mutate.mockImplementation((_data: any, options: any) => {
-        options.onSuccess({ _id: 'product-123' });
+      mockCreateProduct.mutate.mockImplementation((_data: ProductInput, options?: MutateOptions) => {
+        const fullProduct: Product = {
+          _id: 'product-123',
+          name: 'Test Product',
+          description: 'Test Description',
+          price: 99.99,
+          image: 'https://example.com/image.jpg',
+          isFeatured: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        options?.onSuccess?.(fullProduct);
       });
 
       const { result } = renderHook(() => useProductCreation(), {
@@ -428,8 +484,18 @@ describe('useProductCreation', () => {
     });
 
     it('should provide shouldHighlight property', async () => {
-      mockCreateProduct.mutate.mockImplementation((_data: any, options: any) => {
-        options.onSuccess({ _id: 'product-123' });
+      mockCreateProduct.mutate.mockImplementation((_data: ProductInput, options?: MutateOptions) => {
+        const fullProduct: Product = {
+          _id: 'product-123',
+          name: 'Test Product',
+          description: 'Test Description',
+          price: 99.99,
+          image: 'https://example.com/image.jpg',
+          isFeatured: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        options?.onSuccess?.(fullProduct);
       });
 
       const { result } = renderHook(() => useProductCreation(), {

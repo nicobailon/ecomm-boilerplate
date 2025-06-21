@@ -1,4 +1,4 @@
-import { useTheme } from '@/providers/theme-provider';
+import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/Button';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { useEffect } from 'react';

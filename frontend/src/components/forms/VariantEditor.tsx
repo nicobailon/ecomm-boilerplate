@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import type { ProductFormInput } from '@/lib/validations';
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { getVariantKey } from '@/types/variant';
 import { generateVariantId } from '@/utils/variant-id-generator';
 import { findDuplicateLabels, validateUniqueLabel } from '@/utils/variant-validation';
 import { roundToCents } from '@/utils/price-utils';
@@ -24,8 +23,9 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
     name: 'variants',
   });
 
-  const variants = watch('variants') || [];
-  const basePrice = watch('price') || 0;
+  const watchedVariants = watch('variants');
+  const variants = useMemo(() => watchedVariants ?? [], [watchedVariants]);
+  const basePrice = watch('price') ?? 0;
   
   // Debounced validation state
   const [debouncedVariants, setDebouncedVariants] = useState(variants);
@@ -62,7 +62,6 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
   const validateUniqueLabels = useCallback((index: number, value: string) => {
     return validateUniqueLabel(debouncedVariants, index, value);
   }, [debouncedVariants]);
-
 
   // Duplicate check using debounced variants
   const { duplicateLabels, hasDuplicates } = useMemo(() => {
@@ -114,7 +113,7 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
       ) : fields.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border-dashed border-2">
           <p>No variants created yet</p>
-          <p className="text-sm mt-1">Click "Add Variant" to create your first variant</p>
+          <p className="text-sm mt-1">Click &quot;Add Variant&quot; to create your first variant</p>
         </div>
       ) : (
         <div className="border rounded-lg overflow-hidden">
@@ -153,10 +152,6 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
                         if (label && !currentVariantId) {
                           const newId = generateVariantId(label);
                           setValue(`variants.${index}.variantId`, newId);
-                          // Development feedback - remove or replace with toast in production
-                          if (process.env.NODE_ENV === 'development') {
-                            console.log(`Generated variant ID: ${newId} for label: "${label}"`);
-                          }
                         }
                       }}
                     />
@@ -176,7 +171,7 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
                   <td className="p-3">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">
-                        ${roundToCents(basePrice + (variants[index]?.priceAdjustment || 0))}
+                        ${roundToCents(basePrice + (variants[index]?.priceAdjustment ?? 0))}
                       </span>
                       {variants[index]?.priceAdjustment !== 0 && (
                         <span className="text-xs text-muted-foreground">
@@ -254,61 +249,4 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
       )}
     </div>
   );
-}
-
-export function getVariantDisplayText(variant: { label?: string; color?: string; size?: string }) {
-  if (variant.label) {
-    return variant.label;
-  }
-  
-  return [variant.size, variant.color].filter(Boolean).join(' - ') || 'Default';
-}
-
-export function validateVariants(variants: Array<{ label?: string; inventory?: number; attributes?: Record<string, string | undefined> }>) {
-  const errors: string[] = [];
-  
-  // Check for required labels
-  const missingLabels = variants.filter((variant) => 
-    !variant.label || variant.label.trim() === ''
-  );
-  if (missingLabels.length > 0) {
-    errors.push('All variants must have a label');
-  }
-  
-  // Check for duplicate labels
-  const { hasDuplicates, duplicateLabels } = findDuplicateLabels(variants);
-  if (hasDuplicates) {
-    errors.push(`Duplicate labels found: ${duplicateLabels.map(label => `"${label}"`).join(', ')}`);
-  }
-  
-  // Check for duplicate attribute combinations (if using variant attributes)
-  const attributeCombinations = new Map<string, number>();
-  const hasAttributes = variants.some(v => v.attributes && Object.keys(v.attributes).length > 0);
-  
-  if (hasAttributes) {
-    variants.forEach(variant => {
-      if (variant.attributes && Object.keys(variant.attributes).length > 0) {
-        const key = getVariantKey(variant.attributes);
-        attributeCombinations.set(key, (attributeCombinations.get(key) || 0) + 1);
-      }
-    });
-    
-    const duplicateAttrs = Array.from(attributeCombinations.entries()).filter(([, count]) => count > 1);
-    if (duplicateAttrs.length > 0) {
-      errors.push('Duplicate attribute combinations found. Each variant must have a unique combination of attributes.');
-    }
-  }
-  
-  // Check for negative inventory
-  const negativeInventory = variants.filter(variant => 
-    variant.inventory !== undefined && variant.inventory < 0
-  );
-  if (negativeInventory.length > 0) {
-    errors.push('Inventory cannot be negative');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
 }

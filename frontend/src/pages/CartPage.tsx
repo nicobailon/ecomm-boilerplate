@@ -37,7 +37,7 @@ const CartPage = () => {
 						) : (
 							<div className='space-y-6'>
 								{cartItems.map((item) => (
-									<CartItem key={`${item.product._id}-${item.variantId || 'default'}`} item={item} />
+									<CartItem key={`${item.product._id}-${item.variantId ?? 'default'}`} item={item} />
 								))}
 							</div>
 						)}

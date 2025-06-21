@@ -27,7 +27,7 @@ export function useFeatureFlags() {
   }, [isLoading, setLoading]);
 
   useEffect(() => {
-    const errorMessage = error?.message || null;
+    const errorMessage = error?.message ?? null;
     setError(errorMessage);
     
     // Show non-blocking toast in dev mode when feature flag fetch fails
@@ -49,7 +49,7 @@ export function useFeatureFlags() {
   return {
     flags: mergedFlags,
     isLoading,
-    error: error?.message || null,
+    error: error?.message ?? null,
     refetch,
   };
 }

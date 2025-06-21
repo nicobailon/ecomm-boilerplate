@@ -18,7 +18,6 @@ export interface IUserDocument extends Document {
       price: number;
       sku?: string;
     };
-    reservationId?: string;
   }[];
   appliedCoupon: {
     code: string;
@@ -82,10 +81,6 @@ const userSchema = new Schema<IUserDocument>(
               required: false,
             },
           },
-          required: false,
-        },
-        reservationId: {
-          type: String,
           required: false,
         },
       },

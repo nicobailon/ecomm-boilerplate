@@ -16,12 +16,24 @@ interface DailySalesData {
   revenue: number;
 }
 
+interface SalesAggregateResult {
+  _id: null;
+  totalSales: number;
+  totalRevenue: number;
+}
+
+interface DailySalesAggregateResult {
+  _id: string;
+  sales: number;
+  revenue: number;
+}
+
 export class AnalyticsService {
   async getAnalyticsData(): Promise<AnalyticsData> {
     const totalUsers = await User.countDocuments();
     const totalProducts = await Product.countDocuments();
 
-    const salesData = await Order.aggregate([
+    const salesData = await Order.aggregate<SalesAggregateResult>([
       {
         $group: {
           _id: null,
@@ -36,8 +48,8 @@ export class AnalyticsService {
     return {
       users: totalUsers,
       products: totalProducts,
-      totalSales: totalSales as number,
-      totalRevenue: totalRevenue as number,
+      totalSales,
+      totalRevenue,
     };
   }
 
@@ -57,7 +69,7 @@ export class AnalyticsService {
       throw new AppError('Start date must be before end date', 400);
     }
 
-    const dailySalesData = await Order.aggregate([
+    const dailySalesData = await Order.aggregate<DailySalesAggregateResult>([
       {
         $match: {
           createdAt: {
@@ -79,7 +91,7 @@ export class AnalyticsService {
     const dateArray = this.getDatesInRange(start, end);
 
     return dateArray.map((date) => {
-      const foundData = dailySalesData.find((item: { _id: string; sales: number; revenue: number }) => item._id === date);
+      const foundData = dailySalesData.find((item) => item._id === date);
 
       return {
         date,

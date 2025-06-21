@@ -1,4 +1,4 @@
-import { router, publicProcedure, adminProcedure, protectedProcedure } from '../index.js';
+import { router, publicProcedure, adminProcedure } from '../index.js';
 import { z } from 'zod';
 import { inventoryService } from '../../services/inventory.service.js';
 import { createRateLimiter } from '../middleware/rateLimiter.js';
@@ -196,70 +196,6 @@ export const inventoryRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to calculate inventory turnover',
-        });
-      }
-    }),
-
-  reserveInventory: protectedProcedure
-    .input(
-      z.object({
-        productId: z.string().min(1),
-        variantId: z.string().optional(),
-        variantLabel: z.string().optional(),
-        quantity: z.number().int().positive(),
-        sessionId: z.string().min(1),
-        duration: z.number().int().positive().optional(),
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      try {
-        return await inventoryService.reserveInventory(
-          input.productId,
-          input.variantId,
-          input.quantity,
-          input.sessionId,
-          input.duration,
-          ctx.user?._id.toString(),
-          input.variantLabel,
-        );
-      } catch (error) {
-        if (isAppError(error)) {
-          throw new TRPCError({
-            code: error.statusCode === 404 ? 'NOT_FOUND' : 'BAD_REQUEST',
-            message: error.message,
-          });
-        }
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to reserve inventory',
-        });
-      }
-    }),
-
-  releaseReservation: protectedProcedure
-    .input(z.object({ reservationId: z.string().min(1) }))
-    .mutation(async ({ input }) => {
-      try {
-        await inventoryService.releaseReservation(input.reservationId);
-        return { success: true };
-      } catch {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to release reservation',
-        });
-      }
-    }),
-
-  releaseSessionReservations: protectedProcedure
-    .input(z.object({ sessionId: z.string().min(1) }))
-    .mutation(async ({ input }) => {
-      try {
-        await inventoryService.releaseSessionReservations(input.sessionId);
-        return { success: true };
-      } catch {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to release session reservations',
         });
       }
     }),

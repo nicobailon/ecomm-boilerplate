@@ -26,9 +26,12 @@ export function VariantAttributesEditor({ className, isLoading = false }: Varian
     name: 'variantTypes',
   });
 
-  const variants = watch('variants') || [];
-  const variantTypes = watch('variantTypes') || [];
-  const basePrice = watch('price') || 0;
+  const watchedVariants = watch('variants');
+  const watchedVariantTypes = watch('variantTypes');
+  
+  const variants = useMemo(() => watchedVariants ?? [], [watchedVariants]);
+  const variantTypes = useMemo(() => watchedVariantTypes ?? [], [watchedVariantTypes]);
+  const basePrice = watch('price') ?? 0;
   
   const [newTypeName, setNewTypeName] = useState('');
   const [newTypeValues, setNewTypeValues] = useState('');
@@ -37,7 +40,7 @@ export function VariantAttributesEditor({ className, isLoading = false }: Varian
   const generateVariantCombinations = useCallback(() => {
     if (variantTypes.length === 0) return [];
     
-    const combinations: Array<Record<string, string>> = [];
+    const combinations: Record<string, string>[] = [];
     
     const generateCombos = (index: number, current: Record<string, string>) => {
       if (index === variantTypes.length) {
@@ -132,8 +135,10 @@ export function VariantAttributesEditor({ className, isLoading = false }: Varian
         if (seen.has(key)) {
           duplicates.add(index);
           // Also mark the first occurrence as duplicate
-          const firstIndex = seen.get(key)!;
-          duplicates.add(firstIndex);
+          const firstIndex = seen.get(key);
+          if (firstIndex !== undefined) {
+            duplicates.add(firstIndex);
+          }
         } else {
           seen.set(key, index);
         }
@@ -268,7 +273,7 @@ export function VariantAttributesEditor({ className, isLoading = false }: Varian
                   const isDuplicate = duplicateCheck.has(index);
                   
                   return (
-                    <tr key={field.id} className={cn("border-t", isDuplicate && "bg-red-50 dark:bg-red-900/10")}>
+                    <tr key={field.id} className={cn('border-t', isDuplicate && 'bg-red-50 dark:bg-red-900/10')}>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <Input
@@ -315,7 +320,7 @@ export function VariantAttributesEditor({ className, isLoading = false }: Varian
                       
                       <td className="p-3">
                         <span className="text-sm font-medium">
-                          ${(basePrice + (variant?.priceAdjustment || 0)).toFixed(2)}
+                          ${(basePrice + (variant?.priceAdjustment ?? 0)).toFixed(2)}
                         </span>
                       </td>
                       
@@ -393,7 +398,7 @@ export function VariantAttributesEditor({ className, isLoading = false }: Varian
           <p className="font-medium mb-1">Tips:</p>
           <ul className="list-disc list-inside space-y-1 text-xs">
             <li>Define variant types (Size, Color, etc.) and their possible values</li>
-            <li>Click "Generate Variants" to create all combinations automatically</li>
+            <li>Click &quot;Generate Variants&quot; to create all combinations automatically</li>
             <li>Variant labels are auto-generated from attribute values</li>
             <li>Each variant must have a unique combination of attributes</li>
             <li>Set inventory to 0 for out-of-stock variants</li>

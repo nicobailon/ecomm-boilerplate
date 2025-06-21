@@ -37,7 +37,6 @@ export interface BulkUpdateResponse {
   updatedCount: number;
 }
 
-
 // Type guards
 export function isInventoryData(data: unknown): data is InventoryData {
   return (

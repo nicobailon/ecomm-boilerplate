@@ -66,7 +66,7 @@ describe('generateVariantIds', () => {
     const variants = [
       { label: 'Small' },
       { label: 'Medium' },
-      { label: 'Large' }
+      { label: 'Large' },
     ];
     
     const idMap = generateVariantIds(variants);
@@ -82,7 +82,7 @@ describe('generateVariantIds', () => {
       { label: 'Same' },
       { label: 'Same' },
       { label: 'Different' },
-      { label: 'Same' }
+      { label: 'Same' },
     ];
     
     const idMap = generateVariantIds(variants);
@@ -110,7 +110,7 @@ describe('generateVariantIds', () => {
     const variants = [
       { label: '' },
       { label: 'Valid' },
-      { label: '' }
+      { label: '' },
     ];
     
     const idMap = generateVariantIds(variants);
@@ -139,7 +139,7 @@ describe('variant ID format and length', () => {
       'Label with ñ unicode',
       'Label/with\\slashes',
       'Label+with+plus',
-      'Label&with&ampersand'
+      'Label&with&ampersand',
     ];
     
     labels.forEach(label => {

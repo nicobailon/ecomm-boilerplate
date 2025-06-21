@@ -1,4 +1,4 @@
-import { useTheme } from '@/providers/theme-provider';
+import { useTheme } from '@/hooks/useTheme';
 
 export function useIsDarkMode() {
   const { resolvedTheme } = useTheme();

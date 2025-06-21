@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Minus, Plus, Bell } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { ShoppingCart, Minus, Plus, Bell, AlertCircle, Clock } from 'lucide-react';
 import { useUnifiedAddToCart } from '@/hooks/cart/useUnifiedCart';
 import { StockBadge } from '@/components/ui/StockBadge';
 import { getMaxQuantity } from '@/utils/inventory';
 import type { Product } from '@/types';
 import { cleanVariantAttributes } from '@/utils/cleanAttributes';
 import { useProductInventory } from '@/hooks/queries/useInventory';
+import { useProductInventorySubscription } from '@/hooks/useRealtimeInventory';
+import { cn } from '@/lib/utils';
 
 interface IProductVariant {
   variantId: string;
@@ -25,68 +27,77 @@ interface ProductInfoProps {
   onAddToCartSuccess?: () => void;
 }
 
-export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: ProductInfoProps) {
+export function ProductInfoRealtime({ product, selectedVariant, onAddToCartSuccess }: ProductInfoProps) {
   const [quantity, setQuantity] = useState(1);
   const [showNotifyButton, setShowNotifyButton] = useState(false);
   const [inventoryUpdateAnimation, setInventoryUpdateAnimation] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const addToCart = useUnifiedAddToCart({ showToast: false });
+
+  // Subscribe to real-time inventory updates
+  useProductInventorySubscription(product._id);
 
   const displayPrice = selectedVariant?.price ?? product.price;
   const hasVariants = 'variants' in product && Array.isArray(product.variants) && product.variants.length > 0;
   const needsVariantSelection = hasVariants && selectedVariant === null;
   
-  // Fetch real inventory data from backend
+  // Fetch real inventory data from backend with real-time updates
   const { data: inventoryData, isLoading: inventoryLoading } = useProductInventory(
     product._id,
     selectedVariant?.variantId,
     selectedVariant?.label,
   );
   
-  // Use real inventory data from backend with proper edge case handling
-  const displayInventory = React.useMemo(() => {
-    if (!inventoryData) return 0;
-    
-    const available = inventoryData.availableStock;
-    const current = inventoryData.currentStock;
-    
-    // If current stock exists but available is 0, show at least 1
-    // This handles the edge case where items are reserved but not yet purchased
-    if (current > 0 && available === 0) {
-      return 1; // Show "Only 1 left" to create urgency
-    }
-    
-    return available;
-  }, [inventoryData]);
-    
+  // Use real inventory data from backend
+  const displayInventory = inventoryData?.availableStock ?? 0;
   const isOutOfStock = displayInventory === 0;
+  const isLowStock = displayInventory > 0 && displayInventory <= 5;
   const maxQuantity = getMaxQuantity(displayInventory);
   
-  // Mock estimated restock date (would come from API)
-  const estimatedRestockDate = isOutOfStock ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString() : null;
+  // Estimated restock date from inventory data
+  const estimatedRestockDate = inventoryData?.restockDate 
+    ? new Date(inventoryData.restockDate).toLocaleDateString()
+    : isOutOfStock 
+    ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()
+    : null;
 
-  const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity >= 1 && newQuantity <= maxQuantity) {
-      setQuantity(newQuantity);
+  // Adjust quantity if it exceeds available stock
+  useEffect(() => {
+    if (quantity > maxQuantity && maxQuantity > 0) {
+      setQuantity(maxQuantity);
     }
-  };
+  }, [quantity, maxQuantity]);
 
   // Trigger animation when inventory updates
   useEffect(() => {
-    if (selectedVariant) {
+    if (inventoryData) {
       setInventoryUpdateAnimation(true);
+      setLastUpdate(new Date());
       const timer = setTimeout(() => setInventoryUpdateAnimation(false), 500);
       return () => clearTimeout(timer);
     }
-  }, [selectedVariant]);
+  }, [inventoryData?.availableStock]);
+
+  const handleQuantityChange = useCallback((newQuantity: number) => {
+    if (newQuantity >= 1 && newQuantity <= maxQuantity) {
+      setQuantity(newQuantity);
+    }
+  }, [maxQuantity]);
 
   const handleNotifyMe = () => {
-    // Mock implementation - would call API
-    alert(`We'll notify you at ${product.name} when it's back in stock!`);
+    // This would call an API to register for notifications
+    alert(`We'll notify you when ${product.name} is back in stock!`);
     setShowNotifyButton(false);
   };
 
   const handleAddToCart = async () => {
     if (needsVariantSelection || isOutOfStock) return;
+    
+    // Validate against latest inventory before adding
+    if (quantity > displayInventory) {
+      setQuantity(displayInventory);
+      return;
+    }
     
     try {
       for (let i = 0; i < quantity; i++) {
@@ -99,8 +110,12 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
       }
       onAddToCartSuccess?.();
       setQuantity(1);
-    } catch {
-      // Error is already handled by mutation hook
+    } catch (error: any) {
+      // Check if error is due to inventory
+      if (error.message?.includes('available')) {
+        // Inventory has changed, update will come through WebSocket
+        console.log('Inventory changed during add to cart');
+      }
     }
   };
 
@@ -114,8 +129,21 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
             ${displayPrice.toFixed(2)}
           </p>
           {(selectedVariant ?? !hasVariants) && !inventoryLoading && (
-            <div className={inventoryUpdateAnimation ? 'animate-pulse' : ''}>
-              <StockBadge inventory={displayInventory} showCount size="sm" />
+            <div className={cn(
+              'flex items-center gap-2',
+              inventoryUpdateAnimation && 'animate-pulse'
+            )}>
+              <StockBadge 
+                inventory={displayInventory} 
+                showCount 
+                size="sm" 
+              />
+              {lastUpdate && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  <span>Updated {lastUpdate.toLocaleTimeString()}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -124,6 +152,16 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
       <div className="prose prose-sm text-muted-foreground">
         <p>{product.description}</p>
       </div>
+
+      {/* Low stock warning */}
+      {isLowStock && !isOutOfStock && (
+        <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-amber-600" />
+          <p className="text-sm text-amber-800 font-medium">
+            Only {displayInventory} left in stock - order soon!
+          </p>
+        </div>
+      )}
 
       <div className="pt-4 space-y-4">
         {!isOutOfStock && !needsVariantSelection && (
@@ -162,7 +200,7 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
               </button>
             </div>
             {displayInventory < 10 && displayInventory > 0 && (
-              <span className="text-sm text-orange-600 font-medium">
+              <span className="text-sm text-orange-600 font-medium animate-pulse">
                 Max: {maxQuantity}
               </span>
             )}
@@ -208,7 +246,7 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
           </p>
         )}
 
-        {isOutOfStock && !needsVariantSelection && hasVariants && (
+        {isOutOfStock && !needsVariantSelection && (
           <div className="space-y-3">
             {!showNotifyButton ? (
               <button

@@ -58,7 +58,7 @@ const ProductsList = ({ highlightProductId, onHighlightComplete, onEditProduct }
 
 	if (isLoading) return <LoadingSpinner />;
 
-	const products = data?.data ?? [];
+	const products: Product[] = data?.data ?? [];
 
 	return (
 		<>
@@ -147,11 +147,11 @@ function ProductRow({ product, highlightProductId, onEditProduct, onDelete, onTo
 	const isLowStock = inventory > 0 && inventory <= (inventoryData?.lowStockThreshold ?? 10);
 	const hasVariants = product.variants && product.variants.length > 0;
 	
-	const handleToggleFeatured = async (e: React.MouseEvent) => {
+	const handleToggleFeatured = (e: React.MouseEvent) => {
 		e.stopPropagation();
 		setIsToggling(true);
 		try {
-			await onToggleFeatured();
+			onToggleFeatured();
 		} finally {
 			setIsToggling(false);
 		}
@@ -222,7 +222,7 @@ function ProductRow({ product, highlightProductId, onEditProduct, onDelete, onTo
 			</td>
 			<td className='px-6 py-4 whitespace-nowrap'>
 				<button
-					onClick={handleToggleFeatured}
+					onClick={(e) => void handleToggleFeatured(e)}
 					disabled={isToggling}
 					data-testid="toggle-feature"
 					className={cn(
@@ -230,7 +230,7 @@ function ProductRow({ product, highlightProductId, onEditProduct, onDelete, onTo
 						product.isFeatured
 							? 'bg-warning text-warning-foreground hover:bg-warning/80 ring-2 ring-warning/40'
 							: 'bg-muted text-muted-foreground hover:bg-warning/80',
-						isToggling && 'opacity-50 cursor-not-allowed animate-pulse'
+						isToggling && 'opacity-50 cursor-not-allowed animate-pulse',
 					)}
 					title={product.isFeatured ? 'Remove from homepage carousel' : 'Add to homepage carousel'}
 				>
@@ -238,7 +238,7 @@ function ProductRow({ product, highlightProductId, onEditProduct, onDelete, onTo
 						className={cn(
 							'h-5 w-5 transition-transform',
 							isToggling && 'animate-spin',
-							product.isFeatured && 'fill-current'
+							product.isFeatured && 'fill-current',
 						)} 
 					/>
 				</button>

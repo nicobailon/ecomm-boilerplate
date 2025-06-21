@@ -8,7 +8,6 @@ export const inventoryUpdateReasonSchema = z.enum([
   'damage',
   'theft',
   'transfer',
-  'reservation_expired',
   'manual_correction',
 ]);
 
@@ -68,14 +67,6 @@ export const inventoryQuerySchema = z.object({
   search: z.string().optional(),
 });
 
-export const inventoryReservationSchema = z.object({
-  productId: z.string().min(1, 'Product ID is required'),
-  variantId: z.string().optional(),
-  variantLabel: z.string().optional(),
-  quantity: z.number().int().positive('Quantity must be positive'),
-  sessionId: z.string().min(1, 'Session ID is required'),
-  duration: z.number().int().positive().optional(),
-});
 
 export const inventoryCheckSchema = z.object({
   productId: z.string().min(1, 'Product ID is required'),
@@ -92,6 +83,5 @@ export const inventoryTurnoverQuerySchema = z.object({
 export type InventoryUpdateInput = z.infer<typeof inventoryUpdateSchema>;
 export type BulkInventoryUpdateInput = z.infer<typeof bulkInventoryUpdateSchema>;
 export type InventoryQueryInput = z.infer<typeof inventoryQuerySchema>;
-export type InventoryReservationInput = z.infer<typeof inventoryReservationSchema>;
 export type InventoryCheckInput = z.infer<typeof inventoryCheckSchema>;
 export type InventoryTurnoverQueryInput = z.infer<typeof inventoryTurnoverQuerySchema>;

@@ -55,6 +55,7 @@ export const createProduct = asyncHandler(async (req: AuthRequest, res: Response
 });
 
 export const updateProduct = asyncHandler(async (req: Request, res: Response) => {
+  console.log('[DEBUG] updateProduct controller - req.body:', JSON.stringify(req.body, null, 2));
   const { name, description, price, image, collectionId, isFeatured, variants, relatedProducts } = req.body as {
     name?: string;
     description?: string;

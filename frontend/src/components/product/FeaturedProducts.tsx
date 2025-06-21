@@ -63,7 +63,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ featuredProducts })
 							{featuredProducts?.map((product) => (
 								<div key={product._id} className='w-full sm:w-1/2 lg:w-1/3 xl:w-1/4 flex-shrink-0 px-2'>
 									<Link 
-										to={`/products/${product.slug || product._id}`}
+										to={`/products/${product.slug ?? product._id}`}
 										className='block bg-white bg-opacity-10 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden h-full transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border border-primary/30 cursor-pointer'
 									>
 										<div className='overflow-hidden relative'>

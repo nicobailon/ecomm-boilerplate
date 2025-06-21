@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import { Product } from '../models/product.model.js';
-import { InventoryReservation } from '../models/inventory-reservation.model.js';
 import { InventoryHistory } from '../models/inventory-history.model.js';
 import { AppError } from '../utils/AppError.js';
 import { CacheService } from './cache.service.js';
@@ -8,9 +7,9 @@ import { createLogger, generateCorrelationId } from '../utils/logger.js';
 import { getVariantOrDefault } from './helpers/variant.helper.js';
 import { USE_VARIANT_LABEL } from '../utils/featureFlags.js';
 import { buildSafeCacheKey } from '../utils/cache-key-encoder.js';
+import { websocketService } from '../lib/websocket.js';
 import {
   StockStatus,
-  ReservationResult,
   InventoryAdjustmentResult,
   ProductInventoryInfo,
   BulkInventoryUpdate,
@@ -36,6 +35,26 @@ const CACHE_TTL = {
   PRODUCT_INVENTORY: 30, // 30 seconds
 };
 
+// Type definitions for aggregation results
+interface InventoryMetricsResult {
+  totalProducts: number;
+  totalValue: number;
+  outOfStockCount: number;
+  lowStockCount: number;
+}
+
+interface StockValueResult {
+  totalValue: number;
+}
+
+interface OutOfStockProductResult {
+  productId: string;
+  productName: string;
+  variantId: string;
+  variantDetails: string;
+  lastInStock?: Date;
+}
+
 export class InventoryService {
   private cacheService: CacheService;
   private logger = createLogger({ service: 'InventoryService' });
@@ -49,202 +68,32 @@ export class InventoryService {
     quantity = 1,
     variantLabel?: string,
   ): Promise<boolean> {
-    // Build aggregation pipeline for atomic availability check
-    const basePipeline: mongoose.PipelineStage[] = [
-      { $match: { _id: new mongoose.Types.ObjectId(productId) } },
-      { $unwind: '$variants' },
-    ];
-    
-    // Add variant filter if specified
+    const product = await Product.findById(productId);
+    if (!product) {
+      return false;
+    }
+
+    let totalInventory = 0;
+
     if (USE_VARIANT_LABEL && variantLabel) {
-      basePipeline.push({ $match: { 'variants.label': variantLabel } });
+      const { variant } = getVariantOrDefault(product.variants, variantLabel);
+      if (!variant) {
+        return false;
+      }
+      totalInventory = variant.inventory;
     } else if (variantId) {
-      basePipeline.push({ $match: { 'variants.variantId': variantId } });
+      const variant = product.variants.find(v => v.variantId === variantId);
+      if (!variant) {
+        return false;
+      }
+      totalInventory = variant.inventory;
+    } else {
+      totalInventory = product.variants.reduce((sum, v) => sum + v.inventory, 0);
     }
-    
-    // Build lookup conditions
-    const lookupConditions = variantId
-      ? [
-          { $eq: ['$productId', '$$productId'] },
-          { $eq: ['$variantId', '$$variantId'] },
-          { $gt: ['$expiresAt', new Date()] },
-        ]
-      : [
-          { $eq: ['$productId', '$$productId'] },
-          { $gt: ['$expiresAt', new Date()] },
-        ];
-    
-    // Add lookup and aggregation stages
-    const fullPipeline: mongoose.PipelineStage[] = [
-      ...basePipeline,
-      {
-        $lookup: {
-          from: 'inventoryreservations',
-          let: {
-            productId: { $toString: '$_id' },
-            variantId: '$variants.variantId',
-          },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: lookupConditions,
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                totalReserved: { $sum: '$quantity' },
-              },
-            },
-          ],
-          as: 'reservations',
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalInventory: { $sum: '$variants.inventory' },
-          totalReserved: { $sum: { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] } },
-        },
-      },
-      {
-        $project: {
-          availableStock: {
-            $subtract: ['$totalInventory', '$totalReserved'],
-          },
-        },
-      },
-    ];
 
-    const result = await Product.aggregate(fullPipeline);
-    const availableStock = result[0]?.availableStock ?? 0;
-    return availableStock >= quantity;
+    return totalInventory >= quantity;
   }
 
-  async reserveInventory(
-    productId: string,
-    variantId: string | undefined,
-    quantity: number,
-    sessionId: string,
-    duration: number = 30 * 60 * 1000,
-    userId?: string,
-    variantLabel?: string,
-  ): Promise<ReservationResult> {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      // Lock the product document for reading to prevent concurrent modifications
-      const product = await Product.findById(productId).session(session);
-      if (!product) {
-        throw new AppError('Product not found', 404);
-      }
-
-      // Calculate current inventory using helper
-      let currentInventory = 0;
-      if (USE_VARIANT_LABEL && variantLabel) {
-        const { variant } = getVariantOrDefault(product.variants, variantLabel);
-        if (!variant) {
-          throw new AppError('Variant not found', 404);
-        }
-        currentInventory = variant.inventory;
-      } else if (variantId) {
-        const variant = product.variants.find(v => v.variantId === variantId);
-        if (!variant) {
-          throw new AppError('Variant not found', 404);
-        }
-        currentInventory = variant.inventory;
-      } else {
-        currentInventory = product.variants.reduce((sum, v) => sum + v.inventory, 0);
-      }
-
-      // Get existing reservations atomically within the same transaction
-      const existingReservations = await InventoryReservation.aggregate([
-        {
-          $match: {
-            productId,
-            ...(variantId && { variantId }),
-            expiresAt: { $gt: new Date() },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            totalReserved: { $sum: '$quantity' },
-          },
-        },
-      ]).session(session);
-
-      const totalReserved = existingReservations[0]?.totalReserved ?? 0;
-      const availableStock = Math.max(0, currentInventory - totalReserved);
-
-      // Check if requested quantity is available
-      if (availableStock < quantity) {
-        await session.abortTransaction();
-        return {
-          success: false,
-          availableStock,
-          message: `Only ${availableStock} items available`,
-        };
-      }
-
-      // Check for existing reservation for this session
-      const existingReservation = await InventoryReservation.findOne({
-        productId,
-        variantId,
-        sessionId,
-      }).session(session);
-
-      if (existingReservation) {
-        // Update existing reservation
-        existingReservation.quantity = quantity;
-        existingReservation.expiresAt = new Date(Date.now() + duration);
-        await existingReservation.save({ session });
-
-        await session.commitTransaction();
-        return {
-          success: true,
-          reservationId: (existingReservation._id as mongoose.Types.ObjectId).toString(),
-          availableStock: availableStock - quantity,
-        };
-      }
-
-      // Create new reservation
-      const reservation = new InventoryReservation({
-        productId,
-        variantId,
-        quantity,
-        sessionId,
-        userId,
-        expiresAt: new Date(Date.now() + duration),
-        type: 'cart',
-      });
-
-      await reservation.save({ session });
-
-      await session.commitTransaction();
-      return {
-        success: true,
-        reservationId: (reservation._id as mongoose.Types.ObjectId).toString(),
-        availableStock: availableStock - quantity,
-      };
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      await session.endSession();
-    }
-  }
-
-  async releaseReservation(reservationId: string): Promise<void> {
-    await InventoryReservation.findByIdAndDelete(reservationId);
-  }
-
-  async releaseSessionReservations(sessionId: string): Promise<void> {
-    await InventoryReservation.deleteMany({ sessionId });
-  }
 
   async getAvailableInventory(
     productId: string,
@@ -279,24 +128,7 @@ export class InventoryService {
       totalInventory = product.variants.reduce((sum, v) => sum + v.inventory, 0);
     }
 
-    const reservations = await InventoryReservation.aggregate([
-      {
-        $match: {
-          productId,
-          ...(variantId && { variantId }),
-          expiresAt: { $gt: new Date() },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalReserved: { $sum: '$quantity' },
-        },
-      },
-    ]);
-
-    const totalReserved = reservations[0]?.totalReserved ?? 0;
-    return Math.max(0, totalInventory - totalReserved);
+    return Math.max(0, totalInventory);
   }
 
   async updateInventory(
@@ -340,7 +172,6 @@ export class InventoryService {
           color: undefined,
           price: product.price,
           inventory: 0,
-          reservedInventory: 0,
           images: [],
           sku: undefined,
         }];
@@ -370,7 +201,7 @@ export class InventoryService {
         const availableStock = await this.getAvailableInventory(productId, variantId);
         if (Math.abs(adjustment) > availableStock) {
           throw new AppError(
-            `Cannot sell ${Math.abs(adjustment)} items. Only ${availableStock} available (excluding reservations)`,
+            `Cannot sell ${Math.abs(adjustment)} items. Only ${availableStock} available`,
             400,
           );
         }
@@ -433,6 +264,22 @@ export class InventoryService {
       
       // Invalidate cache
       await this.invalidateInventoryCache(productId, variantId, variantLabel);
+      
+      // Broadcast inventory update via WebSocket
+      const stockStatus = this.calculateStockStatus(
+        availableStock,
+        updatedProduct.lowStockThreshold,
+        updatedProduct.allowBackorder,
+      );
+      
+      await websocketService.publishInventoryUpdate({
+        productId,
+        variantId,
+        availableStock,
+        totalStock: newQuantity,
+        stockStatus: stockStatus as 'in_stock' | 'low_stock' | 'out_of_stock',
+        timestamp: Date.now(),
+      });
       
       const result = {
         success: true,
@@ -548,33 +395,25 @@ export class InventoryService {
     const availableStock = await this.getAvailableInventory(productId, variantId, variantLabel);
 
     let currentStock = 0;
-    let reservedStock = 0;
 
     // Handle products without variants
     if (!product.variants || product.variants.length === 0) {
       // Products without variants have 0 inventory
       currentStock = 0;
-      reservedStock = 0;
     } else if (USE_VARIANT_LABEL && variantLabel) {
       const { variant } = getVariantOrDefault(product.variants, variantLabel);
       if (!variant) {
         throw new AppError('Variant not found', 404);
       }
       currentStock = variant.inventory;
-      reservedStock = variant.reservedInventory || 0;
     } else if (variantId) {
       const variant = product.variants.find(v => v.variantId === variantId);
       if (!variant) {
         throw new AppError('Variant not found', 404);
       }
       currentStock = variant.inventory;
-      reservedStock = variant.reservedInventory || 0;
     } else {
       currentStock = product.variants.reduce((sum, v) => sum + v.inventory, 0);
-      reservedStock = product.variants.reduce(
-        (sum, v) => sum + (v.reservedInventory || 0),
-        0,
-      );
     }
 
     const stockStatus = this.calculateStockStatus(
@@ -587,7 +426,6 @@ export class InventoryService {
       productId,
       variantId,
       currentStock,
-      reservedStock,
       availableStock,
       lowStockThreshold: product.lowStockThreshold,
       allowBackorder: product.allowBackorder,
@@ -610,67 +448,6 @@ export class InventoryService {
     return StockStatus.IN_STOCK;
   }
 
-  async convertReservationToPermanent(
-    reservationId: string,
-    orderId: string,
-  ): Promise<void> {
-    const correlationId = generateCorrelationId();
-    const startTime = Date.now();
-    
-    this.logger.info('inventory.reservation.convert.start', {
-      correlationId,
-      reservationId,
-      orderId,
-    });
-    
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      const reservation = await InventoryReservation.findById(reservationId).session(
-        session,
-      );
-      if (!reservation) {
-        throw new AppError('Reservation not found', 404);
-      }
-
-      await this.updateInventory(
-        reservation.productId,
-        reservation.variantId,
-        -reservation.quantity,
-        'sale',
-        reservation.userId ?? 'system',
-        { orderId, correlationId },
-      );
-
-      await reservation.deleteOne({ session });
-
-      await session.commitTransaction();
-      
-      this.logger.info('inventory.reservation.convert.success', {
-        correlationId,
-        reservationId,
-        orderId,
-        productId: reservation.productId,
-        variantId: reservation.variantId,
-        quantity: reservation.quantity,
-        duration: Date.now() - startTime,
-      });
-    } catch (error) {
-      await session.abortTransaction();
-      
-      this.logger.error('inventory.reservation.convert.error', error, {
-        correlationId,
-        reservationId,
-        orderId,
-        duration: Date.now() - startTime,
-      });
-      
-      throw error;
-    } finally {
-      await session.endSession();
-    }
-  }
 
   async getInventoryMetrics(): Promise<InventoryMetrics> {
     // Try to get from cache first
@@ -686,49 +463,10 @@ export class InventoryService {
       // Unwind variants
       { $unwind: '$variants' },
       
-      // Lookup reservations for each variant
-      {
-        $lookup: {
-          from: 'inventoryreservations',
-          let: {
-            productId: { $toString: '$_id' },
-            variantId: '$variants.variantId',
-          },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$productId', '$$productId'] },
-                    { $eq: ['$variantId', '$$variantId'] },
-                    { $gt: ['$expiresAt', new Date()] },
-                  ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                totalReserved: { $sum: '$quantity' },
-              },
-            },
-          ],
-          as: 'reservations',
-        },
-      },
-      
-      // Calculate available stock and stock status
+      // Calculate stock value and status
       {
         $addFields: {
-          totalReserved: {
-            $ifNull: [{ $first: '$reservations.totalReserved' }, 0],
-          },
-          availableStock: {
-            $subtract: [
-              '$variants.inventory',
-              { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] },
-            ],
-          },
+          availableStock: '$variants.inventory',
           stockValue: {
             $multiply: ['$variants.inventory', '$variants.price'],
           },
@@ -738,11 +476,11 @@ export class InventoryService {
       // Categorize stock status
       {
         $addFields: {
-          isOutOfStock: { $lte: ['$availableStock', 0] },
+          isOutOfStock: { $lte: ['$variants.inventory', 0] },
           isLowStock: {
             $and: [
-              { $gt: ['$availableStock', 0] },
-              { $lte: ['$availableStock', '$lowStockThreshold'] },
+              { $gt: ['$variants.inventory', 0] },
+              { $lte: ['$variants.inventory', '$lowStockThreshold'] },
             ],
           },
         },
@@ -760,20 +498,16 @@ export class InventoryService {
           lowStockCount: {
             $sum: { $cond: ['$isLowStock', 1, 0] },
           },
-          totalReserved: {
-            $sum: { $ifNull: ['$variants.reservedInventory', 0] },
-          },
         },
       },
     ];
 
-    const results = await Product.aggregate(pipeline as mongoose.PipelineStage[]);
-    const metrics = results[0] ?? {
+    const results = await Product.aggregate<InventoryMetricsResult>(pipeline as mongoose.PipelineStage[]);
+    const metrics: InventoryMetrics = results[0] ?? {
       totalProducts: 0,
       totalValue: 0,
       outOfStockCount: 0,
       lowStockCount: 0,
-      totalReserved: 0,
     };
 
     // Cache the results
@@ -808,7 +542,7 @@ export class InventoryService {
       },
     ];
 
-    const results = await Product.aggregate(pipeline);
+    const results = await Product.aggregate<StockValueResult>(pipeline);
     return results[0]?.totalValue ?? 0;
   }
 
@@ -843,51 +577,8 @@ export class InventoryService {
       // Unwind variants
       { $unwind: '$variants' },
       
-      // Lookup reservations
-      {
-        $lookup: {
-          from: 'inventoryreservations',
-          let: {
-            productId: { $toString: '$_id' },
-            variantId: '$variants.variantId',
-          },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$productId', '$$productId'] },
-                    { $eq: ['$variantId', '$$variantId'] },
-                    { $gt: ['$expiresAt', new Date()] },
-                  ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                totalReserved: { $sum: '$quantity' },
-              },
-            },
-          ],
-          as: 'reservations',
-        },
-      },
-      
-      // Calculate available stock
-      {
-        $addFields: {
-          availableStock: {
-            $subtract: [
-              '$variants.inventory',
-              { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] },
-            ],
-          },
-        },
-      },
-      
       // Filter for out of stock items
-      { $match: { availableStock: { $lte: 0 } } },
+      { $match: { 'variants.inventory': { $lte: 0 } } },
       
       // Lookup last in-stock date from history
       {
@@ -939,7 +630,7 @@ export class InventoryService {
       },
     ];
 
-    const results = await Product.aggregate(pipeline as mongoose.PipelineStage[]);
+    const results = await Product.aggregate<OutOfStockProductResult>(pipeline as mongoose.PipelineStage[]);
     
     // Cache the results
     await this.cacheService.set(CACHE_KEYS.OUT_OF_STOCK_PRODUCTS, results, CACHE_TTL.OUT_OF_STOCK);
@@ -1031,12 +722,12 @@ export class InventoryService {
       { $sort: { turnoverRate: -1 } },
     ];
 
-    const results = await InventoryHistory.aggregate(pipeline);
+    const results = await InventoryHistory.aggregate<Omit<InventoryTurnoverData, 'period'>>(pipeline);
     
     return results.map(item => ({
       ...item,
       period: dateRange,
-    })) as InventoryTurnoverData[];
+    }));
   }
 
   private async invalidateInventoryCache(productId: string, variantId?: string, variantLabel?: string): Promise<void> {

@@ -3,7 +3,7 @@
  * @param variants Array of variants to check
  * @returns Object with duplicate information
  */
-export function findDuplicateLabels(variants: Array<{ label?: string }>): {
+export function findDuplicateLabels(variants: { label?: string }[]): {
   hasDuplicates: boolean;
   duplicateLabels: string[];
   duplicateIndices: Map<string, number[]>;
@@ -47,15 +47,15 @@ export function findDuplicateLabels(variants: Array<{ label?: string }>): {
  * @returns true if valid, error message if duplicate
  */
 export function validateUniqueLabel(
-  variants: Array<{ label?: string }>,
+  variants: { label?: string }[],
   index: number,
-  label: string
+  label: string,
 ): true | string {
   if (!label.trim()) return true; // Let required validation handle empty values
   
   const normalizedLabel = label.toLowerCase().trim();
   const isDuplicate = variants.some((variant, i) => 
-    i !== index && variant.label?.toLowerCase().trim() === normalizedLabel
+    i !== index && variant.label?.toLowerCase().trim() === normalizedLabel,
   );
   
   return isDuplicate ? 'Label must be unique' : true;

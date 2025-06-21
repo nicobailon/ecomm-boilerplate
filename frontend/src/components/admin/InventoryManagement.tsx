@@ -10,7 +10,7 @@ import { useWindowSize } from '@/hooks/useWindowSize';
 import { VirtualizedInventoryTable } from './VirtualizedInventoryTable';
 import { InventoryTableLoading, InventoryStatsLoading } from '@/components/ui/InventorySkeleton';
 import { useInventoryMetrics, useProductInventory, useUpdateInventory } from '@/hooks/queries/useInventory';
-import { getVariantDisplayText } from '@/components/forms/VariantEditor';
+import { getVariantDisplayText } from '@/utils/variant-helpers';
 
 interface InventoryManagementProps {
   searchQuery?: string;

@@ -98,16 +98,16 @@ export type DiscountFormInput = z.infer<typeof discountFormSchema>;
 
 // Form input type with optional fields for variants
 export type ProductFormInput = Omit<ProductInput, 'variants' | 'variantTypes'> & {
-  variantTypes?: Array<{
+  variantTypes?: {
     name: string;
     values: string[];
-  }>;
-  variants?: Array<{
+  }[];
+  variants?: {
     variantId?: string;
     label: string;
     priceAdjustment?: number;
     inventory?: number;
     sku?: string;
     attributes?: Record<string, string>;
-  }>;
+  }[];
 };

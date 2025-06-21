@@ -6,16 +6,16 @@ import AnalyticsTab from './AnalyticsTab';
 import { CollectionsTab } from './CollectionsTab';
 import DiscountsTab from './DiscountsTab';
 import { InventoryTab } from './InventoryTab';
-import { ErrorBoundary } from '../../components/ErrorBoundary';
-import { DiscountErrorFallback } from '../../components/discount/DiscountErrorFallback';
-import { ProductForm } from '../../components/forms/ProductForm';
-import ProductsList from '../../components/product/ProductsList';
-import { TransitionOverlay } from '../../components/ui/transition-overlay';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
-import type { TabId } from '../../types';
-import { useProductCreation } from '../../hooks/product/useProductCreation';
-import { useProductEditor } from '../../hooks/product/useProductEditor';
-import { ProductEditDrawer } from '../../components/drawers/ProductEditDrawer';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { DiscountErrorFallback } from '@/components/discount/DiscountErrorFallback';
+import { ProductForm } from '@/components/forms/ProductForm';
+import ProductsList from '@/components/product/ProductsList';
+import { TransitionOverlay } from '@/components/ui/transition-overlay';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import type { TabId } from '@/types';
+import { useProductCreation } from '@/hooks/product/useProductCreation';
+import { useProductEditor } from '@/hooks/product/useProductEditor';
+import { ProductEditDrawer } from '@/components/drawers/ProductEditDrawer';
 
 const AdminPage = () => {
 	const [activeTab, setActiveTab] = useState<TabId>('create');

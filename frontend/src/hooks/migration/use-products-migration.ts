@@ -130,6 +130,21 @@ export function useUpdateProduct() {
       void queryClient.invalidateQueries({ queryKey: ['product', variables.id] });
       // Also invalidate featured products in case the update affected that
       void queryClient.invalidateQueries({ queryKey: ['products', 'featured'] });
+      
+      // Invalidate inventory queries for this product
+      void queryClient.invalidateQueries({ 
+        queryKey: ['trpc.inventory.getProductInventory'],
+        predicate: (query) => {
+          const queryKey = query.queryKey as any[];
+          return queryKey[3]?.input?.productId === variables.id;
+        },
+      });
+      
+      // Invalidate general inventory queries
+      void queryClient.invalidateQueries({ queryKey: ['trpc.inventory.getInventoryMetrics'] });
+      void queryClient.invalidateQueries({ queryKey: ['trpc.inventory.list'] });
+      void queryClient.invalidateQueries({ queryKey: ['trpc.inventory.getLowStockProducts'] });
+      
       toast.success('Product updated successfully');
     },
   });
@@ -139,6 +154,7 @@ export function useUpdateProduct() {
       mutate: (params: { id: string; data: Partial<ProductFormInput> | Partial<ProductInput> }) => {
         // Transform the data to match API expectations
         const apiData = params.data as Parameters<typeof trpcMutation.mutate>[0]['data'];
+        console.log('[DEBUG] useUpdateProduct - sending data:', JSON.stringify(apiData, null, 2));
         trpcMutation.mutate({ id: params.id, data: apiData });
       },
       mutateAsync: async (params: { id: string; data: Partial<ProductFormInput> | Partial<ProductInput> }) => {

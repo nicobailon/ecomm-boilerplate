@@ -1,8 +1,10 @@
-import { Minus, Plus, Trash } from 'lucide-react';
+import { Minus, Plus, Trash, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUnifiedUpdateQuantity, useUnifiedRemoveFromCart } from '@/hooks/cart/useUnifiedCart';
 import type { CartItem as CartItemType, Product } from '@/types';
-import { getVariantDisplayText } from '@/components/forms/VariantEditor';
+import { getVariantDisplayText } from '@/utils/variant-helpers';
+import { useProductInventory } from '@/hooks/queries/useInventory';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface CartItemProps {
 	item: CartItemType & { product: Product };
@@ -11,6 +13,19 @@ interface CartItemProps {
 const CartItem: React.FC<CartItemProps> = ({ item }) => {
 	const updateQuantity = useUnifiedUpdateQuantity();
 	const removeFromCart = useUnifiedRemoveFromCart();
+	
+	// Fetch real-time inventory data
+	const { data: inventoryData, isLoading: inventoryLoading } = useProductInventory(
+		item.product._id,
+		item.variantId,
+		item.variantDetails?.label
+	);
+	
+	// Determine inventory warning status
+	const availableStock = inventoryData?.availableStock ?? 0;
+	const isLowStock = availableStock > 0 && availableStock <= 5;
+	const isInsufficientStock = availableStock > 0 && availableStock < item.quantity;
+	const isOutOfStock = availableStock === 0;
 
 	const handleUpdateQuantity = (newQuantity: number) => {
 		if (newQuantity < 1) {
@@ -71,8 +86,9 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 							 border-border bg-muted hover:bg-muted/80 focus:outline-none 
 						focus:ring-2 focus:ring-primary disabled:opacity-50'
 							onClick={() => handleUpdateQuantity(item.quantity + 1)}
-							disabled={updateQuantity.isPending || removeFromCart.isPending}
+							disabled={updateQuantity.isPending || removeFromCart.isPending || (!inventoryLoading && availableStock > 0 && item.quantity >= availableStock)}
 							aria-label={`Increase quantity of ${item.product.name}`}
+							title={(!inventoryLoading && availableStock > 0 && item.quantity >= availableStock) ? 'Maximum available quantity reached' : undefined}
 						>
 							<Plus className='text-muted-foreground' aria-hidden="true" />
 						</button>
@@ -111,6 +127,33 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 						)}
 					</div>
 					<p className='text-sm text-muted-foreground'>{item.product.description}</p>
+
+					<AnimatePresence>
+						{!inventoryLoading && (isLowStock || isInsufficientStock || isOutOfStock) && (
+							<motion.div
+								initial={{ opacity: 0, height: 0 }}
+								animate={{ opacity: 1, height: 'auto' }}
+								exit={{ opacity: 0, height: 0 }}
+								transition={{ duration: 0.2 }}
+								className={`flex items-center gap-2 text-sm p-2 rounded-md ${
+									isOutOfStock 
+										? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400' 
+										: isInsufficientStock
+										? 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
+										: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
+								}`}
+							>
+								<AlertTriangle className="w-4 h-4 flex-shrink-0" />
+								<span>
+									{isOutOfStock
+										? 'Out of stock - will be removed at checkout'
+										: isInsufficientStock
+										? `Only ${availableStock} available - quantity will be adjusted at checkout`
+										: `Low stock - only ${availableStock} left`}
+								</span>
+							</motion.div>
+						)}
+					</AnimatePresence>
 
 					<div className='flex items-center gap-4'>
 						<button

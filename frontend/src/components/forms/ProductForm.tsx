@@ -194,7 +194,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
     
     if (mode === 'create') {
       createProductMutation.mutate(apiData, {
-        onSuccess: (result) => {
+        onSuccess: (result: Product) => {
           let product: Product;
           if ('product' in result && result.product) {
             product = result.product as Product;

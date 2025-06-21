@@ -162,7 +162,9 @@ describe('inventoryRouter', () => {
         10,
         'restock',
         'user123',
-        { supplier: 'Supplier A' }
+        { supplier: 'Supplier A' },
+        0, // retryCount
+        undefined // variantLabel
       );
     });
 
@@ -320,84 +322,6 @@ describe('inventoryRouter', () => {
       });
 
       expect(result).toEqual(mockTurnoverData);
-    });
-  });
-
-  describe('reserveInventory', () => {
-    it('should reserve inventory successfully', async () => {
-      const ctx = createTestContext({ user: mockUser });
-      const caller = inventoryRouter.createCaller(() => ctx);
-
-      const mockReservation = {
-        success: true,
-        reservationId: 'reservation123',
-        availableStock: 35,
-      };
-
-      vi.spyOn(inventoryService, 'reserveInventory').mockResolvedValue(mockReservation);
-
-      const result = await caller.reserveInventory({
-        productId: '507f1f77bcf86cd799439011',
-        variantId: 'v1',
-        quantity: 5,
-        sessionId: 'session123',
-        duration: 30 * 60 * 1000,
-      });
-
-      expect(result).toEqual(mockReservation);
-    });
-
-    it('should handle insufficient inventory', async () => {
-      const ctx = createTestContext({ user: mockUser });
-      const caller = inventoryRouter.createCaller(() => ctx);
-
-      const mockReservation = {
-        success: false,
-        availableStock: 5,
-        message: 'Only 5 items available',
-      };
-
-      vi.spyOn(inventoryService, 'reserveInventory').mockResolvedValue(mockReservation);
-
-      const result = await caller.reserveInventory({
-        productId: '507f1f77bcf86cd799439011',
-        variantId: 'v1',
-        quantity: 10,
-        sessionId: 'session123',
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.message).toBe('Only 5 items available');
-    });
-  });
-
-  describe('releaseReservation', () => {
-    it('should release reservation successfully', async () => {
-      const ctx = createTestContext({ user: mockUser });
-      const caller = inventoryRouter.createCaller(() => ctx);
-
-      vi.spyOn(inventoryService, 'releaseReservation').mockResolvedValue();
-
-      const result = await caller.releaseReservation({
-        reservationId: 'reservation123',
-      });
-
-      expect(result).toEqual({ success: true });
-    });
-  });
-
-  describe('releaseSessionReservations', () => {
-    it('should release all session reservations', async () => {
-      const ctx = createTestContext({ user: mockUser });
-      const caller = inventoryRouter.createCaller(() => ctx);
-
-      vi.spyOn(inventoryService, 'releaseSessionReservations').mockResolvedValue();
-
-      const result = await caller.releaseSessionReservations({
-        sessionId: 'session123',
-      });
-
-      expect(result).toEqual({ success: true });
     });
   });
 });

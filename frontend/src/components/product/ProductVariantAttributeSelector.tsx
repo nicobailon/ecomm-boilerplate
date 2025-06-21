@@ -38,7 +38,6 @@ export function ProductVariantAttributeSelector({
 }: ProductVariantAttributeSelectorProps) {
   // Track selected attributes
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
-  
   // Create a map of variant keys to variants for fast lookup
   const variantMap = useMemo(() => {
     const map = new Map<string, IProductVariant>();
@@ -180,7 +179,7 @@ export function ProductVariantAttributeSelector({
     if (!isComplete) return null;
     
     const key = getVariantKey(selectedAttributes);
-    return variantMap.get(key) || null;
+    return variantMap.get(key) ?? null;
   }, [selectedAttributes, variantTypes, variantMap]);
 
   return (
@@ -228,7 +227,7 @@ export function ProductVariantAttributeSelector({
                       : isSelectable
                       ? 'border-input bg-background text-foreground hover:border-primary hover:bg-accent'
                       : 'border-input/50 bg-muted text-muted-foreground cursor-not-allowed opacity-60',
-                    !isAvailable && 'line-through'
+                    !isAvailable && 'line-through',
                   )}
                   role="radio"
                   aria-checked={isSelected}

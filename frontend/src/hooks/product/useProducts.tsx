@@ -92,6 +92,20 @@ export const useUpdateProduct = () => {
       void queryClient.invalidateQueries({ queryKey: ['product', variables.id] });
       // Also invalidate featured products in case the update affected that
       void queryClient.invalidateQueries({ queryKey: ['products', 'featured'] });
+      
+      // Invalidate inventory queries for this product
+      void queryClient.invalidateQueries({ 
+        queryKey: ['trpc.inventory.getProductInventory'],
+        predicate: (query) => {
+          const queryKey = query.queryKey as { input?: { productId: string } }[];
+          return queryKey[3]?.input?.productId === variables.id;
+        },
+      });
+      
+      // Invalidate general inventory queries
+      void queryClient.invalidateQueries({ queryKey: ['trpc.inventory.getInventoryMetrics'] });
+      void queryClient.invalidateQueries({ queryKey: ['trpc.inventory.list'] });
+      void queryClient.invalidateQueries({ queryKey: ['trpc.inventory.getLowStockProducts'] });
     },
     // Remove the default onSuccess toast to avoid duplicates
   });

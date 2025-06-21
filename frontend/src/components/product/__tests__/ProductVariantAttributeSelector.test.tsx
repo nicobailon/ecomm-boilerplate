@@ -80,7 +80,7 @@ describe('ProductVariantAttributeSelector', () => {
         <ProductVariantAttributeSelector 
           {...defaultProps} 
           onVariantSelect={onVariantSelect}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -109,7 +109,7 @@ describe('ProductVariantAttributeSelector', () => {
         <ProductVariantAttributeSelector 
           {...defaultProps} 
           onVariantSelect={onVariantSelect}
-        />
+        />,
       );
 
       await user.click(screen.getByRole('radio', { name: /Size: Small/ }));
@@ -200,7 +200,7 @@ describe('ProductVariantAttributeSelector', () => {
         <ProductVariantAttributeSelector 
           {...defaultProps} 
           variants={limitedVariants}
-        />
+        />,
       );
 
       // Large option should be disabled as it has no valid combinations
@@ -253,7 +253,7 @@ describe('ProductVariantAttributeSelector', () => {
         <ProductVariantAttributeSelector 
           {...defaultProps} 
           variants={variants}
-        />
+        />,
       );
 
       const smallButton = screen.getByRole('radio', { name: /Size: Small/ });
@@ -282,7 +282,7 @@ describe('ProductVariantAttributeSelector', () => {
         <ProductVariantAttributeSelector 
           {...defaultProps} 
           variants={variantsWithoutAttrs}
-        />
+        />,
       );
 
       // Should still render without crashing
@@ -294,7 +294,7 @@ describe('ProductVariantAttributeSelector', () => {
         <ProductVariantAttributeSelector 
           {...defaultProps} 
           variantTypes={[]}
-        />
+        />,
       );
 
       // Should render without variant selectors

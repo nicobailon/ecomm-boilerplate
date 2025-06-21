@@ -6,17 +6,19 @@ import { apiClient } from '@/lib/api-client';
 import type { Product } from '@/types';
 import type { AxiosResponse } from 'axios';
 import { AxiosHeaders } from 'axios';
+import type { ReactElement } from 'react';
+import { toast } from 'sonner';
 
 vi.mock('@/lib/api-client');
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
+vi.mock('sonner');
 
 // Import the actual hook
 import { useToggleFeatured } from './useProducts';
+
+// Define proper types for toast element structure
+interface ToastElementProps {
+  children: [ReactElement<{ children: string }>, ReactElement<{ href: string; target: string; children: string }>];
+}
 
 // Create a custom wrapper without ThemeProvider to avoid window.matchMedia issues
 const createTestWrapper = () => {
@@ -69,8 +71,11 @@ const createMockAxiosResponse = <T,>(data: T): AxiosResponse<T> => ({
 
 describe('useToggleFeatured Hook', () => {
   const mockApiClient = vi.mocked(apiClient);
-  const mockToastSuccess = vi.fn();
-  const mockToastError = vi.fn();
+  const mockToast = vi.mocked(toast) as unknown as {
+    success: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+    [key: string]: unknown;
+  };
 
   const mockProduct: Product = {
     _id: 'test-id',
@@ -85,6 +90,9 @@ describe('useToggleFeatured Hook', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Setup toast mocks
+    mockToast.success = vi.fn();
+    mockToast.error = vi.fn();
   });
 
   afterEach(() => {
@@ -98,13 +106,15 @@ describe('useToggleFeatured Hook', () => {
     const { wrapper } = createTestWrapper();
     const { result } = renderHook(() => useToggleFeatured(), { wrapper });
 
-    await act(async () => {
+    act(() => {
       result.current.mutate('test-id');
     });
 
     await waitFor(() => {
-      expect(mockApiClient.patch).toHaveBeenCalledWith('/products/toggle-featured/test-id');
-      expect(mockApiClient.patch).toHaveBeenCalledTimes(1);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const patchFn = mockApiClient.patch;
+      expect(patchFn).toHaveBeenCalledWith('/products/toggle-featured/test-id');
+      expect(patchFn).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -115,14 +125,14 @@ describe('useToggleFeatured Hook', () => {
     const { wrapper } = createTestWrapper();
     const { result } = renderHook(() => useToggleFeatured(), { wrapper });
 
-    await act(async () => {
+    act(() => {
       result.current.mutate('test-id');
     });
 
     await waitFor(() => {
-      expect(mockToastSuccess).toHaveBeenCalled();
+      expect(mockToast.success).toHaveBeenCalled();
       // Verify the toast was called with JSX content containing the correct message
-      const toastCall = mockToastSuccess.mock.calls[0][0];
+      const toastCall = mockToast.success.mock.calls[0][0] as ReactElement<ToastElementProps>;
       expect(toastCall).toBeTruthy();
       // The toast content is JSX, so we check its structure
       expect(toastCall.props?.children).toBeDefined();
@@ -144,13 +154,13 @@ describe('useToggleFeatured Hook', () => {
     const { wrapper } = createTestWrapper();
     const { result } = renderHook(() => useToggleFeatured(), { wrapper });
 
-    await act(async () => {
+    act(() => {
       result.current.mutate('test-id');
     });
 
     await waitFor(() => {
-      expect(mockToastSuccess).toHaveBeenCalled();
-      const toastCall = mockToastSuccess.mock.calls[0][0];
+      expect(mockToast.success).toHaveBeenCalled();
+      const toastCall = mockToast.success.mock.calls[0][0] as ReactElement<ToastElementProps>;
       expect(toastCall).toBeTruthy();
       // Verify the unfeatured message
       expect(toastCall.props?.children).toBeDefined();
@@ -168,12 +178,12 @@ describe('useToggleFeatured Hook', () => {
     const { wrapper } = createTestWrapper();
     const { result } = renderHook(() => useToggleFeatured(), { wrapper });
 
-    await act(async () => {
+    act(() => {
       result.current.mutate('test-id');
     });
 
     await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('Failed to update featured status');
+      expect(mockToast.error).toHaveBeenCalledWith('Failed to update featured status');
     });
   });
 
@@ -192,13 +202,15 @@ describe('useToggleFeatured Hook', () => {
     });
     queryClient.setQueryData(['products', 'featured'], []);
 
-    await act(async () => {
+    act(() => {
       result.current.mutate('test-id');
     });
 
     // The hook's onMutate should have optimistically updated the data
     await waitFor(() => {
-      expect(mockApiClient.patch).toHaveBeenCalled();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const patchFn = mockApiClient.patch;
+      expect(patchFn).toHaveBeenCalled();
     });
   });
 
@@ -216,18 +228,19 @@ describe('useToggleFeatured Hook', () => {
     });
     queryClient.setQueryData(['products', 'featured'], []);
 
-    await act(async () => {
+    act(() => {
       result.current.mutate('test-id');
     });
 
     await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalled();
+      expect(mockToast.error).toHaveBeenCalled();
       
       // Data should be rolled back to original state
-      const productsData = queryClient.getQueryData(['products', 1, 12]) as any;
+      const productsData = queryClient.getQueryData<{ data: Product[]; totalPages: number; currentPage: number }>(['products', 1, 12]);
       expect(productsData).toBeDefined();
       expect(productsData?.data).toBeDefined();
-      expect(productsData?.data[0].isFeatured).toBe(false);
+      if (!productsData?.data) throw new Error('No products data');
+      expect(productsData.data[0].isFeatured).toBe(false);
     });
   });
 
@@ -246,12 +259,14 @@ describe('useToggleFeatured Hook', () => {
     });
     queryClient.setQueryData(['products', 'featured'], []);
 
-    await act(async () => {
+    act(() => {
       result.current.mutate('test-id');
     });
 
     await waitFor(() => {
-      expect(mockApiClient.patch).toHaveBeenCalledWith('/products/toggle-featured/test-id');
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const patchFn = mockApiClient.patch;
+      expect(patchFn).toHaveBeenCalledWith('/products/toggle-featured/test-id');
     });
   });
 });

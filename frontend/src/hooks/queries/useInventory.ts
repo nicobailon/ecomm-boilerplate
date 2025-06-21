@@ -33,7 +33,7 @@ export function useUpdateInventory() {
       
       // Also cancel queries without variant info for products
       await utils.inventory.getProductInventory.cancel({ 
-        productId: variables.productId 
+        productId: variables.productId, 
       });
 
       // Snapshot the previous value
@@ -45,7 +45,7 @@ export function useUpdateInventory() {
         : null;
 
       // Optimistically update to the new value
-      const dataToUpdate = previousData || previousProductData;
+      const dataToUpdate = previousData ?? previousProductData;
       if (dataToUpdate) {
         const adjustment = variables.adjustment;
         const newInventory = dataToUpdate.currentStock + adjustment;
@@ -96,7 +96,7 @@ export function useUpdateInventory() {
           );
         }
       }
-      toast.error(error.message || 'Failed to update inventory');
+      toast.error(error.message ?? 'Failed to update inventory');
     },
     onSettled: (_, __, variables) => {
       // Invalidate all possible query combinations
@@ -149,7 +149,6 @@ export function useBulkUpdateInventory() {
     },
   });
 }
-
 
 // Hook for real-time inventory updates (WebSocket)
 export function useInventorySubscription() {

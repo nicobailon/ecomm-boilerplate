@@ -19,14 +19,15 @@ export const createCheckoutSession = asyncHandler(async (req: AuthRequest, res: 
   if (!req.user) {
     throw new AppError('Unauthorized', 401);
   }
-  const sessionId = await paymentService.createCheckoutSession(
+  const result = await paymentService.createCheckoutSession(
     req.user,
     products,
     couponCode,
   );
   
   res.status(200).json({ 
-    id: sessionId,
+    id: result.sessionId,
+    adjustments: result.adjustments,
   });
 });
 

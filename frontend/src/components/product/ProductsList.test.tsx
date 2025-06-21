@@ -3,6 +3,8 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders, createMockProduct } from '@/test/test-utils';
 import ProductsList from './ProductsList';
+import type { UseQueryResult, UseMutationResult } from '@tanstack/react-query';
+import type { Product, PaginatedResponse } from '@/types';
 
 // Mock the hooks module to avoid importing JSX
 vi.mock('@/hooks/product/useProducts', () => ({
@@ -23,6 +25,13 @@ vi.mock('@/hooks/queries/useInventory', () => ({
 
 import * as useProductsHooks from '@/hooks/product/useProducts';
 
+// Type for the actual API response structure
+interface ProductsApiResponse {
+  data: Product[];
+  totalPages: number;
+  currentPage: number;
+}
+
 describe('ProductsList - Featured Products', () => {
   const mockProducts = [
     createMockProduct({ _id: '1', name: 'Product 1', isFeatured: true }),
@@ -39,27 +48,98 @@ describe('ProductsList - Featured Products', () => {
     vi.clearAllMocks();
     
     mockUseProducts.mockReturnValue({
-      data: { data: mockProducts, totalPages: 1, currentPage: 1 },
+      data: { data: mockProducts, totalPages: 1, currentPage: 1 } as ProductsApiResponse,
       isLoading: false,
       error: null,
       refetch: vi.fn(),
-    } as any);
+      isPending: false,
+      isError: false,
+      isSuccess: true,
+      isLoadingError: false,
+      isRefetchError: false,
+      isFetching: false,
+      isFetched: true,
+      isRefetching: false,
+      isStale: false,
+      isPlaceholderData: false,
+      status: 'success',
+      fetchStatus: 'idle',
+      errorUpdateCount: 0,
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      isFetchedAfterMount: true,
+      isInitialLoading: false,
+      isPaused: false,
+      promise: Promise.resolve({ data: mockProducts, totalPages: 1, currentPage: 1 }),
+    } as unknown as UseQueryResult<PaginatedResponse<Product>, Error>);
 
     mockUseDeleteProduct.mockReturnValue({
       mutate: vi.fn(),
-      isLoading: false,
-    } as any);
+      mutateAsync: vi.fn(),
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+      isIdle: true,
+      data: undefined,
+      error: null,
+      variables: undefined,
+      status: 'idle',
+      reset: vi.fn(),
+      context: undefined,
+      failureCount: 0,
+      failureReason: null,
+      isPaused: false,
+      submittedAt: 0,
+    } as UseMutationResult<void, Error, string, unknown>);
 
     mockUseToggleFeatured.mockReturnValue({
       mutate: vi.fn(),
-      isLoading: false,
-    } as any);
+      mutateAsync: vi.fn(),
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+      isIdle: true,
+      data: undefined,
+      error: null,
+      variables: undefined,
+      status: 'idle',
+      reset: vi.fn(),
+      context: undefined,
+      failureCount: 0,
+      failureReason: null,
+      isPaused: false,
+      submittedAt: 0,
+    } as UseMutationResult<Product, Error, string, { previousQueries: [readonly unknown[], PaginatedResponse<Product> | undefined][]; previousFeatured: Product[] | undefined }>);
 
     mockUseFeaturedProducts.mockReturnValue({
       data: mockProducts.filter(p => p.isFeatured),
       isLoading: false,
       error: null,
-    } as any);
+      refetch: vi.fn(),
+      isPending: false,
+      isError: false,
+      isSuccess: true,
+      isLoadingError: false,
+      isRefetchError: false,
+      isFetching: false,
+      isFetched: true,
+      isRefetching: false,
+      isStale: false,
+      isPlaceholderData: false,
+      status: 'success',
+      fetchStatus: 'idle',
+      errorUpdateCount: 0,
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      isFetchedAfterMount: true,
+      isInitialLoading: false,
+      isPaused: false,
+      promise: Promise.resolve(mockProducts.filter(p => p.isFeatured)),
+    } as UseQueryResult<Product[], Error>);
   });
 
   describe('Star Button Dynamic Title', () => {
@@ -88,10 +168,10 @@ describe('ProductsList - Featured Products', () => {
         const allStarButtons = screen.getAllByRole('button', { name: /homepage carousel/i });
         
         const featuredButton = allStarButtons.find(btn => 
-          btn.getAttribute('title') === 'Remove from homepage carousel'
+          btn.getAttribute('title') === 'Remove from homepage carousel',
         );
         const nonFeaturedButton = allStarButtons.find(btn => 
-          btn.getAttribute('title') === 'Add to homepage carousel'
+          btn.getAttribute('title') === 'Add to homepage carousel',
         );
 
         expect(featuredButton?.className).toContain('bg-warning');
@@ -134,7 +214,29 @@ describe('ProductsList - Featured Products', () => {
         data: [mockProducts[0]],
         isLoading: false,
         error: null,
-      } as any);
+        refetch: vi.fn(),
+        isPending: false,
+        isError: false,
+        isSuccess: true,
+        isLoadingError: false,
+        isRefetchError: false,
+        isFetching: false,
+        isFetched: true,
+        isRefetching: false,
+        isStale: false,
+        isPlaceholderData: false,
+        status: 'success',
+        fetchStatus: 'idle',
+        errorUpdateCount: 0,
+        dataUpdatedAt: Date.now(),
+        errorUpdatedAt: 0,
+        failureCount: 0,
+        failureReason: null,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPaused: false,
+        promise: Promise.resolve([mockProducts[0]]),
+      } as UseQueryResult<Product[], Error>);
 
       renderWithProviders(<ProductsList />);
 
@@ -149,7 +251,29 @@ describe('ProductsList - Featured Products', () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+        refetch: vi.fn(),
+        isPending: false,
+        isError: false,
+        isSuccess: true,
+        isLoadingError: false,
+        isRefetchError: false,
+        isFetching: false,
+        isFetched: true,
+        isRefetching: false,
+        isStale: false,
+        isPlaceholderData: false,
+        status: 'success',
+        fetchStatus: 'idle',
+        errorUpdateCount: 0,
+        dataUpdatedAt: Date.now(),
+        errorUpdatedAt: 0,
+        failureCount: 0,
+        failureReason: null,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPaused: false,
+        promise: Promise.resolve([]),
+      } as UseQueryResult<Product[], Error>);
 
       const { container } = renderWithProviders(<ProductsList />);
 
@@ -165,7 +289,29 @@ describe('ProductsList - Featured Products', () => {
         data: undefined,
         isLoading: true,
         error: null,
-      } as any);
+        refetch: vi.fn(),
+        isPending: true,
+        isError: false,
+        isSuccess: false,
+        isLoadingError: false,
+        isRefetchError: false,
+        isFetching: true,
+        isFetched: false,
+        isRefetching: false,
+        isStale: false,
+        isPlaceholderData: false,
+        status: 'pending',
+        fetchStatus: 'fetching',
+        errorUpdateCount: 0,
+        dataUpdatedAt: 0,
+        errorUpdatedAt: 0,
+        failureCount: 0,
+        failureReason: null,
+        isFetchedAfterMount: false,
+        isInitialLoading: true,
+        isPaused: false,
+        promise: new Promise(() => { /* pending promise */ }),
+      } as UseQueryResult<Product[], Error>);
 
       const { container } = renderWithProviders(<ProductsList />);
       
@@ -191,8 +337,22 @@ describe('ProductsList - Featured Products', () => {
       const toggleMutate = vi.fn();
       mockUseToggleFeatured.mockReturnValue({
         mutate: toggleMutate,
-        isLoading: false,
-      } as any);
+        mutateAsync: vi.fn(),
+        isPending: false,
+        isError: false,
+        isSuccess: false,
+        isIdle: true,
+        data: undefined,
+        error: null,
+        variables: undefined,
+        status: 'idle',
+        reset: vi.fn(),
+        context: undefined,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: false,
+        submittedAt: 0,
+      } as UseMutationResult<Product, Error, string, { previousQueries: [readonly unknown[], PaginatedResponse<Product> | undefined][]; previousFeatured: Product[] | undefined }>);
 
       const user = userEvent.setup();
       renderWithProviders(<ProductsList />);
@@ -218,16 +378,27 @@ describe('ProductsList - Featured Products', () => {
 
     it('should show loading state when toggling', async () => {
       // Create a mock that we can control
-      const togglePromise = new Promise((resolve) => {
-        // Promise executor captures resolve function
-        resolve(undefined);
-      });
+      const togglePromise = Promise.resolve(undefined);
       
       const toggleMutate = vi.fn(() => togglePromise);
       mockUseToggleFeatured.mockReturnValue({
-        mutate: toggleMutate,
-        isLoading: false,
-      } as any);
+        mutate: toggleMutate as UseMutationResult<Product, Error, string, { previousQueries: [readonly unknown[], PaginatedResponse<Product> | undefined][]; previousFeatured: Product[] | undefined }>['mutate'],
+        mutateAsync: vi.fn(),
+        isPending: false,
+        isError: false,
+        isSuccess: false,
+        isIdle: true,
+        data: undefined,
+        error: null,
+        variables: undefined,
+        status: 'idle',
+        reset: vi.fn(),
+        context: undefined,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: false,
+        submittedAt: 0,
+      } as UseMutationResult<Product, Error, string, { previousQueries: [readonly unknown[], PaginatedResponse<Product> | undefined][]; previousFeatured: Product[] | undefined }>);
 
       const user = userEvent.setup();
       renderWithProviders(<ProductsList />);
@@ -258,28 +429,85 @@ describe('ProductsList - Featured Products', () => {
       const toggleMutate = vi.fn((productId: string) => {
         // Simulate optimistic update
         currentProducts = currentProducts.map(p => 
-          p._id === productId ? { ...p, isFeatured: !p.isFeatured } : p
+          p._id === productId ? { ...p, isFeatured: !p.isFeatured } : p,
         );
         
         // Re-render with updated data
         mockUseProducts.mockReturnValue({
-          data: { data: currentProducts, totalPages: 1, currentPage: 1 },
+          data: { data: currentProducts, totalPages: 1, currentPage: 1 } as ProductsApiResponse,
           isLoading: false,
           error: null,
           refetch: vi.fn(),
-        } as any);
+          isPending: false,
+          isError: false,
+          isSuccess: true,
+          isLoadingError: false,
+          isRefetchError: false,
+          isFetching: false,
+          isFetched: true,
+          isRefetching: false,
+          isStale: false,
+          isPlaceholderData: false,
+          status: 'success',
+          fetchStatus: 'idle',
+          errorUpdateCount: 0,
+          dataUpdatedAt: Date.now(),
+          errorUpdatedAt: 0,
+          failureCount: 0,
+          failureReason: null,
+          isFetchedAfterMount: true,
+          isInitialLoading: false,
+          isPaused: false,
+          promise: Promise.resolve({ data: currentProducts, totalPages: 1, currentPage: 1 }),
+        } as unknown as UseQueryResult<PaginatedResponse<Product>, Error>);
         
         mockUseFeaturedProducts.mockReturnValue({
           data: currentProducts.filter(p => p.isFeatured),
           isLoading: false,
           error: null,
-        } as any);
+          refetch: vi.fn(),
+          isPending: false,
+          isError: false,
+          isSuccess: true,
+          isLoadingError: false,
+          isRefetchError: false,
+          isFetching: false,
+          isFetched: true,
+          isRefetching: false,
+          isStale: false,
+          isPlaceholderData: false,
+          status: 'success',
+          fetchStatus: 'idle',
+          errorUpdateCount: 0,
+          dataUpdatedAt: Date.now(),
+          errorUpdatedAt: 0,
+          failureCount: 0,
+          failureReason: null,
+          isFetchedAfterMount: true,
+          isInitialLoading: false,
+          isPaused: false,
+          promise: Promise.resolve(currentProducts.filter(p => p.isFeatured)),
+        } as UseQueryResult<Product[], Error>);
       });
 
       mockUseToggleFeatured.mockReturnValue({
-        mutate: toggleMutate,
-        isLoading: false,
-      } as any);
+        mutate: toggleMutate as UseMutationResult<Product, Error, string, { previousQueries: [readonly unknown[], PaginatedResponse<Product> | undefined][]; previousFeatured: Product[] | undefined }>['mutate'],
+        mutateAsync: vi.fn(),
+        isPending: false,
+        isError: false,
+        isSuccess: false,
+        isIdle: true,
+        data: undefined,
+        error: null,
+        variables: undefined,
+        status: 'idle',
+        reset: vi.fn(),
+        context: undefined,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: false,
+        submittedAt: 0,
+      } as UseMutationResult<Product, Error, string, { previousQueries: [readonly unknown[], PaginatedResponse<Product> | undefined][]; previousFeatured: Product[] | undefined }>);
 
       const user = userEvent.setup();
       const { rerender } = renderWithProviders(<ProductsList />);

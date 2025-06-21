@@ -25,7 +25,7 @@ export const FeaturedBadge = ({ className, size = 'md', showText = true }: Featu
       className={cn(
         'inline-flex items-center gap-1 rounded-full bg-warning text-warning-foreground font-medium',
         sizeClasses[size],
-        className
+        className,
       )}
     >
       <Star className={cn(iconSizes[size], 'fill-current')} />

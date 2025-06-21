@@ -127,10 +127,6 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
       // Check if data already has the proper structure (from ProductForm)
       const isAlreadyTransformed = data.variants && data.variants.length > 0 && 'variantId' in data.variants[0] && 'price' in data.variants[0];
       
-      // Log for debugging
-      console.log('Creating product with variants:', data.variants);
-      console.log('Data already transformed:', isAlreadyTransformed);
-      
       // Build product data, transforming variants if needed
       const productData: ProductInput = {
         name: data.name,

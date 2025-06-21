@@ -5,8 +5,9 @@ import { useCreateProduct } from './useProducts';
 import type { ProductInput, ProductFormInput } from '@/lib/validations';
 import { productEvents } from '@/lib/events';
 import { useLocalStorage } from '@/hooks/utils/useLocalStorage';
-import type { TabId, Product } from '@/types';
+import type { TabId, Product, FormVariant } from '@/types';
 import { NAVIGATION_DELAY } from '@/types';
+import { transformFormVariantToSubmission } from '@/utils/variant-transform';
 
 interface UseProductCreationState {
   isCreating: boolean;
@@ -123,7 +124,14 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
   // Create product handler
   const createProduct = useCallback(async (data: ProductFormInput | ProductInput) => {
     return new Promise<string>((resolve, reject) => {
-      // Ensure all required fields are present for ProductInput
+      // Check if data already has the proper structure (from ProductForm)
+      const isAlreadyTransformed = data.variants && data.variants.length > 0 && 'variantId' in data.variants[0] && 'price' in data.variants[0];
+      
+      // Log for debugging
+      console.log('Creating product with variants:', data.variants);
+      console.log('Data already transformed:', isAlreadyTransformed);
+      
+      // Build product data, transforming variants if needed
       const productData: ProductInput = {
         name: data.name,
         description: data.description,
@@ -131,14 +139,25 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
         image: data.image,
         collectionId: data.collectionId,
         variantTypes: 'variantTypes' in data ? data.variantTypes : undefined,
-        variants: data.variants?.map(v => ({
-          label: v.label,
-          color: v.color,
-          priceAdjustment: 'priceAdjustment' in v && typeof v.priceAdjustment === 'number' ? v.priceAdjustment : 0,
-          inventory: 'inventory' in v && typeof v.inventory === 'number' ? v.inventory : 0,
-          sku: v.sku,
-          attributes: 'attributes' in v ? v.attributes : undefined,
-        })),
+        variants: isAlreadyTransformed 
+          ? data.variants as ProductInput['variants'] // Already transformed by ProductForm
+          : data.variants?.map(v => {
+              // Use centralized transform for untransformed variants
+              const formVariant: FormVariant & { variantId?: string } = {
+                variantId: 'variantId' in v ? v.variantId : undefined,
+                label: v.label,
+                priceAdjustment: v.priceAdjustment ?? 0,
+                inventory: v.inventory ?? 0,
+                sku: v.sku,
+              };
+              const transformed = transformFormVariantToSubmission(formVariant, data.price);
+              
+              // Add attributes if present
+              if ('attributes' in v && v.attributes) {
+                return { ...transformed, attributes: v.attributes };
+              }
+              return transformed;
+            }) as ProductInput['variants'],
       };
       
       createProductMutation.mutate(productData, {

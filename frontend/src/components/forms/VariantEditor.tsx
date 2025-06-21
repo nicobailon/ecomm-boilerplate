@@ -8,6 +8,9 @@ import type { ProductFormInput } from '@/lib/validations';
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { getVariantKey } from '@/types/variant';
+import { generateVariantId } from '@/utils/variant-id-generator';
+import { findDuplicateLabels, validateUniqueLabel } from '@/utils/variant-validation';
+import { roundToCents } from '@/utils/price-utils';
 
 interface VariantEditorProps {
   className?: string;
@@ -15,7 +18,7 @@ interface VariantEditorProps {
 }
 
 export function VariantEditor({ className, isLoading = false }: VariantEditorProps) {
-  const { control, register, formState: { errors }, watch } = useFormContext<ProductFormInput>();
+  const { control, register, formState: { errors }, watch, setValue } = useFormContext<ProductFormInput>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'variants',
@@ -26,7 +29,7 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
   
   // Debounced validation state
   const [debouncedVariants, setDebouncedVariants] = useState(variants);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Update debounced variants with delay
   useEffect(() => {
@@ -46,9 +49,10 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
   }, [variants]);
 
   const addVariant = () => {
+    // Don't generate ID yet - will be generated onBlur when label is provided
     append({
+      variantId: '', // Empty ID will be generated when label is entered
       label: '',
-      color: '',
       priceAdjustment: 0,
       inventory: 0,
       sku: '',
@@ -56,32 +60,13 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
   };
   
   const validateUniqueLabels = useCallback((index: number, value: string) => {
-    if (!value.trim()) return true; // Let required validation handle empty values
-    
-    // Use debounced variants for validation to prevent race conditions
-    const normalizedValue = value.toLowerCase().trim();
-    const isDuplicate = debouncedVariants.some((variant, i) => 
-      i !== index && variant.label?.toLowerCase().trim() === normalizedValue
-    );
-    
-    return isDuplicate ? 'Label must be unique' : true;
+    return validateUniqueLabel(debouncedVariants, index, value);
   }, [debouncedVariants]);
 
 
   // Duplicate check using debounced variants
   const { duplicateLabels, hasDuplicates } = useMemo(() => {
-    const labelCounts = new Map<string, number>();
-    debouncedVariants.forEach(variant => {
-      if (variant.label?.trim()) {
-        const label = variant.label.toLowerCase().trim();
-        labelCounts.set(label, (labelCounts.get(label) || 0) + 1);
-      }
-    });
-    const duplicates = Array.from(labelCounts.entries()).filter(([, count]) => count > 1).map(([label]) => label);
-    return {
-      duplicateLabels: duplicates,
-      hasDuplicates: duplicates.length > 0,
-    };
+    return findDuplicateLabels(debouncedVariants);
   }, [debouncedVariants]);
 
   return (
@@ -120,6 +105,7 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
                 <Skeleton className="h-10 w-24" />
                 <Skeleton className="h-10 w-24" />
                 <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 w-20" />
                 <Skeleton className="h-10 w-10" />
               </div>
             </div>
@@ -135,8 +121,7 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
           <table className="w-full">
             <thead className="bg-muted">
               <tr>
-                <th className="p-3 text-left font-medium">Label</th>
-                <th className="p-3 text-left font-medium">Color</th>
+                <th className="p-3 text-left font-medium w-1/4">Label</th>
                 <th className="p-3 text-left font-medium">Price Adjustment</th>
                 <th className="p-3 text-left font-medium">Final Price</th>
                 <th className="p-3 text-left font-medium">Inventory</th>
@@ -148,6 +133,7 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
               {fields.map((field, index) => (
                 <tr key={field.id} className="border-t">
                   <td className="p-3">
+                    <input type="hidden" {...register(`variants.${index}.variantId`)} readOnly />
                     <Input
                       {...register(`variants.${index}.label`, {
                         required: 'Label is required',
@@ -157,14 +143,22 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
                       error={errors.variants?.[index]?.label?.message}
                       className="w-full"
                       aria-label={`Variant ${index + 1} label`}
-                    />
-                  </td>
-                  <td className="p-3">
-                    <Input
-                      {...register(`variants.${index}.color`)}
-                      placeholder="e.g., Red, Blue, Green"
-                      className="w-full"
-                      aria-label={`Variant ${index + 1} color`}
+                      onBlur={(e) => {
+                        const label = e.target.value.trim();
+                        const currentVariantId = variants[index]?.variantId;
+                        // Only generate ID if label exists and variant doesn't have an ID yet
+                        // NOTE: Once generated, IDs are stable and won't change if label is edited.
+                        // This prevents breaking existing references but may cause ID/label mismatch.
+                        // Alternative: Always regenerate on blur to keep ID in sync with label.
+                        if (label && !currentVariantId) {
+                          const newId = generateVariantId(label);
+                          setValue(`variants.${index}.variantId`, newId);
+                          // Development feedback - remove or replace with toast in production
+                          if (process.env.NODE_ENV === 'development') {
+                            console.log(`Generated variant ID: ${newId} for label: "${label}"`);
+                          }
+                        }
+                      }}
                     />
                   </td>
                   <td className="p-3">
@@ -182,11 +176,11 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
                   <td className="p-3">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">
-                        ${(basePrice + (variants[index]?.priceAdjustment || 0)).toFixed(2)}
+                        ${roundToCents(basePrice + (variants[index]?.priceAdjustment || 0))}
                       </span>
                       {variants[index]?.priceAdjustment !== 0 && (
                         <span className="text-xs text-muted-foreground">
-                          ({(variants[index]?.priceAdjustment ?? 0) > 0 ? '+' : ''}{variants[index]?.priceAdjustment?.toFixed(2)})
+                          ({(variants[index]?.priceAdjustment ?? 0) > 0 ? '+' : ''}${Math.abs(variants[index]?.priceAdjustment ?? 0).toFixed(2)})
                         </span>
                       )}
                     </div>
@@ -254,7 +248,6 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
               • Price adjustment is added to the base product price
               • Final price shows what customers will pay (base + adjustment)
               • Negative adjustments create discounted variants
-              • Leave color blank if not applicable
             </p>
           </div>
         </>
@@ -265,7 +258,7 @@ export function VariantEditor({ className, isLoading = false }: VariantEditorPro
 
 export function getVariantDisplayText(variant: { label?: string; color?: string; size?: string }) {
   if (variant.label) {
-    return variant.color ? `${variant.label} - ${variant.color}` : variant.label;
+    return variant.label;
   }
   
   return [variant.size, variant.color].filter(Boolean).join(' - ') || 'Default';
@@ -283,16 +276,9 @@ export function validateVariants(variants: Array<{ label?: string; inventory?: n
   }
   
   // Check for duplicate labels
-  const labelCounts = new Map<string, number>();
-  variants.forEach(variant => {
-    if (variant.label?.trim()) {
-      const label = variant.label.toLowerCase().trim();
-      labelCounts.set(label, (labelCounts.get(label) || 0) + 1);
-    }
-  });
-  const duplicates = Array.from(labelCounts.entries()).filter(([, count]) => count > 1);
-  if (duplicates.length > 0) {
-    errors.push(`Duplicate labels found: ${duplicates.map(([label]) => `"${label}"`).join(', ')}`);
+  const { hasDuplicates, duplicateLabels } = findDuplicateLabels(variants);
+  if (hasDuplicates) {
+    errors.push(`Duplicate labels found: ${duplicateLabels.map(label => `"${label}"`).join(', ')}`);
   }
   
   // Check for duplicate attribute combinations (if using variant attributes)

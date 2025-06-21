@@ -85,9 +85,13 @@ export const useUpdateProduct = () => {
       }
       toast.error('Update failed. Your changes have been rolled back.');
     },
-    onSettled: () => {
+    onSettled: (_data, _error, variables) => {
       // Always refetch after error or success
       void queryClient.invalidateQueries({ queryKey: ['products'] });
+      // Also invalidate the specific product cache
+      void queryClient.invalidateQueries({ queryKey: ['product', variables.id] });
+      // Also invalidate featured products in case the update affected that
+      void queryClient.invalidateQueries({ queryKey: ['products', 'featured'] });
     },
     // Remove the default onSuccess toast to avoid duplicates
   });
@@ -110,18 +114,101 @@ export const useDeleteProduct = () => {
 export const useToggleFeatured = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await apiClient.patch<Product>(
-        `/products/${id}/toggle-featured`,
+        `/products/toggle-featured/${id}`,
       );
       return data;
     },
-    onSuccess: () => {
+    onMutate: async (id) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['products'] });
+      
+      // Snapshot all product queries
+      const productQueries = queryClient.getQueriesData<PaginatedResponse<Product>>({ queryKey: ['products'] });
+      const featuredQuery = queryClient.getQueryData<Product[]>(['products', 'featured']);
+      
+      // Optimistically update all product lists
+      productQueries.forEach(([queryKey, data]) => {
+        if (data?.data) {
+          const updatedData = {
+            ...data,
+            data: data.data.map((product) =>
+              product._id === id ? { ...product, isFeatured: !product.isFeatured } : product,
+            ),
+          };
+          queryClient.setQueryData(queryKey, updatedData);
+        }
+      });
+      
+      // Find the product to get its data for featured list update
+      let toggledProduct: Product | undefined;
+      productQueries.forEach(([, data]) => {
+        if (data?.data && !toggledProduct) {
+          toggledProduct = data.data.find(p => p._id === id);
+        }
+      });
+      
+      // Optimistically update featured products list
+      if (featuredQuery && toggledProduct) {
+        const isCurrentlyFeatured = toggledProduct.isFeatured;
+        if (isCurrentlyFeatured) {
+          // Remove from featured
+          queryClient.setQueryData(['products', 'featured'], 
+            featuredQuery.filter(p => p._id !== id),
+          );
+        } else {
+          // Add to featured
+          queryClient.setQueryData(['products', 'featured'], 
+            [...featuredQuery, { ...toggledProduct, isFeatured: true }],
+          );
+        }
+      }
+      
+      return { previousQueries: productQueries, previousFeatured: featuredQuery };
+    },
+    onError: (err, _id, context) => {
+      // Rollback on error
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      if (context?.previousFeatured) {
+        queryClient.setQueryData(['products', 'featured'], context.previousFeatured);
+      }
+      console.error('Toggle featured error:', err);
+      toast.error('Failed to update featured status');
+    },
+    onSuccess: (updatedProduct) => {
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <span>
+            {updatedProduct.isFeatured
+              ? `${updatedProduct.name} added to homepage carousel`
+              : `${updatedProduct.name} removed from homepage carousel`}
+          </span>
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs underline hover:no-underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            View on homepage →
+          </a>
+        </div>,
+      );
+    },
+    onSettled: () => {
+      // Always refetch to ensure consistency
       void queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Product updated');
+      void queryClient.invalidateQueries({ queryKey: ['products', 'featured'] });
     },
   });
+
+  return mutation;
 };
 
 export const useProductRecommendations = () => {
@@ -132,4 +219,13 @@ export const useProductRecommendations = () => {
       return data;
     },
   });
+};
+
+// Type for featured product selector
+export type ProductSelector = (product: Product) => boolean;
+export type IsFeaturedSelector = ProductSelector;
+
+// Selector helper for featured products
+export const isFeaturedSelector: ProductSelector = (product) => {
+  return product.isFeatured === true;
 };

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { AnalyticsData, DailySalesData } from '@/types';
+import { findDuplicateLabels } from '@/utils/variant-validation';
 
 export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -15,9 +16,9 @@ export const signupSchema = loginSchema.extend({
 });
 
 const variantSchema = z.object({
+  variantId: z.string().optional(), // Optional in form, Dev 1 will generate if missing
   label: z.string().min(1, 'Variant label is required'),
-  color: z.string().optional(),
-  priceAdjustment: z.number().default(0),
+  priceAdjustment: z.number().optional().default(0),
   inventory: z.number().min(0, 'Inventory cannot be negative').default(0),
   sku: z.string().optional(),
   attributes: z.record(z.string()).optional(),
@@ -36,6 +37,22 @@ export const productSchema = z.object({
   image: z.string().url('Invalid image URL'),
   variantTypes: z.array(variantTypeSchema).optional(),
   variants: z.array(variantSchema).optional(),
+}).superRefine((data, ctx) => {
+  // Validate unique variant labels
+  if (data.variants && data.variants.length > 0) {
+    const { duplicateIndices } = findDuplicateLabels(data.variants);
+    
+    // Add issues for all duplicate indices
+    duplicateIndices.forEach((indices) => {
+      indices.forEach(index => {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Variant labels must be unique',
+          path: ['variants', index, 'label'],
+        });
+      });
+    });
+  }
 });
 
 export const analyticsSchema = z.object({
@@ -86,8 +103,8 @@ export type ProductFormInput = Omit<ProductInput, 'variants' | 'variantTypes'> &
     values: string[];
   }>;
   variants?: Array<{
+    variantId?: string;
     label: string;
-    color?: string;
     priceAdjustment?: number;
     inventory?: number;
     sku?: string;

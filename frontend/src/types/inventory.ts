@@ -37,37 +37,6 @@ export interface BulkUpdateResponse {
   updatedCount: number;
 }
 
-export interface InventoryHistoryItem {
-  id: string;
-  timestamp: string;
-  productName?: string;
-  variantInfo?: string;
-  previousQuantity: number;
-  newQuantity: number;
-  changeType: 'sale' | 'restock' | 'adjustment' | 'return' | 'damage';
-  changeAmount: number;
-  userId: string;
-  userName: string;
-  reason?: string;
-  orderId?: string;
-}
-
-export interface InventoryHistoryOptions {
-  variantId?: string;
-  limit?: number;
-  offset?: number;
-}
-
-export interface LowStockItem {
-  productId: string;
-  productName: string;
-  variantId?: string;
-  variantName?: string;
-  currentStock: number;
-  threshold: number;
-  lastRestocked?: Date | string;
-  restockDate?: Date | string;
-}
 
 // Type guards
 export function isInventoryData(data: unknown): data is InventoryData {

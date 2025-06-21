@@ -88,7 +88,6 @@ export function VariantAttributesEditor({ className, isLoading = false }: Varian
       const label = generateVariantLabel(attributes, variantTypes);
       appendVariant({
         label,
-        color: '',
         priceAdjustment: 0,
         inventory: 0,
         sku: '',
@@ -378,7 +377,6 @@ export function VariantAttributesEditor({ className, isLoading = false }: Varian
             size="sm"
             onClick={() => appendVariant({
               label: '',
-              color: '',
               priceAdjustment: 0,
               inventory: 0,
               sku: '',

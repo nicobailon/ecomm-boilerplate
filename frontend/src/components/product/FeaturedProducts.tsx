@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAddToCart } from '@/hooks/cart/useCart';
 import { useCurrentUser } from '@/hooks/auth/useAuth';
+import { FeaturedBadge } from '@/components/ui/FeaturedBadge';
 import type { Product } from '@/types';
 import { toast } from 'sonner';
 
@@ -36,7 +38,8 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ featuredProducts })
 		setCurrentIndex((prevIndex) => prevIndex - itemsPerPage);
 	};
 
-	const handleAddToCart = (product: Product) => {
+	const handleAddToCart = (e: React.MouseEvent, product: Product) => {
+		e.preventDefault(); // Prevent navigation when clicking add to cart
 		if (!user) {
 			toast.error('Please login to add products to cart');
 			return;
@@ -59,21 +62,27 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ featuredProducts })
 						>
 							{featuredProducts?.map((product) => (
 								<div key={product._id} className='w-full sm:w-1/2 lg:w-1/3 xl:w-1/4 flex-shrink-0 px-2'>
-									<div className='bg-white bg-opacity-10 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden h-full transition-all duration-300 hover:shadow-xl border border-primary/30'>
-										<div className='overflow-hidden'>
+									<Link 
+										to={`/products/${product.slug || product._id}`}
+										className='block bg-white bg-opacity-10 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden h-full transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border border-primary/30 cursor-pointer'
+									>
+										<div className='overflow-hidden relative'>
 											<img
 												src={product.image}
 												alt={product.name}
 												className='w-full h-48 object-cover transition-transform duration-300 ease-in-out hover:scale-110'
 											/>
+											<div className='absolute top-2 left-2'>
+												<FeaturedBadge size='sm' showText={false} />
+											</div>
 										</div>
 										<div className='p-4'>
-											<h3 className='text-lg font-semibold mb-2 text-white'>{product.name}</h3>
+											<h3 className='text-lg font-semibold mb-2 text-white hover:text-primary transition-colors'>{product.name}</h3>
 											<p className='text-primary font-medium mb-4'>
 												${product.price.toFixed(2)}
 											</p>
 											<button
-												onClick={() => handleAddToCart(product)}
+												onClick={(e) => handleAddToCart(e, product)}
 												disabled={addToCart.isPending}
 												className='w-full bg-primary hover:bg-primary/80 text-primary-foreground font-semibold py-2 px-4 rounded transition-colors duration-300 
 												flex items-center justify-center disabled:opacity-50'
@@ -82,7 +91,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ featuredProducts })
 												{addToCart.isPending ? 'Adding...' : 'Add to Cart'}
 											</button>
 										</div>
-									</div>
+									</Link>
 								</div>
 							))}
 						</div>

@@ -1,3 +1,5 @@
+import { VARIANT_LIMITS } from '../../shared/constants/variant.constants.js';
+
 export const PAGINATION = {
   DEFAULT_PAGE: 1,
   DEFAULT_LIMIT: 12,
@@ -18,11 +20,8 @@ export const PRODUCT_LIMITS = {
   MAX_INVENTORY: 999999,
 } as const;
 
-export const VARIANT_LIMITS = {
-  MIN_VARIANT_ID_LENGTH: 1,
-  MAX_SKU_LENGTH: 50,
-  MAX_IMAGES_PER_VARIANT: 10,
-} as const;
+// Re-export VARIANT_LIMITS from shared constants
+export { VARIANT_LIMITS };
 
 export const RETRY_CONFIG = {
   MAX_INVENTORY_UPDATE_RETRIES: 3,

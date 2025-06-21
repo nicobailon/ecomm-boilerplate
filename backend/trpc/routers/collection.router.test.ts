@@ -401,7 +401,7 @@ describe('collectionRouter', () => {
 
       await expect(authedCaller.collection.quickCreate(input)).rejects.toMatchObject({
         code: 'CONFLICT',
-        message: 'A collection with this name already exists',
+        message: 'A resource with this name already exists',
       });
     });
 

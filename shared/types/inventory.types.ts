@@ -94,17 +94,6 @@ export interface InventoryQueryParams {
   search?: string;
 }
 
-export interface LowStockAlert {
-  productId: string;
-  productName: string;
-  variantId?: string;
-  variantName?: string;
-  variantLabel?: string;
-  currentStock: number;
-  threshold: number;
-  lastRestocked?: Date;
-  restockDate?: Date;
-}
 
 export interface InventoryTurnoverData {
   productId: string;

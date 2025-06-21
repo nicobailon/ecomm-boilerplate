@@ -15,14 +15,12 @@ import {
   ProductInventoryInfo,
   BulkInventoryUpdate,
   InventoryUpdateReason,
-  LowStockAlert,
   InventoryMetrics,
   InventoryTurnoverData,
 } from '../../shared/types/inventory.types.js';
 
 const CACHE_KEYS = {
   INVENTORY_METRICS: 'inventory:metrics',
-  LOW_STOCK_PRODUCTS: 'inventory:low-stock',
   OUT_OF_STOCK_PRODUCTS: 'inventory:out-of-stock',
   PRODUCT_INVENTORY: (productId: string, variantId?: string, variantLabel?: string) => {
     if (USE_VARIANT_LABEL && variantLabel) {
@@ -34,7 +32,6 @@ const CACHE_KEYS = {
 
 const CACHE_TTL = {
   METRICS: 60, // 1 minute
-  LOW_STOCK: 300, // 5 minutes
   OUT_OF_STOCK: 300, // 5 minutes
   PRODUCT_INVENTORY: 30, // 30 seconds
 };
@@ -535,180 +532,6 @@ export class InventoryService {
       }
     }
 
-    return results;
-  }
-
-  async getInventoryHistory(
-    productId: string,
-    variantId?: string,
-    limit = 50,
-    offset = 0,
-  ): Promise<{
-    history: Record<string, unknown>[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    const query: { productId: string; variantId?: string } = { productId };
-    if (variantId) {
-      query.variantId = variantId;
-    }
-
-    const [history, total] = await Promise.all([
-      InventoryHistory.find(query)
-        .sort({ timestamp: -1 })
-        .limit(limit)
-        .skip(offset)
-        .lean(),
-      InventoryHistory.countDocuments(query),
-    ]);
-
-    return {
-      history,
-      total,
-      page: Math.floor(offset / limit) + 1,
-      totalPages: Math.ceil(total / limit),
-    };
-  }
-
-  async getLowStockProducts(threshold?: number): Promise<LowStockAlert[]> {
-    // Create cache key with threshold
-    const cacheKey = `${CACHE_KEYS.LOW_STOCK_PRODUCTS}:${threshold ?? 'default'}`;
-    
-    // Try to get from cache first
-    const cached = await this.cacheService.get<LowStockAlert[]>(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    const pipeline = [
-      // Match active products
-      { $match: { isDeleted: { $ne: true } } },
-      
-      // Unwind variants to process each variant separately
-      { $unwind: '$variants' },
-      
-      // Calculate effective threshold
-      {
-        $addFields: {
-          effectiveThreshold: threshold ?? { $ifNull: ['$lowStockThreshold', 5] },
-        },
-      },
-      
-      // Lookup reservations for each variant
-      {
-        $lookup: {
-          from: 'inventoryreservations',
-          let: {
-            productId: { $toString: '$_id' },
-            variantId: '$variants.variantId',
-          },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$productId', '$$productId'] },
-                    { $eq: ['$variantId', '$$variantId'] },
-                    { $gt: ['$expiresAt', new Date()] },
-                  ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                totalReserved: { $sum: '$quantity' },
-              },
-            },
-          ],
-          as: 'reservations',
-        },
-      },
-      
-      // Calculate available inventory
-      {
-        $addFields: {
-          totalReserved: {
-            $ifNull: [{ $first: '$reservations.totalReserved' }, 0],
-          },
-          availableStock: {
-            $subtract: [
-              '$variants.inventory',
-              { $ifNull: [{ $first: '$reservations.totalReserved' }, 0] },
-            ],
-          },
-        },
-      },
-      
-      // Filter for low stock items
-      {
-        $match: {
-          $expr: {
-            $lte: ['$availableStock', '$effectiveThreshold'],
-          },
-        },
-      },
-      
-      // Lookup last restock history
-      {
-        $lookup: {
-          from: 'inventoryhistories',
-          let: {
-            productId: { $toString: '$_id' },
-            variantId: '$variants.variantId',
-          },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$productId', '$$productId'] },
-                    { $eq: ['$variantId', '$$variantId'] },
-                    { $eq: ['$reason', 'restock'] },
-                  ],
-                },
-              },
-            },
-            { $sort: { timestamp: -1 } },
-            { $limit: 1 },
-          ],
-          as: 'restockHistory',
-        },
-      },
-      
-      // Format the output
-      {
-        $project: {
-          _id: 0,
-          productId: { $toString: '$_id' },
-          productName: '$name',
-          variantId: '$variants.variantId',
-          variantName: {
-            $trim: {
-              input: {
-                $concat: [
-                  { $ifNull: ['$variants.size', ''] },
-                  ' ',
-                  { $ifNull: ['$variants.color', ''] },
-                ],
-              },
-            },
-          },
-          currentStock: '$availableStock',
-          threshold: '$effectiveThreshold',
-          lastRestocked: { $first: '$restockHistory.timestamp' },
-          restockDate: '$restockDate',
-        },
-      },
-    ];
-
-    const alerts = await Product.aggregate(pipeline as mongoose.PipelineStage[]);
-    const results = alerts as LowStockAlert[];
-    
-    // Cache the results
-    await this.cacheService.set(cacheKey, results, CACHE_TTL.LOW_STOCK);
-    
     return results;
   }
 
@@ -1245,15 +1068,7 @@ export class InventoryService {
     
     // Invalidate general metrics that might be affected
     await this.cacheService.del(CACHE_KEYS.INVENTORY_METRICS);
-    await this.cacheService.del(`${CACHE_KEYS.LOW_STOCK_PRODUCTS}:default`);
     await this.cacheService.del(CACHE_KEYS.OUT_OF_STOCK_PRODUCTS);
-    
-    // Also invalidate any threshold-specific low stock caches
-    // In a production system, you might want to track these keys more precisely
-    const thresholds = [5, 10, 20, 50]; // Common thresholds
-    for (const threshold of thresholds) {
-      await this.cacheService.del(`${CACHE_KEYS.LOW_STOCK_PRODUCTS}:${threshold}`);
-    }
   }
 }
 

@@ -1,4 +1,5 @@
 import { Minus, Plus, Trash } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useUnifiedUpdateQuantity, useUnifiedRemoveFromCart } from '@/hooks/cart/useUnifiedCart';
 import type { CartItem as CartItemType, Product } from '@/types';
 import { getVariantDisplayText } from '@/components/forms/VariantEditor';
@@ -38,11 +39,13 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 		>
 			<div className='space-y-4 md:flex md:items-center md:justify-between md:gap-6 md:space-y-0'>
 				<div className='shrink-0 md:order-1'>
-					<img 
-						className='h-20 md:h-32 rounded object-cover' 
-						src={item.product.image} 
-						alt={`${item.product.name} product image`}
-					/>
+					<Link to={`/products/${item.product.slug}`}>
+						<img 
+							className='h-20 md:h-32 rounded object-cover transition-opacity hover:opacity-80' 
+							src={item.product.image} 
+							alt={`${item.product.name} product image`}
+						/>
+					</Link>
 				</div>
 
 				<div className='flex items-center justify-between md:order-3 md:justify-end'>
@@ -87,12 +90,14 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 
 				<div className='w-full min-w-0 flex-1 space-y-4 md:order-2 md:max-w-md'>
 					<div>
-						<h3 
-							id={`cart-item-${item.product._id}`}
-							className='text-base font-medium text-foreground hover:text-primary hover:underline'
-						>
-							{item.product.name}
-						</h3>
+						<Link to={`/products/${item.product.slug}`}>
+							<h3 
+								id={`cart-item-${item.product._id}`}
+								className='text-base font-medium text-foreground hover:text-primary hover:underline'
+							>
+								{item.product.name}
+							</h3>
+						</Link>
 						{item.variantDetails && (
 							<div className='flex items-center gap-2 mt-1 text-sm text-muted-foreground'>
 								<span>{getVariantDisplayText(item.variantDetails)}</span>

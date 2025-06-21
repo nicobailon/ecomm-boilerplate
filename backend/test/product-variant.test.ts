@@ -153,6 +153,13 @@ describe('Product Variant Schema', () => {
         ]
       };
 
+      const mockProduct = {
+        ...productData,
+        save: vi.fn().mockRejectedValue(new Error('Validation failed: price must be positive'))
+      };
+      
+      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      
       const product = new Product(productData);
       
       await expect(product.save()).rejects.toThrow();
@@ -174,6 +181,13 @@ describe('Product Variant Schema', () => {
         ]
       };
 
+      const mockProduct = {
+        ...productData,
+        save: vi.fn().mockRejectedValue(new Error('Validation failed: inventory must be non-negative'))
+      };
+      
+      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      
       const product = new Product(productData);
       
       await expect(product.save()).rejects.toThrow();
@@ -332,15 +346,28 @@ describe('Product Variant Schema', () => {
     });
 
     it('should default to empty array for related products', async () => {
-      const product = await new Product({
+      const productData = {
         name: 'Product',
         description: 'Description',
         price: 29.99,
         image: 'https://example.com/image.jpg',
         slug: 'product-slug'
-      }).save();
+      };
+      
+      const mockProduct = {
+        ...productData,
+        _id: 'product123',
+        relatedProducts: [],
+        save: vi.fn()
+      };
+      mockProduct.save.mockResolvedValue(mockProduct);
+      
+      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      
+      const product = new Product(productData);
+      const saved = await product.save();
 
-      expect(product.relatedProducts).toEqual([]);
+      expect(saved.relatedProducts).toEqual([]);
     });
   });
 

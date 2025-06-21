@@ -8,7 +8,6 @@ import {
   useUpdateProduct as useUpdateProductREST,
   useDeleteProduct as useDeleteProductREST,
   useToggleFeatured as useToggleFeaturedREST,
-  useProductRecommendations as useProductRecommendationsREST,
 } from '@/hooks/product/useProducts';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -126,8 +125,11 @@ export function useUpdateProduct() {
   
   const trpcMutation = trpc.product.update.useMutation({
     onSuccess: (_, variables) => {
+      // Invalidate all product-related queries
       void queryClient.invalidateQueries({ queryKey: ['products'] });
       void queryClient.invalidateQueries({ queryKey: ['product', variables.id] });
+      // Also invalidate featured products in case the update affected that
+      void queryClient.invalidateQueries({ queryKey: ['products', 'featured'] });
       toast.success('Product updated successfully');
     },
   });
@@ -208,24 +210,5 @@ export function useToggleFeatured() {
   }
 
   return restMutation;
-}
-
-export function useProductRecommendations() {
-  const restQuery = useProductRecommendationsREST();
-  const trpcQuery = trpc.product.recommended.useQuery(undefined, {
-    enabled: FEATURE_FLAGS.USE_TRPC_PRODUCTS,
-  });
-
-  if (FEATURE_FLAGS.USE_TRPC_PRODUCTS) {
-    return {
-      data: trpcQuery.data,
-      isLoading: trpcQuery.isLoading,
-      error: trpcQuery.error,
-      isError: trpcQuery.isError,
-      refetch: trpcQuery.refetch,
-    };
-  }
-
-  return restQuery;
 }
 

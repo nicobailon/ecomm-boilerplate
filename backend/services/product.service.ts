@@ -287,29 +287,38 @@ class ProductService {
       },
     ]);
 
-    return products;
+    return products as IProduct[];
   }
 
-  async getProductById(productId: string): Promise<IProduct> {
+  async getProductById(productId: string): Promise<IProductWithVariants> {
     const product = await Product.findById(productId);
     if (!product) {
       throw new AppError(`Product not found with ID: ${productId}`, 404);
     }
-    return toProduct(product);
+    return toProductWithVariants(product);
   }
 
   async toggleFeaturedProduct(productId: string): Promise<IProduct> {
-    const product = await Product.findById(productId);
+    // First get the current product to check its featured status
+    const currentProduct = await Product.findById(productId);
     
-    if (!product) {
+    if (!currentProduct) {
       throw new AppError(`Product not found with ID: ${productId}. Cannot toggle featured status`, 404);
     }
     
-    product.isFeatured = !product.isFeatured;
-    const updatedProduct = await product.save();
+    // Update only the isFeatured field without triggering full validation
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      { isFeatured: !currentProduct.isFeatured },
+      { new: true, runValidators: false },
+    );
     
     // Update cache
     await this.updateFeaturedProductsCache();
+    
+    if (!updatedProduct) {
+      throw new AppError(`Failed to update product featured status for ID: ${productId}`, 500);
+    }
     
     return toProduct(updatedProduct);
   }
@@ -618,7 +627,7 @@ class ProductService {
     // Cache with configured TTL
     await redis.set(cacheKey, JSON.stringify(result), 'EX', CACHE_TTL.RELATED_PRODUCTS);
     
-    return result;
+    return result as IProduct[];
   }
   
   calculateVariantPrice(basePrice: number, variant: IProductVariant): number {
@@ -645,7 +654,7 @@ class ProductService {
   async updateVariantInventory(
     productId: string, 
     variantId?: string,
-    quantity: number = 1,
+    quantity = 1,
     operation: 'increment' | 'decrement' | 'set' = 'set',
     maxRetries = RETRY_CONFIG.MAX_INVENTORY_UPDATE_RETRIES,
     variantLabel?: string,
@@ -661,7 +670,7 @@ class ProductService {
         }
         
         // Map incoming size to label when flag is ON  
-        let effectiveVariantId = variantId;
+        const effectiveVariantId = variantId;
         let effectiveVariantLabel = variantLabel;
         
         if (USE_VARIANT_LABEL && variantId && !variantLabel) {
@@ -678,7 +687,7 @@ class ProductService {
         const variantIndex = product.variants.findIndex(v => 
           USE_VARIANT_LABEL && effectiveVariantLabel ? 
             v.label === effectiveVariantLabel : 
-            v.variantId === effectiveVariantId
+            v.variantId === effectiveVariantId,
         );
         
         if (variantIndex === -1) {

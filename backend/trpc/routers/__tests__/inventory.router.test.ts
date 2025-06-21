@@ -243,75 +243,8 @@ describe('inventoryRouter', () => {
     });
   });
 
-  describe('getInventoryHistory', () => {
-    it('should get inventory history with pagination', async () => {
-      const ctx = createTestContext({ user: mockUser });
-      const caller = inventoryRouter.createCaller(() => ctx);
-
-      const mockHistory = {
-        history: [
-          {
-            productId: '507f1f77bcf86cd799439011',
-            variantId: 'v1',
-            previousQuantity: 40,
-            newQuantity: 50,
-            adjustment: 10,
-            reason: 'restock',
-            userId: 'admin123',
-            timestamp: new Date(),
-          },
-        ],
-        total: 100,
-        page: 2,
-        totalPages: 5,
-      };
-
-      vi.spyOn(inventoryService, 'getInventoryHistory').mockResolvedValue(mockHistory as any);
-
-      const result = await caller.getInventoryHistory({
-        productId: '507f1f77bcf86cd799439011',
-        variantId: 'v1',
-        limit: 20,
-        offset: 20,
-      });
-
-      expect(result).toEqual(mockHistory);
-    });
-  });
-
-  describe('getLowStockProducts', () => {
-    it('should get low stock products with pagination', async () => {
-      const ctx = createTestContext({ user: mockUser });
-      const caller = inventoryRouter.createCaller(() => ctx);
-
-      const mockAlerts = [
-        {
-          productId: '507f1f77bcf86cd799439011',
-          productName: 'Product 1',
-          variantId: 'v1',
-          variantName: 'Size M',
-          currentStock: 3,
-          threshold: 5,
-          lastRestocked: new Date(),
-        },
-      ];
-
-      vi.spyOn(inventoryService, 'getLowStockProducts').mockResolvedValue(mockAlerts);
-
-      const result = await caller.getLowStockProducts({
-        threshold: 5,
-        page: 1,
-        limit: 20,
-      });
-
-      expect(result).toEqual({
-        alerts: mockAlerts,
-        total: 1,
-        page: 1,
-        totalPages: 1,
-      });
-    });
-  });
+  // Note: getInventoryHistory and getLowStockProducts procedures were removed
+  // as part of the inventory simplification (removed History and Low Stock sections)
 
   describe('getInventoryMetrics', () => {
     it('should get inventory metrics', async () => {

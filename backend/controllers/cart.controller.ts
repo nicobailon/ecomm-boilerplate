@@ -14,14 +14,14 @@ export const getCartProducts = asyncHandler(async (req: AuthRequest, res: Respon
 });
 
 export const addToCart = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { productId, variantId } = req.body as { productId: string; variantId?: string };
+  const { productId, variantId, variantLabel } = req.body as { productId: string; variantId?: string; variantLabel?: string };
   if (!req.user) {
     res.status(401).json({ message: 'Unauthorized' });
     return;
   }
   const user = req.user;
   
-  await cartService.addToCart(user, productId, variantId);
+  await cartService.addToCart(user, productId, variantId, variantLabel);
   const cartResponse = await cartService.calculateCartTotals(user);
   res.json(cartResponse);
 });

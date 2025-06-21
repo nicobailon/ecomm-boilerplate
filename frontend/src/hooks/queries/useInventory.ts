@@ -1,8 +1,5 @@
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
-import type { 
-  InventoryHistoryOptions,
-} from '@/types/inventory';
 
 // Hook to get product inventory
 export function useProductInventory(productId: string, variantId?: string, variantLabel?: string) {
@@ -24,71 +21,119 @@ export function useUpdateInventory() {
 
   return trpc.inventory.updateInventory.useMutation({
     onMutate: async (variables) => {
+      // Build the query key based on what's provided
+      const queryKey = {
+        productId: variables.productId,
+        ...(variables.variantId && { variantId: variables.variantId }),
+        ...(variables.variantLabel && { variantLabel: variables.variantLabel }),
+      };
+      
       // Cancel any outgoing refetches
+      await utils.inventory.getProductInventory.cancel(queryKey);
+      
+      // Also cancel queries without variant info for products
       await utils.inventory.getProductInventory.cancel({ 
-        productId: variables.productId, 
-        variantId: variables.variantId,
-        variantLabel: variables.variantLabel,
+        productId: variables.productId 
       });
 
       // Snapshot the previous value
-      const previousData = utils.inventory.getProductInventory.getData({
-        productId: variables.productId,
-        variantId: variables.variantId,
-        variantLabel: variables.variantLabel,
-      });
+      const previousData = utils.inventory.getProductInventory.getData(queryKey);
+      
+      // Also try to get data for product-only query if no variant data
+      const previousProductData = !previousData && !variables.variantId 
+        ? utils.inventory.getProductInventory.getData({ productId: variables.productId })
+        : null;
 
       // Optimistically update to the new value
-      if (previousData) {
+      const dataToUpdate = previousData || previousProductData;
+      if (dataToUpdate) {
         const adjustment = variables.adjustment;
-        const newInventory = previousData.currentStock + adjustment;
-        const newAvailable = previousData.availableStock + adjustment;
+        const newInventory = dataToUpdate.currentStock + adjustment;
+        const newAvailable = dataToUpdate.availableStock + adjustment;
         
+        // Update the specific query
         utils.inventory.getProductInventory.setData(
-          { productId: variables.productId, variantId: variables.variantId, variantLabel: variables.variantLabel },
+          queryKey,
           {
-            ...previousData,
+            ...dataToUpdate,
             currentStock: newInventory,
             availableStock: newAvailable,
           },
         );
+        
+        // Also update product-only query if no variant
+        if (!variables.variantId) {
+          utils.inventory.getProductInventory.setData(
+            { productId: variables.productId },
+            {
+              ...dataToUpdate,
+              currentStock: newInventory,
+              availableStock: newAvailable,
+            },
+          );
+        }
       }
 
       // Return a context object with the snapshotted value
-      return { previousData };
+      return { previousData: dataToUpdate, queryKey };
     },
     onSuccess: (data) => {
       toast.success(`Inventory updated successfully. New stock: ${data.newQuantity}`);
     },
     onError: (error, variables, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousData) {
+      if (context?.previousData && context?.queryKey) {
         utils.inventory.getProductInventory.setData(
-          { productId: variables.productId, variantId: variables.variantId, variantLabel: variables.variantLabel },
+          context.queryKey,
           context.previousData,
         );
+        
+        // Also rollback product-only query if no variant
+        if (!variables.variantId) {
+          utils.inventory.getProductInventory.setData(
+            { productId: variables.productId },
+            context.previousData,
+          );
+        }
       }
       toast.error(error.message || 'Failed to update inventory');
     },
     onSettled: (_, __, variables) => {
-      // Always refetch after error or success
+      // Invalidate all possible query combinations
+      // 1. Specific variant query
+      if (variables.variantId) {
+        void utils.inventory.getProductInventory.invalidate({
+          productId: variables.productId,
+          variantId: variables.variantId,
+          variantLabel: variables.variantLabel,
+        });
+      }
+      
+      // 2. Product-only query (for non-variant products or aggregate data)
       void utils.inventory.getProductInventory.invalidate({
         productId: variables.productId,
-        variantId: variables.variantId,
-        variantLabel: variables.variantLabel,
       });
-      // Also invalidate without variantId to catch parent product queries
-      void utils.inventory.getProductInventory.invalidate({
-        productId: variables.productId,
-      });
-      void utils.inventory.getLowStockProducts.invalidate();
+      
+      // 3. Invalidate metrics
       void utils.inventory.getInventoryMetrics.invalidate();
-      // Force immediate refetch
-      void utils.inventory.getProductInventory.refetch({
+      
+      // 4. Also invalidate product list queries that might show inventory
+      void utils.product.list.invalidate();
+      
+      // Force immediate refetch of the specific query
+      const refetchQuery = {
         productId: variables.productId,
-        variantId: variables.variantId,
-        variantLabel: variables.variantLabel,
-      });
+        ...(variables.variantId && { variantId: variables.variantId }),
+        ...(variables.variantLabel && { variantLabel: variables.variantLabel }),
+      };
+      void utils.inventory.getProductInventory.refetch(refetchQuery);
+      
+      // Also refetch product-only if no variant
+      if (!variables.variantId) {
+        void utils.inventory.getProductInventory.refetch({
+          productId: variables.productId,
+        });
+      }
     },
   });
 }
@@ -105,28 +150,6 @@ export function useBulkUpdateInventory() {
   });
 }
 
-// Hook to get inventory history
-export function useInventoryHistory(productId: string, options?: InventoryHistoryOptions) {
-  const limit = options?.limit ?? 50;
-  const offset = options?.offset ?? 0;
-  
-  return trpc.inventory.getInventoryHistory.useQuery({
-    productId,
-    variantId: options?.variantId,
-    limit,
-    offset,
-  });
-}
-
-// Hook to get low stock products
-export function useLowStockProducts(threshold = 5, page = 1, limit = 20) {
-  return trpc.inventory.getLowStockProducts.useQuery(
-    { threshold, page, limit },
-    {
-      refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
-    },
-  );
-}
 
 // Hook for real-time inventory updates (WebSocket)
 export function useInventorySubscription() {

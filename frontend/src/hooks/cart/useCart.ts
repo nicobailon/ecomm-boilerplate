@@ -103,8 +103,9 @@ type AddToCartParams =
   | Product                                    // @deprecated Legacy format - product only
   | string;                                   // @deprecated Legacy format - product ID only
 
-export const useAddToCart = () => {
+export const useAddToCart = (options?: { showToast?: boolean }) => {
   const queryClient = useQueryClient();
+  const showToast = options?.showToast ?? true;
 
   return useMutation({
     mutationFn: async (params: AddToCartParams) => {
@@ -199,7 +200,9 @@ export const useAddToCart = () => {
       void queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
     onSuccess: () => {
-      toast.success('Added to cart');
+      if (showToast) {
+        toast.success('Added to cart');
+      }
     },
   });
 };

@@ -12,6 +12,7 @@ export interface IUserDocument extends Document {
     quantity: number;
     variantId?: string;
     variantDetails?: {
+      label?: string;
       size?: string;
       color?: string;
       price: number;
@@ -60,6 +61,10 @@ const userSchema = new Schema<IUserDocument>(
         },
         variantDetails: {
           type: {
+            label: {
+              type: String,
+              required: false,
+            },
             size: {
               type: String,
               required: false,

@@ -1,12 +1,9 @@
 import { useState } from 'react';
-import { Search, Package, AlertTriangle, TrendingUp, Download } from 'lucide-react';
+import { Search, Package, Download } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { InventoryManagement } from '@/components/admin/InventoryManagement';
-import { LowStockAlerts } from '@/components/admin/LowStockAlerts';
-import { InventoryHistory } from '@/components/admin/InventoryHistory';
 import { BulkInventoryUpdate } from '@/components/admin/BulkInventoryUpdate';
 import { Button } from '@/components/ui/Button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { InventoryErrorBoundary } from '@/components/ui/InventoryErrorBoundary';
 import { useDebounce } from '@/hooks/useDebounce';
 import { InventoryTableLoading, InventoryStatsLoading } from '@/components/ui/InventorySkeleton';
@@ -14,7 +11,6 @@ import { InventoryTableLoading, InventoryStatsLoading } from '@/components/ui/In
 export function InventoryTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const [activeSubTab, setActiveSubTab] = useState('overview');
   const [showBulkUpdate, setShowBulkUpdate] = useState(false);
 
   // Mock loading state for demonstration
@@ -60,50 +56,17 @@ export function InventoryTab() {
         </div>
       </div>
 
-      {/* Sub-tabs for different inventory views */}
-      <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="overview">
-            <Package className="w-4 h-4 mr-2" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="alerts">
-            <AlertTriangle className="w-4 h-4 mr-2" />
-            Low Stock
-          </TabsTrigger>
-          <TabsTrigger value="history">
-            <TrendingUp className="w-4 h-4 mr-2" />
-            History
-          </TabsTrigger>
-        </TabsList>
-
-        <div className="mt-6">
-          <TabsContent value="overview">
-            <InventoryErrorBoundary>
-              {isLoading ? (
-                <div className="space-y-4">
-                  <InventoryStatsLoading />
-                  <InventoryTableLoading />
-                </div>
-              ) : (
-                <InventoryManagement searchQuery={debouncedSearchQuery} />
-              )}
-            </InventoryErrorBoundary>
-          </TabsContent>
-
-          <TabsContent value="alerts">
-            <InventoryErrorBoundary>
-              <LowStockAlerts />
-            </InventoryErrorBoundary>
-          </TabsContent>
-
-          <TabsContent value="history">
-            <InventoryErrorBoundary>
-              <InventoryHistory />
-            </InventoryErrorBoundary>
-          </TabsContent>
-        </div>
-      </Tabs>
+      {/* Inventory Overview */}
+      <InventoryErrorBoundary>
+        {isLoading ? (
+          <div className="space-y-4">
+            <InventoryStatsLoading />
+            <InventoryTableLoading />
+          </div>
+        ) : (
+          <InventoryManagement searchQuery={debouncedSearchQuery} />
+        )}
+      </InventoryErrorBoundary>
 
       {/* Bulk Update Modal */}
       {showBulkUpdate && (

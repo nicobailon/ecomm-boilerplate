@@ -1,6 +1,7 @@
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ProductFormInput, ProductInput } from '@/lib/validations';
+import type { FormVariant, VariantSubmission } from '@/types';
 import { productSchema } from '@/lib/validations';
 import { useProductCreation } from '@/hooks/product/useProductCreation';
 import { useCreateProduct, useUpdateProduct } from '@/hooks/migration/use-products-migration';
@@ -18,10 +19,13 @@ import { Progress } from '@/components/ui/Progress';
 import { cn } from '@/lib/utils';
 import { CheckIcon } from 'lucide-react';
 import type { ProductFormProps, Product } from '@/types';
+import type { ProductWithVariantTypes, ProductVariantWithAttributes } from '@/types/variant';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { VariantEditor } from './VariantEditor';
 import { VariantAttributesEditor } from './VariantAttributesEditor';
 import { useFeatureFlag } from '@/hooks/useFeatureFlags';
+import { transformFormVariantToSubmission, recalculatePriceAdjustments } from '@/utils/variant-transform';
+import { roundToCents } from '@/utils/price-utils';
 
 export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onSuccess }) => {
   // Detect if we're inside a modal/drawer by checking for Radix dialog context
@@ -48,14 +52,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         ? initialData.collectionId 
         : initialData.collectionId?._id,
       image: initialData.image,
-      variantTypes: (initialData as any).variantTypes,
+      variantTypes: 'variantTypes' in initialData ? (initialData as ProductWithVariantTypes).variantTypes : undefined,
       variants: initialData.variants?.map(v => ({
-        label: v.label || '',
-        color: v.color || '',
-        priceAdjustment: v.price - initialData.price,
+        variantId: v.variantId,
+        label: v.label ?? '',
+        color: v.color ?? '',
+        priceAdjustment: roundToCents(v.price - initialData.price),
         inventory: v.inventory,
-        sku: v.sku || '',
-        attributes: (v as any).attributes,
+        reservedInventory: v.reservedInventory ?? 0, // NEW: Keep existing reservedInventory value
+        images: v.images ?? [], // NEW: Keep existing images
+        sku: v.sku ?? '',
+        attributes: 'attributes' in v ? (v as ProductVariantWithAttributes).attributes : undefined,
       })),
     } : productCreation?.draftData ?? {
       name: '',
@@ -89,6 +96,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
 
   const watchedImage = watch('image');
   const watchedFields = watch();
+  const watchedPrice = watch('price');
+  const watchedVariants = watch('variants');
+  
+  // Track previous price for recalculation
+  const [previousPrice, setPreviousPrice] = useState<number>(initialData?.price ?? 0);
+  
+  // Recalculate price adjustments when base price changes
+  useEffect(() => {
+    if (watchedPrice && watchedPrice !== previousPrice && watchedVariants && watchedVariants.length > 0) {
+      const recalculatedVariants = recalculatePriceAdjustments(
+        watchedVariants as (FormVariant & { variantId?: string })[],
+        previousPrice,
+        watchedPrice,
+      );
+      setValue('variants', recalculatedVariants);
+      setPreviousPrice(watchedPrice);
+    }
+  }, [watchedPrice, previousPrice, watchedVariants, setValue]);
   
   // Check if fields are valid
   const nameError = errors.name;
@@ -118,11 +143,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
           : initialData.collectionId?._id,
         image: initialData.image,
         variants: initialData.variants?.map(v => ({
-          label: v.label || '',
-          color: v.color || '',
-          priceAdjustment: v.price - initialData.price,
+          variantId: v.variantId,
+          label: v.label ?? '',
+          color: v.color ?? '',
+          priceAdjustment: roundToCents(v.price - initialData.price),
           inventory: v.inventory,
-          sku: v.sku || '',
+          reservedInventory: v.reservedInventory ?? 0, // NEW: Keep existing reservedInventory value
+          images: v.images ?? [], // NEW: Keep existing images
+          sku: v.sku ?? '',
+          attributes: 'attributes' in v ? (v as ProductVariantWithAttributes).attributes : undefined,
         })),
       });
       if (initialData.image) {
@@ -137,6 +166,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
   }, [mode, initialData, reset, productCreation?.draftData]);
   
   const onSubmit = useCallback((data: ProductFormInput) => {
+    // Transform variants with proper variantId and absolute price
+    const transformedVariants: VariantSubmission[] | undefined = data.variants?.map(variant => {
+      const formVariant = variant as FormVariant & { variantId?: string };
+      const submission = transformFormVariantToSubmission(formVariant, data.price);
+      
+      // Add attributes if feature flag is enabled
+      if (useVariantAttributes && variant.attributes) {
+        return { ...submission, attributes: variant.attributes };
+      }
+      
+      return submission;
+    });
+
+    // Transform data for submission
+
     // Create properly typed data for the API with required variant fields
     const apiData: ProductInput = {
       name: data.name,
@@ -145,14 +189,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
       image: data.image,
       collectionId: data.collectionId,
       variantTypes: useVariantAttributes ? data.variantTypes : undefined,
-      variants: data.variants?.map(variant => ({
-        label: variant.label,
-        color: variant.color,
-        priceAdjustment: variant.priceAdjustment ?? 0,
-        inventory: variant.inventory ?? 0,
-        sku: variant.sku,
-        attributes: useVariantAttributes ? variant.attributes : undefined,
-      })),
+      variants: transformedVariants as ProductInput['variants'],
     };
     
     if (mode === 'create') {
@@ -165,7 +202,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
               toast.success('Created product in new collection');
             }
           } else {
-            product = result as Product;
+            product = result;
           }
           
           reset();
@@ -185,7 +222,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         },
       });
     }
-  }, [mode, createProductMutation, updateProductMutation, initialData, reset, onSuccess, productCreationData]);
+  }, [mode, createProductMutation, updateProductMutation, initialData, reset, onSuccess, productCreationData, useVariantAttributes]);
   
   // Keyboard shortcuts
   useEffect(() => {

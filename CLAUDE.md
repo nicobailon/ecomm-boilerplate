@@ -244,3 +244,36 @@ Required variables are documented in `.env.example`. Key services:
 - React.lazy for route-based splitting
 - Optimistic updates with TanStack Query
 - Database indexes on frequently queried fields
+
+## Inventory Management
+
+### Shopify-Like Pattern (No Reservations)
+
+The system follows a Shopify-like inventory pattern without reservations:
+
+- **No inventory reservations**: Items can remain in cart even if out of stock
+- **Checkout-time validation**: Inventory is only checked when proceeding to payment
+- **Automatic adjustment**: If insufficient stock at checkout, quantities are automatically adjusted
+- **Clear messaging**: Users receive clear feedback about any quantity adjustments
+
+### Inventory Flow
+
+1. **Adding to Cart**: No inventory checks - items can be added freely
+2. **Cart Display**: Shows current inventory status with warnings but doesn't prevent items
+3. **Checkout Process**:
+   - Backend validates each item against current inventory
+   - Automatically adjusts quantities if insufficient stock
+   - Returns adjustment details to frontend
+   - Proceeds with available items only
+4. **Real-time Updates**: WebSocket notifications for inventory changes
+
+### Key Services
+
+- **Inventory Service** (`/backend/services/inventory.service.ts`): 
+  - `getAvailableInventory()` returns actual inventory (no reservation calculations)
+  - `updateInventory()` handles stock changes with atomic operations
+  
+- **Payment Service** (`/backend/services/payment.service.ts`):
+  - Validates and adjusts cart at checkout time
+  - Returns `adjustments` array with any quantity changes
+  - Handles inventory decrement only after successful payment

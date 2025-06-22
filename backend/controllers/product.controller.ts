@@ -49,13 +49,13 @@ export const createProduct = asyncHandler(async (req: AuthRequest, res: Response
     isFeatured,
     variants,
     relatedProducts,
+    mediaGallery: [],
   });
 
   res.status(201).json(product);
 });
 
 export const updateProduct = asyncHandler(async (req: Request, res: Response) => {
-  console.log('[DEBUG] updateProduct controller - req.body:', JSON.stringify(req.body, null, 2));
   const { name, description, price, image, collectionId, isFeatured, variants, relatedProducts } = req.body as {
     name?: string;
     description?: string;

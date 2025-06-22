@@ -131,7 +131,7 @@ describe('VariantEditor', () => {
       await user.click(screen.getByRole('button', { name: /add variant/i }));
 
       // Initially, variantId should be empty
-      const hiddenInput = document.querySelector('input[name="variants.0.variantId"]') as HTMLInputElement;
+      const hiddenInput = document.querySelector('input[name="variants.0.variantId"]')!;
       expect(hiddenInput).toBeInTheDocument();
       expect(hiddenInput.value).toBe('');
 
@@ -186,7 +186,7 @@ describe('VariantEditor', () => {
       );
 
       // Check that the hidden input contains the existing variant ID
-      const hiddenInput = document.querySelector('input[name="variants.0.variantId"]') as HTMLInputElement;
+      const hiddenInput = document.querySelector('input[name="variants.0.variantId"]')!;
       expect(hiddenInput).toBeInTheDocument();
       expect(hiddenInput.value).toBe('existing-variant-123');
 

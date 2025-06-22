@@ -1,5 +1,6 @@
 import { IProduct } from './index.js';
 import { VariantAttributes } from '../../shared/types/variant-attributes.js';
+import { IMediaItem } from './media.types.js';
 
 export interface IProductVariant {
   variantId: string;
@@ -27,6 +28,11 @@ export interface IProductWithVariants extends IProduct {
   lowStockThreshold: number;
   allowBackorder: boolean;
   restockDate?: Date;
+  mediaGallery: IMediaItem[];
+}
+
+export interface IProductWithMediaGallery extends IProductWithVariants {
+  mediaGallery: IMediaItem[];
 }
 
 // Use IProductVariant for document type as well since they're identical
@@ -54,3 +60,6 @@ export interface IProductBySlugResponse {
     };
   };
 }
+
+export type { IMediaItem };
+export { MEDIA_LIMITS } from './media.types.js';

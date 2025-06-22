@@ -36,6 +36,7 @@ export function toProductWithVariants(doc: IProductDocument | mongoose.FlattenMa
     lowStockThreshold: obj.lowStockThreshold ?? 5,
     allowBackorder: obj.allowBackorder ?? false,
     restockDate: obj.restockDate,
+    mediaGallery: obj.mediaGallery ?? [],
     createdAt: obj.createdAt ? new Date(obj.createdAt).toISOString() : undefined,
     updatedAt: obj.updatedAt ? new Date(obj.updatedAt).toISOString() : undefined,
   };

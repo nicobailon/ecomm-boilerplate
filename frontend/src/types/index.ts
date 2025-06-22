@@ -1,3 +1,5 @@
+import type { MediaItem } from './media';
+
 // These will be imported from backend later
 export interface User {
   _id: string;
@@ -29,6 +31,7 @@ export interface Product {
   }[];
   inventory?: number;
   lowStockThreshold?: number;
+  mediaGallery?: MediaItem[];
   createdAt: string;
   updatedAt: string;
 }

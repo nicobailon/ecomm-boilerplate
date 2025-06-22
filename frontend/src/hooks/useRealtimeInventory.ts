@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/auth/useAuth';
@@ -91,7 +92,7 @@ export function useRealtimeInventory() {
           reservedStock: update.reservedStock,
           stockStatus: update.stockStatus,
         };
-      }
+      },
     );
 
     // Update product list queries that might show inventory
@@ -114,12 +115,12 @@ export function useRealtimeInventory() {
     if (validation.userId !== user?._id?.toString()) return;
 
     // Get current cart data
-    const cartQuery = queryClient.getQueryData(['cart.getCart']) as { cartItems: CartItem[] } | undefined;
+    const cartQuery = queryClient.getQueryData(['cart.getCart']);
     if (!cartQuery) return;
 
     const affectedItem = cartQuery.cartItems.find(
       item => typeof item.product === 'object' && item.product._id === validation.productId && 
-              item.variantId === validation.variantId
+              item.variantId === validation.variantId,
     );
 
     if (!affectedItem) return;

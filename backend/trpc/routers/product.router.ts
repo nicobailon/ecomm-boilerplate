@@ -162,7 +162,6 @@ export const productRouter = router({
       data: updateProductSchema,
     }))
     .mutation(async ({ input }) => {
-      console.log('[DEBUG] tRPC update - input.data:', JSON.stringify(input.data, null, 2));
       try {
         return await productService.updateProduct(input.id, input.data);
       } catch (error) {

@@ -110,11 +110,11 @@ export function ProductInfoRealtime({ product, selectedVariant, onAddToCartSucce
       }
       onAddToCartSuccess?.();
       setQuantity(1);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check if error is due to inventory
-      if (error.message?.includes('available')) {
+      if (error instanceof Error && error.message.includes('available')) {
         // Inventory has changed, update will come through WebSocket
-        console.log('Inventory changed during add to cart');
+        // Silent fail - inventory update will come through WebSocket
       }
     }
   };
@@ -131,7 +131,7 @@ export function ProductInfoRealtime({ product, selectedVariant, onAddToCartSucce
           {(selectedVariant ?? !hasVariants) && !inventoryLoading && (
             <div className={cn(
               'flex items-center gap-2',
-              inventoryUpdateAnimation && 'animate-pulse'
+              inventoryUpdateAnimation && 'animate-pulse',
             )}>
               <StockBadge 
                 inventory={displayInventory} 

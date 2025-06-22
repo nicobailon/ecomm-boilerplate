@@ -17,7 +17,10 @@ export function findDuplicateLabels(variants: { label?: string }[]): {
       if (!labelIndices.has(normalizedLabel)) {
         labelIndices.set(normalizedLabel, []);
       }
-      labelIndices.get(normalizedLabel)!.push(index);
+      const indices = labelIndices.get(normalizedLabel);
+      if (indices) {
+        indices.push(index);
+      }
     }
   });
   

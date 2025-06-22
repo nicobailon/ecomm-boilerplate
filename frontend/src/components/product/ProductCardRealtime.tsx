@@ -17,7 +17,7 @@ interface ProductCardProps {
 export const ProductCardRealtime = memo(function ProductCardRealtime({ 
   product, 
   className,
-  enableRealtime = true 
+  enableRealtime = true, 
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [lastStockUpdate, setLastStockUpdate] = useState<Date | null>(null);
@@ -53,8 +53,8 @@ export const ProductCardRealtime = memo(function ProductCardRealtime({
     try {
       await addToCart.mutateAsync({ product });
       toast.success('Added to cart!');
-    } catch (error: any) {
-      if (error.message?.includes('stock')) {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message.includes('stock')) {
         toast.error('Product no longer available');
       }
     }
@@ -66,7 +66,7 @@ export const ProductCardRealtime = memo(function ProductCardRealtime({
         'group relative rounded-lg border bg-card overflow-hidden transition-all duration-300',
         'hover:shadow-lg hover:border-primary/20',
         isOutOfStock && 'opacity-75',
-        className
+        className,
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -79,7 +79,7 @@ export const ProductCardRealtime = memo(function ProductCardRealtime({
             alt={product.name}
             className={cn(
               'h-full w-full object-cover transition-transform duration-300',
-              isHovered && 'scale-105'
+              isHovered && 'scale-105',
             )}
             loading="lazy"
           />
@@ -102,7 +102,7 @@ export const ProductCardRealtime = memo(function ProductCardRealtime({
           {/* Quick Actions */}
           <div className={cn(
             'absolute top-2 right-2 flex flex-col gap-2 transition-opacity duration-200',
-            isHovered ? 'opacity-100' : 'opacity-0'
+            isHovered ? 'opacity-100' : 'opacity-0',
           )}>
             <button
               className="p-2 rounded-full bg-white/90 hover:bg-white shadow-sm transition-colors"
@@ -165,14 +165,14 @@ export const ProductCardRealtime = memo(function ProductCardRealtime({
       {/* Quick Add Button */}
       <div className="p-4 pt-0">
         <button
-          onClick={handleQuickAdd}
+          onClick={() => { void handleQuickAdd(); }}
           disabled={isOutOfStock || addToCart.isPending}
           className={cn(
             'w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors',
             'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
             isOutOfStock
               ? 'bg-muted text-muted-foreground cursor-not-allowed'
-              : 'bg-primary text-primary-foreground hover:bg-primary/90'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90',
           )}
         >
           <ShoppingCart className="w-4 h-4" />

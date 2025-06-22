@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { PRODUCT_SIZES } from '../constants/variant-options.js'; // legacy - for backward compatibility
 import { PRODUCT_LIMITS, VARIANT_LIMITS } from '../constants/app-limits.js';
 import { USE_VARIANT_ATTRIBUTES } from '../utils/featureFlags.js';
+import { mediaGallerySchema } from './media.validation.js';
 
 export const colorValidationSchema = z.string().refine(
   (color) => {
@@ -73,6 +74,7 @@ export const baseProductSchema = z.object({
   variants: z.array(productVariantSchema).max(PRODUCT_LIMITS.MAX_VARIANTS).default([]),
   variantTypes: z.array(z.string()).optional(),
   relatedProducts: z.array(z.string()).max(PRODUCT_LIMITS.MAX_RELATED_PRODUCTS).default([]),
+  mediaGallery: mediaGallerySchema,
 });
 
 export const createProductSchema = baseProductSchema.refine((data) => {

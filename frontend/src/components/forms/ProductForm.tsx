@@ -26,11 +26,14 @@ import { VariantAttributesEditor } from './VariantAttributesEditor';
 import { useFeatureFlag } from '@/hooks/useFeatureFlags';
 import { transformFormVariantToSubmission, recalculatePriceAdjustments } from '@/utils/variant-transform';
 import { roundToCents } from '@/utils/price-utils';
+import { MediaGalleryManager } from '@/components/admin/MediaGalleryManager';
+import type { MediaItem } from '@/types/media';
 
 export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onSuccess }) => {
   // Detect if we're inside a modal/drawer by checking for Radix dialog context
   const inModal = mode === 'edit';
   const useVariantAttributes = useFeatureFlag('USE_VARIANT_ATTRIBUTES');
+  const useMediaGallery = useFeatureFlag('USE_MEDIA_GALLERY');
   const productCreation = useProductCreation();
   const productCreationData = mode === 'create' ? productCreation : null;
   const createProductMutation = useCreateProduct();
@@ -38,7 +41,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
   const { data: collectionsData, isLoading: isLoadingCollections } = useListCollections({ limit: 100 });
   const { mutateAsync: quickCreateCollection } = useQuickCreateCollection();
 
-  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imagePreview, setImagePreview] = useState<string>('');  
+  const [mediaGallery, setMediaGallery] = useState<MediaItem[]>([]);
   
   const collections = collectionsData?.collections ?? [];
   
@@ -425,6 +429,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
           <p className="text-sm text-destructive">{errors.image.message}</p>
         )}
       </div>
+      
+      {/* Media Gallery */}
+      {useMediaGallery && (
+        <div className="space-y-2">
+          <MediaGalleryManager
+            productId={mode === 'edit' ? initialData?._id : undefined}
+            initialMedia={mediaGallery}
+            onChange={setMediaGallery}
+          />
+        </div>
+      )}
       
       {/* Variant Editor */}
       {useVariantAttributes ? (

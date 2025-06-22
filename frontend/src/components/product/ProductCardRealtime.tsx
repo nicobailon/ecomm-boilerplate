@@ -165,7 +165,7 @@ export const ProductCardRealtime = memo(function ProductCardRealtime({
       {/* Quick Add Button */}
       <div className="p-4 pt-0">
         <button
-          onClick={() => { void handleQuickAdd(); }}
+          onClick={(e) => { void handleQuickAdd(e); }}
           disabled={isOutOfStock || addToCart.isPending}
           className={cn(
             'w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors',

@@ -4,25 +4,7 @@ import { isAppError } from '../../utils/error-types.js';
 import { nanoid } from 'nanoid';
 import { AppError } from '../../utils/AppError.js';
 import { IMediaItem } from '../../types/media.types.js';
-
-const mediaItemSchema = z.object({
-  id: z.string().min(1),
-  type: z.enum(['image', 'video']),
-  url: z.string().url().max(2048),
-  thumbnail: z.string().url().max(2048).optional(),
-  title: z.string().max(200).optional(),
-  order: z.number().int().min(0).max(5),
-  variantId: z.string().optional(),
-  createdAt: z.date(),
-  metadata: z.object({
-    size: z.number().positive().optional(),
-    duration: z.number().positive().max(300).optional(),
-    dimensions: z.object({
-      width: z.number().min(100).max(4096),
-      height: z.number().min(100).max(4096),
-    }).optional(),
-  }).optional(),
-});
+import { mediaItemSchema } from '../../validations/media.validation.js';
 
 export const mediaRouter = router({
   updateGallery: adminProcedure
@@ -51,7 +33,7 @@ export const mediaRouter = router({
       productId: z.string(),
       mediaOrder: z.array(z.object({
         id: z.string().min(1),
-        order: z.number().int().min(0).max(5),
+        order: z.number().int().min(0),
       })),
     }))
     .mutation(async ({ input, ctx }) => {

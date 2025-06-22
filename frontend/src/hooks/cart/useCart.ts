@@ -266,7 +266,7 @@ export const useRemoveFromCart = () => {
       const variantLabel = typeof params === 'string' ? undefined : params.variantLabel;
       
       // Backend expects variantId in request body for the DELETE /cart/:productId endpoint
-      const requestConfig: any = {};
+      const requestConfig: { data?: { variantId?: string; variantLabel?: string } } = {};
       if (variantId !== undefined || variantLabel !== undefined) {
         requestConfig.data = { variantId, variantLabel };
       }

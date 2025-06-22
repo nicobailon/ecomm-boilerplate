@@ -875,7 +875,7 @@ class ProductService {
               throw new AppError('Maximum 6 media items allowed', 400);
             }
           },
-          deleteMediaFiles: async (urls: string[]) => {
+          deleteMediaFiles: async (_urls: string[]) => {
             // Media service stub - would delete files in production
           }
         };

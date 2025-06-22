@@ -135,8 +135,9 @@ export function useUpdateProduct() {
       void queryClient.invalidateQueries({ 
         queryKey: ['trpc.inventory.getProductInventory'],
         predicate: (query) => {
-          const queryKey = query.queryKey as any[];
-          return queryKey[3]?.input?.productId === variables.id;
+          const queryKey = query.queryKey as unknown[];
+          const queryData = queryKey[3] as { input?: { productId?: string } } | undefined;
+          return queryData?.input?.productId === variables.id;
         },
       });
       
@@ -154,7 +155,7 @@ export function useUpdateProduct() {
       mutate: (params: { id: string; data: Partial<ProductFormInput> | Partial<ProductInput> }) => {
         // Transform the data to match API expectations
         const apiData = params.data as Parameters<typeof trpcMutation.mutate>[0]['data'];
-        console.log('[DEBUG] useUpdateProduct - sending data:', JSON.stringify(apiData, null, 2));
+        // Transform data for tRPC mutation
         trpcMutation.mutate({ id: params.id, data: apiData });
       },
       mutateAsync: async (params: { id: string; data: Partial<ProductFormInput> | Partial<ProductInput> }) => {

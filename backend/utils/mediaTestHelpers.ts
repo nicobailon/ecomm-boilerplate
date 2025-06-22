@@ -94,7 +94,7 @@ export const mockMediaService = {
       throw new Error('Maximum 6 media items allowed');
     }
   },
-  deleteMediaFiles: async (urls: string[]) => {
+  deleteMediaFiles: async (_urls: string[]) => {
     // Mock implementation for testing
   },
   validateYouTubeUrl: async (url: string) => {

@@ -36,7 +36,7 @@ export function useRealtimeInventory() {
   // Initialize WebSocket connection
   useEffect(() => {
     if (!socketRef.current) {
-      const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000', {
+      const socket = io(import.meta.env.VITE_API_URL ?? 'http://localhost:3000', {
         transports: ['websocket', 'polling'],
         auth: {
           token: user ? localStorage.getItem('accessToken') : undefined,
@@ -44,7 +44,7 @@ export function useRealtimeInventory() {
       });
 
       socket.on('connect', () => {
-        console.log('Connected to real-time inventory updates');
+        // Connected to real-time inventory updates
         
         // Re-subscribe to products if reconnecting
         if (subscribedProducts.current.size > 0) {
@@ -58,7 +58,7 @@ export function useRealtimeInventory() {
       });
 
       socket.on('disconnect', () => {
-        console.log('Disconnected from real-time inventory updates');
+        // Disconnected from real-time inventory updates
       });
 
       socket.on('inventory:update', handleInventoryUpdate);
@@ -82,7 +82,7 @@ export function useRealtimeInventory() {
         productId: update.productId,
         variantId: update.variantId,
       }],
-      (oldData: any) => {
+      (oldData: unknown) => {
         if (!oldData) return oldData;
         
         return {
@@ -115,19 +115,23 @@ export function useRealtimeInventory() {
     if (validation.userId !== user?._id?.toString()) return;
 
     // Get current cart data
-    const cartQuery = queryClient.getQueryData(['cart.getCart']);
-    if (!cartQuery) return;
+    const cartQuery = queryClient.getQueryData(['cart.getCart']) as { cartItems?: Array<{ product: unknown; variantId?: string }> } | undefined;
+    if (!cartQuery?.cartItems) return;
 
     const affectedItem = cartQuery.cartItems.find(
-      item => typeof item.product === 'object' && item.product._id === validation.productId && 
-              item.variantId === validation.variantId,
+      (item: { product: unknown; variantId?: string }) => {
+        const product = item.product as { _id?: string } | undefined;
+        return typeof item.product === 'object' && product?._id === validation.productId && 
+               item.variantId === validation.variantId;
+      },
     );
 
     if (!affectedItem) return;
 
     // Show appropriate notification
     if (validation.action === 'remove') {
-      toast.error(`${typeof affectedItem.product === 'object' ? affectedItem.product.name : 'Item'} is no longer available`, {
+      const product = affectedItem.product as { name?: string } | null;
+      toast.error(`${typeof product === 'object' && product?.name ? product.name : 'Item'} is no longer available`, {
         description: 'This item has been removed from your cart.',
         duration: 5000,
       });
@@ -135,7 +139,8 @@ export function useRealtimeInventory() {
       // Invalidate cart to trigger refetch
       void utils.cart.get.invalidate();
     } else if (validation.action === 'reduce') {
-      toast.warning(`${typeof affectedItem.product === 'object' ? affectedItem.product.name : 'Item'} quantity reduced`, {
+      const product = affectedItem.product as { name?: string } | null;
+      toast.warning(`${typeof product === 'object' && product?.name ? product.name : 'Item'} quantity reduced`, {
         description: `Only ${validation.availableQuantity} available. Your cart has been updated.`,
         duration: 5000,
       });

@@ -251,7 +251,14 @@ describe('MediaService', () => {
     });
 
     it('should validate and set thumbnail for YouTube videos', async () => {
-      const mediaItems = [
+      const mediaItems: Array<{
+        id: string;
+        type: 'video';
+        url: string;
+        order: number;
+        createdAt: Date;
+        thumbnail?: string;
+      }> = [
         {
           id: 'media1',
           type: 'video' as const,
@@ -263,7 +270,7 @@ describe('MediaService', () => {
 
       await mediaService.validateMediaGallery(mediaItems);
 
-      expect((mediaItems[0] as any).thumbnail).toBe('https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg');
+      expect(mediaItems[0].thumbnail).toBe('https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg');
     });
 
     it('should throw error for invalid YouTube URLs', async () => {

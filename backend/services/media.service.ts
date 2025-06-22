@@ -114,7 +114,6 @@ export class MediaService {
     if (uploadThingUrls.length === 0) return;
     
     try {
-      console.log('UploadThing file deletion would happen here for URLs:', uploadThingUrls);
       // UploadThing file deletion implementation would go here
       // await this.utapi.deleteFiles(uploadThingUrls);
     } catch (error) {

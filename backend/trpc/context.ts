@@ -20,7 +20,8 @@ export async function createContext({ req, res }: CreateExpressContextOptions): 
       const secret = process.env.ACCESS_TOKEN_SECRET;
       if (!secret) throw new Error('ACCESS_TOKEN_SECRET not configured');
       const decoded = jwt.verify(token, secret) as TokenPayload;
-      user = await User.findById(decoded.userId).select('-password');
+      const foundUser = await User.findById(decoded.userId).select('-password');
+      user = foundUser;
     } catch {
       // Invalid token, user remains null
     }

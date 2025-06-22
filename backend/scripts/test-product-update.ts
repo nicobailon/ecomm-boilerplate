@@ -1,39 +1,54 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import { Product } from '../models/product.model.js';
+import { Product, IProductDocument } from '../models/product.model.js';
 import { productService } from '../services/product.service.js';
+import { IProductWithVariants } from '../types/product.types.js';
 
 dotenv.config();
 
-async function testProductUpdate() {
+async function testProductUpdate(): Promise<void> {
   try {
-    await mongoose.connect(process.env.MONGODB_URI as string);
-    console.log('Connected to MongoDB');
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+      throw new Error('MONGODB_URI not configured');
+    }
+    await mongoose.connect(mongoUri);
+    console.error('Connected to MongoDB');
 
     // Find a product with variants
-    const product = await Product.findOne({ 'variants.0': { $exists: true } });
+    const productDoc = await Product.findOne({ 'variants.0': { $exists: true } }) as IProductDocument | null;
     
-    if (!product) {
-      console.log('No product with variants found');
+    if (!productDoc) {
+      console.error('No product with variants found');
       return;
     }
 
-    console.log('Found product:', product.name);
-    console.log('Current variants:', JSON.stringify(product.variants, null, 2));
+    console.error('Found product:', productDoc.name);
+    console.error('Current variants:', JSON.stringify(productDoc.variants, null, 2));
+
+    // Get the product through the service to ensure proper typing
+    const product = await productService.getProductById(String(productDoc._id));
 
     // Try to update with the same variants but different inventory
     const updatedVariants = product.variants.map(v => ({
-      ...v.toObject(),
+      variantId: v.variantId,
+      label: v.label,
+      size: v.size,
+      color: v.color,
+      price: v.price,
       inventory: v.inventory + 10, // Add 10 to each variant's inventory
+      images: v.images,
+      sku: v.sku,
+      attributes: v.attributes,
     }));
 
-    console.log('Updating with variants:', JSON.stringify(updatedVariants, null, 2));
+    console.error('Updating with variants:', JSON.stringify(updatedVariants, null, 2));
 
-    const updated = await productService.updateProduct(product._id.toString(), {
+    const updated = await productService.updateProduct(String(productDoc._id), {
       variants: updatedVariants,
-    });
+    }) as IProductWithVariants;
 
-    console.log('Updated product variants:', JSON.stringify(updated.variants, null, 2));
+    console.error('Updated product variants:', JSON.stringify(updated.variants, null, 2));
 
   } catch (error) {
     console.error('Error:', error);
@@ -42,4 +57,4 @@ async function testProductUpdate() {
   }
 }
 
-testProductUpdate();
+void testProductUpdate();

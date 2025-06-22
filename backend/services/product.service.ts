@@ -12,6 +12,9 @@ import { CACHE_TTL, CACHE_KEYS } from '../constants/cache-config.js';
 import { PAGINATION, PRODUCT_LIMITS, RETRY_CONFIG, REDIS_SCAN_CONFIG } from '../constants/app-limits.js';
 import { getVariantOrDefault } from './helpers/variant.helper.js';
 import { USE_VARIANT_LABEL } from '../utils/featureFlags.js';
+import { MediaCacheService } from './mediaCache.service.js';
+import { IMediaItem } from '../types/media.types.js';
+import { logTransactionError } from '../lib/logger.js';
 
 class ProductService {
   private utapi = new UTApi();
@@ -324,11 +327,25 @@ class ProductService {
   }
 
   async getProductById(productId: string): Promise<IProductWithVariants> {
+    // Try cache first for media
+    const cachedMedia = await MediaCacheService.getCachedMedia(productId);
+    
     const product = await Product.findById(productId);
     if (!product) {
       throw new AppError(`Product not found with ID: ${productId}`, 404);
     }
-    return toProductWithVariants(product);
+
+    const productData = toProductWithVariants(product);
+    
+    // Use cached media if available and current media is empty/missing
+    if (cachedMedia && (!product.mediaGallery || product.mediaGallery.length === 0)) {
+      productData.mediaGallery = cachedMedia;
+    } else if (product.mediaGallery && product.mediaGallery.length > 0) {
+      // Cache the media gallery
+      await MediaCacheService.setCachedMedia(productId, product.mediaGallery);
+    }
+    
+    return productData;
   }
 
   async toggleFeaturedProduct(productId: string): Promise<IProduct> {
@@ -424,11 +441,23 @@ class ProductService {
       }
       
       const { collectionName: _cn, ...productData } = data;
-      
+
+      // Validate required fields with explicit runtime checks
+      if (!productData.name || typeof productData.name !== 'string' || productData.name.trim() === '') {
+        throw new AppError('Product name is required and must be a non-empty string', 400);
+      }
+
+      // Generate slug for the product
+      const slug = await generateUniqueSlug(
+        productData.name,
+        async (s) => !!(await Product.findOne({ slug: s })),
+      );
+
       const product = await Product.create(
         [{
           ...productData,
           collectionId,
+          slug,
         }],
         { session },
       );
@@ -453,7 +482,25 @@ class ProductService {
       };
     } catch (error) {
       await session.abortTransaction();
-      throw error;
+
+      // Re-throw AppError instances as-is to preserve error context
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      // Log transaction error with structured logging
+      logTransactionError({
+        operation: 'createProductWithCollection',
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      // Wrap other errors with transaction context
+      throw new AppError(
+        `Transaction failed during product creation: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        500
+      );
     } finally {
       await session.endSession();
     }
@@ -807,6 +854,9 @@ class ProductService {
         const allRelatedKeys = await this.scanRedisKeys(reverseRelatedPattern);
         // In production, you might want to check which ones actually contain this product
         keysToDelete.push(...allRelatedKeys);
+        
+        // Clear media cache for this product
+        await MediaCacheService.invalidateMediaCache(productId);
       }
       
       // Only clear featured products cache if necessary
@@ -835,6 +885,331 @@ class ProductService {
     } while (cursor !== '0');
     
     return keys;
+  }
+
+  async updateMediaGallery(
+    productId: string,
+    mediaItems: IMediaItem[],
+    userId: string,
+  ): Promise<IProduct> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      interface MediaServiceInterface {
+        validateMediaGallery: (items: IMediaItem[]) => Promise<void>;
+        deleteMediaFiles: (urls: string[]) => Promise<void>;
+      }
+      let service: MediaServiceInterface;
+      try {
+        const { mediaService } = await import('./media.service.js');
+        service = {
+          validateMediaGallery: (items: IMediaItem[]) => {
+            mediaService.validateMediaGallery(items);
+            return Promise.resolve();
+          },
+          deleteMediaFiles: (urls: string[]) => {
+            mediaService.deleteMediaFiles(urls);
+            return Promise.resolve();
+          },
+        };
+      } catch {
+        service = {
+          validateMediaGallery: (items: IMediaItem[]) => {
+            if (items.length > 6) {
+              throw new AppError('Maximum 6 media items allowed', 400);
+            }
+            return Promise.resolve();
+          },
+          deleteMediaFiles: async (_urls: string[]) => {
+            // Media service stub - would delete files in production
+          },
+        };
+      }
+      
+      await service.validateMediaGallery(mediaItems);
+      
+      const product = await Product.findById(productId).session(session);
+      if (!product) {
+        throw new AppError('Product not found', 404);
+      }
+      
+      const oldMediaUrls = (product.mediaGallery || [])
+        .filter((m) => m.url.includes('utfs.io'))
+        .map((m) => m.url);
+      
+      const firstImage = mediaItems.find(item => item.type === 'image');
+      if (firstImage) {
+        product.image = firstImage.url;
+      }
+      
+      product.mediaGallery = mediaItems;
+      
+      await product.save({ session });
+      
+      const newUrls = new Set(mediaItems.map(m => m.url));
+      const orphanedUrls = oldMediaUrls.filter(url => !newUrls.has(url));
+      if (orphanedUrls.length > 0) {
+        service.deleteMediaFiles(orphanedUrls).catch(console.error);
+      }
+      
+      await this.logMediaAudit(productId, 'media_gallery_update', userId, {
+        oldCount: oldMediaUrls.length,
+        newCount: mediaItems.length,
+      });
+      
+      await this.clearProductCache(product.slug, productId);
+      
+      await session.commitTransaction();
+      return toProduct(product);
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  async reorderMediaItems(
+    productId: string,
+    mediaOrder: { id: string; order: number }[],
+    userId: string,
+  ): Promise<IProduct> {
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        const product = await Product.findById(productId);
+        if (!product) {
+          throw new AppError('Product not found', 404);
+        }
+        
+        if (!product.mediaGallery) {
+          product.mediaGallery = [];
+        }
+        
+        const orderMap = new Map(mediaOrder.map(item => [item.id, item.order]));
+        
+        const reorderedItems = product.mediaGallery.map((item) => ({
+          ...item,
+          order: orderMap.get(item.id) ?? item.order,
+        }));
+        
+        reorderedItems.sort((a, b) => a.order - b.order);
+        
+        product.mediaGallery = reorderedItems;
+        
+        const firstImage = reorderedItems.find(item => item.type === 'image');
+        if (firstImage && product.image !== firstImage.url) {
+          product.image = firstImage.url;
+        }
+        
+        await product.save();
+        
+        await this.logMediaAudit(productId, 'media_reorder', userId, {
+          itemCount: mediaOrder.length,
+        });
+        
+        await this.clearProductCache(product.slug, productId);
+        
+        return toProduct(product);
+      } catch (error) {
+        if (error instanceof Error && error.name === 'VersionError' && retryCount < maxRetries - 1) {
+          retryCount++;
+          await new Promise(resolve => 
+            setTimeout(resolve, 100 * Math.pow(2, retryCount)),
+          );
+          continue;
+        }
+        throw error;
+      }
+    }
+    
+    throw new AppError('Failed to reorder media after multiple attempts', 500);
+  }
+
+  async deleteMediaItem(
+    productId: string,
+    mediaId: string,
+    userId: string,
+  ): Promise<IProduct> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      const product = await Product.findById(productId).session(session);
+      if (!product) {
+        throw new AppError('Product not found', 404);
+      }
+      
+      if (!product.mediaGallery) {
+        product.mediaGallery = [];
+      }
+      
+      const mediaItem = product.mediaGallery.find((m) => m.id === mediaId);
+      if (!mediaItem) {
+        throw new AppError('Media item not found', 404);
+      }
+      
+      const imageCount = product.mediaGallery.filter((m) => m.type === 'image').length;
+      if (mediaItem.type === 'image' && imageCount === 1) {
+        throw new AppError('Cannot delete the last image', 400);
+      }
+      
+      product.mediaGallery = product.mediaGallery.filter((m) => m.id !== mediaId);
+      
+      product.mediaGallery.forEach((item, index) => {
+        item.order = index;
+      });
+      
+      if (mediaItem.url === product.image) {
+        const firstImage = product.mediaGallery.find((m) => m.type === 'image');
+        if (firstImage) {
+          product.image = firstImage.url;
+        }
+      }
+      
+      await product.save({ session });
+      
+      if (mediaItem.url.includes('utfs.io')) {
+        try {
+          const { mediaService } = await import('./media.service.js');
+          try {
+            mediaService.deleteMediaFiles([mediaItem.url]);
+          } catch (error) {
+            console.error(error);
+          }
+        } catch {
+          // MediaService not available, skipping file deletion
+        }
+      }
+      
+      await this.logMediaAudit(productId, 'media_delete', userId, {
+        deletedItemId: mediaId,
+        deletedItemUrl: mediaItem.url,
+      });
+      
+      await this.clearProductCache(product.slug, productId);
+      
+      await session.commitTransaction();
+      return toProduct(product);
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  async addMediaItem(
+    productId: string,
+    mediaItem: IMediaItem,
+    userId: string,
+  ): Promise<IProduct> {
+    const product = await Product.findById(productId);
+    if (!product) {
+      throw new AppError('Product not found', 404);
+    }
+    
+    if (!product.mediaGallery) {
+      product.mediaGallery = [];
+    }
+    
+    if (product.mediaGallery.length >= 6) {
+      throw new AppError('Media gallery is full', 400);
+    }
+    
+    mediaItem.order = product.mediaGallery.length;
+    
+    product.mediaGallery.push(mediaItem);
+    await product.save();
+    
+    await this.logMediaAudit(productId, 'media_add', userId, {
+      addedItemId: mediaItem.id,
+      addedItemType: mediaItem.type,
+    });
+    
+    await this.clearProductCache(product.slug, productId);
+    
+    return toProduct(product);
+  }
+
+  async getProductsWithMedia(
+    filter: Record<string, unknown> = {},
+    options: { sort?: Record<string, 1 | -1>; limit?: number } = {},
+  ): Promise<IProduct[]> {
+    const products = await Product.find({
+      ...filter,
+      isDeleted: { $ne: true },
+    })
+    .populate('mediaGallery')
+    .sort(options.sort ?? { createdAt: -1 })
+    .limit(options.limit ?? 50);
+    
+    return products.map(toProduct);
+  }
+
+  async validateMediaConsistency(productId: string): Promise<boolean> {
+    const product = await Product.findById(productId);
+    if (!product) return false;
+    
+    if (product.mediaGallery && product.mediaGallery.length > 0) {
+      const firstImage = product.mediaGallery.find((m) => m.type === 'image');
+      if (firstImage && product.image !== firstImage.url) {
+        product.image = firstImage.url;
+        await product.save();
+        await this.clearProductCache(product.slug, productId);
+      }
+    }
+    
+    return true;
+  }
+
+  async bulkUpdateMediaGalleries(
+    updates: { productId: string; mediaGallery: IMediaItem[] }[],
+    userId: string,
+  ): Promise<void> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      for (const update of updates) {
+        await this.updateMediaGallery(
+          update.productId,
+          update.mediaGallery,
+          userId,
+        );
+      }
+      
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  private async logMediaAudit(
+    productId: string,
+    action: string,
+    userId: string,
+    metadata?: unknown,
+  ): Promise<void> {
+    // Media audit logging for compliance and debugging
+    
+    try {
+      await redis.zadd(
+        `audit:media:${productId}`,
+        Date.now(),
+        JSON.stringify({ action, userId, metadata }),
+      );
+      
+      await redis.zremrangebyrank(`audit:media:${productId}`, 0, -101);
+    } catch (error) {
+      console.error('Failed to log audit:', error);
+    }
   }
 }
 

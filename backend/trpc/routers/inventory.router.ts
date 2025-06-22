@@ -156,7 +156,6 @@ export const inventoryRouter = router({
       }
     }),
 
-
   getInventoryMetrics: adminProcedure
     .use(inventoryQueryLimiter)
     .query(async () => {

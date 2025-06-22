@@ -1,7 +1,7 @@
 import { Redis } from 'ioredis';
-import dotenv from 'dotenv';
+import { config } from 'dotenv';
 
-dotenv.config();
+config();
 
 const redisUrl = process.env.UPSTASH_REDIS_URL;
 if (!redisUrl) {

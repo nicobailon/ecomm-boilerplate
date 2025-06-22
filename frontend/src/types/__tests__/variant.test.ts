@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateVariantLabel, getVariantKey } from '../variant';
+import type { VariantAttributes } from '@shared/types/variant-attributes';
 
 describe('generateVariantLabel', () => {
   it('should generate label from attributes in variant type order', () => {
@@ -26,8 +27,8 @@ describe('generateVariantLabel', () => {
   });
 
   it('should return Default for null/undefined attributes', () => {
-    expect(generateVariantLabel(null as any)).toBe('Default');
-    expect(generateVariantLabel(undefined as any)).toBe('Default');
+    expect(generateVariantLabel(null as unknown as VariantAttributes)).toBe('Default');
+    expect(generateVariantLabel(undefined as unknown as VariantAttributes)).toBe('Default');
   });
 
   it('should skip missing attributes when using variant types', () => {

@@ -18,7 +18,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 	const { data: inventoryData, isLoading: inventoryLoading } = useProductInventory(
 		item.product._id,
 		item.variantId,
-		item.variantDetails?.label
+		item.variantDetails?.label,
 	);
 	
 	// Determine inventory warning status

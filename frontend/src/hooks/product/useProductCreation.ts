@@ -133,9 +133,9 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
         description: data.description,
         price: data.price,
         image: data.image,
-        collectionId: data.collectionId,
+        collectionId: data.collectionId && data.collectionId.trim() !== '' ? data.collectionId : undefined,
         variantTypes: 'variantTypes' in data ? data.variantTypes : undefined,
-        variants: isAlreadyTransformed 
+        variants: isAlreadyTransformed
           ? data.variants as ProductInput['variants'] // Already transformed by ProductForm
           : data.variants?.map(v => {
               // Use centralized transform for untransformed variants
@@ -147,13 +147,14 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
                 sku: v.sku,
               };
               const transformed = transformFormVariantToSubmission(formVariant, data.price);
-              
+
               // Add attributes if present
               if ('attributes' in v && v.attributes) {
                 return { ...transformed, attributes: v.attributes };
               }
               return transformed;
             }) as ProductInput['variants'],
+        mediaGallery: 'mediaGallery' in data ? data.mediaGallery ?? [] : [],
       };
       
       createProductMutation.mutate(productData, {

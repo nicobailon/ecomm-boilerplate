@@ -1,3 +1,5 @@
+import type { MediaItem } from './media';
+
 export interface IUser {
   _id?: string;
   name: string;
@@ -22,6 +24,7 @@ export interface IProduct {
   image: string;
   category: string;
   isFeatured: boolean;
+  mediaGallery?: MediaItem[];
   createdAt?: Date;
   updatedAt?: Date;
 }

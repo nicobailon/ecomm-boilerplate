@@ -19,7 +19,7 @@ export const RealtimeStockBadge = React.memo(function RealtimeStockBadge({
   className, 
   showCount = false, 
   showConnectionStatus = false,
-  size = 'xs' 
+  size = 'xs', 
 }: RealtimeStockBadgeProps) {
   const [inventory, setInventory] = useState(initialInventory);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -115,7 +115,7 @@ export const RealtimeStockBadge = React.memo(function RealtimeStockBadge({
             'inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full',
             isConnected 
               ? 'bg-green-100 text-green-700' 
-              : 'bg-gray-100 text-gray-600'
+              : 'bg-gray-100 text-gray-600',
           )}
           title={isConnected ? 'Real-time updates active' : 'Real-time updates disconnected'}
         >

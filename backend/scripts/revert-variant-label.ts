@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import { Product } from '../models/product.model.js';
 import dotenv from 'dotenv';
 import path from 'path';
-import { createThrottledLogger } from '../utils/throttledLogger.js';
 
 interface VariantWithLabel {
   variantId: string;
@@ -41,13 +40,13 @@ async function revertVariantLabels(options: RevertOptions = {}): Promise<RevertR
   };
 
   // Use throttled logger for production runs with large datasets
-  const logger = createThrottledLogger(
-    { operation: 'variant-revert' },
-    {
-      maxLogsPerMinute: 100,
-      summaryInterval: 30000, // 30 seconds
-    }
-  );
+  // const _logger = createThrottledLogger(
+  //   { operation: 'variant-revert' },
+  //   {
+  //     maxLogsPerMinute: 100,
+  //     summaryInterval: 30000, // 30 seconds
+  //   },
+  // );
 
   try {
     const mongoUri = process.env.MONGO_URI;
@@ -100,9 +99,14 @@ async function revertVariantLabels(options: RevertOptions = {}): Promise<RevertR
             }
             
             if (!dryRun) {
-              const variantDoc = variant as any;
-              delete variantDoc.label;
-              product.markModified('variants');
+              // Create a new variant without the label property
+              const { label, ...variantWithoutLabel } = variant;
+              // Replace the variant in the array
+              const variantIndex = product.variants.findIndex(v => v.variantId === variant.variantId);
+              if (variantIndex !== -1) {
+                product.variants[variantIndex] = variantWithoutLabel as typeof variant;
+                product.markModified('variants');
+              }
             }
             needsUpdate = true;
           }

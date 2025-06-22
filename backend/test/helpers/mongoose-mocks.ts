@@ -60,8 +60,8 @@ export const mockObjectId = (id: string): mongoose.Types.ObjectId => ({
   toString: () => id,
   equals: (otherId: unknown) => {
     if (typeof otherId === 'string') return id === otherId;
-    if (otherId && typeof otherId === 'object' && 'toString' in otherId) {
-      return id === String(otherId);
+    if (otherId && typeof otherId === 'object' && 'toString' in otherId && typeof (otherId as { toString: unknown }).toString === 'function') {
+      return id === (otherId as { toString(): string }).toString();
     }
     return false;
   },

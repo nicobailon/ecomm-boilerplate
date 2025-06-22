@@ -180,6 +180,7 @@ describe('useProductCreation', () => {
       description: 'Test Description',
       price: 99.99,
       image: 'https://example.com/image.jpg',
+      mediaGallery: [],
     };
 
     const mockProductResponse: Product = {

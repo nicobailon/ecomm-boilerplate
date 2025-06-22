@@ -1,10 +1,11 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/auth/useAuth';
 import { trpc } from '@/lib/trpc';
-import type { CartItem } from '@/types';
+import type { Cart, CartItem } from '@/types';
 
 interface InventoryUpdate {
   productId: string;
@@ -32,48 +33,6 @@ export function useRealtimeInventory() {
   const subscribedProducts = useRef<Set<string>>(new Set());
   const utils = trpc.useUtils();
 
-  // Initialize WebSocket connection
-  useEffect(() => {
-    if (!socketRef.current) {
-      const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000', {
-        transports: ['websocket', 'polling'],
-        auth: {
-          token: user ? localStorage.getItem('accessToken') : undefined,
-        },
-      });
-
-      socket.on('connect', () => {
-        console.log('Connected to real-time inventory updates');
-        
-        // Re-subscribe to products if reconnecting
-        if (subscribedProducts.current.size > 0) {
-          socket.emit('subscribe:inventory', Array.from(subscribedProducts.current));
-        }
-
-        // Subscribe to cart validations if authenticated
-        if (user) {
-          socket.emit('subscribe:cart');
-        }
-      });
-
-      socket.on('disconnect', () => {
-        console.log('Disconnected from real-time inventory updates');
-      });
-
-      socket.on('inventory:update', handleInventoryUpdate);
-      socket.on('cart:validation', handleCartValidation);
-
-      socketRef.current = socket;
-    }
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-    };
-  }, [user]);
-
   const handleInventoryUpdate = useCallback((update: InventoryUpdate) => {
     // Update React Query cache
     queryClient.setQueryData(
@@ -81,7 +40,7 @@ export function useRealtimeInventory() {
         productId: update.productId,
         variantId: update.variantId,
       }],
-      (oldData: any) => {
+      (oldData: unknown) => {
         if (!oldData) return oldData;
         
         return {
@@ -91,7 +50,7 @@ export function useRealtimeInventory() {
           reservedStock: update.reservedStock,
           stockStatus: update.stockStatus,
         };
-      }
+      },
     );
 
     // Update product list queries that might show inventory
@@ -114,19 +73,22 @@ export function useRealtimeInventory() {
     if (validation.userId !== user?._id?.toString()) return;
 
     // Get current cart data
-    const cartQuery = queryClient.getQueryData(['cart.getCart']) as { cartItems: CartItem[] } | undefined;
-    if (!cartQuery) return;
+    const cartQuery = queryClient.getQueryData<Cart>(['cart.getCart']);
+    if (!cartQuery?.cartItems) return;
 
     const affectedItem = cartQuery.cartItems.find(
-      item => typeof item.product === 'object' && item.product._id === validation.productId && 
-              item.variantId === validation.variantId
+      (item) => {
+        return typeof item.product === 'object' && item.product._id === validation.productId && 
+               item.variantId === validation.variantId;
+      },
     );
 
     if (!affectedItem) return;
 
     // Show appropriate notification
     if (validation.action === 'remove') {
-      toast.error(`${typeof affectedItem.product === 'object' ? affectedItem.product.name : 'Item'} is no longer available`, {
+      const product = affectedItem.product as { name?: string } | null;
+      toast.error(`${typeof product === 'object' && product?.name ? product.name : 'Item'} is no longer available`, {
         description: 'This item has been removed from your cart.',
         duration: 5000,
       });
@@ -134,13 +96,14 @@ export function useRealtimeInventory() {
       // Invalidate cart to trigger refetch
       void utils.cart.get.invalidate();
     } else if (validation.action === 'reduce') {
-      toast.warning(`${typeof affectedItem.product === 'object' ? affectedItem.product.name : 'Item'} quantity reduced`, {
+      const product = affectedItem.product as { name?: string } | null;
+      toast.warning(`${typeof product === 'object' && product?.name ? product.name : 'Item'} quantity reduced`, {
         description: `Only ${validation.availableQuantity} available. Your cart has been updated.`,
         duration: 5000,
       });
       
       // Update cart quantity optimistically
-      queryClient.setQueryData(['cart.getCart'], (oldData: any) => {
+      queryClient.setQueryData(['cart.getCart'], (oldData: Cart | undefined) => {
         if (!oldData) return oldData;
         
         return {
@@ -156,6 +119,48 @@ export function useRealtimeInventory() {
       });
     }
   }, [user, queryClient, utils]);
+
+  // Initialize WebSocket connection
+  useEffect(() => {
+    if (!socketRef.current) {
+      const socket = io((import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000', {
+        transports: ['websocket', 'polling'],
+        auth: {
+          token: user ? localStorage.getItem('accessToken') : undefined,
+        },
+      });
+
+      socket.on('connect', () => {
+        // Connected to real-time inventory updates
+        
+        // Re-subscribe to products if reconnecting
+        if (subscribedProducts.current.size > 0) {
+          socket.emit('subscribe:inventory', Array.from(subscribedProducts.current));
+        }
+
+        // Subscribe to cart validations if authenticated
+        if (user) {
+          socket.emit('subscribe:cart');
+        }
+      });
+
+      socket.on('disconnect', () => {
+        // Disconnected from real-time inventory updates
+      });
+
+      socket.on('inventory:update', handleInventoryUpdate);
+      socket.on('cart:validation', handleCartValidation);
+
+      socketRef.current = socket;
+    }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [user, handleCartValidation, handleInventoryUpdate]);
 
   // Subscribe to product inventory updates
   const subscribeToProduct = useCallback((productId: string) => {

@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { AlertCircle } from 'lucide-react';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { ProductImageGallery } from '@/components/product/ProductImageGallery';
+import { ProductMediaCarousel } from '@/components/product/ProductMediaCarousel';
 import { ProductVariantSelector } from '@/components/product/ProductVariantSelector';
 import { ProductVariantAttributeSelector } from '@/components/product/ProductVariantAttributeSelector';
 import { ProductInfo } from '@/components/product/ProductInfo';
@@ -35,6 +36,7 @@ export default function ProductDetailPage() {
   const [selectedVariant, setSelectedVariant] = useState<IProductVariant | null>(null);
   const [showCheckoutCallout, setShowCheckoutCallout] = useState(false);
   const useVariantAttributes = useFeatureFlag('USE_VARIANT_ATTRIBUTES');
+  const useMediaGallery = useFeatureFlag('USE_MEDIA_GALLERY');
   
   const { data, isLoading, error } = useProduct(slug ?? '');
   const product = data?.product;
@@ -142,10 +144,18 @@ export default function ProductDetailPage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         <ErrorBoundary>
-          <ProductImageGallery 
-            images={displayImages}
-            productName={currentProduct.name}
-          />
+          {useMediaGallery && currentProduct.mediaGallery?.length > 0 ? (
+            <ProductMediaCarousel
+              mediaItems={currentProduct.mediaGallery}
+              productName={currentProduct.name}
+              className="lg:sticky lg:top-20"
+            />
+          ) : (
+            <ProductImageGallery 
+              images={displayImages}
+              productName={currentProduct.name}
+            />
+          )}
         </ErrorBoundary>
         
         <div>
@@ -167,7 +177,9 @@ export default function ProductDetailPage() {
             />
           </ErrorBoundary>
           
-          {'variants' in currentProduct && currentProduct.variants && currentProduct.variants.length > 0 && (
+          {'variants' in currentProduct && currentProduct.variants && currentProduct.variants.length > 0 && 
+           // Don't show variant selector if there's only one variant and it has an empty label (default empty variant)
+           !(currentProduct.variants.length === 1 && (!currentProduct.variants[0].label || currentProduct.variants[0].label === '')) && (
             <div className="mt-8">
               <ErrorBoundary>
                 {useVariantAttributes && 'variantTypes' in currentProduct && currentProduct.variantTypes && Array.isArray(currentProduct.variantTypes) ? (

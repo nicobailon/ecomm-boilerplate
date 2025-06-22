@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Product } from '../models/product.model.js';
 import { Collection } from '../models/collection.model.js';
+import { User } from '../models/user.model.js';
 import { generateUniqueSlug } from '../utils/slugify.js';
 import dotenv from 'dotenv';
 
@@ -29,7 +30,7 @@ async function migrateCategoriesToCollections(): Promise<void> {
     session.startTransaction();
     
     try {
-      const adminUser = await mongoose.model('User').findOne({ role: 'admin' }).session(session);
+      const adminUser = await User.findOne({ role: 'admin' }).session(session);
       if (!adminUser) {
         throw new Error('No admin user found. Please create an admin user first.');
       }
@@ -106,8 +107,13 @@ async function migrateCategoriesToCollections(): Promise<void> {
         },
       ]);
       
+      interface CollectionSummary {
+        name: string;
+        productCount: number;
+      }
+      
       console.warn('\nMigration Summary:');
-      summary.forEach(col => {
+      summary.forEach((col: CollectionSummary) => {
         console.warn(`- ${col.name}: ${col.productCount} products`);
       });
       

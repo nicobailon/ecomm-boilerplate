@@ -12,39 +12,43 @@ if (!process.env.UPLOADTHING_TOKEN && (!process.env.UPLOADTHING_APP_ID || !proce
 
 const f = createUploadthing();
 
+// Auth middleware helper
+const authMiddleware = ({ req }: { req: Request }): { userId: string; userEmail: string; userName: string } => {
+  // For UploadThing callbacks, we can't rely on cookies as they won't be present
+  // Authentication should be handled at the route level before UploadThing processes the request
+  // This middleware is only for adding metadata to the upload
+  
+  // Try to get user info if available (from route-level auth)
+  interface RequestWithUser extends Request {
+    user?: {
+      _id: { toString(): string };
+      email: string;
+      name: string;
+    };
+  }
+  const user = (req as RequestWithUser).user;
+  
+  if (user) {
+    return { 
+      userId: user._id.toString(),
+      userEmail: user.email,
+      userName: user.name,
+    };
+  }
+  
+  // For callback requests from UploadThing servers, we won't have user context
+  // This is expected and OK - the file upload itself was already authorized
+  return {
+    userId: 'system',
+    userEmail: 'callback@uploadthing',
+    userName: 'UploadThing Callback',
+  };
+};
+
 export const uploadRouter = {
+  // Keep existing productImageUploader for backward compatibility
   productImageUploader: f({ image: { maxFileSize: '4MB', maxFileCount: 1 } })
-    .middleware(({ req }) => {
-      // For UploadThing callbacks, we can't rely on cookies as they won't be present
-      // Authentication should be handled at the route level before UploadThing processes the request
-      // This middleware is only for adding metadata to the upload
-      
-      // Try to get user info if available (from route-level auth)
-      interface RequestWithUser extends Request {
-        user?: {
-          _id: { toString(): string };
-          email: string;
-          name: string;
-        };
-      }
-      const user = (req as RequestWithUser).user;
-      
-      if (user) {
-        return { 
-          userId: user._id.toString(),
-          userEmail: user.email,
-          userName: user.name,
-        };
-      }
-      
-      // For callback requests from UploadThing servers, we won't have user context
-      // This is expected and OK - the file upload itself was already authorized
-      return {
-        userId: 'system',
-        userEmail: 'callback@uploadthing',
-        userName: 'UploadThing Callback',
-      };
-    })
+    .middleware(authMiddleware)
     .onUploadComplete(({ metadata, file }) => {
       // Return the file info in a consistent format
       // This ensures the client always gets the URL, even if there are auth issues
@@ -55,6 +59,42 @@ export const uploadRouter = {
         name: file.name,
         size: file.size,
       };
+    }),
+    
+  // New multi-image uploader
+  productImagesUploader: f({ 
+    image: { 
+      maxFileSize: '8MB', 
+      maxFileCount: 6,
+    },
+  })
+    .middleware(authMiddleware)
+    .onUploadComplete(({ file }) => {
+      return { url: file.url };
+    }),
+    
+  // Separate video uploader
+  productVideoUploader: f({ 
+    video: { 
+      maxFileSize: '16MB', 
+      maxFileCount: 1,
+    },
+  })
+    .middleware(authMiddleware)
+    .onUploadComplete(({ file }) => {
+      return { url: file.url };
+    }),
+    
+  // Thumbnail uploader for custom video thumbnails
+  videoThumbnailUploader: f({ 
+    image: { 
+      maxFileSize: '2MB', 
+      maxFileCount: 1,
+    },
+  })
+    .middleware(authMiddleware)
+    .onUploadComplete(({ file }) => {
+      return { thumbnailUrl: file.url };
     }),
 } satisfies FileRouter;
 

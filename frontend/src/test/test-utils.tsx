@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import type { ReactElement } from 'react';
 import type { RenderOptions } from '@testing-library/react';
 import { render } from '@testing-library/react';
@@ -133,4 +134,19 @@ export function renderInLightMode(ui: ReactElement, options?: Omit<CustomRenderO
 }
 
 export { customRender as render, customRender as renderWithProviders, createTestQueryClient };
-export * from '@testing-library/react';
+
+// Re-export specific testing utilities instead of using export *
+export {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+  within,
+  renderHook,
+  type RenderResult,
+  type RenderOptions,
+  type RenderHookOptions,
+  type RenderHookResult,
+} from '@testing-library/react';

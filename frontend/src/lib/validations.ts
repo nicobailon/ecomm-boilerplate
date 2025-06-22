@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { AnalyticsData, DailySalesData } from '@/types';
+import type { MediaItem } from '@/types/media';
 import { findDuplicateLabels } from '@/utils/variant-validation';
 
 export const loginSchema = z.object({
@@ -29,6 +30,26 @@ const variantTypeSchema = z.object({
   values: z.array(z.string().min(1)).min(1, 'At least one value is required'),
 });
 
+// Media item schema for frontend validation
+const mediaItemSchema = z.object({
+  id: z.string(),
+  type: z.enum(['image', 'video']),
+  url: z.string().url(),
+  thumbnail: z.string().url().optional(),
+  title: z.string().optional(),
+  order: z.number().min(0).max(5),
+  variantId: z.string().optional(),
+  createdAt: z.date(),
+  metadata: z.object({
+    size: z.number().positive().optional(),
+    duration: z.number().positive().max(300).optional(),
+    dimensions: z.object({
+      width: z.number().min(100).max(4096),
+      height: z.number().min(100).max(4096),
+    }).optional(),
+  }).optional(),
+});
+
 export const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
@@ -37,6 +58,7 @@ export const productSchema = z.object({
   image: z.string().url('Invalid image URL'),
   variantTypes: z.array(variantTypeSchema).optional(),
   variants: z.array(variantSchema).optional(),
+  mediaGallery: z.array(mediaItemSchema).max(6).default([]),
 }).superRefine((data, ctx) => {
   // Validate unique variant labels
   if (data.variants && data.variants.length > 0) {
@@ -97,7 +119,7 @@ export type VariantTypeInput = z.infer<typeof variantTypeSchema>;
 export type DiscountFormInput = z.infer<typeof discountFormSchema>;
 
 // Form input type with optional fields for variants
-export type ProductFormInput = Omit<ProductInput, 'variants' | 'variantTypes'> & {
+export type ProductFormInput = Omit<ProductInput, 'variants' | 'variantTypes' | 'mediaGallery'> & {
   variantTypes?: {
     name: string;
     values: string[];
@@ -110,4 +132,5 @@ export type ProductFormInput = Omit<ProductInput, 'variants' | 'variantTypes'> &
     sku?: string;
     attributes?: Record<string, string>;
   }[];
+  mediaGallery?: MediaItem[];
 };

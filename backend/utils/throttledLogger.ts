@@ -21,8 +21,14 @@ export function createThrottledLogger(
   config: ThrottleConfig = {
     maxLogsPerMinute: 100,
     summaryInterval: 30000, // 30 seconds
-  }
-) {
+  },
+): {
+  info: (message: string, metadata?: LogMetadata) => void;
+  error: (message: string, error?: unknown, metadata?: LogMetadata) => void;
+  warn: (message: string, metadata?: LogMetadata) => void;
+  debug: (message: string, metadata?: LogMetadata) => void;
+  flush: () => void;
+} {
   const baseLogger = createLogger(defaultMetadata);
   const stats: LogStats = {
     total: 0,
@@ -33,7 +39,7 @@ export function createThrottledLogger(
   let summaryTimer: NodeJS.Timeout | null = null;
   const pendingLogs = new Map<string, number>(); // message -> count
 
-  const resetIfNeeded = () => {
+  const resetIfNeeded = (): void => {
     const now = Date.now();
     if (now - stats.lastReset >= 60000) {
       stats.total = 0;
@@ -46,7 +52,7 @@ export function createThrottledLogger(
     return stats.total >= config.maxLogsPerMinute;
   };
 
-  const logSummary = () => {
+  const logSummary = (): void => {
     if (pendingLogs.size > 0) {
       const summary = Array.from(pendingLogs.entries())
         .map(([msg, count]) => `${msg} (${count}x)`)
@@ -62,13 +68,11 @@ export function createThrottledLogger(
     }
   };
 
-  const startSummaryTimer = () => {
-    if (!summaryTimer) {
-      summaryTimer = setInterval(logSummary, config.summaryInterval);
-    }
+  const startSummaryTimer = (): void => {
+    summaryTimer ??= setInterval(logSummary, config.summaryInterval);
   };
 
-  const stopSummaryTimer = () => {
+  const stopSummaryTimer = (): void => {
     if (summaryTimer) {
       clearInterval(summaryTimer);
       summaryTimer = null;
@@ -77,10 +81,10 @@ export function createThrottledLogger(
   };
 
   return {
-    info: (message: string, metadata?: LogMetadata) => {
+    info: (message: string, metadata?: LogMetadata): void => {
       if (shouldThrottle()) {
         stats.throttled++;
-        const count = pendingLogs.get(message) || 0;
+        const count = pendingLogs.get(message) ?? 0;
         pendingLogs.set(message, count + 1);
         startSummaryTimer();
       } else {
@@ -95,7 +99,7 @@ export function createThrottledLogger(
     warn: (message: string, metadata?: LogMetadata) => {
       if (shouldThrottle()) {
         stats.throttled++;
-        const count = pendingLogs.get(message) || 0;
+        const count = pendingLogs.get(message) ?? 0;
         pendingLogs.set(message, count + 1);
         startSummaryTimer();
       } else {
@@ -106,7 +110,7 @@ export function createThrottledLogger(
     debug: (message: string, metadata?: LogMetadata) => {
       if (shouldThrottle()) {
         stats.throttled++;
-        const count = pendingLogs.get(message) || 0;
+        const count = pendingLogs.get(message) ?? 0;
         pendingLogs.set(message, count + 1);
         startSummaryTimer();
       } else {
@@ -120,12 +124,5 @@ export function createThrottledLogger(
     flush: () => {
       stopSummaryTimer();
     },
-    /**
-     * Get current throttling statistics
-     */
-    getStats: () => ({
-      ...stats,
-      pendingLogs: pendingLogs.size,
-    }),
   };
 }

@@ -79,15 +79,19 @@ app.use(errorHandler);
 const httpServer = createServer(app);
 
 // Initialize WebSocket service and inventory monitor
-httpServer.listen(PORT, '0.0.0.0', async () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.error('Server is running on http://localhost:' + PORT);
   
-  try {
-    await connectDB();
-    await websocketService.initialize(httpServer);
-    await inventoryMonitor.startMonitoring();
-    console.log('Real-time inventory monitoring started');
-  } catch (error) {
-    console.error('Failed to initialize services:', error);
-  }
+  void (async () => {
+    try {
+      await connectDB();
+      await websocketService.initialize(httpServer);
+      await inventoryMonitor.startMonitoring();
+      console.error('Real-time inventory monitoring started');
+    } catch (error) {
+      console.error('Failed to initialize services:', error);
+    }
+  })();
 });
+
+export default app;

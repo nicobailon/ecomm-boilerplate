@@ -94,7 +94,6 @@ export class InventoryService {
     return totalInventory >= quantity;
   }
 
-
   async getAvailableInventory(
     productId: string,
     variantId?: string,
@@ -447,7 +446,6 @@ export class InventoryService {
     }
     return StockStatus.IN_STOCK;
   }
-
 
   async getInventoryMetrics(): Promise<InventoryMetrics> {
     // Try to get from cache first

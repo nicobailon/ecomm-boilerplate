@@ -17,7 +17,7 @@
     "allowJs": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["vite/client", "vitest/globals"],
+    "types": ["vite/client", "vitest/globals", "node"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
@@ -27,7 +27,7 @@
   },
   "include": [
     "src/**/*",
-    "../backend/trpc/routers/app.router.ts",
+    "../backend/**/*.ts",
     "../shared/**/*"
   ],
   "exclude": ["node_modules", "dist"]

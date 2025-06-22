@@ -1,6 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createTRPCMsw } from 'msw-trpc';
-import { setupServer } from 'msw/node';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { appRouter } from '../app.router.js';
 import { createContext } from '../../context.js';
 import { productService } from '../../../services/product.service.js';

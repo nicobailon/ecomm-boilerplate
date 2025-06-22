@@ -17,10 +17,6 @@ export function validateEnvVariables(): void {
     'UPLOADTHING_TOKEN',
   ];
   
-  const optionalEnvVars = [
-    'USE_VARIANT_LABEL',
-    'USE_VARIANT_ATTRIBUTES',
-  ];
 
   const missingVars: string[] = [];
 

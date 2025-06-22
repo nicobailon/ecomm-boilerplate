@@ -53,6 +53,16 @@ export function ProductMediaCarousel({
     });
   }, [currentIndex, mediaItems]);
   
+  const handleNext = useCallback(() => {
+    setCurrentIndex(prev => (prev === mediaItems.length - 1 ? 0 : prev + 1));
+    setIsVideoPlaying(false);
+  }, [mediaItems.length]);
+  
+  const handlePrevious = useCallback(() => {
+    setCurrentIndex(prev => (prev === 0 ? mediaItems.length - 1 : prev - 1));
+    setIsVideoPlaying(false);
+  }, [mediaItems.length]);
+  
   useEffect(() => {
     if (!autoPlay || isVideoPlaying || mediaItems.length <= 1) return;
     
@@ -61,17 +71,7 @@ export function ProductMediaCarousel({
     }, 5000);
     
     return () => clearInterval(interval);
-  }, [autoPlay, isVideoPlaying, currentIndex, mediaItems.length]);
-  
-  const handlePrevious = useCallback(() => {
-    setCurrentIndex(prev => (prev === 0 ? mediaItems.length - 1 : prev - 1));
-    setIsVideoPlaying(false);
-  }, [mediaItems.length]);
-  
-  const handleNext = useCallback(() => {
-    setCurrentIndex(prev => (prev === mediaItems.length - 1 ? 0 : prev + 1));
-    setIsVideoPlaying(false);
-  }, [mediaItems.length]);
+  }, [autoPlay, isVideoPlaying, currentIndex, mediaItems.length, handleNext]);
   
   const { onTouchStart, onTouchMove, onTouchEnd } = useSwipeGesture({
     onSwipeLeft: handleNext,

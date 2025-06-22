@@ -6,16 +6,16 @@ import { redis } from '../lib/redis.js';
 
 export class MediaService {
   
-  async processMediaUpload(
-    files: Array<{ url: string; type: string; size: number; name: string }>,
-    existingMediaCount: number = 0
-  ): Promise<IMediaItem[]> {
+  processMediaUpload(
+    files: { url: string; type: string; size: number; name: string }[],
+    existingMediaCount = 0,
+  ): IMediaItem[] {
     const mediaItems: IMediaItem[] = [];
     
     if (existingMediaCount + files.length > MEDIA_LIMITS.MAX_ITEMS) {
       throw new AppError(
         `Cannot exceed ${MEDIA_LIMITS.MAX_ITEMS} total media items`,
-        400
+        400,
       );
     }
     
@@ -34,7 +34,7 @@ export class MediaService {
         createdAt: new Date(),
         metadata: {
           size: file.size,
-        }
+        },
       };
       
       mediaItems.push(mediaItem);
@@ -43,14 +43,14 @@ export class MediaService {
     return mediaItems;
   }
   
-  async validateYouTubeUrl(url: string): Promise<{ isValid: boolean; videoId?: string }> {
+  validateYouTubeUrl(url: string): { isValid: boolean; videoId?: string } {
     const patterns = [
       /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s]+)/,
     ];
     
     for (const pattern of patterns) {
       const match = url.match(pattern);
-      if (match && match[1]) {
+      if (match?.[1]) {
         return { isValid: true, videoId: match[1] };
       }
     }
@@ -58,7 +58,7 @@ export class MediaService {
     return { isValid: false };
   }
   
-  async getYouTubeThumbnail(videoId: string): Promise<string> {
+  getYouTubeThumbnail(videoId: string): string {
     const qualities = ['maxresdefault', 'hqdefault', 'mqdefault', 'default'];
     
     for (const quality of qualities) {
@@ -71,7 +71,7 @@ export class MediaService {
     return `https://img.youtube.com/vi/${videoId}/default.jpg`;
   }
   
-  async validateMediaGallery(mediaItems: IMediaItem[]): Promise<void> {
+  validateMediaGallery(mediaItems: IMediaItem[]): void {
     if (mediaItems.length > MEDIA_LIMITS.MAX_ITEMS) {
       throw new AppError(`Maximum ${MEDIA_LIMITS.MAX_ITEMS} media items allowed`, 400);
     }
@@ -87,13 +87,13 @@ export class MediaService {
       // For video items, validate YouTube URLs specifically
       if (item.type === 'video') {
         if (item.url.includes('youtube.com') || item.url.includes('youtu.be')) {
-          const validation = await this.validateYouTubeUrl(item.url);
+          const validation = this.validateYouTubeUrl(item.url);
           if (!validation.isValid) {
             throw new AppError(`Invalid YouTube URL: ${item.url}`, 400);
           }
           
           if (!item.thumbnail && validation.videoId) {
-            item.thumbnail = await this.getYouTubeThumbnail(validation.videoId);
+            item.thumbnail = this.getYouTubeThumbnail(validation.videoId);
           }
         } else {
           // All video URLs must be from YouTube
@@ -108,7 +108,7 @@ export class MediaService {
     }
   }
   
-  async deleteMediaFiles(mediaUrls: string[]): Promise<void> {
+  deleteMediaFiles(mediaUrls: string[]): void {
     const uploadThingUrls = mediaUrls.filter(url => url.includes('utfs.io'));
     
     if (uploadThingUrls.length === 0) return;
@@ -121,18 +121,18 @@ export class MediaService {
     }
   }
   
-  async getMediaMetadata(mediaId: string): Promise<any> {
+  async getMediaMetadata(mediaId: string): Promise<{ views: number; lastViewed: Date }> {
     const cacheKey = `media:metadata:${mediaId}`;
     
     try {
       const cached = await redis.get(cacheKey);
       if (cached) {
-        const parsed = JSON.parse(cached);
+        const parsed = JSON.parse(cached) as { views: number; lastViewed: string | Date };
         // Convert string dates back to Date objects if they exist
         if (parsed.lastViewed) {
           parsed.lastViewed = new Date(parsed.lastViewed);
         }
-        return parsed;
+        return parsed as { views: number; lastViewed: Date };
       }
     } catch (error) {
       console.error('Redis error:', error);
@@ -161,9 +161,9 @@ export class MediaService {
   private isValidFileType(mimeType: string): boolean {
     const allTypes = [
       ...MEDIA_LIMITS.SUPPORTED_IMAGE_TYPES,
-      ...MEDIA_LIMITS.SUPPORTED_VIDEO_TYPES
+      ...MEDIA_LIMITS.SUPPORTED_VIDEO_TYPES,
     ];
-    return allTypes.includes(mimeType as any);
+    return allTypes.includes(mimeType as typeof allTypes[number]);
   }
   
   private isSecureUrl(url: string): boolean {
@@ -176,11 +176,11 @@ export class MediaService {
         'utfs.io',
         'youtube.com',
         'youtu.be',
-        'img.youtube.com'
+        'img.youtube.com',
       ];
       
       return allowedDomains.some(domain => 
-        urlObj.hostname === domain || urlObj.hostname.endsWith(`.${domain}`)
+        urlObj.hostname === domain || urlObj.hostname.endsWith(`.${domain}`),
       );
     } catch {
       return false;

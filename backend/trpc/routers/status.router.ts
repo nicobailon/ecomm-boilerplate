@@ -18,9 +18,9 @@ export const statusRouter = router({
         useVariantLabel: z.boolean(),
         useVariantAttributes: z.boolean(),
         timestamp: z.string(),
-      })
+      }),
     )
-    .query(async () => {
+    .query(() => {
       return {
         useVariantLabel: USE_VARIANT_LABEL,
         useVariantAttributes: USE_VARIANT_ATTRIBUTES,
@@ -41,9 +41,9 @@ export const statusRouter = router({
       z.object({
         status: z.literal('ok'),
         timestamp: z.string(),
-      })
+      }),
     )
-    .query(async () => {
+    .query(() => {
       return {
         status: 'ok',
         timestamp: new Date().toISOString(),

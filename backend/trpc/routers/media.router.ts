@@ -4,7 +4,10 @@ import { isAppError } from '../../utils/error-types.js';
 import { nanoid } from 'nanoid';
 import { AppError } from '../../utils/AppError.js';
 import { IMediaItem } from '../../types/media.types.js';
-import { mediaItemSchema } from '../../validations/media.validation.js';
+import { 
+  mediaItemSchema,
+  youtubeUrlSchema,
+} from '../../validations/media.validation.js';
 
 export const mediaRouter = router({
   updateGallery: adminProcedure
@@ -19,7 +22,7 @@ export const mediaRouter = router({
         const result = await productService.updateMediaGallery(
           input.productId,
           input.mediaItems,
-          ctx.user.id || ctx.userId
+          String(ctx.user.id ?? ctx.userId),
         );
         return result;
       } catch (error) {
@@ -33,8 +36,8 @@ export const mediaRouter = router({
       productId: z.string(),
       mediaOrder: z.array(z.object({
         id: z.string().min(1),
-        order: z.number().int().min(0),
-      })),
+        order: z.number().int().min(0).max(5),
+      })).min(1),
     }))
     .mutation(async ({ input, ctx }) => {
       try {
@@ -42,8 +45,8 @@ export const mediaRouter = router({
         
         const result = await productService.reorderMediaItems(
           input.productId,
-          input.mediaOrder as Array<{ id: string; order: number }>,
-          ctx.user.id || ctx.userId
+          input.mediaOrder as { id: string; order: number }[],
+          String(ctx.user.id ?? ctx.userId),
         );
         return result;
       } catch (error) {
@@ -64,7 +67,7 @@ export const mediaRouter = router({
         const result = await productService.deleteMediaItem(
           input.productId,
           input.mediaId,
-          ctx.user.id || ctx.userId
+          String(ctx.user.id ?? ctx.userId),
         );
         return result;
       } catch (error) {
@@ -76,31 +79,41 @@ export const mediaRouter = router({
   addYouTubeVideo: adminProcedure
     .input(z.object({
       productId: z.string(),
-      url: z.string().url(),
+      url: youtubeUrlSchema,
       title: z.string().max(200),
     }))
     .mutation(async ({ input, ctx }) => {
       try {
-        let service: any;
+        let service: {
+          validateYouTubeUrl: (url: string) => Promise<{ isValid: boolean; videoId?: string }>;
+          getYouTubeThumbnail: (id: string) => Promise<string>;
+        };
         try {
           const { mediaService } = await import('../../services/media.service.js');
-          service = mediaService;
+          service = {
+            validateYouTubeUrl: (url: string) => {
+              return Promise.resolve(mediaService.validateYouTubeUrl(url));
+            },
+            getYouTubeThumbnail: (id: string) => {
+              return Promise.resolve(mediaService.getYouTubeThumbnail(id));
+            },
+          };
         } catch {
           service = {
-            validateYouTubeUrl: async (url: string) => {
+            validateYouTubeUrl: (url: string) => {
               const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
-              const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
-              return { 
-                isValid: youtubeRegex.test(url) && match, 
-                videoId: match ? match[1] : null 
-              };
+              const match = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/.exec(url);
+              return Promise.resolve({ 
+                isValid: youtubeRegex.test(url) && !!match, 
+                videoId: match ? match[1] : undefined, 
+              });
             },
-            getYouTubeThumbnail: async (id: string) => `https://img.youtube.com/vi/${id}/maxresdefault.jpg`
+            getYouTubeThumbnail: (id: string) => Promise.resolve(`https://img.youtube.com/vi/${id}/maxresdefault.jpg`),
           };
         }
         
         const validation = await service.validateYouTubeUrl(input.url);
-        if (!validation.isValid) {
+        if (!validation.isValid || !validation.videoId) {
           throw new AppError('Invalid YouTube URL', 400);
         }
         
@@ -109,7 +122,7 @@ export const mediaRouter = router({
           type: 'video',
           url: input.url,
           title: input.title,
-          thumbnail: await service.getYouTubeThumbnail(validation.videoId!),
+          thumbnail: await service.getYouTubeThumbnail(validation.videoId),
           order: 0,
           createdAt: new Date(),
         };
@@ -118,7 +131,7 @@ export const mediaRouter = router({
         const result = await productService.addMediaItem(
           input.productId,
           mediaItem,
-          ctx.user.id || ctx.userId
+          String(ctx.user.id ?? ctx.userId),
         );
         return result;
       } catch (error) {
@@ -133,9 +146,9 @@ export const mediaRouter = router({
       files: z.array(z.object({
         url: z.string().url(),
         type: z.string(),
-        size: z.number(),
-        name: z.string(),
-      })),
+        size: z.number().positive(),
+        name: z.string().min(1),
+      })).min(1),
     }))
     .mutation(async ({ input, ctx }) => {
       try {
@@ -148,29 +161,35 @@ export const mediaRouter = router({
         
         const existingCount = product.mediaGallery?.length || 0;
         
-        let service: any;
+        let service: {
+          processMediaUpload: (files: { url: string; type: string; size: number; name: string }[], count: number) => Promise<IMediaItem[]>;
+        };
         try {
           const { mediaService } = await import('../../services/media.service.js');
-          service = mediaService;
+          service = {
+            processMediaUpload: (files: { url: string; type: string; size: number; name: string }[], count: number) => {
+              return Promise.resolve(mediaService.processMediaUpload(files, count));
+            },
+          };
         } catch {
           service = {
-            processMediaUpload: async (files: any[], count: number) => {
-              return files.map((file, index) => ({
+            processMediaUpload: (files: { url: string; type: string; size: number; name: string }[], count: number) => {
+              return Promise.resolve(files.map((file, index) => ({
                 id: nanoid(6),
                 type: file.type.startsWith('image/') ? 'image' as const : 'video' as const,
                 url: file.url,
                 title: file.name,
                 order: count + index,
                 createdAt: new Date(),
-                metadata: { size: file.size }
-              }));
-            }
+                metadata: { size: file.size },
+              })));
+            },
           };
         }
         
         const newMediaItems = await service.processMediaUpload(
           input.files,
-          existingCount
+          existingCount,
         );
         
         const allMediaItems = [...(product.mediaGallery || []), ...newMediaItems];
@@ -178,7 +197,7 @@ export const mediaRouter = router({
         const result = await productService.updateMediaGallery(
           input.productId,
           allMediaItems,
-          ctx.user.id || ctx.userId
+          String(ctx.user.id ?? ctx.userId),
         );
         
         return result;
@@ -200,7 +219,7 @@ export const mediaRouter = router({
       try {
         const { Product } = await import('../../models/product.model.js');
         
-        const query: any = { isDeleted: { $ne: true } };
+        const query: Record<string, unknown> = { isDeleted: { $ne: true } };
         if (input.productId) {
           query._id = input.productId;
         }
@@ -222,8 +241,8 @@ export const mediaRouter = router({
             stats.productsWithMedia++;
             stats.totalMediaItems += product.mediaGallery.length;
             
-            const images = product.mediaGallery.filter((m: any) => m.type === 'image').length;
-            const videos = product.mediaGallery.filter((m: any) => m.type === 'video').length;
+            const images = product.mediaGallery.filter((m: IMediaItem) => m.type === 'image').length;
+            const videos = product.mediaGallery.filter((m: IMediaItem) => m.type === 'video').length;
             
             stats.totalImages += images;
             stats.totalVideos += videos;
@@ -239,7 +258,7 @@ export const mediaRouter = router({
           : 0;
         
         return stats;
-      } catch (error) {
+      } catch {
         throw new AppError('Failed to get media statistics', 500);
       }
     }),
@@ -255,12 +274,12 @@ export const mediaRouter = router({
         for (const product of products) {
           if (product.image) usedUrls.add(product.image);
           if (product.mediaGallery) {
-            product.mediaGallery.forEach((m: any) => {
+            product.mediaGallery.forEach((m: IMediaItem) => {
               usedUrls.add(m.url);
               if (m.thumbnail) usedUrls.add(m.thumbnail);
             });
           }
-          product.variants?.forEach((v: any) => {
+          product.variants?.forEach((v: { images?: string[] }) => {
             v.images?.forEach((img: string) => usedUrls.add(img));
           });
         }
@@ -268,9 +287,9 @@ export const mediaRouter = router({
         return {
           usedUrlCount: usedUrls.size,
           usedUrls: Array.from(usedUrls),
-          message: 'Full orphaned media detection requires UploadThing API integration'
+          message: 'Full orphaned media detection requires UploadThing API integration',
         };
-      } catch (error) {
+      } catch {
         throw new AppError('Failed to find orphaned media', 500);
       }
     }),

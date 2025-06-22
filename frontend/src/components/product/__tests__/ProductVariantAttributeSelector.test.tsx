@@ -128,9 +128,9 @@ describe('ProductVariantAttributeSelector', () => {
       expect(mediumButton).not.toBeDisabled();
 
       // But after selecting Medium, Red should be disabled
-      userEvent.click(mediumButton);
+      void userEvent.click(mediumButton);
 
-      waitFor(() => {
+      void waitFor(() => {
         const redButton = screen.getByRole('radio', { name: /Color: Red.*Out of stock/ });
         expect(redButton).toBeDisabled();
       });
@@ -192,7 +192,7 @@ describe('ProductVariantAttributeSelector', () => {
   });
 
   describe('Invalid Combinations', () => {
-    it('should show message for invalid attribute combinations', async () => {
+    it('should show message for invalid attribute combinations', () => {
       // Create variants without Large size
       const limitedVariants = mockVariants.filter(v => v.attributes?.Size !== 'Large');
       
@@ -257,9 +257,9 @@ describe('ProductVariantAttributeSelector', () => {
       );
 
       const smallButton = screen.getByRole('radio', { name: /Size: Small/ });
-      userEvent.click(smallButton);
+      void userEvent.click(smallButton);
 
-      waitFor(() => {
+      void waitFor(() => {
         const redButton = screen.getByRole('radio', { name: /Color: Red.*Out of stock/ });
         expect(redButton).toHaveAttribute('title', 'Out of stock');
       });

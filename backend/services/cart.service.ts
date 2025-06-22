@@ -62,7 +62,7 @@ export class CartService {
     const productMap = new Map<string, { variantIds: Set<string>, cartItems: typeof user.cartItems[0][] }>();
     
     user.cartItems.forEach(item => {
-      const productId = item.product.toString();
+      const productId = String(item.product);
       if (!productMap.has(productId)) {
         productMap.set(productId, { variantIds: new Set(), cartItems: [] });
       }
@@ -86,7 +86,23 @@ export class CartService {
         isFeatured: 1,
         variants: 1,
       },
-    ).lean();
+    ).lean() as unknown as {
+      _id: mongoose.Types.ObjectId;
+      name: string;
+      description: string;
+      price: number;
+      image: string;
+      collectionId?: mongoose.Types.ObjectId;
+      isFeatured: boolean;
+      variants?: {
+        variantId: string;
+        label?: string;
+        size?: string;
+        color?: string;
+        price: number;
+        sku?: string;
+      }[];
+    }[];
 
     const cartItems: CartProductWithQuantity[] = [];
     
@@ -94,7 +110,7 @@ export class CartService {
     for (const cartItem of user.cartItems) {
       const product = products.find(p => {
         // MongoDB ObjectId has toString() method
-        return (p._id as unknown as { toString(): string }).toString() === cartItem.product.toString();
+        return String(p._id) === String(cartItem.product);
       });
       
       if (!product) {
@@ -102,7 +118,7 @@ export class CartService {
         continue;
       }
       
-      const productIdStr = (product._id as unknown as { toString(): string }).toString();
+      const productIdStr = String(product._id);
       
       // Get the base price, or use variant price if available
       let price = product.price;
@@ -195,7 +211,7 @@ export class CartService {
 
       // Find existing item with same product and variant combination
       const existingItem = user.cartItems.find(
-        (item) => item.product.toString() === productId && item.variantId === variantId,
+        (item) => String(item.product) === productId && item.variantId === variantId,
       );
 
       if (existingItem) {
@@ -234,7 +250,7 @@ export class CartService {
       } else {
         // Remove items from cart
         user.cartItems = user.cartItems.filter((item) => {
-          const matchesProduct = item.product.toString() === productId;
+          const matchesProduct = String(item.product) === productId;
           if (variantId !== undefined) {
             return !(matchesProduct && item.variantId === variantId);
           } else {
@@ -261,7 +277,7 @@ export class CartService {
     
     try {
       const existingItem = user.cartItems.find((item) => 
-        item.product.toString() === productId && item.variantId === variantId,
+        String(item.product) === productId && item.variantId === variantId,
       );
 
       if (!existingItem) {
@@ -271,7 +287,7 @@ export class CartService {
       if (quantity === 0) {
         // Remove item if quantity is 0
         user.cartItems = user.cartItems.filter((item) => {
-          const matchesProduct = item.product.toString() === productId;
+          const matchesProduct = String(item.product) === productId;
           if (variantId !== undefined) {
             return !(matchesProduct && item.variantId === variantId);
           } else {
@@ -303,14 +319,14 @@ export class CartService {
     const products = await Product.find({ _id: { $in: productIds } });
     
     // Create a map for quick product lookup
-    const productMap = new Map(products.map(p => [(p._id as unknown as { toString(): string }).toString(), p]));
+    const productMap = new Map(products.map(p => [String(p._id), p]));
     
     for (const cartItem of user.cartItems) {
-      const product = productMap.get(cartItem.product.toString());
+      const product = productMap.get(String(cartItem.product));
       if (!product) {
         // Product no longer exists
         adjustments.push({
-          productId: cartItem.product.toString(),
+          productId: String(cartItem.product),
           productName: 'Product not found',
           variantDetails: undefined,
           requestedQuantity: cartItem.quantity,
@@ -323,7 +339,7 @@ export class CartService {
       
       // Get available inventory
       const availableStock = await inventoryService.getAvailableInventory(
-        (product._id as unknown as { toString(): string }).toString(),
+        String(product._id),
         cartItem.variantId,
       );
       
@@ -338,7 +354,7 @@ export class CartService {
       
       if (availableStock === 0) {
         adjustments.push({
-          productId: (product._id as unknown as { toString(): string }).toString(),
+          productId: String(product._id),
           productName: product.name,
           variantDetails,
           requestedQuantity: cartItem.quantity,
@@ -348,7 +364,7 @@ export class CartService {
         });
       } else if (availableStock < cartItem.quantity) {
         adjustments.push({
-          productId: (product._id as unknown as { toString(): string }).toString(),
+          productId: String(product._id),
           productName: product.name,
           variantDetails,
           requestedQuantity: cartItem.quantity,
@@ -374,13 +390,13 @@ export class CartService {
       const products = await Product.find({ _id: { $in: productIds } }).session(session);
       
       // Create a map for quick product lookup
-      const productMap = new Map(products.map(p => [(p._id as unknown as { toString(): string }).toString(), p]));
+      const productMap = new Map(products.map(p => [String(p._id), p]));
       
       // Track items to keep after adjustment
       const itemsToKeep: typeof user.cartItems = [];
       
       for (const cartItem of user.cartItems) {
-        const product = productMap.get(cartItem.product.toString());
+        const product = productMap.get(String(cartItem.product));
         if (!product) {
           // Product no longer exists, skip it
           continue;
@@ -388,7 +404,7 @@ export class CartService {
         
         // Get available inventory
         const availableStock = await inventoryService.getAvailableInventory(
-          (product._id as unknown as { toString(): string }).toString(),
+          String(product._id),
           cartItem.variantId,
         );
         
@@ -404,7 +420,7 @@ export class CartService {
         if (availableStock === 0) {
           // Remove item completely
           adjustments.push({
-            productId: (product._id as unknown as { toString(): string }).toString(),
+            productId: String(product._id),
             productName: product.name,
             variantDetails,
             requestedQuantity: cartItem.quantity,
@@ -415,7 +431,7 @@ export class CartService {
         } else if (availableStock < cartItem.quantity) {
           // Adjust quantity down
           adjustments.push({
-            productId: (product._id as unknown as { toString(): string }).toString(),
+            productId: String(product._id),
             productName: product.name,
             variantDetails,
             requestedQuantity: cartItem.quantity,

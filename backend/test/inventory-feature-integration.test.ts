@@ -11,7 +11,6 @@ describe('Inventory Feature Integration', () => {
       color: 'blue',
       price: 29.99,
       inventory: 10,
-      reservedInventory: 0,
       images: [],
       sku: 'TEST-S-BLUE',
     },
@@ -22,7 +21,6 @@ describe('Inventory Feature Integration', () => {
       color: 'red',
       price: 32.99,
       inventory: 5,
-      reservedInventory: 0,
       images: [],
       sku: 'TEST-M-RED',
     },
@@ -33,7 +31,6 @@ describe('Inventory Feature Integration', () => {
       color: 'green',
       price: 35.99,
       inventory: 8,
-      reservedInventory: 0,
       images: [],
       sku: 'TEST-L-GREEN',
     },
@@ -129,8 +126,7 @@ describe('Inventory Feature Integration', () => {
         color: undefined,
         price: 29.99,
         inventory: 0,
-        reservedInventory: 0,
-        images: [],
+          images: [],
         sku: undefined,
       };
 

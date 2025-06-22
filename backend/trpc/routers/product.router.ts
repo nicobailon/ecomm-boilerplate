@@ -7,8 +7,10 @@ import {
 } from '../../validations/index.js';
 import { baseProductSchema } from '../../validations/product.validation.js';
 import { TRPCError } from '@trpc/server';
+import { ZodError } from 'zod';
 import { MONGODB_OBJECTID_REGEX } from '../../utils/constants.js';
 import { isAppError } from '../../utils/error-types.js';
+import { logProductCreation, logValidationError } from '../../lib/logger.js';
 
 export const productRouter = router({
   list: publicProcedure
@@ -131,27 +133,77 @@ export const productRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       try {
+        logProductCreation.start({
+          userId: ctx.userId,
+          inputKeys: Object.keys(input),
+          hasMediaGallery: 'mediaGallery' in input,
+          mediaGalleryLength: input.mediaGallery?.length ?? 0,
+        });
+
         const result = await productService.createProductWithCollection(
           ctx.userId,
           input,
         );
-        
+
+        logProductCreation.success({
+          productId: result.product._id ?? 'unknown',
+          productName: result.product.name,
+          collectionCreated: result.created.collection,
+          userId: ctx.userId,
+        });
+
         return {
           product: result.product,
           collection: result.collection,
           created: result.created,
         };
       } catch (error) {
+        logProductCreation.error({
+          userId: ctx.userId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          inputData: {
+            name: input.name,
+            hasImage: !!input.image,
+            hasMediaGallery: 'mediaGallery' in input,
+            mediaGalleryLength: input.mediaGallery?.length ?? 0,
+            variantsCount: input.variants?.length ?? 0,
+          },
+        });
+
+        // Handle validation errors specifically
+        if (error instanceof ZodError) {
+          const validationErrors = error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+
+          logValidationError({
+            operation: 'product.create',
+            userId: ctx.userId,
+            validationErrors,
+            inputData: { name: input.name, hasMediaGallery: 'mediaGallery' in input },
+          });
+
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Validation failed: ${validationErrors.join(', ')}`,
+          });
+        }
+
         if (isAppError(error) && error.statusCode === 400) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: error.message,
           });
         }
+
+        // Enhanced error message for debugging (sanitized for production)
         const message = error instanceof Error ? error.message : 'Failed to create product';
+        const enhancedMessage = process.env.NODE_ENV === 'development'
+          ? `Product creation failed: ${message}. Check server logs for details.`
+          : 'Product creation failed. Please try again or contact support.';
+
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: message ?? 'Failed to create product',
+          message: enhancedMessage,
         });
       }
     }),
@@ -274,10 +326,10 @@ export const productRouter = router({
       variantId: z.string().optional(),
       variantLabel: z.string().optional(),
     }).refine(
-      (data) => data.variantId || data.variantLabel,
+      (data) => Boolean(data.variantId ?? data.variantLabel),
       {
         message: 'Either variantId or variantLabel must be provided',
-      }
+      },
     ))
     .query(async ({ input }) => {
       try {
@@ -310,10 +362,10 @@ export const productRouter = router({
       quantity: z.number().int(),
       operation: z.enum(['increment', 'decrement', 'set']),
     }).refine(
-      (data) => data.variantId || data.variantLabel,
+      (data) => Boolean(data.variantId ?? data.variantLabel),
       {
         message: 'Either variantId or variantLabel must be provided',
-      }
+      },
     ))
     .mutation(async ({ input }) => {
       try {

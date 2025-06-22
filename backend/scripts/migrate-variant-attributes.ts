@@ -2,24 +2,28 @@
 import mongoose from 'mongoose';
 import '../utils/validateEnv.js';
 import { Product } from '../models/product.model.js';
-import { IProductDocument } from '../models/product.model.js';
+import type { IProductDocument } from '../models/product.model.js';
 import { generateVariantLabel } from '../utils/variantLabel.js';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const BATCH_SIZE = 250;
 
-async function migrateVariantAttributes() {
-  console.log('🚀 Starting variant attributes migration...');
+async function migrateVariantAttributes(): Promise<void> {
+  console.error('🚀 Starting variant attributes migration...');
   if (DRY_RUN) {
-    console.log('🔸 Running in DRY RUN mode - no changes will be saved');
+    console.error('🔸 Running in DRY RUN mode - no changes will be saved');
   }
 
   try {
-    await mongoose.connect(process.env.MONGO_URI!);
-    console.log('✅ Connected to MongoDB');
+    const mongoUri = process.env.MONGO_URI;
+    if (!mongoUri) {
+      throw new Error('MONGO_URI not configured');
+    }
+    await mongoose.connect(mongoUri);
+    console.error('✅ Connected to MongoDB');
 
     const totalProducts = await Product.countDocuments({ isDeleted: { $ne: true } });
-    console.log(`📊 Found ${totalProducts} products to process`);
+    console.error(`📊 Found ${totalProducts} products to process`);
 
     let processedCount = 0;
     let modifiedCount = 0;
@@ -32,12 +36,18 @@ async function migrateVariantAttributes() {
         .limit(BATCH_SIZE)
         .lean() as IProductDocument[];
 
-      const bulkOps: any[] = [];
+      interface BulkOp {
+        updateOne: {
+          filter: { _id: mongoose.Types.ObjectId };
+          update: { $set: Record<string, unknown> };
+        };
+      }
+      const bulkOps: BulkOp[] = [];
 
       for (const product of products) {
         try {
           let hasChanges = false;
-          const updates: any = {};
+          const updates: Record<string, unknown> = {};
 
           // Build variantTypes from existing variants
           const variantTypes = new Set<string>();
@@ -45,11 +55,13 @@ async function migrateVariantAttributes() {
           // Process variants to extract types and migrate attributes
           if (product.variants && product.variants.length > 0) {
             const updatedVariants = product.variants.map(variant => {
-              const variantUpdate: any = { ...variant };
+              const variantUpdate = { 
+                ...variant, 
+                attributes: variant.attributes ?? {},
+              };
               
-              // Initialize attributes if not present
-              if (!variantUpdate.attributes) {
-                variantUpdate.attributes = {};
+              // Check if attributes was initialized
+              if (!variant.attributes) {
                 hasChanges = true;
               }
 
@@ -65,7 +77,8 @@ async function migrateVariantAttributes() {
               }
 
               // Parse label for additional attributes if attributes are empty
-              if (Object.keys(variantUpdate.attributes).length === 0 && variant.label) {
+              const attributeKeys = Object.keys(variantUpdate.attributes as Record<string, unknown>);
+              if (attributeKeys.length === 0 && variant.label) {
                 const parts = variant.label.split(' / ');
                 // TODO: Log labels that don't match expected heuristic for manual audit
                 if (parts.length > 0 && parts[0]) {
@@ -107,42 +120,42 @@ async function migrateVariantAttributes() {
             if (!DRY_RUN) {
               bulkOps.push({
                 updateOne: {
-                  filter: { _id: product._id },
+                  filter: { _id: product._id as mongoose.Types.ObjectId },
                   update: { $set: updates },
                 },
               });
             }
             modifiedCount++;
-            console.log(`  ✏️  Modified: ${product.name} (${product._id})`);
+            console.error(`  ✏️  Modified: ${product.name} (${String(product._id)})`);
           }
 
           processedCount++;
         } catch (error) {
           errorCount++;
-          console.error(`  ❌ Error processing product ${product._id}:`, error);
+          console.error(`  ❌ Error processing product ${String(product._id)}:`, error);
         }
       }
 
       // Execute bulk updates
       if (bulkOps.length > 0 && !DRY_RUN) {
         await Product.bulkWrite(bulkOps);
-        console.log(`  💾 Saved batch of ${bulkOps.length} updates`);
+        console.error(`  💾 Saved batch of ${bulkOps.length} updates`);
       }
 
-      console.log(`Progress: ${processedCount}/${totalProducts} (${Math.round(processedCount / totalProducts * 100)}%)`);
+      console.error(`Progress: ${processedCount}/${totalProducts} (${Math.round(processedCount / totalProducts * 100)}%)`);
     }
 
-    console.log('\n📈 Migration Summary:');
-    console.log(`  • Total products: ${totalProducts}`);
-    console.log(`  • Processed: ${processedCount}`);
-    console.log(`  • Modified: ${modifiedCount}`);
-    console.log(`  • Errors: ${errorCount}`);
+    console.error('\n📈 Migration Summary:');
+    console.error(`  • Total products: ${totalProducts}`);
+    console.error(`  • Processed: ${processedCount}`);
+    console.error(`  • Modified: ${modifiedCount}`);
+    console.error(`  • Errors: ${errorCount}`);
 
     if (DRY_RUN) {
-      console.log('\n🔸 DRY RUN completed - no changes were saved');
-      console.log('Run without --dry-run flag to apply changes');
+      console.error('\n🔸 DRY RUN completed - no changes were saved');
+      console.error('Run without --dry-run flag to apply changes');
     } else {
-      console.log('\n✅ Migration completed successfully!');
+      console.error('\n✅ Migration completed successfully!');
     }
 
   } catch (error) {
@@ -150,9 +163,9 @@ async function migrateVariantAttributes() {
     process.exit(1);
   } finally {
     await mongoose.disconnect();
-    console.log('🔌 Disconnected from MongoDB');
+    console.error('🔌 Disconnected from MongoDB');
   }
 }
 
 // Run migration
-migrateVariantAttributes().catch(console.error);
+void migrateVariantAttributes().catch(console.error);

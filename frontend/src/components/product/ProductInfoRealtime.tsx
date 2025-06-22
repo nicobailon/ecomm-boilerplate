@@ -76,7 +76,7 @@ export function ProductInfoRealtime({ product, selectedVariant, onAddToCartSucce
       const timer = setTimeout(() => setInventoryUpdateAnimation(false), 500);
       return () => clearTimeout(timer);
     }
-  }, [inventoryData?.availableStock]);
+  }, [inventoryData]);
 
   const handleQuantityChange = useCallback((newQuantity: number) => {
     if (newQuantity >= 1 && newQuantity <= maxQuantity) {

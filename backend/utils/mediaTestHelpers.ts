@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 
 export const createMockMediaItem = (
   type: 'image' | 'video' = 'image',
-  order: number = 0
+  order = 0,
 ): IMediaItem => ({
   id: nanoid(6),
   type,
@@ -20,12 +20,12 @@ export const createMockMediaItem = (
     size: 1024 * 1024, // 1MB
     dimensions: type === 'image' ? { width: 1920, height: 1080 } : undefined,
     duration: type === 'video' ? 180 : undefined,
-  }
+  },
 });
 
 export const createMockMediaGallery = (
-  imageCount: number = 3,
-  videoCount: number = 1
+  imageCount = 3,
+  videoCount = 1,
 ): IMediaItem[] => {
   const gallery: IMediaItem[] = [];
   
@@ -40,7 +40,7 @@ export const createMockMediaGallery = (
   return gallery;
 };
 
-export const createMockYouTubeVideo = (order: number = 0): IMediaItem => ({
+export const createMockYouTubeVideo = (order = 0): IMediaItem => ({
   id: nanoid(6),
   type: 'video',
   url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
@@ -50,13 +50,18 @@ export const createMockYouTubeVideo = (order: number = 0): IMediaItem => ({
   createdAt: new Date(),
   metadata: {
     duration: 212, // 3:32
-  }
+  },
 });
 
 export const createMockUploadedFile = (
   type: 'image' | 'video' = 'image',
-  size: number = 1024 * 1024
-) => ({
+  size: number = 1024 * 1024,
+): {
+  url: string;
+  type: string;
+  size: number;
+  name: string;
+} => ({
   url: type === 'image' 
     ? `https://utfs.io/uploaded-${nanoid(6)}.jpg`
     : `https://utfs.io/uploaded-${nanoid(6)}.mp4`,
@@ -67,7 +72,7 @@ export const createMockUploadedFile = (
 
 export const createMaxMediaGallery = (): IMediaItem[] => {
   return Array.from({ length: 6 }, (_, i) => 
-    createMockMediaItem(i < 4 ? 'image' : 'video', i)
+    createMockMediaItem(i < 4 ? 'image' : 'video', i),
   );
 };
 
@@ -80,7 +85,7 @@ export const createInvalidMediaItem = (invalidField: string): Partial<IMediaItem
     case 'order':
       return { ...base, order: -1 };
     case 'type':
-      return { ...base, type: 'invalid' as any };
+      return { ...base, type: 'invalid' as 'image' | 'video' };
     case 'title':
       return { ...base, title: 'x'.repeat(201) }; // Too long
     default:
@@ -89,35 +94,35 @@ export const createInvalidMediaItem = (invalidField: string): Partial<IMediaItem
 };
 
 export const mockMediaService = {
-  validateMediaGallery: async (items: IMediaItem[]) => {
+  validateMediaGallery: (items: IMediaItem[]): void => {
     if (items.length > 6) {
       throw new Error('Maximum 6 media items allowed');
     }
   },
-  deleteMediaFiles: async (_urls: string[]) => {
+  deleteMediaFiles: (_urls: string[]): void => {
     // Mock implementation for testing
   },
-  validateYouTubeUrl: async (url: string) => {
+  validateYouTubeUrl: (url: string): { isValid: boolean; videoId: string | null } => {
     const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+    const match = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/.exec(url);
     return { 
-      isValid: youtubeRegex.test(url) && match, 
-      videoId: match ? match[1] : null 
+      isValid: youtubeRegex.test(url) && !!match, 
+      videoId: match ? match[1] : null, 
     };
   },
-  getYouTubeThumbnail: async (id: string) => 
+  getYouTubeThumbnail: (id: string): string => 
     `https://img.youtube.com/vi/${id}/maxresdefault.jpg`,
-  processMediaUpload: async (files: any[], existingCount: number) => {
+  processMediaUpload: (files: { type: string; url: string; name: string; size?: number }[], existingCount: number): IMediaItem[] => {
     return files.map((file, index) => ({
       id: nanoid(6),
-      type: file.type.startsWith('image/') ? 'image' as const : 'video' as const,
+      type: file.type.startsWith('image/') ? 'image' : 'video',
       url: file.url,
       title: file.name,
       order: existingCount + index,
       createdAt: new Date(),
-      metadata: { size: file.size }
+      metadata: file.size ? { size: file.size } : undefined,
     }));
-  }
+  },
 };
 
 export const validateMediaGallery = (gallery: IMediaItem[]): { valid: boolean; errors: string[] } => {

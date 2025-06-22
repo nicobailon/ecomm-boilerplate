@@ -142,7 +142,7 @@ describe('Variant Attributes Flow', () => {
       const key = getVariantKey(selectedAttributes);
       
       // Create variant map
-      const variantMap = new Map();
+      const variantMap = new Map<string, typeof variants[0]>();
       variants.forEach(v => {
         if (v.attributes) {
           variantMap.set(getVariantKey(v.attributes), v);

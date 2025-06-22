@@ -13,6 +13,8 @@ import { PAGINATION, PRODUCT_LIMITS, RETRY_CONFIG, REDIS_SCAN_CONFIG } from '../
 import { getVariantOrDefault } from './helpers/variant.helper.js';
 import { USE_VARIANT_LABEL } from '../utils/featureFlags.js';
 import { MediaCacheService } from './mediaCache.service.js';
+import { IMediaItem } from '../types/media.types.js';
+import { logTransactionError } from '../lib/logger.js';
 
 class ProductService {
   private utapi = new UTApi();
@@ -439,11 +441,23 @@ class ProductService {
       }
       
       const { collectionName: _cn, ...productData } = data;
-      
+
+      // Validate required fields with explicit runtime checks
+      if (!productData.name || typeof productData.name !== 'string' || productData.name.trim() === '') {
+        throw new AppError('Product name is required and must be a non-empty string', 400);
+      }
+
+      // Generate slug for the product
+      const slug = await generateUniqueSlug(
+        productData.name,
+        async (s) => !!(await Product.findOne({ slug: s })),
+      );
+
       const product = await Product.create(
         [{
           ...productData,
           collectionId,
+          slug,
         }],
         { session },
       );
@@ -468,7 +482,25 @@ class ProductService {
       };
     } catch (error) {
       await session.abortTransaction();
-      throw error;
+
+      // Re-throw AppError instances as-is to preserve error context
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      // Log transaction error with structured logging
+      logTransactionError({
+        operation: 'createProductWithCollection',
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      // Wrap other errors with transaction context
+      throw new AppError(
+        `Transaction failed during product creation: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        500
+      );
     } finally {
       await session.endSession();
     }
@@ -857,27 +889,41 @@ class ProductService {
 
   async updateMediaGallery(
     productId: string,
-    mediaItems: any[],
-    userId: string
+    mediaItems: IMediaItem[],
+    userId: string,
   ): Promise<IProduct> {
     const session = await mongoose.startSession();
     session.startTransaction();
     
     try {
-      let service: any;
+      interface MediaServiceInterface {
+        validateMediaGallery: (items: IMediaItem[]) => Promise<void>;
+        deleteMediaFiles: (urls: string[]) => Promise<void>;
+      }
+      let service: MediaServiceInterface;
       try {
         const { mediaService } = await import('./media.service.js');
-        service = mediaService;
+        service = {
+          validateMediaGallery: (items: IMediaItem[]) => {
+            mediaService.validateMediaGallery(items);
+            return Promise.resolve();
+          },
+          deleteMediaFiles: (urls: string[]) => {
+            mediaService.deleteMediaFiles(urls);
+            return Promise.resolve();
+          },
+        };
       } catch {
         service = {
-          validateMediaGallery: async (items: any[]) => {
+          validateMediaGallery: (items: IMediaItem[]) => {
             if (items.length > 6) {
               throw new AppError('Maximum 6 media items allowed', 400);
             }
+            return Promise.resolve();
           },
           deleteMediaFiles: async (_urls: string[]) => {
             // Media service stub - would delete files in production
-          }
+          },
         };
       }
       
@@ -889,8 +935,8 @@ class ProductService {
       }
       
       const oldMediaUrls = (product.mediaGallery || [])
-        .filter((m: any) => m.url.includes('utfs.io'))
-        .map((m: any) => m.url);
+        .filter((m) => m.url.includes('utfs.io'))
+        .map((m) => m.url);
       
       const firstImage = mediaItems.find(item => item.type === 'image');
       if (firstImage) {
@@ -920,14 +966,14 @@ class ProductService {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
   async reorderMediaItems(
     productId: string,
-    mediaOrder: Array<{ id: string; order: number }>,
-    userId: string
+    mediaOrder: { id: string; order: number }[],
+    userId: string,
   ): Promise<IProduct> {
     let retryCount = 0;
     const maxRetries = 3;
@@ -945,9 +991,9 @@ class ProductService {
         
         const orderMap = new Map(mediaOrder.map(item => [item.id, item.order]));
         
-        const reorderedItems = product.mediaGallery.map((item: any) => ({
-          ...item.toObject(),
-          order: orderMap.get(item.id) ?? item.order
+        const reorderedItems = product.mediaGallery.map((item) => ({
+          ...item,
+          order: orderMap.get(item.id) ?? item.order,
         }));
         
         reorderedItems.sort((a, b) => a.order - b.order);
@@ -968,11 +1014,11 @@ class ProductService {
         await this.clearProductCache(product.slug, productId);
         
         return toProduct(product);
-      } catch (error: any) {
-        if (error.name === 'VersionError' && retryCount < maxRetries - 1) {
+      } catch (error) {
+        if (error instanceof Error && error.name === 'VersionError' && retryCount < maxRetries - 1) {
           retryCount++;
           await new Promise(resolve => 
-            setTimeout(resolve, 100 * Math.pow(2, retryCount))
+            setTimeout(resolve, 100 * Math.pow(2, retryCount)),
           );
           continue;
         }
@@ -986,7 +1032,7 @@ class ProductService {
   async deleteMediaItem(
     productId: string,
     mediaId: string,
-    userId: string
+    userId: string,
   ): Promise<IProduct> {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -1001,24 +1047,24 @@ class ProductService {
         product.mediaGallery = [];
       }
       
-      const mediaItem = product.mediaGallery.find((m: any) => m.id === mediaId);
+      const mediaItem = product.mediaGallery.find((m) => m.id === mediaId);
       if (!mediaItem) {
         throw new AppError('Media item not found', 404);
       }
       
-      const imageCount = product.mediaGallery.filter((m: any) => m.type === 'image').length;
+      const imageCount = product.mediaGallery.filter((m) => m.type === 'image').length;
       if (mediaItem.type === 'image' && imageCount === 1) {
         throw new AppError('Cannot delete the last image', 400);
       }
       
-      product.mediaGallery = product.mediaGallery.filter((m: any) => m.id !== mediaId);
+      product.mediaGallery = product.mediaGallery.filter((m) => m.id !== mediaId);
       
-      product.mediaGallery.forEach((item: any, index: number) => {
+      product.mediaGallery.forEach((item, index) => {
         item.order = index;
       });
       
       if (mediaItem.url === product.image) {
-        const firstImage = product.mediaGallery.find((m: any) => m.type === 'image');
+        const firstImage = product.mediaGallery.find((m) => m.type === 'image');
         if (firstImage) {
           product.image = firstImage.url;
         }
@@ -1029,7 +1075,11 @@ class ProductService {
       if (mediaItem.url.includes('utfs.io')) {
         try {
           const { mediaService } = await import('./media.service.js');
-          mediaService.deleteMediaFiles([mediaItem.url]).catch(console.error);
+          try {
+            mediaService.deleteMediaFiles([mediaItem.url]);
+          } catch (error) {
+            console.error(error);
+          }
         } catch {
           // MediaService not available, skipping file deletion
         }
@@ -1048,14 +1098,14 @@ class ProductService {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
   async addMediaItem(
     productId: string,
-    mediaItem: any,
-    userId: string
+    mediaItem: IMediaItem,
+    userId: string,
   ): Promise<IProduct> {
     const product = await Product.findById(productId);
     if (!product) {
@@ -1086,16 +1136,16 @@ class ProductService {
   }
 
   async getProductsWithMedia(
-    filter: any = {},
-    options: any = {}
+    filter: Record<string, unknown> = {},
+    options: { sort?: Record<string, 1 | -1>; limit?: number } = {},
   ): Promise<IProduct[]> {
     const products = await Product.find({
       ...filter,
-      isDeleted: { $ne: true }
+      isDeleted: { $ne: true },
     })
     .populate('mediaGallery')
-    .sort(options.sort || { createdAt: -1 })
-    .limit(options.limit || 50);
+    .sort(options.sort ?? { createdAt: -1 })
+    .limit(options.limit ?? 50);
     
     return products.map(toProduct);
   }
@@ -1105,7 +1155,7 @@ class ProductService {
     if (!product) return false;
     
     if (product.mediaGallery && product.mediaGallery.length > 0) {
-      const firstImage = product.mediaGallery.find((m: any) => m.type === 'image');
+      const firstImage = product.mediaGallery.find((m) => m.type === 'image');
       if (firstImage && product.image !== firstImage.url) {
         product.image = firstImage.url;
         await product.save();
@@ -1117,8 +1167,8 @@ class ProductService {
   }
 
   async bulkUpdateMediaGalleries(
-    updates: Array<{ productId: string; mediaGallery: any[] }>,
-    userId: string
+    updates: { productId: string; mediaGallery: IMediaItem[] }[],
+    userId: string,
   ): Promise<void> {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -1128,7 +1178,7 @@ class ProductService {
         await this.updateMediaGallery(
           update.productId,
           update.mediaGallery,
-          userId
+          userId,
         );
       }
       
@@ -1137,7 +1187,7 @@ class ProductService {
       await session.abortTransaction();
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
@@ -1145,7 +1195,7 @@ class ProductService {
     productId: string,
     action: string,
     userId: string,
-    metadata?: any
+    metadata?: unknown,
   ): Promise<void> {
     // Media audit logging for compliance and debugging
     
@@ -1153,7 +1203,7 @@ class ProductService {
       await redis.zadd(
         `audit:media:${productId}`,
         Date.now(),
-        JSON.stringify({ action, userId, metadata })
+        JSON.stringify({ action, userId, metadata }),
       );
       
       await redis.zremrangebyrank(`audit:media:${productId}`, 0, -101);

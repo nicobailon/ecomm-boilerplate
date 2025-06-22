@@ -90,9 +90,9 @@ describe('variant-validation', () => {
 
     it('should handle array with no label property', () => {
       const variants = [
-        { notLabel: 'Small' },
-        { notLabel: 'Medium' },
-      ] as any[];
+        { label: undefined },
+        { label: undefined },
+      ] as { label?: string }[];
 
       const result = findDuplicateLabels(variants);
 

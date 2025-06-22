@@ -15,7 +15,7 @@ export function generateVariantLabel(attributes: VariantAttributes): string {
   // Add priority attributes first
   for (const key of priorityKeys) {
     if (attributes[key]) {
-      parts.push(escapeValue(attributes[key]!));
+      parts.push(escapeValue(attributes[key]));
     }
   }
   

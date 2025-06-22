@@ -4,13 +4,9 @@ import { Collection } from '../models/collection.model.js';
 import { Product } from '../models/product.model.js';
 import { AppError } from '../utils/AppError.js';
 import { generateSlug, generateUniqueSlug } from '../utils/slugify.js';
-import { escapeRegExp } from '../utils/escapeRegex.js';
-import mongoose from 'mongoose';
 import { 
   createMockSession, 
   createSessionableQuery, 
-  createPopulatableQuery,
-  createSelectableQuery,
   createChainableQuery,
   mockObjectId
 } from './helpers/mongoose-mocks.js';
@@ -106,6 +102,7 @@ describe('CollectionService', () => {
       const input = {
         name: 'My Collection',
         products: ['product1', 'invalid'],
+        isPublic: false,
       };
 
       const mockProducts = [{ _id: 'product1' }];
@@ -120,6 +117,7 @@ describe('CollectionService', () => {
       const input = {
         name: 'Empty Collection',
         products: [],
+        isPublic: false,
       };
 
       vi.mocked(generateUniqueSlug).mockResolvedValue('empty-collection');
@@ -255,7 +253,7 @@ describe('CollectionService', () => {
       const mockProducts = [{ _id: 'product3' }, { _id: 'product4' }];
       vi.mocked(Product.find).mockReturnValue(createChainableQuery(mockProducts) as any);
 
-      await collectionService.addProducts(collectionId, productIds, userId);
+      await collectionService.addProducts(collectionId, userId, productIds);
 
       expect(mockCollection.products).toEqual(['product1', 'product2', 'product3', 'product4']);
       expect(mockCollection.productCount).toBe(4);
@@ -280,7 +278,7 @@ describe('CollectionService', () => {
       const mockProducts = [{ _id: 'product1' }, { _id: 'product3' }];
       vi.mocked(Product.find).mockReturnValue(createChainableQuery(mockProducts) as any);
 
-      await collectionService.addProducts(collectionId, productIds, userId);
+      await collectionService.addProducts(collectionId, userId, productIds);
 
       expect(mockCollection.products).toEqual(['product1', 'product2', 'product3']);
       expect(mockCollection.productCount).toBe(3);
@@ -290,7 +288,7 @@ describe('CollectionService', () => {
       vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(null) as any);
 
       await expect(
-        collectionService.addProducts('collection123', ['product1'], 'user123')
+        collectionService.addProducts('collection123', 'user123', ['product1'])
       ).rejects.toThrow('Collection not found or unauthorized');
     });
 
@@ -305,7 +303,7 @@ describe('CollectionService', () => {
       vi.mocked(Product.find).mockReturnValue(createChainableQuery([]) as any);
 
       await expect(
-        collectionService.addProducts('collection123', ['invalid'], 'user123')
+        collectionService.addProducts('collection123', 'user123', ['invalid'])
       ).rejects.toThrow('One or more product IDs are invalid');
     });
   });
@@ -432,7 +430,7 @@ describe('CollectionService', () => {
       const result = await collectionService.list({ limit: 10 });
 
       expect(result.collections).toEqual(mockCollections);
-      expect(result.hasMore).toBe(false);
+      expect(result.nextCursor).toBe(null);
     });
 
     it('should filter by userId and isPublic', async () => {
@@ -449,7 +447,7 @@ describe('CollectionService', () => {
         }),
       } as any);
 
-      await collectionService.list({ userId, isPublic: false });
+      await collectionService.list({ userId, isPublic: false, limit: 10 });
 
       expect(Collection.find).toHaveBeenCalledWith({
         owner: userId,
@@ -666,7 +664,7 @@ describe('CollectionService', () => {
 
       vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
 
-      await collectionService.setProductsForCollection(collectionId, [], userId);
+      await collectionService.setProductsForCollection(collectionId, userId, []);
 
       expect(mockCollection.products).toEqual([]);
       expect(mockCollection.productCount).toBe(0);
@@ -676,7 +674,7 @@ describe('CollectionService', () => {
       vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(null) as any);
 
       await expect(
-        collectionService.setProductsForCollection('collection123', [], 'user123')
+        collectionService.setProductsForCollection('collection123', 'user123', [])
       ).rejects.toThrow('Collection not found or unauthorized');
     });
 
@@ -691,7 +689,7 @@ describe('CollectionService', () => {
       vi.mocked(Product.find).mockReturnValue(createChainableQuery([]) as any);
 
       await expect(
-        collectionService.setProductsForCollection('collection123', ['invalid'], 'user123')
+        collectionService.setProductsForCollection('collection123', 'user123', ['invalid'])
       ).rejects.toThrow('One or more product IDs are invalid');
     });
   });

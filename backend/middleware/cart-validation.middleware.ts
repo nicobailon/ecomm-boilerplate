@@ -7,18 +7,36 @@ import type { CartValidation } from '../lib/websocket.js';
 
 const logger = createLogger({ service: 'CartValidationMiddleware' });
 
+interface CartItem {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  [key: string]: unknown;
+}
+
+interface ValidatedCartItem extends CartItem {
+  requestedQuantity: number;
+  availableQuantity: number;
+  validated: boolean;
+}
+
 interface CartValidationRequest extends Request {
   validatedCart?: {
-    items: Array<{
-      productId: string;
-      variantId?: string;
-      requestedQuantity: number;
-      availableQuantity: number;
-      validated: boolean;
-    }>;
+    items: ValidatedCartItem[];
     hasChanges: boolean;
     removedItems: number;
     reducedItems: number;
+  };
+  body: {
+    cartItems?: CartItem[];
+    productId?: string;
+    variantId?: string;
+    quantity?: number;
+  };
+  user?: {
+    _id: {
+      toString(): string;
+    };
   };
 }
 
@@ -28,16 +46,16 @@ interface CartValidationRequest extends Request {
  */
 export const validateCartInventory = async (
   req: CartValidationRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const { cartItems } = req.body;
     if (!cartItems || !Array.isArray(cartItems)) {
       return next();
     }
 
-    const validatedItems = [];
+    const validatedItems: ValidatedCartItem[] = [];
     let hasChanges = false;
     let removedItems = 0;
     let reducedItems = 0;
@@ -67,7 +85,7 @@ export const validateCartInventory = async (
         }
 
         logger.info('cart.validation.item.removed', {
-          userId: req.user?._id,
+          userId: req.user?._id?.toString(),
           productId: item.productId,
           variantId: item.variantId,
           requestedQuantity: item.quantity,
@@ -99,7 +117,7 @@ export const validateCartInventory = async (
         }
 
         logger.info('cart.validation.quantity.reduced', {
-          userId: req.user?._id,
+          userId: req.user?._id?.toString(),
           productId: item.productId,
           variantId: item.variantId,
           requestedQuantity: item.quantity,
@@ -139,12 +157,16 @@ export const validateCartInventory = async (
  * Prevents adding items that are already out of stock
  */
 export const validateAddToCart = async (
-  req: Request,
-  res: Response,
+  req: CartValidationRequest,
+  _res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const { productId, variantId, quantity = 1 } = req.body;
+
+    if (!productId) {
+      throw new AppError('Product ID is required', 400);
+    }
 
     const isAvailable = await inventoryService.checkAvailability(
       productId,
@@ -177,17 +199,18 @@ export const includeCartValidationWarnings = (
   req: CartValidationRequest,
   res: Response,
   next: NextFunction,
-) => {
+): void => {
   if (req.validatedCart?.hasChanges) {
     const originalJson = res.json.bind(res);
-    res.json = function (data: any) {
+    res.json = function <T>(data: T): Response<T> {
+      const { hasChanges, removedItems, reducedItems } = req.validatedCart!;
       return originalJson({
         ...data,
         cartValidation: {
-          hasChanges: req.validatedCart!.hasChanges,
-          removedItems: req.validatedCart!.removedItems,
-          reducedItems: req.validatedCart!.reducedItems,
-          message: `Cart updated: ${req.validatedCart!.removedItems} items removed, ${req.validatedCart!.reducedItems} items reduced due to stock availability.`,
+          hasChanges,
+          removedItems,
+          reducedItems,
+          message: `Cart updated: ${removedItems} items removed, ${reducedItems} items reduced due to stock availability.`,
         },
       });
     };

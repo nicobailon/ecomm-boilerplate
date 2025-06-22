@@ -177,7 +177,9 @@ export default function ProductDetailPage() {
             />
           </ErrorBoundary>
           
-          {'variants' in currentProduct && currentProduct.variants && currentProduct.variants.length > 0 && (
+          {'variants' in currentProduct && currentProduct.variants && currentProduct.variants.length > 0 && 
+           // Don't show variant selector if there's only one variant and it has an empty label (default empty variant)
+           !(currentProduct.variants.length === 1 && (!currentProduct.variants[0].label || currentProduct.variants[0].label === '')) && (
             <div className="mt-8">
               <ErrorBoundary>
                 {useVariantAttributes && 'variantTypes' in currentProduct && currentProduct.variantTypes && Array.isArray(currentProduct.variantTypes) ? (

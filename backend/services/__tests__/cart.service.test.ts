@@ -50,13 +50,6 @@ vi.mock('../inventory.service.js', () => ({
   inventoryService: {
     checkAvailability: vi.fn().mockResolvedValue(true),
     getAvailableInventory: vi.fn().mockResolvedValue(10),
-    reserveInventory: vi.fn().mockResolvedValue({
-      success: true,
-      reservationId: 'reservation123',
-      reservedQuantity: 1,
-    }),
-    releaseReservation: vi.fn().mockResolvedValue(true),
-    releaseSessionReservations: vi.fn().mockResolvedValue(true),
   },
 }));
 
@@ -152,10 +145,6 @@ describe('CartService', () => {
       const { inventoryService } = await import('../inventory.service.js');
       vi.mocked(inventoryService.checkAvailability).mockResolvedValueOnce(false);
       vi.mocked(inventoryService.getAvailableInventory).mockResolvedValueOnce(0);
-      vi.mocked(inventoryService.reserveInventory).mockResolvedValueOnce({
-        success: false,
-        message: 'Variant var1 is out of stock',
-      } as any);
       
       await expect(
         cartService.addToCart(mockUser, productId, 'var1')
@@ -215,11 +204,7 @@ describe('CartService', () => {
       // Mock inventory check for product without variants
       const { inventoryService } = await import('../inventory.service.js');
       vi.mocked(inventoryService.checkAvailability).mockResolvedValue(true);
-      vi.mocked(inventoryService.reserveInventory).mockResolvedValue({
-        success: true,
-        reservationId: 'reservation123',
-        reservedQuantity: 1,
-      });
+      // No need to mock reserveInventory - inventory is checked but not reserved
 
       await cartService.addToCart(mockUser, productId);
       

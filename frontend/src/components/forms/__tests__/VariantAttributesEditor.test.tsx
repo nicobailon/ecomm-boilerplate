@@ -172,7 +172,7 @@ describe('VariantAttributesEditor', () => {
   });
 
   describe('Variant Table', () => {
-    it('should display variant table with dynamic columns based on types', async () => {
+    it('should display variant table with dynamic columns based on types', () => {
       const defaultValues = {
         variantTypes: [
           { name: 'Size', values: ['S', 'M', 'L'] },

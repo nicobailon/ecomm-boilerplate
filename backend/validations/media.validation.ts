@@ -6,7 +6,7 @@ const validateYouTubeUrl = (url: string): boolean => {
   const patterns = [
     /^https?:\/\/(www\.)?youtube\.com\/watch\?v=[\w-]+(&[\w=]*)?$/,
     /^https?:\/\/youtu\.be\/[\w-]+(\?[\w=]*)?$/,
-    /^https?:\/\/(www\.)?youtube\.com\/embed\/[\w-]+(\?[\w=]*)?$/
+    /^https?:\/\/(www\.)?youtube\.com\/embed\/[\w-]+(\?[\w=]*)?$/,
   ];
   return patterns.some(pattern => pattern.test(url));
 };
@@ -24,7 +24,7 @@ export const mediaItemSchema = z.object({
       }
       return true;
     },
-    { message: 'Invalid media URL format' }
+    { message: 'Invalid media URL format' },
   ),
   thumbnail: z.string().url().max(2048).optional(),
   title: z.string().max(200).optional(),
@@ -68,7 +68,7 @@ export const youtubeUrlSchema = z.string().refine(
     // Then check if it's a valid YouTube URL
     return validateYouTubeUrl(url);
   },
-  { message: 'Invalid YouTube URL format' }
+  { message: 'Invalid YouTube URL format' },
 );
 
 export const mediaUploadSchema = z.object({
@@ -76,29 +76,29 @@ export const mediaUploadSchema = z.object({
     url: z.string().url(),
     type: z.string(),
     size: z.number().positive(),
-    name: z.string().min(1)
+    name: z.string().min(1),
   })).min(1),
-  existingMediaCount: z.number().int().min(0).default(0)
+  existingMediaCount: z.number().int().min(0).default(0),
 }).refine(
   (data) => data.files.length + data.existingMediaCount <= MEDIA_LIMITS.MAX_ITEMS,
-  { message: `Total media items cannot exceed ${MEDIA_LIMITS.MAX_ITEMS}` }
+  { message: `Total media items cannot exceed ${MEDIA_LIMITS.MAX_ITEMS}` },
 );
 
 export const mediaReorderSchema = z.object({
   mediaItems: z.array(z.object({
     id: z.string().min(1),
-    order: z.number().int().min(0)
-  })).min(1)
+    order: z.number().int().min(0),
+  })).min(1),
 }).refine(
   (data) => {
     const ids = data.mediaItems.map(item => item.id);
     return new Set(ids).size === ids.length;
   },
-  { message: 'Duplicate media item IDs found in reorder' }
+  { message: 'Duplicate media item IDs found in reorder' },
 ).refine(
   (data) => {
     const orders = data.mediaItems.map(item => item.order).sort((a, b) => a - b);
     return orders.every((order, index) => order === index);
   },
-  { message: 'Media items must have sequential order starting from 0' }
+  { message: 'Media items must have sequential order starting from 0' },
 );

@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { appRouter } from '../app.router.js';
-import { createContext } from '../../context.js';
 import { productService } from '../../../services/product.service.js';
 import { AppError } from '../../../utils/AppError.js';
-import { IProduct } from '../../../types/index.js';
+import { IProductWithVariants } from '../../../types/product.types.js';
 import { IMediaItem } from '../../../types/media.types.js';
 import { Product } from '../../../models/product.model.js';
 
@@ -34,9 +33,22 @@ vi.mock('../../../services/media.service.js', () => ({
   },
 }));
 
+// Create a mock user that satisfies IUserDocument interface
+const createMockUser = () => ({
+  _id: 'admin123',
+  id: 'admin123',
+  name: 'Admin User',
+  email: 'admin@test.com',
+  password: 'hashed',
+  role: 'admin' as const,
+  cartItems: [],
+  appliedCoupon: null,
+  comparePassword: vi.fn(),
+  ...({} as any), // Include Document properties
+});
+
 const mockContext = {
-  user: { id: 'admin123', _id: 'admin123', role: 'admin' },
-  userId: 'admin123',
+  user: createMockUser(),
   req: {} as any,
   res: {} as any,
 };
@@ -48,7 +60,7 @@ describe('Media Router', () => {
 
   describe('updateGallery', () => {
     it('should update media gallery successfully', async () => {
-      const mockProduct: IProduct = {
+      const mockProduct: IProductWithVariants = {
         _id: 'product123',
         name: 'Test Product',
         description: 'Test Description',
@@ -58,8 +70,10 @@ describe('Media Router', () => {
         isFeatured: false,
         variants: [],
         relatedProducts: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        lowStockThreshold: 5,
+        allowBackorder: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         mediaGallery: [],
       };
 
@@ -127,7 +141,7 @@ describe('Media Router', () => {
 
   describe('reorderItems', () => {
     it('should reorder media items successfully', async () => {
-      const mockProduct: IProduct = {
+      const mockProduct: IProductWithVariants = {
         _id: 'product123',
         name: 'Test Product',
         description: 'Test Description',
@@ -137,8 +151,10 @@ describe('Media Router', () => {
         isFeatured: false,
         variants: [],
         relatedProducts: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        lowStockThreshold: 5,
+        allowBackorder: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         mediaGallery: [],
       };
 
@@ -194,7 +210,7 @@ describe('Media Router', () => {
 
   describe('deleteItem', () => {
     it('should delete media item successfully', async () => {
-      const mockProduct: IProduct = {
+      const mockProduct: IProductWithVariants = {
         _id: 'product123',
         name: 'Test Product',
         description: 'Test Description',
@@ -204,8 +220,10 @@ describe('Media Router', () => {
         isFeatured: false,
         variants: [],
         relatedProducts: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        lowStockThreshold: 5,
+        allowBackorder: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         mediaGallery: [],
       };
 
@@ -244,7 +262,7 @@ describe('Media Router', () => {
 
   describe('addYouTubeVideo', () => {
     it('should add YouTube video successfully', async () => {
-      const mockProduct: IProduct = {
+      const mockProduct: IProductWithVariants = {
         _id: 'product123',
         name: 'Test Product',
         description: 'Test Description',
@@ -254,8 +272,10 @@ describe('Media Router', () => {
         isFeatured: false,
         variants: [],
         relatedProducts: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        lowStockThreshold: 5,
+        allowBackorder: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         mediaGallery: [],
       };
 
@@ -331,7 +351,7 @@ describe('Media Router', () => {
     });
 
     it('should fallback when media service unavailable', async () => {
-      const mockProduct: IProduct = {
+      const mockProduct: IProductWithVariants = {
         _id: 'product123',
         name: 'Test Product',
         description: 'Test Description',
@@ -341,8 +361,10 @@ describe('Media Router', () => {
         isFeatured: false,
         variants: [],
         relatedProducts: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        lowStockThreshold: 5,
+        allowBackorder: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         mediaGallery: [],
       };
 
@@ -377,7 +399,7 @@ describe('Media Router', () => {
 
   describe('processUploadedFiles', () => {
     it('should process uploaded files successfully', async () => {
-      const mockProduct: IProduct = {
+      const mockProduct: IProductWithVariants = {
         _id: 'product123',
         name: 'Test Product',
         description: 'Test Description',
@@ -387,8 +409,10 @@ describe('Media Router', () => {
         isFeatured: false,
         variants: [],
         relatedProducts: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        lowStockThreshold: 5,
+        allowBackorder: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         mediaGallery: [
           {
             id: 'existing1',
@@ -415,7 +439,7 @@ describe('Media Router', () => {
       (productService.getProductById as any).mockResolvedValue(mockProduct);
       (productService.updateMediaGallery as any).mockResolvedValue({
         ...mockProduct,
-        mediaGallery: [...mockProduct.mediaGallery, ...mockProcessedFiles],
+        mediaGallery: [...(mockProduct as any).mediaGallery, ...mockProcessedFiles],
       });
 
       // Mock media service
@@ -429,7 +453,7 @@ describe('Media Router', () => {
 
       const caller = appRouter.createCaller(mockContext);
 
-      const result = await caller.media.processUploadedFiles({
+      await caller.media.processUploadedFiles({
         productId: 'product123',
         files: [
           {
@@ -471,13 +495,20 @@ describe('Media Router', () => {
       await expect(
         caller.media.processUploadedFiles({
           productId: 'nonexistent',
-          files: [],
+          files: [
+            {
+              url: 'https://example.com/test.jpg',
+              type: 'image/jpeg',
+              size: 1024,
+              name: 'test.jpg',
+            },
+          ],
         })
       ).rejects.toThrow('Product not found');
     });
 
     it('should fallback when media service unavailable', async () => {
-      const mockProduct: IProduct = {
+      const mockProduct: IProductWithVariants = {
         _id: 'product123',
         name: 'Test Product',
         description: 'Test Description',
@@ -487,8 +518,10 @@ describe('Media Router', () => {
         isFeatured: false,
         variants: [],
         relatedProducts: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        lowStockThreshold: 5,
+        allowBackorder: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         mediaGallery: [],
       };
 
@@ -502,7 +535,7 @@ describe('Media Router', () => {
 
       const caller = appRouter.createCaller(mockContext);
 
-      const result = await caller.media.processUploadedFiles({
+      await caller.media.processUploadedFiles({
         productId: 'product123',
         files: [
           {

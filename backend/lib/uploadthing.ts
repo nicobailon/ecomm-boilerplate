@@ -13,7 +13,7 @@ if (!process.env.UPLOADTHING_TOKEN && (!process.env.UPLOADTHING_APP_ID || !proce
 const f = createUploadthing();
 
 // Auth middleware helper
-const authMiddleware = ({ req }: { req: any }) => {
+const authMiddleware = ({ req }: { req: Request }): { userId: string; userEmail: string; userName: string } => {
   // For UploadThing callbacks, we can't rely on cookies as they won't be present
   // Authentication should be handled at the route level before UploadThing processes the request
   // This middleware is only for adding metadata to the upload
@@ -65,12 +65,11 @@ export const uploadRouter = {
   productImagesUploader: f({ 
     image: { 
       maxFileSize: '8MB', 
-      maxFileCount: 6
-    }
+      maxFileCount: 6,
+    },
   })
     .middleware(authMiddleware)
-    .onUploadComplete(async ({ file }) => {
-      console.log('Multiple images upload completed:', file.url);
+    .onUploadComplete(({ file }) => {
       return { url: file.url };
     }),
     
@@ -78,12 +77,11 @@ export const uploadRouter = {
   productVideoUploader: f({ 
     video: { 
       maxFileSize: '16MB', 
-      maxFileCount: 1
-    }
+      maxFileCount: 1,
+    },
   })
     .middleware(authMiddleware)
-    .onUploadComplete(async ({ file }) => {
-      console.log('Video upload completed:', file.url);
+    .onUploadComplete(({ file }) => {
       return { url: file.url };
     }),
     
@@ -91,11 +89,11 @@ export const uploadRouter = {
   videoThumbnailUploader: f({ 
     image: { 
       maxFileSize: '2MB', 
-      maxFileCount: 1
-    }
+      maxFileCount: 1,
+    },
   })
     .middleware(authMiddleware)
-    .onUploadComplete(async ({ file }) => {
+    .onUploadComplete(({ file }) => {
       return { thumbnailUrl: file.url };
     }),
 } satisfies FileRouter;

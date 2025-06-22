@@ -59,7 +59,7 @@ async function migrateVariantLabels(options: MigrationOptions = {}): Promise<Mig
     {
       maxLogsPerMinute: 100,
       summaryInterval: 30000, // 30 seconds
-    }
+    },
   );
 
   try {
@@ -118,7 +118,7 @@ async function migrateVariantLabels(options: MigrationOptions = {}): Promise<Mig
           }
           
           // Add to the set to prevent duplicates in this run
-          allExistingVariantIds.add(variantId)
+          allExistingVariantIds.add(variantId);
           
           if (!dryRun) {
             product.variants = [{
@@ -126,7 +126,6 @@ async function migrateVariantLabels(options: MigrationOptions = {}): Promise<Mig
               label: 'Default',
               price: product.price,
               inventory: 0,
-              reservedInventory: 0,
               images: [],
             }];
             needsUpdate = true;
@@ -211,7 +210,7 @@ async function main(): Promise<void> {
   const verbose = args.includes('--verbose') || args.includes('-v');
 
   if (args.includes('--help') || args.includes('-h')) {
-    console.log(`
+    console.error(`
 📝 Product Variant Label Migration Script
 
 This script migrates product variants to use the new label-based system.

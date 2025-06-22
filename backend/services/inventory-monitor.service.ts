@@ -1,4 +1,4 @@
-import { inventoryService } from './inventory.service.js';
+import mongoose from 'mongoose';
 import { websocketService } from '../lib/websocket.js';
 import { CacheService } from './cache.service.js';
 import { createLogger } from '../utils/logger.js';
@@ -16,7 +16,7 @@ export class InventoryMonitorService {
   private monitorInterval: NodeJS.Timeout | null = null;
   private isMonitoring = false;
 
-  async startMonitoring() {
+  async startMonitoring(): Promise<void> {
     if (this.isMonitoring) return;
     
     this.isMonitoring = true;
@@ -31,7 +31,7 @@ export class InventoryMonitorService {
     await this.checkInventoryChanges();
   }
 
-  stopMonitoring() {
+  stopMonitoring(): void {
     if (this.monitorInterval) {
       clearInterval(this.monitorInterval);
       this.monitorInterval = null;
@@ -41,7 +41,7 @@ export class InventoryMonitorService {
     logger.info('Stopped inventory monitoring');
   }
 
-  private async checkInventoryChanges() {
+  private async checkInventoryChanges(): Promise<void> {
     try {
       // Get current inventory snapshot
       const currentSnapshot = await this.getInventorySnapshot();
@@ -61,7 +61,13 @@ export class InventoryMonitorService {
     }
   }
 
-  private async getInventorySnapshot() {
+  private async getInventorySnapshot(): Promise<Record<string, {
+    productId: string;
+    variants: Record<string, {
+      inventory: number;
+      available: number;
+    }>;
+  }>> {
     const products = await Product.find(
       { isDeleted: { $ne: true } },
       { 
@@ -70,7 +76,15 @@ export class InventoryMonitorService {
         lowStockThreshold: 1,
         allowBackorder: 1,
       },
-    ).lean();
+    ).lean() as unknown as {
+      _id: mongoose.Types.ObjectId;
+      variants?: {
+        variantId: string;
+        inventory: number;
+      }[];
+      lowStockThreshold?: number;
+      allowBackorder?: boolean;
+    }[];
 
     const snapshot: Record<string, {
       productId: string;
@@ -81,7 +95,7 @@ export class InventoryMonitorService {
     }> = {};
 
     for (const product of products) {
-      const productId = product._id.toString();
+      const productId = String(product._id);
       snapshot[productId] = {
         productId,
         variants: {},
@@ -104,9 +118,21 @@ export class InventoryMonitorService {
   }
 
   private async compareAndBroadcast(
-    previous: Record<string, any>,
-    current: Record<string, any>,
-  ) {
+    previous: Record<string, {
+      productId: string;
+      variants: Record<string, {
+        inventory: number;
+        available: number;
+      }>;
+    }>,
+    current: Record<string, {
+      productId: string;
+      variants: Record<string, {
+        inventory: number;
+        available: number;
+      }>;
+    }>,
+  ): Promise<void> {
     const updates: InventoryUpdate[] = [];
 
     for (const productId in current) {
@@ -170,7 +196,7 @@ export class InventoryMonitorService {
     productId: string,
     variantId: string,
     availableStock: number,
-  ) {
+  ): Promise<void> {
     // Find all users with this item in their cart
     const affectedUsers = await User.find({
       'cartItems.product': productId,
@@ -179,7 +205,7 @@ export class InventoryMonitorService {
 
     for (const user of affectedUsers) {
       const cartItem = user.cartItems.find(
-        item => item.product.toString() === productId && item.variantId === variantId,
+        item => String(item.product) === productId && item.variantId === variantId,
       );
 
       if (!cartItem) continue;
@@ -187,7 +213,7 @@ export class InventoryMonitorService {
       // Check if cart quantity exceeds available stock
       if (cartItem.quantity > availableStock) {
         const validation: CartValidation = {
-          userId: user._id.toString(),
+          userId: String(user._id),
           productId,
           variantId,
           requestedQuantity: cartItem.quantity,
@@ -199,7 +225,7 @@ export class InventoryMonitorService {
         await websocketService.publishCartValidation(validation);
 
         logger.info('cart.validation.required', {
-          userId: user._id.toString(),
+          userId: String(user._id),
           productId,
           variantId,
           requestedQuantity: cartItem.quantity,

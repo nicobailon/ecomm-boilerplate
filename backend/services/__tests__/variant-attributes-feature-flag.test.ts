@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { z } from 'zod';
 
 describe('Variant Attributes Feature Flag', () => {
   let originalEnv: string | undefined;

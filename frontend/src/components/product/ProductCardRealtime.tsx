@@ -34,7 +34,7 @@ export const ProductCardRealtime = memo(function ProductCardRealtime({
     if (inventoryData) {
       setLastStockUpdate(new Date());
     }
-  }, [inventoryData?.availableStock]);
+  }, [inventoryData]);
 
   const handleQuickAdd = async (e: React.MouseEvent) => {
     e.preventDefault();

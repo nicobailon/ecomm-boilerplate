@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { trpc } from '@/lib/trpc';
 import { useMediaUpload } from '@/hooks/useMediaUpload';
 import { parseYouTubeUrl, getYouTubeThumbnailUrl } from '@/utils/youtube';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface MediaGalleryManagerProps {
   productId?: string;
@@ -44,26 +45,14 @@ export function MediaGalleryManager({
   const [mediaItems, setMediaItems] = useState<MediaItem[]>(initialMedia);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  
+
   const utils = trpc.useUtils();
-  
-  const { uploadFiles, uploadProgress, isUploading } = useMediaUpload({
-    onSuccess: (items) => {
-      const newItems = [...mediaItems, ...items];
-      setMediaItems(newItems);
-      
-      if (productId) {
-        void updateGalleryMutation.mutateAsync({
-          productId,
-          mediaItems: newItems,
-        });
-      }
-    },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to upload files');
-    },
-  });
-  
+
+  // Centralised error handler to respect strict ESLint rules
+  const handleMutationError = (error: unknown): void => {
+    toast.error(getErrorMessage(error));
+  };
+
   const updateGalleryMutation = trpc.media.updateGallery.useMutation({
     onSuccess: () => {
       toast.success('Media gallery updated');
@@ -71,17 +60,13 @@ export function MediaGalleryManager({
         void utils.product.list.invalidate();
       }
     },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to update media gallery');
-    },
+    onError: handleMutationError,
   });
-  
+
   const reorderMutation = trpc.media.reorderItems.useMutation({
-    onError: (error) => {
-      toast.error(error.message || 'Failed to reorder items');
-    },
+    onError: handleMutationError,
   });
-  
+
   const deleteMutation = trpc.media.deleteItem.useMutation({
     onSuccess: () => {
       toast.success('Media item deleted');
@@ -89,26 +74,39 @@ export function MediaGalleryManager({
         void utils.product.list.invalidate();
       }
     },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to delete media item');
-    },
+    onError: handleMutationError,
   });
-  
+
   const addYouTubeMutation = trpc.media.addYouTubeVideo.useMutation({
     onSuccess: (result) => {
-      if (result && 'mediaGallery' in result && result.mediaGallery) {
-        setMediaItems(result.mediaGallery as MediaItem[]);
+      // Type assertion: result is IProduct from backend
+      const product = result as { mediaGallery?: MediaItem[] };
+      if (product.mediaGallery) {
+        setMediaItems(product.mediaGallery);
         toast.success('YouTube video added');
         if (productId) {
           void utils.product.list.invalidate();
         }
       }
     },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to add YouTube video');
-    },
+    onError: handleMutationError,
   });
-  
+
+  const { uploadFiles, uploadProgress, isUploading } = useMediaUpload({
+    onSuccess: (items) => {
+      const newItems = [...mediaItems, ...items];
+      setMediaItems(newItems);
+
+      if (productId) {
+        updateGalleryMutation.mutate({
+          productId,
+          mediaItems: newItems,
+        });
+      }
+    },
+    onError: handleMutationError,
+  });
+
   useEffect(() => {
     onChange(mediaItems);
   }, [mediaItems, onChange]);
@@ -125,14 +123,14 @@ export function MediaGalleryManager({
       });
     };
   }, [mediaItems]);
-  
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
-  
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'image/*': MEDIA_LIMITS.SUPPORTED_IMAGE_TYPES,
@@ -154,7 +152,7 @@ export function MediaGalleryManager({
       // Error handling is done in the useMediaUpload hook
     }
   }
-  
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
@@ -163,16 +161,16 @@ export function MediaGalleryManager({
       
       const oldIndex = mediaItems.findIndex(item => item.id === active.id);
       const newIndex = mediaItems.findIndex(item => item.id === over.id);
-      
+
       const reorderedItems = arrayMove(mediaItems, oldIndex, newIndex);
-      
+
       const updatedItems = reorderedItems.map((item, index) => ({
         ...item,
         order: index,
       }));
-      
+
       setMediaItems(updatedItems);
-      
+
       if (productId) {
         reorderMutation.mutate({
           productId,
@@ -182,65 +180,55 @@ export function MediaGalleryManager({
     },
     [mediaItems, productId, reorderMutation],
   );
-  
+
   const handleDelete = useCallback(
-    async (mediaId: string) => {
+    (mediaId: string) => {
       const itemToDelete = mediaItems.find(item => item.id === mediaId);
       if (!itemToDelete) return;
-      
+
       const imageCount = mediaItems.filter(item => item.type === 'image').length;
       if (itemToDelete.type === 'image' && imageCount === 1) {
         toast.error('Cannot delete the last image');
         return;
       }
-      
+
       const newItems = mediaItems.filter(item => item.id !== mediaId);
       const updatedItems = newItems.map((item, index) => ({
         ...item,
         order: index,
       }));
-      
+
       setMediaItems(updatedItems);
-      
+
       if (productId) {
-        try {
-          await deleteMutation.mutateAsync({
-            productId,
-            mediaId,
-          });
-          toast.success('Media item deleted');
-        } catch {
-          setMediaItems(mediaItems);
-          toast.error('Failed to delete media item');
-        }
+        deleteMutation.mutate({
+          productId,
+          mediaId,
+        });
       }
     },
     [mediaItems, productId, deleteMutation],
   );
-  
+
   const handleYouTubeAdd = useCallback(
-    async (url: string, title: string) => {
+    async (url: string, title: string): Promise<void> => {
       if (mediaItems.length >= maxItems) {
         toast.error(`Maximum ${maxItems} media items allowed`);
         return;
       }
-      
+
       const parseResult = parseYouTubeUrl(url);
       if (!parseResult.isValid || !parseResult.videoId) {
         toast.error(parseResult.error ?? 'Invalid YouTube URL');
         return;
       }
-      
+
       if (productId) {
-        try {
-          await addYouTubeMutation.mutateAsync({
-            productId,
-            url,
-            title,
-          });
-        } catch {
-          // Error handling is done in the mutation
-        }
+        await addYouTubeMutation.mutateAsync({
+          productId,
+          url,
+          title,
+        });
       } else {
         const mediaItem: MediaItem = {
           id: nanoid(6),
@@ -251,11 +239,11 @@ export function MediaGalleryManager({
           createdAt: new Date(),
           thumbnail: getYouTubeThumbnailUrl(parseResult.videoId),
         };
-        
+
         setMediaItems([...mediaItems, mediaItem]);
         toast.success('YouTube video added');
       }
-      
+
       setShowVideoModal(false);
     },
     [mediaItems, maxItems, productId, addYouTubeMutation],
@@ -334,7 +322,7 @@ export function MediaGalleryManager({
                 key={item.id}
                 item={item}
                 index={index}
-                onDelete={() => { void handleDelete(item.id); }}
+                onDelete={() => handleDelete(item.id)}
                 onEdit={() => handleEdit(item.id)}
               />
             ))}

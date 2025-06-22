@@ -1,9 +1,9 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import app from '../server';
-import { User } from '../models/user.model';
-import { Product } from '../models/product.model';
+import app from '../server.js';
+import { User } from '../models/user.model.js';
+import { Product } from '../models/product.model.js';
 import jwt from 'jsonwebtoken';
 
 describe('Checkout Integration', () => {
@@ -185,7 +185,6 @@ describe('Checkout Integration', () => {
             label: 'Default',
             price: 19.99,
             inventory: 5,
-            reservedInventory: 0,
             images: [],
           },
         ],
@@ -200,7 +199,7 @@ describe('Checkout Integration', () => {
             variantLabel: 'Large',
           },
           {
-            _id: secondProduct._id.toString(),
+            _id: (secondProduct as any)._id.toString(),
             quantity: 1,
             variantId: 'default',
             variantLabel: 'Default',

@@ -4,9 +4,10 @@ import { IProductVariant } from '../../types/product.types.js';
 // Mock the feature flag module
 vi.mock('../../utils/featureFlags.js', () => ({
   USE_VARIANT_LABEL: false,
+  USE_VARIANT_ATTRIBUTES: false,
 }));
 
-import { getVariantOrDefault, mapSizeToLabel, mapLabelToSize } from '../helpers/variant.helper.js';
+import { getVariantOrDefault } from '../helpers/variant.helper.js';
 
 const mockVariants: IProductVariant[] = [
   {
@@ -16,7 +17,6 @@ const mockVariants: IProductVariant[] = [
     color: 'blue',
     price: 29.99,
     inventory: 10,
-    reservedInventory: 0,
     images: [],
     sku: 'TEST-S-BLUE',
   },
@@ -27,7 +27,6 @@ const mockVariants: IProductVariant[] = [
     color: 'red',
     price: 32.99,
     inventory: 5,
-    reservedInventory: 0,
     images: [],
     sku: 'TEST-M-RED',
   },
@@ -38,7 +37,6 @@ const mockVariants: IProductVariant[] = [
     color: 'green',
     price: 35.99,
     inventory: 8,
-    reservedInventory: 0,
     images: [],
     sku: 'TEST-L-GREEN',
   },

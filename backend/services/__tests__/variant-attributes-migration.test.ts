@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
-import { Product } from '../../models/product.model.js';
 import { generateVariantLabel } from '../../utils/variantLabel.js';
-import type { IProductDocument } from '../../models/product.model.js';
 
 vi.mock('../../models/product.model.js');
 
@@ -60,7 +58,7 @@ describe('Variant Attributes Migration', () => {
   describe('Migration Process Simulation', () => {
     function simulateMigration(product: any) {
       const variantTypes = new Set<string>();
-      const updatedVariants = product.variants.map(variant => {
+      const updatedVariants = product.variants.map((variant: any) => {
         const variantUpdate: any = { ...variant };
         
         if (!variantUpdate.attributes) {

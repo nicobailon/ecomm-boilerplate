@@ -1,0 +1,211 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Design System/Contributing" />
+
+# Contributing to Storybook
+
+This guide helps you write effective stories and maintain our component library.
+
+## Writing Stories
+
+### Basic Story Structure
+
+```typescript
+import type { Meta, StoryObj } from '@storybook/react';
+import { MyComponent } from './MyComponent';
+
+const meta = {
+  title: 'Category/ComponentName',
+  component: MyComponent,
+  parameters: {
+    layout: 'centered', // or 'fullscreen', 'padded'
+  },
+  tags: ['autodocs'], // Generates documentation
+  argTypes: {
+    // Define controls for props
+  },
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    // Default props
+  },
+};
+```
+
+### Story Best Practices
+
+1. **Comprehensive Coverage**
+   - Show all component states (default, hover, active, disabled)
+   - Include all variants and sizes
+   - Demonstrate error and loading states
+   - Show edge cases
+
+2. **Meaningful Names**
+   ```typescript
+   // Good
+   export const LoadingState: Story = { ... };
+   export const WithErrorMessage: Story = { ... };
+   
+   // Avoid
+   export const Story1: Story = { ... };
+   export const Test: Story = { ... };
+   ```
+
+3. **Use Render Functions for Complex Examples**
+   ```typescript
+   export const InteractiveExample: Story = {
+     render: (args) => {
+       const [value, setValue] = useState('');
+       return <Input {...args} value={value} onChange={setValue} />;
+     },
+   };
+   ```
+
+## Accessibility Testing
+
+### Required Accessibility Stories
+
+Every component should include:
+
+1. **Keyboard Navigation Story**
+   ```typescript
+   export const KeyboardNavigation: Story = {
+     render: () => (
+       <div role="group" aria-label="Keyboard navigation demo">
+         <Component autoFocus />
+         <Component />
+         <Component disabled />
+       </div>
+     ),
+   };
+   ```
+
+2. **Screen Reader Story**
+   ```typescript
+   export const ScreenReaderSupport: Story = {
+     args: {
+       'aria-label': 'Descriptive label',
+       'aria-describedby': 'help-text',
+     },
+   };
+   ```
+
+3. **ARIA Attributes**
+   - Always include proper ARIA labels for icon-only buttons
+   - Use aria-invalid for error states
+   - Include aria-busy for loading states
+   - Add role attributes where needed
+
+### A11y Addon Configuration
+
+```typescript
+parameters: {
+  a11y: {
+    config: {
+      rules: [
+        { id: 'color-contrast', enabled: true },
+        { id: 'label', enabled: true },
+        { id: 'button-name', enabled: true },
+      ],
+    },
+  },
+},
+```
+
+## Using Mock Data
+
+Import centralized mock data instead of hardcoding:
+
+```typescript
+import { mockProducts, mockUsers } from '@/test/mocks/products';
+import { placeholderImages } from '@/test/mocks/placeholder-images';
+
+export const WithProduct: Story = {
+  args: {
+    product: mockProducts[0],
+    image: placeholderImages.product('Demo Product'),
+  },
+};
+```
+
+## Theme Testing
+
+### Multi-Theme Stories
+
+```typescript
+export const ThemedComponent: Story = {
+  render: () => (
+    <div className="grid grid-cols-2 gap-4">
+      <div className="light p-4">
+        <Component />
+      </div>
+      <div className="dark bg-background p-4">
+        <Component />
+      </div>
+    </div>
+  ),
+};
+```
+
+## Responsive Design
+
+### Viewport Testing
+
+```typescript
+export const MobileView: Story = {
+  parameters: {
+    viewport: {
+      defaultViewport: 'mobile',
+    },
+  },
+};
+
+export const ResponsiveGrid: Story = {
+  render: () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Responsive content */}
+    </div>
+  ),
+};
+```
+
+## Documentation
+
+### Using MDX
+
+Create MDX files for complex documentation:
+
+```mdx
+import { Meta, Story, Canvas } from '@storybook/addon-docs/blocks';
+import * as ComponentStories from './Component.stories';
+
+<Meta of={ComponentStories} />
+
+# Component Name
+
+Description of the component and its purpose.
+
+## Usage
+
+<Canvas of={ComponentStories.Default} />
+
+## Props
+
+Document important props and their usage.
+```
+
+## Checklist for New Components
+
+- [ ] All variants and states covered
+- [ ] Accessibility stories included
+- [ ] Responsive examples provided
+- [ ] Mock data used (not hardcoded)
+- [ ] Theme compatibility tested
+- [ ] ArgTypes properly configured
+- [ ] Documentation complete
+- [ ] No TypeScript errors
+- [ ] A11y tests passing

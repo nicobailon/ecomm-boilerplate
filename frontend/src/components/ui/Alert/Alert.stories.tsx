@@ -16,7 +16,7 @@ import {
   Star,
   TrendingUp,
   Download,
-  ArrowRight
+  ArrowRight,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { userEvent, within, expect } from '@storybook/test';
@@ -203,7 +203,7 @@ export const WithActions: Story = {
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Payment Failed</AlertTitle>
         <AlertDescription>
-          We couldn't process your payment. Please try again.
+          We couldn&apos;t process your payment. Please try again.
         </AlertDescription>
         <div className="mt-3 flex gap-2">
           <Button size="sm" variant="destructive">Retry Payment</Button>
@@ -215,7 +215,7 @@ export const WithActions: Story = {
         <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
         <AlertTitle className="text-amber-800 dark:text-amber-200">Storage Almost Full</AlertTitle>
         <AlertDescription className="text-amber-700 dark:text-amber-300">
-          You're using 90% of your storage. Upgrade to get more space.
+          You&apos;re using 90% of your storage. Upgrade to get more space.
         </AlertDescription>
         <div className="mt-3">
           <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
@@ -288,7 +288,7 @@ export const LongContent: Story = {
       <Info className="h-4 w-4" />
       <AlertTitle>Terms of Service Update</AlertTitle>
       <AlertDescription>
-        We've updated our Terms of Service to reflect changes in data protection laws and to clarify 
+        We&apos;ve updated our Terms of Service to reflect changes in data protection laws and to clarify 
         how we handle user information. The key changes include: enhanced privacy controls, clearer 
         data retention policies, updated cookie usage guidelines, and improved transparency about 
         third-party integrations. These changes will take effect on January 1, 2024. By continuing 
@@ -416,7 +416,7 @@ export const Accessibility: Story = {
           <div className="mt-4 text-sm text-muted-foreground">
             <p>Accessibility features:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>role="alert" for automatic screen reader announcement</li>
+              <li>role=&quot;alert&quot; for automatic screen reader announcement</li>
               <li>Keyboard focusable with tab navigation</li>
               <li>ARIA labels and descriptions for context</li>
               <li>Live region for action announcements</li>

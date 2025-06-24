@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trpc } from '@/lib/trpc';
 import { createTRPCClient } from '@/lib/trpc-client';
 import { useState } from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import { within, userEvent, expect } from '@storybook/test';
 import { withScenario, withEndpointOverrides, withNetworkCondition } from '@/mocks/story-helpers';
 import { trpcMutation, trpcQuery } from '@/mocks/utils/trpc-mock';
@@ -12,7 +13,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Toaster, toast } from 'sonner';
-import { AlertCircle, RefreshCw, Wifi, WifiOff, AlertTriangle, Database, TrendingDown } from 'lucide-react';
+import { AlertCircle, RefreshCw, Wifi, WifiOff, AlertTriangle, Database, TrendingDown, Users, CheckCircle2 } from 'lucide-react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -616,6 +617,569 @@ export const ConcurrentUpdateConflict: Story = {
   ]),
 };
 
+// Inventory Sync Stories - Multi-user updates, conflicts, out-of-sync, recovery
+export const MultiUserInventorySync: Story = {
+  decorators: [
+    (Story) => {
+      const mockQueryClient = new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 0,
+            retry: false,
+          },
+        },
+      });
+      
+      interface User {
+        id: string;
+        name: string;
+        active: boolean;
+        color: string;
+      }
+      
+      const [_users, _setUsers] = useState<User[]>([
+        { id: 'user1', name: 'Alice (You)', active: true, color: 'bg-blue-500' },
+        { id: 'user2', name: 'Bob', active: true, color: 'bg-green-500' },
+        { id: 'user3', name: 'Carol', active: false, color: 'bg-purple-500' },
+      ]);
+      
+      const [inventoryUpdates, setInventoryUpdates] = useState<any[]>([]);
+      interface ConflictItem {
+        id: string;
+        description: string;
+        timestamp: Date;
+        resolved: boolean;
+      }
+      
+      const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
+      
+      const simulateUserUpdate = (userId: string, productId: string, newQuantity: number) => {
+        const user = _users.find((u) => u.id === userId);
+        const timestamp = new Date();
+        
+        // Simulate potential conflict
+        const hasConflict = Math.random() > 0.7;
+        
+        const update = {
+          id: Date.now().toString(),
+          userId,
+          userName: user?.name || 'Unknown',
+          productId,
+          quantity: newQuantity,
+          timestamp,
+          hasConflict,
+          conflictReason: hasConflict ? 'Concurrent modification detected' : null,
+        };
+        
+        setInventoryUpdates(prev => [...prev.slice(-9), update]);
+        
+        if (hasConflict) {
+          setConflicts(prev => [...prev.slice(-4), {
+            id: update.id,
+            description: `${user?.name} tried to update ${productId} but another user modified it first`,
+            timestamp,
+            resolved: false,
+          }]);
+          toast.error(`Conflict detected: ${user?.name}'s update to ${productId}`);
+        } else {
+          toast.success(`${user?.name} updated ${productId} to ${newQuantity} units`);
+        }
+      };
+      
+      const simulateAutoUpdates = () => {
+        const interval = setInterval(() => {
+          const activeUsers = _users.filter((u) => u.active && u.id !== 'user1');
+          if (activeUsers.length > 0) {
+            const user = activeUsers[Math.floor(Math.random() * activeUsers.length)];
+            const productId = `prod${Math.floor(Math.random() * 5) + 1}`;
+            const quantity = Math.floor(Math.random() * 100) + 10;
+            simulateUserUpdate(user.id, productId, quantity);
+          }
+        }, 3000);
+        
+        return () => clearInterval(interval);
+      };
+      
+      const resolveConflict = (conflictId: string) => {
+        setConflicts(prev => prev.map(c => 
+          c.id === conflictId ? { ...c, resolved: true } : c,
+        ));
+        toast.success('Conflict resolved');
+      };
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={mockQueryClient}>
+          <QueryClientProvider client={mockQueryClient}>
+            <BrowserRouter>
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Multi-User Inventory Sync
+                    </h4>
+                    <Button size="sm" onClick={simulateAutoUpdates}>
+                      Start Auto Updates
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Active Users */}
+                    <div>
+                      <h5 className="text-sm font-medium mb-2">Active Users</h5>
+                      <div className="space-y-2">
+                        {_users.map((user) => (
+                          <div key={user.id} className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${user.color}`} />
+                            <span className="text-sm">{user.name}</span>
+                            <Badge variant={user.active ? 'default' : 'secondary'}>
+                              {user.active ? 'Online' : 'Offline'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Recent Updates */}
+                    <div>
+                      <h5 className="text-sm font-medium mb-2">Recent Updates</h5>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {inventoryUpdates.slice(-5).reverse().map(update => (
+                          <div key={update.id} className="text-xs p-2 bg-muted rounded">
+                            <div className="flex justify-between">
+                              <span className="font-medium">{update.userName}</span>
+                              <span className="text-muted-foreground">
+                                {update.timestamp.toLocaleTimeString()}
+                              </span>
+                            </div>
+                            <div className="text-muted-foreground">
+                              {update.productId}: {update.quantity} units
+                            </div>
+                            {update.hasConflict && (
+                              <div className="text-red-600 text-xs mt-1">
+                                ⚠️ Conflict detected
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Conflicts */}
+                    <div>
+                      <h5 className="text-sm font-medium mb-2">Conflicts ({conflicts.filter(c => !c.resolved).length})</h5>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {conflicts.filter(c => !c.resolved).map(conflict => (
+                          <div key={conflict.id} className="text-xs p-2 bg-red-50 border border-red-200 rounded">
+                            <div className="text-red-800 mb-1">{conflict.description}</div>
+                            <Button size="sm" onClick={() => resolveConflict(conflict.id)}>
+                              Resolve
+                            </Button>
+                          </div>
+                        ))}
+                        {conflicts.filter(c => !c.resolved).length === 0 && (
+                          <div className="text-sm text-muted-foreground text-center py-2">
+                            No conflicts
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 flex gap-2">
+                    <Button size="sm" onClick={() => simulateUserUpdate('user1', 'prod1', 50)}>
+                      Update Product 1
+                    </Button>
+                    <Button size="sm" onClick={() => simulateUserUpdate('user1', 'prod2', 75)}>
+                      Update Product 2
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setConflicts([])}>
+                      Clear Conflicts
+                    </Button>
+                  </div>
+                </Card>
+                
+                <Story />
+              </div>
+              <Toaster position="top-right" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
+  ...withEndpointOverrides([
+    trpcMutation('inventory.update', async ({ productId, quantity }: any) => {
+      // Simulate random conflicts
+      if (Math.random() > 0.6) {
+        throw new Error(`Inventory conflict: ${productId} was modified by another user`);
+      }
+      return { productId, quantity, timestamp: Date.now() };
+    }),
+  ]),
+};
+
+export const OutOfSyncRecovery: Story = {
+  decorators: [
+    (Story) => {
+      const mockQueryClient = new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 0,
+            retry: false,
+          },
+        },
+      });
+      
+      const [syncState, setSyncState] = useState<'synced' | 'out-of-sync' | 'syncing' | 'error'>('synced');
+      const [lastSync, setLastSync] = useState(new Date());
+      const [localChanges, setLocalChanges] = useState<any[]>([]);
+      const [serverChanges, setServerChanges] = useState<any[]>([]);
+      
+      const simulateOutOfSync = () => {
+        setSyncState('out-of-sync');
+        setLastSync(new Date(Date.now() - 300000)); // 5 minutes ago
+        
+        // Simulate server changes
+        const serverUpdates = [
+          { productId: 'prod1', quantity: 25, user: 'Server Admin', timestamp: new Date() },
+          { productId: 'prod3', quantity: 0, user: 'Auto System', timestamp: new Date() },
+        ];
+        setServerChanges(serverUpdates);
+        
+        // Simulate local changes
+        const localUpdates = [
+          { productId: 'prod1', quantity: 30, user: 'You', timestamp: new Date() },
+          { productId: 'prod2', quantity: 15, user: 'You', timestamp: new Date() },
+        ];
+        setLocalChanges(localUpdates);
+        
+        toast.warning('Inventory data is out of sync with server');
+      };
+      
+      const attemptSync = async () => {
+        setSyncState('syncing');
+        
+        // Simulate sync process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Randomly succeed or fail
+        if (Math.random() > 0.3) {
+          setSyncState('synced');
+          setLastSync(new Date());
+          setLocalChanges([]);
+          setServerChanges([]);
+          toast.success('Inventory data synchronized successfully');
+        } else {
+          setSyncState('error');
+          toast.error('Sync failed - please try again');
+        }
+      };
+      
+      const forcePull = () => {
+        setSyncState('syncing');
+        setTimeout(() => {
+          setSyncState('synced');
+          setLastSync(new Date());
+          setLocalChanges([]);
+          setServerChanges([]);
+          toast.info('Force pulled latest data from server');
+        }, 1000);
+      };
+      
+      const getSyncStateColor = () => {
+        switch (syncState) {
+          case 'synced': return 'border-green-200 bg-green-50';
+          case 'out-of-sync': return 'border-yellow-200 bg-yellow-50';
+          case 'syncing': return 'border-blue-200 bg-blue-50';
+          case 'error': return 'border-red-200 bg-red-50';
+        }
+      };
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={mockQueryClient}>
+          <QueryClientProvider client={mockQueryClient}>
+            <BrowserRouter>
+              <div className="space-y-4">
+                <Card className={`p-4 ${getSyncStateColor()}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      {syncState === 'synced' && <CheckCircle2 className="w-5 h-5 text-green-600" />}
+                      {syncState === 'out-of-sync' && <AlertTriangle className="w-5 h-5 text-yellow-600" />}
+                      {syncState === 'syncing' && <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />}
+                      {syncState === 'error' && <AlertCircle className="w-5 h-5 text-red-600" />}
+                      <h4 className="font-medium">Sync Status: {syncState.replace('-', ' ')}</h4>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={simulateOutOfSync} disabled={syncState === 'syncing'}>
+                        Simulate Out-of-Sync
+                      </Button>
+                      <Button size="sm" onClick={attemptSync} disabled={syncState === 'syncing' || syncState === 'synced'}>
+                        {syncState === 'syncing' ? 'Syncing...' : 'Sync Now'}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={forcePull} disabled={syncState === 'syncing'}>
+                        Force Pull
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-muted-foreground mb-4">
+                    Last sync: {lastSync.toLocaleString()}
+                  </div>
+                  
+                  {syncState === 'out-of-sync' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h5 className="text-sm font-medium mb-2 text-yellow-800">Local Changes</h5>
+                        <div className="space-y-1">
+                          {localChanges.map((change, i) => (
+                            <div key={i} className="text-xs p-2 bg-yellow-100 rounded">
+                              <div className="font-medium">{change.productId}</div>
+                              <div>Quantity: {change.quantity} (by {change.user})</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h5 className="text-sm font-medium mb-2 text-blue-800">Server Changes</h5>
+                        <div className="space-y-1">
+                          {serverChanges.map((change, i) => (
+                            <div key={i} className="text-xs p-2 bg-blue-100 rounded">
+                              <div className="font-medium">{change.productId}</div>
+                              <div>Quantity: {change.quantity} (by {change.user})</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {syncState === 'error' && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Failed to synchronize inventory data. Check your connection and try again.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </Card>
+                
+                <Story />
+              </div>
+              <Toaster position="top-right" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
+};
+
+export const ConflictResolutionFlow: Story = {
+  decorators: [
+    (Story) => {
+      const mockQueryClient = new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 0,
+            retry: false,
+          },
+        },
+      });
+      
+      interface ConflictData {
+        id: string;
+        productId: string;
+        localValue: number;
+        serverValue: number;
+        localUser: string;
+        serverUser: string;
+        timestamp: Date;
+        resolved: boolean;
+        resolution?: 'local' | 'server' | 'custom' | null;
+        finalValue?: number;
+      }
+      
+      const [conflicts, setConflicts] = useState<ConflictData[]>([]);
+      const [resolutionStrategy, setResolutionStrategy] = useState<'manual' | 'server-wins' | 'local-wins' | 'merge'>('manual');
+      
+      const generateConflict = () => {
+        const productId = `prod${Math.floor(Math.random() * 3) + 1}`;
+        const conflict: ConflictData = {
+          id: Date.now().toString(),
+          productId,
+          localValue: Math.floor(Math.random() * 50) + 10,
+          serverValue: Math.floor(Math.random() * 50) + 10,
+          localUser: 'You',
+          serverUser: ['Alice', 'Bob', 'Carol'][Math.floor(Math.random() * 3)],
+          timestamp: new Date(),
+          resolved: false,
+          resolution: null,
+        };
+        
+        setConflicts(prev => [...prev, conflict]);
+        toast.error(`Conflict detected on ${productId}`);
+      };
+      
+      const resolveConflict = (conflictId: string, resolution: 'local' | 'server' | 'custom', customValue?: number) => {
+        setConflicts(prev => prev.map(conflict => {
+          if (conflict.id === conflictId) {
+            const resolvedValue = resolution === 'local' 
+              ? conflict.localValue 
+              : resolution === 'server' 
+              ? conflict.serverValue 
+              : customValue || conflict.localValue;
+              
+            toast.success(`Conflict resolved: using ${resolution === 'custom' ? 'custom' : resolution} value (${resolvedValue})`);
+            
+            return {
+              ...conflict,
+              resolved: true,
+              resolution,
+              finalValue: resolvedValue,
+            };
+          }
+          return conflict;
+        }));
+      };
+      
+      const autoResolveAll = () => {
+        const unresolvedConflicts = conflicts.filter(c => !c.resolved);
+        
+        unresolvedConflicts.forEach(conflict => {
+          let resolution: 'local' | 'server' | 'custom' = 'server';
+          let value = conflict.serverValue;
+          
+          switch (resolutionStrategy) {
+            case 'server-wins':
+              resolution = 'server';
+              value = conflict.serverValue;
+              break;
+            case 'local-wins':
+              resolution = 'local';
+              value = conflict.localValue;
+              break;
+            case 'merge':
+              resolution = 'custom';
+              value = Math.max(conflict.localValue, conflict.serverValue);
+              break;
+          }
+          
+          setTimeout(() => {
+            resolveConflict(conflict.id, resolution, value);
+          }, Math.random() * 1000);
+        });
+        
+        if (unresolvedConflicts.length > 0) {
+          toast.info(`Auto-resolving ${unresolvedConflicts.length} conflicts using ${resolutionStrategy} strategy`);
+        }
+      };
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={mockQueryClient}>
+          <QueryClientProvider client={mockQueryClient}>
+            <BrowserRouter>
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <h4 className="font-medium mb-4 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    Conflict Resolution Demo
+                  </h4>
+                  
+                  <div className="flex items-center gap-4 mb-4">
+                    <Button size="sm" onClick={generateConflict}>
+                      Generate Conflict
+                    </Button>
+                    
+                    <select 
+                      value={resolutionStrategy} 
+                      onChange={(e) => setResolutionStrategy(e.target.value as 'manual' | 'server-wins' | 'local-wins' | 'merge')}
+                      className="text-sm border rounded px-2 py-1"
+                    >
+                      <option value="manual">Manual Resolution</option>
+                      <option value="server-wins">Server Wins</option>
+                      <option value="local-wins">Local Wins</option>
+                      <option value="merge">Merge (Use Highest)</option>
+                    </select>
+                    
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={autoResolveAll}
+                      disabled={conflicts.filter(c => !c.resolved).length === 0}
+                    >
+                      Auto-Resolve All
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {conflicts.length === 0 && (
+                      <div className="text-center text-muted-foreground py-4">
+                        No conflicts yet. Click &quot;Generate Conflict&quot; to simulate one.
+                      </div>
+                    )}
+                    
+                    {conflicts.slice(-5).map(conflict => (
+                      <div key={conflict.id} className={`p-3 border rounded ${
+                        conflict.resolved ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                      }`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="font-medium">{conflict.productId}</h5>
+                          <Badge variant={conflict.resolved ? 'default' : 'destructive'}>
+                            {conflict.resolved ? 'Resolved' : 'Conflict'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm mb-3">
+                          <div className="p-2 bg-blue-100 rounded">
+                            <div className="font-medium">Local Value</div>
+                            <div>{conflict.localValue} (by {conflict.localUser})</div>
+                          </div>
+                          <div className="p-2 bg-yellow-100 rounded">
+                            <div className="font-medium">Server Value</div>
+                            <div>{conflict.serverValue} (by {conflict.serverUser})</div>
+                          </div>
+                        </div>
+                        
+                        {conflict.resolved ? (
+                          <div className="text-sm text-green-700">
+                            ✓ Resolved using {conflict.resolution} value: {conflict.finalValue}
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => resolveConflict(conflict.id, 'local')}>
+                              Use Local
+                            </Button>
+                            <Button size="sm" onClick={() => resolveConflict(conflict.id, 'server')}>
+                              Use Server
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => {
+                              const customValue = prompt('Enter custom value:', Math.max(conflict.localValue, conflict.serverValue).toString());
+                              if (customValue && !isNaN(Number(customValue))) {
+                                resolveConflict(conflict.id, 'custom', Number(customValue));
+                              }
+                            }}>
+                              Custom Value
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+                
+                <Story />
+              </div>
+              <Toaster position="top-right" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
+};
+
 export const LowStockAlert: Story = {
   decorators: [
     (Story) => {
@@ -910,7 +1474,7 @@ export const OfflineMode: Story = {
             <Alert className="mb-6">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                You're working offline. Changes will be synced when connection is restored.
+                You&apos;re working offline. Changes will be synced when connection is restored.
               </AlertDescription>
             </Alert>
           )}

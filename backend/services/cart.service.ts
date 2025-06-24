@@ -3,28 +3,10 @@ import { Product } from '../models/product.model.js';
 import { IUserDocument } from '../models/user.model.js';
 import { AppError } from '../utils/AppError.js';
 import { inventoryService } from './inventory.service.js';
+import type { CartProductWithQuantity } from '../types/cart-types.js';
 
 interface CartItem {
   product: mongoose.Types.ObjectId;
-  quantity: number;
-  variantId?: string;
-  variantDetails?: {
-    label?: string;
-    size?: string;
-    color?: string;
-    price: number;
-    sku?: string;
-  };
-}
-
-interface CartProductWithQuantity {
-  _id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  collectionId?: mongoose.Types.ObjectId;
-  isFeatured: boolean;
   quantity: number;
   variantId?: string;
   variantDetails?: {
@@ -85,6 +67,7 @@ export class CartService {
         collectionId: 1,
         isFeatured: 1,
         variants: 1,
+        slug: 1,
       },
     ).lean() as unknown as {
       _id: mongoose.Types.ObjectId;
@@ -94,6 +77,7 @@ export class CartService {
       image: string;
       collectionId?: mongoose.Types.ObjectId;
       isFeatured: boolean;
+      slug?: string;
       variants?: {
         variantId: string;
         label?: string;
@@ -149,6 +133,7 @@ export class CartService {
         image: product.image,
         collectionId: product.collectionId,
         isFeatured: product.isFeatured,
+        slug: product.slug,
         quantity: cartItem.quantity,
         variantId: cartItem.variantId,
         variantDetails,
@@ -185,6 +170,9 @@ export class CartService {
     session.startTransaction();
     
     try {
+      // Normalize variantId to handle undefined/null/empty string consistently
+      const normalizedVariantId = variantId ?? undefined;
+      
       // Lock the product document for update
       const product = await Product.findById(productId).session(session);
       if (!product) {
@@ -194,10 +182,23 @@ export class CartService {
       let variantDetails: CartItem['variantDetails'] | undefined;
       
       // If variantId is provided, validate and get variant details
-      if (variantId) {
-        const variant = product.variants?.find(v => v.variantId === variantId);
+      if (normalizedVariantId) {
+        const variant = product.variants?.find(v => v.variantId === normalizedVariantId);
         if (!variant) {
-          throw new AppError(`Variant with ID ${variantId} not found for this product`, 404);
+          throw new AppError(`Variant with ID ${normalizedVariantId} not found for this product`, 404);
+        }
+        
+        // Check if variant is in stock
+        const availableStock = await inventoryService.getAvailableInventory(
+          productId,
+          normalizedVariantId,
+        );
+        
+        if (availableStock === 0) {
+          throw new AppError(
+            `${variant.label || 'This variant'} is currently out of stock`,
+            400,
+          );
         }
         
         variantDetails = {
@@ -207,22 +208,44 @@ export class CartService {
           price: variant.price,
           sku: variant.sku,
         };
+      } else {
+        // Check base product inventory
+        const availableStock = await inventoryService.getAvailableInventory(productId);
+        
+        if (availableStock === 0) {
+          throw new AppError('This product is currently out of stock', 400);
+        }
       }
 
       // Find existing item with same product and variant combination
-      const existingItem = user.cartItems.find(
-        (item) => String(item.product) === productId && item.variantId === variantId,
-      );
+      const existingItem = user.cartItems.find((item) => {
+        const itemVariantId = item.variantId ?? undefined;
+        return String(item.product) === productId && itemVariantId === normalizedVariantId;
+      });
 
       if (existingItem) {
+        // Check if we can add one more
+        const newQuantity = existingItem.quantity + 1;
+        const availableStock = await inventoryService.getAvailableInventory(
+          productId,
+          normalizedVariantId,
+        );
+        
+        if (availableStock < newQuantity) {
+          throw new AppError(
+            `Cannot add more items. Only ${availableStock} available in stock`,
+            400,
+          );
+        }
+        
         // Update quantity for existing item
-        existingItem.quantity = existingItem.quantity + 1;
+        existingItem.quantity = newQuantity;
       } else {
         // Add new item to cart
         user.cartItems.push({ 
           product: new mongoose.Types.ObjectId(productId), 
           quantity: 1,
-          variantId,
+          variantId: normalizedVariantId,
           variantDetails,
         });
       }
@@ -248,14 +271,14 @@ export class CartService {
         // Clear entire cart
         user.cartItems = [];
       } else {
+        // Normalize variantId to handle undefined/null/empty string consistently
+        const normalizedVariantId = variantId ?? undefined;
+        
         // Remove items from cart
         user.cartItems = user.cartItems.filter((item) => {
+          const itemVariantId = item.variantId ?? undefined;
           const matchesProduct = String(item.product) === productId;
-          if (variantId !== undefined) {
-            return !(matchesProduct && item.variantId === variantId);
-          } else {
-            return !(matchesProduct && !item.variantId);
-          }
+          return !(matchesProduct && itemVariantId === normalizedVariantId);
         });
       }
       
@@ -276,9 +299,13 @@ export class CartService {
     session.startTransaction();
     
     try {
-      const existingItem = user.cartItems.find((item) => 
-        String(item.product) === productId && item.variantId === variantId,
-      );
+      // Normalize variantId to handle undefined/null/empty string consistently
+      const normalizedVariantId = variantId ?? undefined;
+      
+      const existingItem = user.cartItems.find((item) => {
+        const itemVariantId = item.variantId ?? undefined;
+        return String(item.product) === productId && itemVariantId === normalizedVariantId;
+      });
 
       if (!existingItem) {
         throw new AppError('Product not found in cart', 404);
@@ -287,14 +314,24 @@ export class CartService {
       if (quantity === 0) {
         // Remove item if quantity is 0
         user.cartItems = user.cartItems.filter((item) => {
+          const itemVariantId = item.variantId ?? undefined;
           const matchesProduct = String(item.product) === productId;
-          if (variantId !== undefined) {
-            return !(matchesProduct && item.variantId === variantId);
-          } else {
-            return !(matchesProduct && !item.variantId);
-          }
+          return !(matchesProduct && itemVariantId === normalizedVariantId);
         });
       } else {
+        // Check inventory availability for the new quantity
+        const availableStock = await inventoryService.getAvailableInventory(
+          productId,
+          normalizedVariantId,
+        );
+        
+        if (availableStock < quantity) {
+          throw new AppError(
+            `Cannot update quantity to ${quantity}. Only ${availableStock} available in stock`,
+            400,
+          );
+        }
+        
         // Update quantity
         existingItem.quantity = quantity;
       }

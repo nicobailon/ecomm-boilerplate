@@ -3,7 +3,7 @@ import {
   InventorySkeleton, 
   InventoryBadgeLoading, 
   InventoryTableLoading, 
-  InventoryStatsLoading 
+  InventoryStatsLoading, 
 } from './InventorySkeleton';
 import { Skeleton } from './Skeleton';
 

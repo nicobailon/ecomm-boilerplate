@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import { useState } from 'react';
 import { Switch } from './Switch';
 
@@ -178,23 +176,23 @@ export const InteractionTest: Story = {
     const switchElement = canvas.getByRole('switch');
     
     // Initially unchecked
-    await expect(switchElement).toHaveAttribute('data-state', 'unchecked');
-    await expect(switchElement).toHaveAttribute('aria-checked', 'false');
+    expect(switchElement).toHaveAttribute('data-state', 'unchecked');
+    expect(switchElement).toHaveAttribute('aria-checked', 'false');
     
     // Click to check
     await userEvent.click(switchElement);
-    await expect(switchElement).toHaveAttribute('data-state', 'checked');
-    await expect(switchElement).toHaveAttribute('aria-checked', 'true');
+    expect(switchElement).toHaveAttribute('data-state', 'checked');
+    expect(switchElement).toHaveAttribute('aria-checked', 'true');
     
     // Click to uncheck
     await userEvent.click(switchElement);
-    await expect(switchElement).toHaveAttribute('data-state', 'unchecked');
-    await expect(switchElement).toHaveAttribute('aria-checked', 'false');
+    expect(switchElement).toHaveAttribute('data-state', 'unchecked');
+    expect(switchElement).toHaveAttribute('aria-checked', 'false');
     
     // Test keyboard interaction
-    await switchElement.focus();
+    switchElement.focus();
     await userEvent.keyboard(' '); // Space key
-    await expect(switchElement).toHaveAttribute('data-state', 'checked');
+    expect(switchElement).toHaveAttribute('data-state', 'checked');
   },
 };
 
@@ -292,8 +290,8 @@ export const DarkModeToggle: Story = {
     return (
       <div 
         className={cn(
-          "p-8 rounded-lg transition-colors duration-300",
-          isDark ? "bg-gray-900 text-white" : "bg-white text-gray-900"
+          'p-8 rounded-lg transition-colors duration-300',
+          isDark ? 'bg-gray-900 text-white' : 'bg-white text-gray-900',
         )}
       >
         <div className="flex items-center justify-between mb-4">

@@ -7,8 +7,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
   stories: [
-    "../src/**/*.mdx",
-    "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+    '../src/**/*.mdx',
+    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
   addons: [
     {
@@ -18,25 +18,25 @@ const config: StorybookConfig = {
         transcludeMarkdown: true,
       },
     },
-    "@storybook/addon-onboarding",
-    "@storybook/addon-themes",
-    "@storybook/addon-a11y",
+    '@storybook/addon-onboarding',
+    '@storybook/addon-themes',
+    '@storybook/addon-a11y',
   ],
   framework: {
-    name: "@storybook/react-vite",
-    options: {}
+    name: '@storybook/react-vite',
+    options: {},
   },
   typescript: {
     check: false,
     reactDocgen: 'react-docgen',
   },
-  async viteFinal(config) {
+  viteFinal(config) {
     return mergeConfig(config, {
       resolve: {
         alias: {
           '@': join(__dirname, '../src'),
-          '@shared': join(__dirname, '../../shared')
-        }
+          '@shared': join(__dirname, '../../shared'),
+        },
       },
       esbuild: {
         // Skip TypeScript type checking during build
@@ -61,6 +61,6 @@ const config: StorybookConfig = {
         },
       },
     });
-  }
+  },
 };
 export default config;

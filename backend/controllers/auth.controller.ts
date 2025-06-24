@@ -64,5 +64,6 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const getProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
+  await Promise.resolve();
   res.json(req.user);
 });

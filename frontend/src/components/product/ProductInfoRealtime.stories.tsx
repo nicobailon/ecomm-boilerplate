@@ -5,7 +5,7 @@ import { ProductInfoRealtime } from './ProductInfoRealtime';
 import { trpc } from '@/lib/trpc';
 import { createTRPCClient } from '@/lib/trpc-client';
 import type { Product } from '@/types';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/Progress';
 import { Toaster, toast } from 'sonner';
-import { Wifi, WifiOff, RefreshCw, AlertCircle, TrendingDown, Users, TrendingUp, Clock } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, AlertCircle, TrendingDown, Users, TrendingUp, Clock, CheckCircle, CloudOff, Cloud, AlertTriangle } from 'lucide-react';
 import { withScenario, withEndpointOverrides, withNetworkCondition } from '@/mocks/story-helpers';
 import { trpcQuery } from '@/mocks/utils/trpc-mock';
 
@@ -83,7 +83,7 @@ const AdvancedInventorySimulator = ({
   productId, 
   onUpdate, 
   onConnectionChange,
-  scenario = 'normal'
+  scenario = 'normal',
 }: { 
   productId: string; 
   onUpdate: (data: any) => void;
@@ -99,7 +99,7 @@ const AdvancedInventorySimulator = ({
   const [users, setUsers] = useState(1);
   const intervalRef = useRef<NodeJS.Timeout>();
 
-  const updateStock = (newStock: number, source: string = 'manual') => {
+  const updateStock = useCallback((newStock: number, source = 'manual') => {
     if (scenario === 'conflict' && Math.random() > 0.7) {
       setConflictCount(prev => prev + 1);
       toast.error('Inventory conflict detected! Another user modified stock.');
@@ -129,9 +129,9 @@ const AdvancedInventorySimulator = ({
         toast.error('Product is now out of stock!');
       }
     }, networkLatency);
-  };
+  }, [scenario, productId, lowThreshold, users, networkLatency, onUpdate]);
 
-  const handleConnectionChange = (newState: boolean) => {
+  const handleConnectionChange = useCallback((newState: boolean) => {
     setConnected(newState);
     onConnectionChange?.(newState);
     
@@ -144,7 +144,7 @@ const AdvancedInventorySimulator = ({
       toast.success('Reconnected to inventory service');
       setLastSync(new Date());
     }
-  };
+  }, [onConnectionChange]);
 
   // Scenario-specific behaviors
   useEffect(() => {
@@ -189,7 +189,7 @@ const AdvancedInventorySimulator = ({
         clearInterval(intervalRef.current);
       }
     };
-  }, [connected, scenario, currentStock, users]);
+  }, [connected, scenario, currentStock, users, handleConnectionChange, updateStock]);
 
   return (
     <Card className="p-4 space-y-4">
@@ -232,7 +232,7 @@ const AdvancedInventorySimulator = ({
             </Button>
             <Button 
               size="sm" 
-              variant={connected ? "destructive" : "default"}
+              variant={connected ? 'destructive' : 'default'}
               onClick={() => handleConnectionChange(!connected)}
             >
               {connected ? 'Disconnect' : 'Connect'}
@@ -658,7 +658,7 @@ export const PriceFluctuations: Story = {
                             className="flex-1 bg-primary transition-all duration-300"
                             style={{ 
                               height: `${height}%`,
-                              opacity: 0.2 + (i / priceHistory.length) * 0.8
+                              opacity: 0.2 + (i / priceHistory.length) * 0.8,
                             }}
                           />
                         );
@@ -690,13 +690,13 @@ export const InventoryConflictResolution: Story = {
   decorators: [
     (Story) => {
       const queryClient = createQueryClient();
-      const [conflicts, setConflicts] = useState<Array<{
+      const [conflicts, setConflicts] = useState<{
         id: string;
         timestamp: Date;
         user: string;
         attempted: number;
         actual: number;
-      }>>([]);
+      }[]>([]);
       
       const handleAddToCart = async (quantity: number) => {
         // Simulate conflict scenario
@@ -720,7 +720,7 @@ export const InventoryConflictResolution: Story = {
                 label: 'Add Available',
                 onClick: () => toast.success(`Added ${serverStock} to cart`),
               },
-            }
+            },
           );
           
           // Update local state with server truth
@@ -800,12 +800,12 @@ export const OutOfSyncRecovery: Story = {
       const [localStock, setLocalStock] = useState(15);
       const [serverStock, setServerStock] = useState(15);
       const [isSynced, setIsSynced] = useState(true);
-      const [syncHistory, setSyncHistory] = useState<Array<{
+      const [syncHistory, setSyncHistory] = useState<{
         timestamp: Date;
         local: number;
         server: number;
         action: string;
-      }>>([]);
+      }[]>([]);
       
       const createDesync = () => {
         const newServerStock = Math.floor(Math.random() * 20) + 1;
@@ -1049,6 +1049,310 @@ export const InventoryStressTest: Story = {
                 </Card>
                 
                 <Story />
+              </div>
+              <Toaster position="top-right" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
+};
+
+// Network Error Scenarios for ProductInfo
+export const NetworkTimeoutRecovery: Story = {
+  args: {
+    product: mockProduct,
+    selectedVariant: null,
+  },
+  decorators: [
+    () => {
+      const queryClient = createQueryClient();
+      const [networkState, setNetworkState] = useState<'connected' | 'timeout' | 'recovering'>('connected');
+      const [timeoutCount, setTimeoutCount] = useState(0);
+      
+      const simulateTimeout = () => {
+        setNetworkState('timeout');
+        setTimeoutCount(prev => prev + 1);
+        toast.error('Network timeout - retrying...');
+        
+        setTimeout(() => {
+          setNetworkState('recovering');
+          toast.info('Attempting to reconnect...');
+          
+          setTimeout(() => {
+            setNetworkState('connected');
+            queryClient.setQueryData(['inventory.product', mockProduct._id], {
+              productId: mockProduct._id,
+              availableStock: 8,
+              lowStockThreshold: 5,
+              allowBackorder: false,
+            });
+            toast.success('Connection restored!');
+          }, 2000);
+        }, 1500);
+      };
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <div className="space-y-4">
+                <Card className={`p-4 border-2 ${
+                  networkState === 'connected' ? 'border-green-200 bg-green-50' :
+                  networkState === 'timeout' ? 'border-red-200 bg-red-50' :
+                  'border-yellow-200 bg-yellow-50'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {networkState === 'connected' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                      {networkState === 'timeout' && <AlertCircle className="w-4 h-4 text-red-600" />}
+                      {networkState === 'recovering' && <RefreshCw className="w-4 h-4 text-yellow-600 animate-spin" />}
+                      <span className="font-medium capitalize">{networkState}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-sm text-muted-foreground">Timeouts: {timeoutCount}</span>
+                      <Button size="sm" onClick={simulateTimeout} disabled={networkState !== 'connected'}>
+                        Simulate Timeout
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {networkState === 'timeout' && (
+                    <Alert variant="destructive" className="mt-3">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Unable to load inventory data. Some features may be limited.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </Card>
+                
+                <ProductInfoRealtime product={mockProduct} selectedVariant={null} />
+              </div>
+              <Toaster position="top-right" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
+};
+
+export const OfflineQueueManagement: Story = {
+  args: {
+    product: mockProduct,
+    selectedVariant: null,
+  },
+  decorators: [
+    () => {
+      const queryClient = createQueryClient();
+      const [isOffline, setIsOffline] = useState(false);
+      const [queuedActions, setQueuedActions] = useState<{id: string, action: string, data: any, timestamp: Date}[]>([]);
+      
+      const queueAction = (action: string, data: any) => {
+        const queueItem = {
+          id: Date.now().toString(),
+          action,
+          data,
+          timestamp: new Date(),
+        };
+        setQueuedActions(prev => [...prev, queueItem]);
+        toast.info(`Queued: ${action}`);
+      };
+      
+      const goOffline = () => {
+        setIsOffline(true);
+        toast.warning('Connection lost - actions will be queued');
+      };
+      
+      const goOnline = () => {
+        setIsOffline(false);
+        toast.success(`Reconnected - processing ${queuedActions.length} queued actions`);
+        
+        // Process queued actions
+        queuedActions.forEach((item, index) => {
+          setTimeout(() => {
+            toast.success(`Processed: ${item.action}`);
+            if (index === queuedActions.length - 1) {
+              setQueuedActions([]);
+            }
+          }, (index + 1) * 500);
+        });
+      };
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      {isOffline ? (
+                        <><CloudOff className="w-4 h-4 text-orange-600" />
+                        <span className="font-medium">Offline Mode</span></>
+                      ) : (
+                        <><Cloud className="w-4 h-4 text-green-600" />
+                        <span className="font-medium">Online</span></>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={goOffline} disabled={isOffline}>
+                        Go Offline
+                      </Button>
+                      <Button size="sm" onClick={goOnline} disabled={!isOffline}>
+                        Reconnect
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {isOffline && (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => queueAction('Add to Cart', { quantity: 1 })}>
+                          Queue: Add to Cart
+                        </Button>
+                        <Button size="sm" onClick={() => queueAction('Update Quantity', { quantity: 2 })}>
+                          Queue: Update Qty
+                        </Button>
+                        <Button size="sm" onClick={() => queueAction('Remove Item', {})}>
+                          Queue: Remove
+                        </Button>
+                      </div>
+                      
+                      {queuedActions.length > 0 && (
+                        <div className="mt-3">
+                          <h4 className="text-sm font-medium mb-2">Queued Actions ({queuedActions.length})</h4>
+                          <div className="space-y-1 max-h-32 overflow-y-auto">
+                            {queuedActions.map(item => (
+                              <div key={item.id} className="text-xs p-2 bg-muted rounded flex justify-between">
+                                <span>{item.action}</span>
+                                <span className="text-muted-foreground">
+                                  {item.timestamp.toLocaleTimeString()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Card>
+                
+                <ProductInfoRealtime product={mockProduct} selectedVariant={null} />
+              </div>
+              <Toaster position="top-right" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
+};
+
+export const GradualDataDegradation: Story = {
+  args: {
+    product: mockProduct,
+    selectedVariant: null,
+  },
+  decorators: [
+    () => {
+      const queryClient = createQueryClient();
+      const [dataQuality, setDataQuality] = useState<'full' | 'partial' | 'cached' | 'unavailable'>('full');
+      
+      const dataStates = {
+        full: {
+          productId: mockProduct._id,
+          availableStock: 15,
+          lowStockThreshold: 5,
+          allowBackorder: false,
+          lastUpdated: new Date(),
+          source: 'live',
+        },
+        partial: {
+          productId: mockProduct._id,
+          availableStock: 15,
+          source: 'partial',
+        },
+        cached: {
+          productId: mockProduct._id,
+          availableStock: null,
+          source: 'cache',
+          lastUpdated: new Date(Date.now() - 300000), // 5 minutes ago
+        },
+        unavailable: null,
+      };
+      
+      const degradeData = () => {
+        const sequence: (keyof typeof dataStates)[] = ['partial', 'cached', 'unavailable'];
+        const currentIndex = sequence.indexOf(dataQuality);
+        const nextQuality = sequence[currentIndex + 1] || 'full';
+        
+        setDataQuality(nextQuality);
+        
+        if (nextQuality === 'full') {
+          queryClient.setQueryData(['inventory.product', mockProduct._id], dataStates.full);
+          toast.success('Data quality restored');
+        } else {
+          queryClient.setQueryData(['inventory.product', mockProduct._id], dataStates[nextQuality]);
+          toast.warning(`Data quality degraded to: ${nextQuality}`);
+        }
+      };
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium">Data Quality Simulation</h4>
+                    <Button size="sm" onClick={degradeData}>
+                      Next Quality Level
+                    </Button>
+                  </div>
+                  
+                  <div className="flex gap-2 mb-3">
+                    {Object.keys(dataStates).map(quality => (
+                      <Badge 
+                        key={quality} 
+                        variant={quality === dataQuality ? 'default' : 'secondary'}
+                      >
+                        {quality}
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  {dataQuality === 'partial' && (
+                    <Alert>
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        Limited inventory data available. Some features may not work correctly.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {dataQuality === 'cached' && (
+                    <Alert variant="destructive">
+                      <Clock className="h-4 w-4" />
+                      <AlertDescription>
+                        Showing cached data from 5 minutes ago. Real-time updates unavailable.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {dataQuality === 'unavailable' && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Inventory data unavailable. Operating in fallback mode.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </Card>
+                
+                <ProductInfoRealtime product={mockProduct} selectedVariant={null} />
               </div>
               <Toaster position="top-right" />
             </BrowserRouter>

@@ -896,7 +896,9 @@ export const HighContrastMode: Story = {
                 <div className="max-w-4xl mx-auto p-6 bg-background border rounded">
                   <ProductSelector 
                     selectedProductIds={[...selectedIds]} 
-                    onSelectionChange={() => {}}
+                    onSelectionChange={() => {
+                      // Empty handler for accessibility demo
+                    }}
                   />
                 </div>
               </div>
@@ -999,7 +1001,7 @@ export const ValidationError: Story = {
     },
   ],
   ...withEndpointOverrides([
-    trpcQuery('product.list', async ({ search }: any) => {
+    trpcQuery('product.list', async ({ search }: { search?: string }) => {
       if (search && /[<>"'&]/.test(search)) {
         throw new Error('Search query contains invalid characters');
       }
@@ -1119,7 +1121,7 @@ export const PermissionError: Story = {
               <AlertDescription>
                 <div className="space-y-2">
                   <p className="font-medium">Permission Denied</p>
-                  <p className="text-sm">You don't have permission to view products. Please contact your administrator.</p>
+                  <p className="text-sm">You don&apos;t have permission to view products. Please contact your administrator.</p>
                 </div>
               </AlertDescription>
             </Alert>

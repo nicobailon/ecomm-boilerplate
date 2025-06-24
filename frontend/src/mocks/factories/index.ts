@@ -71,6 +71,9 @@ export const createMockInventoryUpdate = (productId: string, inventory: number) 
 });
 
 export const createMockAnalyticsData = () => ({
+  users: 89,
+  products: 156,
+  totalSales: 127,
   totalRevenue: 15420.50,
   totalOrders: 127,
   totalCustomers: 89,

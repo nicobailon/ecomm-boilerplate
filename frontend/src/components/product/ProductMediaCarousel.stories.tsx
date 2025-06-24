@@ -247,7 +247,7 @@ export const FullscreenMode: Story = {
   render: (args) => (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Click the fullscreen icon or press 'F' to enter fullscreen mode
+        Click the fullscreen icon or press &apos;F&apos; to enter fullscreen mode
       </p>
       <ProductMediaCarousel {...args} />
     </div>

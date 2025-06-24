@@ -131,7 +131,7 @@ describe('Variant Attributes Feature Flag', () => {
         variants,
         undefined,
         undefined,
-        { size: 'M', color: 'Blue' }
+        { size: 'M', color: 'Blue' },
       );
       
       expect(result.variant?.variantId).toBe('v2');
@@ -168,7 +168,7 @@ describe('Variant Attributes Feature Flag', () => {
         variants,
         undefined,
         'M',
-        { size: 'M', color: 'Any' }
+        { size: 'M', color: 'Any' },
       );
       
       expect(result.variant?.variantId).toBe('v2');

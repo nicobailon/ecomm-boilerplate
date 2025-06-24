@@ -510,13 +510,13 @@ export const Accessibility: Story = {
               <h4 className="font-medium mb-2">Screen Reader Support</h4>
               <div className="space-y-3">
                 <Card className="p-4">
-                  <p className="text-sm font-mono">aria-label="Product: {context.args.product.name}"</p>
+                  <p className="text-sm font-mono">aria-label=&quot;Product: {context.args.product.name}&quot;</p>
                 </Card>
                 <Card className="p-4">
-                  <p className="text-sm font-mono">role="article"</p>
+                  <p className="text-sm font-mono">role=&quot;article&quot;</p>
                 </Card>
                 <Card className="p-4">
-                  <p className="text-sm font-mono">Price announced as "${context.args.product.price}"</p>
+                  <p className="text-sm font-mono">Price announced as &quot;${context.args.product.price}&quot;</p>
                 </Card>
               </div>
             </div>
@@ -555,7 +555,7 @@ export const InventoryStates: Story = {
           <ProductCard
             product={toProduct(mockProducts[0], { 
               _id: 'inv-high',
-              inventory: 50 
+              inventory: 50, 
             })}
           />
         </div>
@@ -564,7 +564,7 @@ export const InventoryStates: Story = {
           <ProductCard
             product={toProduct(mockProducts[0], { 
               _id: 'inv-low',
-              inventory: 5 
+              inventory: 5, 
             })}
           />
         </div>
@@ -573,7 +573,7 @@ export const InventoryStates: Story = {
           <ProductCard
             product={toProduct(mockProducts[0], { 
               _id: 'inv-out',
-              inventory: 0 
+              inventory: 0, 
             })}
           />
         </div>

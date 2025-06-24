@@ -3,28 +3,30 @@ import { TRPCError } from '@trpc/server';
 import { couponRouter } from '../../trpc/routers/coupon.router.js';
 import { couponService } from '../../services/coupon.service.js';
 import { AppError } from '../../utils/AppError.js';
+import type { Request, Response } from 'express';
+import type { IUserDocument } from '../../models/user.model.js';
 
 vi.mock('../../services/coupon.service.js');
 
 describe('coupon.create tRPC endpoint', () => {
   const mockAdminContext = {
-    req: {} as any,
-    res: {} as any,
+    req: {} as Request,
+    res: {} as Response,
     user: {
       _id: 'admin123',
       email: 'admin@test.com',
       role: 'admin',
-    } as any,
+    } as unknown as IUserDocument,
   };
 
   const mockUserContext = {
-    req: {} as any,
-    res: {} as any,
+    req: {} as Request,
+    res: {} as Response,
     user: {
       _id: 'user123',
       email: 'user@test.com',
       role: 'customer',
-    } as any,
+    } as unknown as IUserDocument,
   };
 
   const mockUnauthContext = {

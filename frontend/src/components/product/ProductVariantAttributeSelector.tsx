@@ -223,10 +223,10 @@ export function ProductVariantAttributeSelector({
                     'px-4 py-2 text-sm font-medium rounded-md border transition-all min-w-[60px] min-h-[40px]',
                     'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
                     isSelected
-                      ? 'border-primary bg-primary text-primary-foreground'
+                      ? 'border-emerald-500 bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 ring-2 ring-emerald-500/20 scale-105 font-semibold'
                       : isSelectable
-                      ? 'border-input bg-background text-foreground hover:border-primary hover:bg-accent'
-                      : 'border-input/50 bg-muted text-muted-foreground cursor-not-allowed opacity-60',
+                      ? 'border-gray-300 bg-white text-gray-900 hover:border-emerald-500 hover:bg-emerald-50 hover:shadow-md hover:scale-102'
+                      : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60',
                     !isAvailable && 'line-through',
                   )}
                   role="radio"

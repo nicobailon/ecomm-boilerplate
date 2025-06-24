@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import { useState } from 'react';
 import { Checkbox } from './Checkbox';
 
@@ -159,23 +157,23 @@ export const InteractionTest: Story = {
     const checkbox = canvas.getByRole('checkbox');
     
     // Initially unchecked
-    await expect(checkbox).not.toBeChecked();
+    expect(checkbox).not.toBeChecked();
     
     // Click to check
     await userEvent.click(checkbox);
-    await expect(checkbox).toBeChecked();
+    expect(checkbox).toBeChecked();
     
     // Click to uncheck
     await userEvent.click(checkbox);
-    await expect(checkbox).not.toBeChecked();
+    expect(checkbox).not.toBeChecked();
     
     // Test clicking the label
     const label = canvas.getByText('Click me');
     await userEvent.click(label);
-    await expect(checkbox).toBeChecked();
+    expect(checkbox).toBeChecked();
     
     // Verify checkbox has focus after label click (proper htmlFor/id wiring)
-    await expect(checkbox).toHaveFocus();
+    expect(checkbox).toHaveFocus();
   },
 };
 

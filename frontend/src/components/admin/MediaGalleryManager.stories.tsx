@@ -391,7 +391,7 @@ export const FileUploadProcess: Story = {
     expect(uploadArea).toBeInTheDocument();
     
     // Simulate file selection
-    const fileInput = canvas.getByLabelText(/upload.*image/i) as HTMLInputElement;
+    const fileInput = canvas.getByLabelText(/upload.*image/i);
     const file = new File(['test'], 'test-image.jpg', { type: 'image/jpeg' });
     
     await userEvent.upload(fileInput, file);
@@ -663,7 +663,7 @@ export const QuotaExceeded: Story = {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            You're approaching your storage limit. Consider removing unused media.
+            You&apos;re approaching your storage limit. Consider removing unused media.
           </AlertDescription>
         </Alert>
         
@@ -737,12 +737,12 @@ export const ConcurrentUploadError: Story = {
     initialMedia: mockMediaItems.slice(0, 1),
   },
   render: (args) => {
-    const [uploadQueue, setUploadQueue] = useState<Array<{
+    const [uploadQueue, setUploadQueue] = useState<{
       id: string;
       name: string;
       progress: number;
       status: 'uploading' | 'failed' | 'success';
-    }>>([]);
+    }[]>([]);
     
     const simulateConcurrentUploads = () => {
       const newUploads = [

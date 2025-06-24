@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import { ThemeToggle } from './theme-toggle';
 // import { ThemeProvider } from '@/providers/ThemeProvider';
 
@@ -68,7 +66,7 @@ export const WithVisualFeedback: Story = {
         <div className="p-4 bg-background border rounded">
           <h3 className="font-medium mb-2">Background Color</h3>
           <p className="text-sm text-muted-foreground">
-            This box demonstrates the current theme's background color.
+            This box demonstrates the current theme&apos;s background color.
           </p>
         </div>
         <div className="p-4 bg-muted rounded">

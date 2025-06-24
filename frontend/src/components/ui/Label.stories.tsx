@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
+import { within, expect } from '@storybook/test';
 import { Label } from './Label';
 import { Input } from './Input';
 import { Textarea } from './Textarea';
@@ -89,7 +88,7 @@ export const Required: Story = {
     const input = canvas.getByPlaceholderText('Enter username');
     
     // Assert that the input has aria-required attribute
-    await expect(input).toHaveAttribute('aria-required', 'true');
+    expect(input).toHaveAttribute('aria-required', 'true');
   },
 };
 

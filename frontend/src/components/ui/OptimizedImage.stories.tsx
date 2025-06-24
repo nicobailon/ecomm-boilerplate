@@ -291,7 +291,7 @@ export const Gallery: Story = {
               'Minimalist analog watch with brown leather strap',
               'Premium black headphones with gold accents',
               'Red athletic sneaker with white sole',
-              'Professional DSLR camera body'
+              'Professional DSLR camera body',
             ][selectedImage]}
             aspectRatio={16/9}
             className="w-full"
@@ -303,8 +303,8 @@ export const Gallery: Story = {
               key={index}
               onClick={() => setSelectedImage(index)}
               className={cn(
-                "border-2 rounded overflow-hidden transition-colors",
-                selectedImage === index ? "border-primary" : "border-transparent"
+                'border-2 rounded overflow-hidden transition-colors',
+                selectedImage === index ? 'border-primary' : 'border-transparent',
               )}
             >
               <OptimizedImage
@@ -313,7 +313,7 @@ export const Gallery: Story = {
                   'Watch thumbnail',
                   'Headphones thumbnail',
                   'Sneaker thumbnail',
-                  'Camera thumbnail'
+                  'Camera thumbnail',
                 ][index]}
                 aspectRatio={1}
                 className="w-full"

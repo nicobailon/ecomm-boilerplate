@@ -104,7 +104,7 @@ export const WithCounts: Story = {
     <div className="space-y-4">
       <div className="flex items-center gap-4">
         <StockBadge inventory={0} showCount />
-        <span className="text-sm text-muted-foreground">Shows "Out of stock"</span>
+        <span className="text-sm text-muted-foreground">Shows &quot;Out of stock&quot;</span>
       </div>
       <div className="flex items-center gap-4">
         <StockBadge inventory={2} showCount />
@@ -120,7 +120,7 @@ export const WithCounts: Story = {
       </div>
       <div className="flex items-center gap-4">
         <StockBadge inventory={150} showCount />
-        <span className="text-sm text-muted-foreground">Shows "In stock" for 100+</span>
+        <span className="text-sm text-muted-foreground">Shows &quot;In stock&quot; for 100+</span>
       </div>
     </div>
   ),

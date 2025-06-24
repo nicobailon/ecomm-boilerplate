@@ -143,9 +143,15 @@ describe('Theme Persistence', () => {
         getItem: () => {
           throw new Error('Storage error');
         },
-        removeItem: () => {},
-        setItem: () => {},
-        clear: () => {},
+        removeItem: () => {
+          // Mock implementation
+        },
+        setItem: () => {
+          // Mock implementation
+        },
+        clear: () => {
+          // Mock implementation
+        },
         length: 0,
         key: () => null,
       };
@@ -180,10 +186,10 @@ describe('Theme Persistence', () => {
       };
       
       setTheme('dark');
-      expect(JSON.parse(localStorage.getItem(STORAGE_KEY) || '')).toBe('dark');
-      
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '')).toBe('dark');
+
       setTheme('modern');
-      expect(JSON.parse(localStorage.getItem(STORAGE_KEY) || '')).toBe('modern');
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '')).toBe('modern');
     });
   });
 });

@@ -317,7 +317,7 @@ export const CarouselNavigation: Story = {
     
     // Click next button
     const nextButton = canvas.getAllByRole('button').find(btn => 
-      btn.querySelector('.lucide-chevron-right')
+      btn.querySelector('.lucide-chevron-right'),
     );
     if (nextButton) {
       await userEvent.click(nextButton);
@@ -400,7 +400,7 @@ const ErrorFeaturedProducts = () => {
           </div>
           <h3 className='text-xl font-semibold mb-2'>Failed to Load Products</h3>
           <p className='text-muted-foreground mb-6 max-w-md mx-auto'>
-            We're having trouble loading featured products. This might be a temporary issue.
+            We&apos;re having trouble loading featured products. This might be a temporary issue.
           </p>
           <Button 
             onClick={handleRetry} 

@@ -245,7 +245,7 @@ export const DeleteVariantType: Story = {
     
     // Find and click the first delete button
     const deleteButtons = canvas.getAllByRole('button').filter(btn => 
-      btn.querySelector('svg') && btn.className.includes('text-destructive')
+      btn.querySelector('svg') && btn.className.includes('text-destructive'),
     );
     
     if (deleteButtons.length > 0) {
@@ -287,7 +287,7 @@ export const EditVariantDetails: Story = {
     
     // Find price adjustment input for first variant
     const priceInputs = canvas.getAllByRole('spinbutton').filter(input => 
-      input.getAttribute('name')?.includes('priceAdjustment')
+      input.getAttribute('name')?.includes('priceAdjustment'),
     );
     
     if (priceInputs.length > 0) {
@@ -297,7 +297,7 @@ export const EditVariantDetails: Story = {
     
     // Find inventory input
     const inventoryInputs = canvas.getAllByRole('spinbutton').filter(input => 
-      input.getAttribute('name')?.includes('inventory')
+      input.getAttribute('name')?.includes('inventory'),
     );
     
     if (inventoryInputs.length > 0) {
@@ -618,7 +618,7 @@ export const DuplicateAttributeError: Story = {
               <AlertDescription>
                 <div className="space-y-2">
                   <p className="font-medium">Duplicate Variant Detected</p>
-                  <p className="text-sm">Multiple variants with attributes "M / Black" found. Each variant must have unique attributes.</p>
+                  <p className="text-sm">Multiple variants with attributes &quot;M / Black&quot; found. Each variant must have unique attributes.</p>
                   <Button
                     size="sm"
                     variant="outline"
@@ -670,7 +670,7 @@ export const InvalidAttributeValue: Story = {
           <Card className="p-4">
             <h4 className="font-medium mb-2">Attribute Validation Demo</h4>
             <p className="text-sm text-muted-foreground mb-3">
-              Detects when variant attributes don't match defined options
+              Detects when variant attributes don&apos;t match defined options
             </p>
             <Button size="sm" onClick={validateAttributes}>
               Validate Attributes

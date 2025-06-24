@@ -3,6 +3,8 @@ import { createRateLimiter } from '../rateLimiter.js';
 import { TRPCError } from '@trpc/server';
 import { redis } from '../../../lib/redis.js';
 import type { Context } from '../../context.js';
+import type { Request, Response } from 'express';
+import type { IUserDocument } from '../../../models/user.model.js';
 
 vi.mock('../../../lib/redis.js');
 
@@ -20,13 +22,13 @@ describe('rateLimiter middleware', () => {
       _id: { toString: () => 'user123' },
       email: 'user@test.com',
       role: 'user',
-    } as any,
+    } as unknown as IUserDocument,
     req: {
       headers: { 'x-forwarded-for': '192.168.1.1' },
       connection: { remoteAddress: '127.0.0.1' },
       ip: '192.168.1.1',
-    } as any,
-    res: {} as any,
+    } as unknown as Request,
+    res: {} as Response,
   };
 
   beforeEach(() => {

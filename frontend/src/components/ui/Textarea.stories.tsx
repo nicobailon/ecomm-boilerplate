@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import { Textarea } from './Textarea';
 
 const meta = {
@@ -205,16 +203,16 @@ export const InteractiveTest: Story = {
     const textarea = canvas.getByPlaceholderText('Type something to test...');
     
     await userEvent.click(textarea);
-    await expect(textarea).toHaveFocus();
+    expect(textarea).toHaveFocus();
     
     await userEvent.type(textarea, 'Hello, this is a test message!');
-    await expect(textarea).toHaveValue('Hello, this is a test message!');
+    expect(textarea).toHaveValue('Hello, this is a test message!');
     
     await userEvent.clear(textarea);
-    await expect(textarea).toHaveValue('');
+    expect(textarea).toHaveValue('');
     
     await userEvent.type(textarea, 'New content');
-    await expect(textarea).toHaveValue('New content');
+    expect(textarea).toHaveValue('New content');
   },
 };
 

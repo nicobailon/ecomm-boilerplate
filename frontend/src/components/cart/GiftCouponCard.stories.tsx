@@ -229,7 +229,7 @@ export const InteractiveApplyRemove: Story = {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold mb-4">Interactive Coupon Application</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Try entering codes like "SAVE20", "DISCOUNT", or any text
+          Try entering codes like &quot;SAVE20&quot;, &quot;DISCOUNT&quot;, or any text
         </p>
         <GiftCouponCard />
       </div>
@@ -401,6 +401,267 @@ export const InvalidCouponError: Story = {
               This story simulates an invalid coupon code error
             </AlertDescription>
           </Alert>
+          <Story />
+          <Toaster position="top-right" />
+        </div>
+      );
+    },
+  ],
+};
+
+// Network Error Scenarios for GiftCouponCard
+export const NetworkTimeoutError: Story = {
+  decorators: [
+    (Story) => {
+      const [isOffline, setIsOffline] = useState(false);
+      const [isPending, setIsPending] = useState(false);
+      const [error, setError] = useState<string | null>(null);
+      const [retryCount, setRetryCount] = useState(0);
+      
+      (useUnifiedCart as any).mockReturnValue({
+        data: { appliedCoupon: null },
+        source: 'user',
+      });
+      
+      (useApplyCoupon as any).mockReturnValue({
+        mutate: () => {
+          setIsPending(true);
+          setError(null);
+          
+          if (isOffline) {
+            setTimeout(() => {
+              setError('Network timeout - please check your connection');
+              setIsPending(false);
+              toast.error('Network timeout - request failed');
+            }, 3000);
+          } else {
+            setTimeout(() => {
+              setError(null);
+              setIsPending(false);
+              toast.success('Coupon applied successfully!');
+            }, 1500);
+          }
+        },
+        isPending,
+        isSuccess: false,
+        error,
+      });
+      
+      (useRemoveCoupon as any).mockReturnValue(mockRemoveCoupon);
+      
+      const toggleNetwork = () => {
+        setIsOffline(!isOffline);
+        setError(null);
+        setRetryCount(0);
+      };
+      
+      const retry = () => {
+        setRetryCount(prev => prev + 1);
+        setError(null);
+      };
+      
+      return (
+        <div className="space-y-4">
+          <Card className={`p-4 ${
+            isOffline ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isOffline ? (
+                  <><WifiOff className="w-4 h-4 text-red-600" />
+                  <span className="text-sm font-medium">Offline Mode</span></>
+                ) : (
+                  <><Wifi className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium">Online</span></>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={toggleNetwork}>
+                  {isOffline ? 'Go Online' : 'Go Offline'}
+                </Button>
+                {error && (
+                  <Button size="sm" variant="outline" onClick={retry}>
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Retry ({retryCount})
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            {error && (
+              <Alert variant="destructive" className="mt-3">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+          </Card>
+          
+          <Story />
+          <Toaster position="top-right" />
+        </div>
+      );
+    },
+  ],
+};
+
+export const SlowNetworkResponse: Story = {
+  decorators: [
+    (Story) => {
+      const [isPending, setIsPending] = useState(false);
+      const [networkSpeed, setNetworkSpeed] = useState<'fast' | 'slow' | 'unstable'>('fast');
+      const [progress, setProgress] = useState(0);
+      
+      (useUnifiedCart as any).mockReturnValue({
+        data: { appliedCoupon: null },
+        source: 'user',
+      });
+      
+      (useApplyCoupon as any).mockReturnValue({
+        mutate: () => {
+          setIsPending(true);
+          setProgress(0);
+          
+          const delays = {
+            fast: 500,
+            slow: 3000,
+            unstable: 8000,
+          };
+          
+          const delay = delays[networkSpeed];
+          
+          // Simulate progress
+          const interval = setInterval(() => {
+            setProgress(prev => {
+              if (prev >= 90) {
+                clearInterval(interval);
+                return 90;
+              }
+              return prev + (networkSpeed === 'unstable' ? Math.random() * 5 : 10);
+            });
+          }, delay / 10);
+          
+          setTimeout(() => {
+            clearInterval(interval);
+            setProgress(100);
+            setIsPending(false);
+            toast.success('Coupon applied!');
+          }, delay);
+        },
+        isPending,
+        isSuccess: false,
+      });
+      
+      (useRemoveCoupon as any).mockReturnValue(mockRemoveCoupon);
+      
+      return (
+        <div className="space-y-4">
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium">Network Speed Simulation</h4>
+              <select 
+                value={networkSpeed} 
+                onChange={(e) => setNetworkSpeed(e.target.value as 'fast' | 'slow' | 'unstable')}
+                className="text-sm border rounded px-2 py-1"
+              >
+                <option value="fast">Fast (500ms)</option>
+                <option value="slow">Slow (3s)</option>
+                <option value="unstable">Unstable (8s)</option>
+              </select>
+            </div>
+            
+            {isPending && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Applying coupon...</span>
+                  <span>{Math.round(progress)}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+            )}
+          </Card>
+          
+          <Story />
+          <Toaster position="top-right" />
+        </div>
+      );
+    },
+  ],
+};
+
+export const PartialDataError: Story = {
+  decorators: [
+    (Story) => {
+      const [dataQuality, setDataQuality] = useState<'full' | 'partial' | 'corrupted'>('full');
+      const [isPending, setIsPending] = useState(false);
+      const [error, setError] = useState<string | null>(null);
+      
+      (useUnifiedCart as any).mockReturnValue({
+        data: { appliedCoupon: null },
+        source: 'user',
+      });
+      
+      (useApplyCoupon as any).mockReturnValue({
+        mutate: () => {
+          setIsPending(true);
+          setError(null);
+          
+          setTimeout(() => {
+            if (dataQuality === 'corrupted') {
+              setError('Invalid response from server - data corrupted');
+              toast.error('Server returned corrupted data');
+            } else if (dataQuality === 'partial') {
+              setError('Incomplete coupon data received - please try again');
+              toast.warning('Received partial data - retrying...');
+            } else {
+              toast.success('Coupon applied successfully!');
+            }
+            setIsPending(false);
+          }, 1500);
+        },
+        isPending,
+        isSuccess: false,
+        error,
+      });
+      
+      (useRemoveCoupon as any).mockReturnValue(mockRemoveCoupon);
+      
+      return (
+        <div className="space-y-4">
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium">Data Quality Simulation</h4>
+              <select 
+                value={dataQuality} 
+                onChange={(e) => setDataQuality(e.target.value as 'full' | 'partial' | 'corrupted')}
+                className="text-sm border rounded px-2 py-1"
+              >
+                <option value="full">Full Data</option>
+                <option value="partial">Partial Data</option>
+                <option value="corrupted">Corrupted Data</option>
+              </select>
+            </div>
+            
+            <div className="flex gap-2">
+              {Object.keys({ full: '', partial: '', corrupted: '' }).map(quality => (
+                <Badge 
+                  key={quality} 
+                  variant={quality === dataQuality ? 'default' : 'secondary'}
+                >
+                  {quality}
+                </Badge>
+              ))}
+            </div>
+            
+            {error && (
+              <Alert variant="destructive" className="mt-3">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+          </Card>
+          
           <Story />
           <Toaster position="top-right" />
         </div>

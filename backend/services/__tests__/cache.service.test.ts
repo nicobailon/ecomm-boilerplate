@@ -50,7 +50,9 @@ describe('CacheService', () => {
 
     it('should handle JSON parse errors gracefully', async () => {
       mockRedis.get.mockResolvedValue('invalid-json');
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {
+        // Mock implementation to suppress console output during tests
+      });
 
       const result = await cacheService.get('test-key');
 
@@ -61,15 +63,17 @@ describe('CacheService', () => {
     });
 
     it('should handle Redis errors gracefully', async () => {
-      mockRedis.get.mockRejectedValue(new Error('Redis connection error'));
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      void mockRedis.get.mockRejectedValue(new Error('Redis connection error'));
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {
+        // Mock implementation to suppress console output during tests
+      });
 
       const result = await cacheService.get('test-key');
 
       expect(result).toBeNull();
       expect(consoleError).toHaveBeenCalledWith(
         'Cache get error:',
-        expect.any(Error)
+        expect.any(Error),
       );
       
       consoleError.mockRestore();
@@ -87,7 +91,7 @@ describe('CacheService', () => {
         'test-key',
         JSON.stringify(testData),
         'EX',
-        300
+        300,
       );
     });
 
@@ -101,19 +105,21 @@ describe('CacheService', () => {
         'test-key',
         JSON.stringify(testData),
         'EX',
-        3600
+        3600,
       );
     });
 
     it('should handle set errors gracefully', async () => {
-      mockRedis.set.mockRejectedValue(new Error('Redis connection error'));
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      void mockRedis.set.mockRejectedValue(new Error('Redis connection error'));
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {
+        // Mock implementation to suppress console output during tests
+      });
 
       await cacheService.set('test-key', { data: 'test' }, 300);
 
       expect(consoleError).toHaveBeenCalledWith(
         'Cache set error:',
-        expect.any(Error)
+        expect.any(Error),
       );
       
       consoleError.mockRestore();
@@ -138,14 +144,16 @@ describe('CacheService', () => {
     });
 
     it('should handle delete errors gracefully', async () => {
-      mockRedis.del.mockRejectedValue(new Error('Redis connection error'));
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      void mockRedis.del.mockRejectedValue(new Error('Redis connection error'));
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {
+        // Mock implementation to suppress console output during tests
+      });
 
       await cacheService.del('test-key');
 
       expect(consoleError).toHaveBeenCalledWith(
         'Cache delete error:',
-        expect.any(Error)
+        expect.any(Error),
       );
       
       consoleError.mockRestore();
@@ -162,14 +170,16 @@ describe('CacheService', () => {
     });
 
     it('should handle flush errors gracefully', async () => {
-      mockRedis.flushall.mockRejectedValue(new Error('Redis connection error'));
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      void mockRedis.flushall.mockRejectedValue(new Error('Redis connection error'));
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {
+        // Mock implementation to suppress console output during tests
+      });
 
       await cacheService.flush();
 
       expect(consoleError).toHaveBeenCalledWith(
         'Cache flush error:',
-        expect.any(Error)
+        expect.any(Error),
       );
       
       consoleError.mockRestore();
@@ -194,7 +204,7 @@ describe('CacheService', () => {
         cacheKey,
         JSON.stringify(inventoryInfo),
         'EX',
-        30
+        30,
       );
     });
 

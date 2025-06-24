@@ -215,7 +215,7 @@ export const AddVariantInteraction: Story = {
     await userEvent.type(document.activeElement as HTMLElement, 'SMALL-001');
     
     // Blur from the label field to trigger ID generation
-    await labelInput.blur();
+    labelInput.blur();
     
     // Verify final price calculation
     await waitFor(() => {
@@ -908,7 +908,7 @@ export const PriceCalculationError: Story = {
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Price adjustment results in negative price for "Clearance" variant
+                Price adjustment results in negative price for &quot;Clearance&quot; variant
               </AlertDescription>
             </Alert>
           )}

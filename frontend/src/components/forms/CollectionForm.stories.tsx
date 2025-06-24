@@ -66,13 +66,13 @@ const mockCollection = {
 // Extended form with product selection and SEO
 const ExtendedCollectionForm = ({ 
   mode, 
-  initialData
+  initialData,
 }: { 
   mode: 'create' | 'edit';
   initialData?: any;
 }) => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>(
-    initialData?.products as string[] || []
+    initialData?.products as string[] || [],
   );
   const [seoTitle, setSeoTitle] = useState(initialData?.name || '');
   const [seoDescription, setSeoDescription] = useState(initialData?.description || '');
@@ -178,7 +178,7 @@ const ExtendedCollectionForm = ({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setSlug(generateSlug(seoTitle || 'new-collection'))}
+                  onClick={() => setSlug(generateSlug(String(seoTitle) || 'new-collection'))}
                 >
                   Generate
                 </Button>
@@ -346,8 +346,8 @@ export const SEOFields: Story = {
     await userEvent.click(generateButton);
     
     // Check slug was generated
-    const slugInput = canvas.getByLabelText(/url slug/i) as HTMLInputElement;
-    expect(slugInput.value).toBe('amazing-summer-collection-best-deals-2024');
+    const slugInput = canvas.getByLabelText(/url slug/i);
+    expect((slugInput as HTMLInputElement).value).toBe('amazing-summer-collection-best-deals-2024');
   },
 };
 
@@ -846,7 +846,7 @@ export const DuplicateSlugError: Story = {
               <h4 className="font-medium">Duplicate Slug Warning</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              The slug "summer-collection-2024" is already in use
+              The slug &quot;summer-collection-2024&quot; is already in use
             </p>
           </Card>
           
@@ -854,7 +854,7 @@ export const DuplicateSlugError: Story = {
             mode="create" 
             initialData={{ 
               name: 'Summer Collection 2024',
-              slug: 'summer-collection-2024' 
+              slug: 'summer-collection-2024', 
             }}
           />
           <Toaster position="top-right" />
@@ -897,8 +897,8 @@ export const ProductSelectionError: Story = {
                 <div className="space-y-2">
                   <p>2 selected products have issues:</p>
                   <ul className="text-sm list-disc list-inside">
-                    <li>Product "Premium Headphones" - Out of stock</li>
-                    <li>Product "Smart Watch" - Discontinued</li>
+                    <li>Product &quot;Premium Headphones&quot; - Out of stock</li>
+                    <li>Product &quot;Smart Watch&quot; - Discontinued</li>
                   </ul>
                   <Button
                     size="sm"

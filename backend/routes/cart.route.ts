@@ -12,6 +12,6 @@ router.get('/', protectRoute, asyncHandler(validateCartInventory), includeCartVa
 router.post('/', protectRoute, validateBody(addToCartSchema), asyncHandler(validateAddToCart), addToCart);
 router.delete('/', protectRoute, removeFromCart);
 router.delete('/:productId', protectRoute, validateParams(cartProductIdParamSchema), removeFromCart);
-router.put('/:id', protectRoute, validateParams(productIdParamSchema), validateBody(updateQuantitySchema), asyncHandler(validateAddToCart), updateQuantity);
+router.put('/:id', protectRoute, validateParams(productIdParamSchema), validateBody(updateQuantitySchema), updateQuantity);
 
 export default router;

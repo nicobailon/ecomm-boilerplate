@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 // Custom colored badge component
 const CustomColoredBadge = ({ 
   color, 
-  className 
+  className, 
 }: { 
   color: 'blue' | 'green' | 'purple' | 'red'; 
   className?: string;
@@ -39,7 +39,7 @@ const CustomColoredBadge = ({
 const BadgeWithIcon = ({ 
   icon: Icon, 
   text,
-  className 
+  className, 
 }: { 
   icon: typeof Star; 
   text: string;
@@ -60,7 +60,7 @@ const BadgeWithIcon = ({
 
 // Animated badge component
 const AnimatedBadge = ({ 
-  variant = 'pulse' 
+  variant = 'pulse', 
 }: { 
   variant?: 'pulse' | 'bounce' | 'sparkle';
 }) => {

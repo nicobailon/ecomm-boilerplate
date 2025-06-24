@@ -35,14 +35,15 @@ describe('InventoryService - Dual Mode Behavior', () => {
   };
 
   const mockCacheService = {
-    get: vi.fn(),
-    set: vi.fn(),
-    del: vi.fn(),
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    del: vi.fn().mockResolvedValue(undefined),
+    flush: vi.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(CacheService).mockImplementation(() => mockCacheService as any);
+    vi.mocked(CacheService).mockImplementation(() => mockCacheService as unknown as CacheService);
   });
 
   afterEach(() => {
@@ -57,37 +58,41 @@ describe('InventoryService - Dual Mode Behavior', () => {
 
       it('should check availability using label', async () => {
         const mockAggregateResult = [{ availableStock: 8 }];
-        vi.mocked(Product.aggregate).mockResolvedValue(mockAggregateResult);
+        const mockAggregate = vi.spyOn(Product, 'aggregate');
+        mockAggregate.mockResolvedValue(mockAggregateResult);
 
         const result = await inventoryService.checkAvailability(
           mockProductId.toString(),
           undefined,
           5,
-          'Small - Blue'
+          'Small - Blue',
         );
 
         expect(result).toBe(true);
         
-        const aggregateCall = vi.mocked(Product.aggregate).mock.calls[0];
-        const pipeline = aggregateCall[0];
+        const mockAggregate2 = vi.spyOn(Product, 'aggregate');
+        const aggregateCall = mockAggregate2.mock.calls[0];
+        const pipeline = aggregateCall[0] as unknown;
         
         expect(pipeline).toContainEqual({ $match: { 'variants.label': 'Small - Blue' } });
       });
 
       it('should fallback to variantId if label not provided', async () => {
         const mockAggregateResult = [{ availableStock: 10 }];
-        vi.mocked(Product.aggregate).mockResolvedValue(mockAggregateResult);
+        const mockAggregate3 = vi.spyOn(Product, 'aggregate');
+        mockAggregate3.mockResolvedValue(mockAggregateResult);
 
         const result = await inventoryService.checkAvailability(
           mockProductId.toString(),
           'var-medium',
-          5
+          5,
         );
 
         expect(result).toBe(true);
         
-        const aggregateCall = vi.mocked(Product.aggregate).mock.calls[0];
-        const pipeline = aggregateCall[0];
+        const mockAggregate4 = vi.spyOn(Product, 'aggregate');
+        const aggregateCall = mockAggregate4.mock.calls[0];
+        const pipeline = aggregateCall[0] as unknown;
         
         expect(pipeline).toContainEqual({ $match: { 'variants.variantId': 'var-medium' } });
       });
@@ -100,19 +105,21 @@ describe('InventoryService - Dual Mode Behavior', () => {
 
       it('should ignore label and use variantId', async () => {
         const mockAggregateResult = [{ availableStock: 12 }];
-        vi.mocked(Product.aggregate).mockResolvedValue(mockAggregateResult);
+        const mockAggregate5 = vi.spyOn(Product, 'aggregate');
+        mockAggregate5.mockResolvedValue(mockAggregateResult);
 
         const result = await inventoryService.checkAvailability(
           mockProductId.toString(),
           'var-small',
           5,
-          'Medium - Blue'
+          'Medium - Blue',
         );
 
         expect(result).toBe(true);
         
-        const aggregateCall = vi.mocked(Product.aggregate).mock.calls[0];
-        const pipeline = aggregateCall[0];
+        const mockAggregate6 = vi.spyOn(Product, 'aggregate');
+        const aggregateCall = mockAggregate6.mock.calls[0];
+        const pipeline = aggregateCall[0] as unknown;
         
         expect(pipeline).toContainEqual({ $match: { 'variants.variantId': 'var-small' } });
         expect(pipeline).not.toContainEqual({ $match: { 'variants.label': 'Medium - Blue' } });
@@ -130,36 +137,38 @@ describe('InventoryService - Dual Mode Behavior', () => {
 
       it('should use label-based cache key', async () => {
         mockCacheService.get.mockResolvedValue(null);
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        const mockFindById = vi.spyOn(Product, 'findById');
+        mockFindById.mockResolvedValue(mockProduct);
         // No reservations in this system
 
         await inventoryService.getProductInventoryInfo(
           mockProductId.toString(),
           undefined,
-          'Medium - Blue'
+          'Medium - Blue',
         );
 
         const getCalls = mockCacheService.get.mock.calls;
-        const hasLabelKey = getCalls.some(call => 
-          call[0].includes(':label:Medium - Blue')
+        const hasLabelKey = getCalls.some((call: unknown[]) => 
+          typeof call[0] === 'string' && call[0].includes(':label:Medium - Blue'),
         );
         expect(hasLabelKey).toBe(true);
       });
 
       it('should set cache with label-based key', async () => {
         mockCacheService.get.mockResolvedValue(null);
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        const mockFindById = vi.spyOn(Product, 'findById');
+        mockFindById.mockResolvedValue(mockProduct);
         // No reservations in this system
 
         await inventoryService.getProductInventoryInfo(
           mockProductId.toString(),
           undefined,
-          'Small - Blue'
+          'Small - Blue',
         );
 
         const setCalls = mockCacheService.set.mock.calls;
-        const hasLabelKey = setCalls.some(call => 
-          call[0].includes(':label:Small - Blue')
+        const hasLabelKey = setCalls.some((call: unknown[]) => 
+          typeof call[0] === 'string' && call[0].includes(':label:Small - Blue'),
         );
         expect(hasLabelKey).toBe(true);
       });
@@ -172,17 +181,18 @@ describe('InventoryService - Dual Mode Behavior', () => {
 
       it('should use variantId-based cache key (legacy)', async () => {
         mockCacheService.get.mockResolvedValue(null);
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        const mockFindById = vi.spyOn(Product, 'findById');
+        mockFindById.mockResolvedValue(mockProduct);
         // No reservations in this system
 
         await inventoryService.getProductInventoryInfo(
           mockProductId.toString(),
-          'var-small'
+          'var-small',
         );
 
         const getCalls = mockCacheService.get.mock.calls;
-        const hasLegacyKey = getCalls.some(call => 
-          call[0].includes(':var-small') && !call[0].includes(':label:')
+        const hasLegacyKey = getCalls.some((call: unknown[]) => 
+          typeof call[0] === 'string' && call[0].includes(':var-small') && !call[0].includes(':label:'),
         );
         expect(hasLegacyKey).toBe(true);
       });

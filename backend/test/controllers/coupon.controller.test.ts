@@ -22,7 +22,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       _id: new mongoose.Types.ObjectId(),
       email: 'test@example.com',
       appliedCoupon: null,
-      save: vi.fn()
+      save: vi.fn(),
     } as unknown as IUserDocument;
 
     jsonMock = vi.fn();
@@ -30,12 +30,12 @@ describe('CouponController - Concurrent Usage Prevention', () => {
 
     mockReq = {
       user: mockUser,
-      body: {}
+      body: {},
     };
 
     mockRes = {
       status: statusMock,
-      json: jsonMock
+      json: jsonMock,
     };
 
     vi.clearAllMocks();
@@ -54,7 +54,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
         cartItems: [],
         subtotal: 100,
         totalAmount: 80,
-        appliedCoupon: { code: 'RACE20', discountPercentage: 20 }
+        appliedCoupon: { code: 'RACE20', discountPercentage: 20 },
       };
 
       // Simulate slow database operation
@@ -63,7 +63,8 @@ describe('CouponController - Concurrent Usage Prevention', () => {
         applyCouponResolve = resolve;
       });
 
-      vi.mocked(couponService.applyCouponToUser).mockImplementation(async () => {
+      const mockApplyCouponToUser = vi.mocked(couponService.applyCouponToUser);
+      mockApplyCouponToUser.mockImplementation(async () => {
         await applyCouponPromise;
         mockUser.appliedCoupon = { code: 'RACE20', discountPercentage: 20 };
       });
@@ -71,7 +72,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       vi.mocked(cartService.calculateCartTotals).mockResolvedValue(mockCartResponse);
 
       // All requests should be pending
-      expect(couponService.applyCouponToUser).toHaveBeenCalledTimes(3);
+      expect(mockApplyCouponToUser).toHaveBeenCalledTimes(3);
 
             // Resolve the database operation  
       applyCouponResolve?.();
@@ -85,8 +86,8 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       expect(jsonMock).toHaveBeenCalledTimes(3);
       expect(jsonMock).toHaveBeenCalledWith({
         success: true,
-        message: "Coupon applied successfully",
-        cart: mockCartResponse
+        message: 'Coupon applied successfully',
+        cart: mockCartResponse,
       });
     });
 
@@ -99,7 +100,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
         cartItems: [],
         subtotal: 100,
         totalAmount: 80,
-        appliedCoupon: { code: 'NEW20', discountPercentage: 20 }
+        appliedCoupon: { code: 'NEW20', discountPercentage: 20 },
       };
 
       vi.mocked(couponService.applyCouponToUser).mockImplementation(async () => {
@@ -114,7 +115,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       // Execute multiple concurrent requests
       await Promise.all([
         applyCoupon(mockReq as any, mockRes as any, vi.fn()),
-        applyCoupon(mockReq as any, mockRes as any, vi.fn())
+        applyCoupon(mockReq as any, mockRes as any, vi.fn()),
       ]);
 
       // Should replace the existing coupon
@@ -137,7 +138,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
         cartItems: [],
         subtotal: 100,
         totalAmount: 80,
-        appliedCoupon: { code: 'ERROR20', discountPercentage: 20 }
+        appliedCoupon: { code: 'ERROR20', discountPercentage: 20 },
       };
       vi.mocked(cartService.calculateCartTotals).mockResolvedValue(mockCartResponse);
 
@@ -149,13 +150,13 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       await Promise.allSettled([
         applyCoupon(mockReq as any, mockRes as any, nextFn1),
         applyCoupon(mockReq as any, mockRes as any, nextFn2), // This one will fail
-        applyCoupon(mockReq as any, mockRes as any, nextFn3)
+        applyCoupon(mockReq as any, mockRes as any, nextFn3),
       ]);
 
       // Two should succeed, one should fail
       expect(jsonMock).toHaveBeenCalledTimes(2);
       expect(nextFn2).toHaveBeenCalledWith(expect.objectContaining({
-        message: 'Database connection lost'
+        message: 'Database connection lost',
       }));
     });
   });
@@ -168,7 +169,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
         cartItems: [],
         subtotal: 100,
         totalAmount: 100,
-        appliedCoupon: null
+        appliedCoupon: null,
       };
 
       let removeCouponResolve: ((value: void) => void) | undefined;
@@ -197,8 +198,8 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       expect(jsonMock).toHaveBeenCalledTimes(3);
       expect(jsonMock).toHaveBeenCalledWith({
         success: true,
-        message: "Coupon removed successfully",
-        cart: mockCartResponse
+        message: 'Coupon removed successfully',
+        cart: mockCartResponse,
       });
       expect(mockUser.appliedCoupon).toBeNull();
     });
@@ -210,7 +211,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
         cartItems: [],
         subtotal: 100,
         totalAmount: 100,
-        appliedCoupon: null
+        appliedCoupon: null,
       };
 
       vi.mocked(couponService.removeCouponFromUser).mockResolvedValue(undefined);
@@ -219,7 +220,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       // Multiple concurrent requests to remove non-existent coupon
       await Promise.all([
         removeCoupon(mockReq as any, mockRes as any, vi.fn()),
-        removeCoupon(mockReq as any, mockRes as any, vi.fn())
+        removeCoupon(mockReq as any, mockRes as any, vi.fn()),
       ]);
 
       expect(jsonMock).toHaveBeenCalledTimes(2);
@@ -237,14 +238,14 @@ describe('CouponController - Concurrent Usage Prevention', () => {
         cartItems: [],
         subtotal: 100,
         totalAmount: 80,
-        appliedCoupon: { code: 'CONFLICT20', discountPercentage: 20 }
+        appliedCoupon: { code: 'CONFLICT20', discountPercentage: 20 },
       };
 
       const removeCartResponse = {
         cartItems: [],
         subtotal: 100,
         totalAmount: 100,
-        appliedCoupon: null
+        appliedCoupon: null,
       };
 
       // Set up mocks with delays to simulate race condition
@@ -295,7 +296,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
             cartItems: [],
             subtotal: 100,
             totalAmount: 90,
-            appliedCoupon: { code: `CYCLE${i}`, discountPercentage: 10 }
+            appliedCoupon: { code: `CYCLE${i}`, discountPercentage: 10 },
           });
           applyCoupon(mockReq as AuthRequest, mockRes as Response, vi.fn());
           operations.push(Promise.resolve());
@@ -305,7 +306,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
             cartItems: [],
             subtotal: 100,
             totalAmount: 100,
-            appliedCoupon: null
+            appliedCoupon: null,
           });
           removeCoupon(mockReq as AuthRequest, mockRes as Response, vi.fn());
           operations.push(Promise.resolve());

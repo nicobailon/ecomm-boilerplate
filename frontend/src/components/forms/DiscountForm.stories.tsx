@@ -33,7 +33,7 @@ const mockDiscount: Discount = {
 // Extended form with product restrictions and advanced options
 const ExtendedDiscountForm = ({ 
   mode, 
-  initialData
+  initialData,
 }: { 
   mode: 'create' | 'edit';
   initialData?: Discount;
@@ -96,11 +96,9 @@ const ExtendedDiscountForm = ({
               size="sm"
               onClick={() => {
                 const code = generateCode();
-                const input = document.querySelector('input[name="code"]') as HTMLInputElement;
-                if (input) {
-                  input.value = code;
-                  input.dispatchEvent(new Event('input', { bubbles: true }));
-                }
+                const input = document.querySelector<HTMLInputElement>('input[name="code"]')!;
+                input.value = code;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
               }}
             >
               <Shuffle className="w-4 h-4 mr-2" />
@@ -299,8 +297,8 @@ export const CodeGeneration: Story = {
     await userEvent.click(generateButton);
     
     // Check that a code was generated
-    const codeInput = canvas.getByPlaceholderText('SUMMER2024') as HTMLInputElement;
-    expect(codeInput.value).toMatch(/^[A-Z]+\d+[A-Z]+$/);
+    const codeInput = canvas.getByPlaceholderText('SUMMER2024');
+    expect((codeInput as HTMLInputElement).value).toMatch(/^[A-Z]+\d+[A-Z]+$/);
   },
 };
 
@@ -504,7 +502,7 @@ export const DiscountPreview: Story = {
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span>Expires {format(new Date(formData.expirationDate), 'MMM d, yyyy')}</span>
+                      <span>Expires {format(new Date(formData.expirationDate as string), 'MMM d, yyyy')}</span>
                     </div>
                     {formData.maxUses && (
                       <div className="flex items-center gap-2">
@@ -712,7 +710,7 @@ export const DuplicateCodeError: Story = {
               <h4 className="font-medium">Duplicate Code Warning</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              The code "SUMMER2024" is already in use
+              The code &quot;SUMMER2024&quot; is already in use
             </p>
           </Card>
           

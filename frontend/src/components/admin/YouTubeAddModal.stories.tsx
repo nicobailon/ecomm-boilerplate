@@ -422,7 +422,7 @@ export const CompleteWorkflow: Story = {
     await waitFor(() => {
       expect(args.onAdd).toHaveBeenCalledWith(
         'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-        'Rick Astley - Never Gonna Give You Up'
+        'Rick Astley - Never Gonna Give You Up',
       );
     });
   },
@@ -590,7 +590,7 @@ export const FocusManagement: Story = {
     expect(document.activeElement).toBe(firstInput);
     
     // Tab through all elements
-    for (let i = 0; i < allFocusable.length; i++) {
+    for (const _element of allFocusable) {
       await userEvent.tab();
     }
     

@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import { Drawer } from './Drawer';
 import { Button } from './Button';
 import { Input } from './Input';
@@ -114,7 +112,7 @@ const DrawerDemo = ({ side = 'right', content }: { side?: 'left' | 'right', cont
 export const Default: Story = {
   args: {
     isOpen: false,
-    onClose: () => {},
+    onClose: () => { console.log('Drawer closed'); },
     children: <div />,
   },
   render: () => <DrawerDemo />,
@@ -123,7 +121,7 @@ export const Default: Story = {
 export const LeftSide: Story = {
   args: {
     isOpen: false,
-    onClose: () => {},
+    onClose: () => { console.log('Drawer closed'); },
     children: <div />,
   },
   render: () => <DrawerDemo side="left" />,
@@ -132,7 +130,7 @@ export const LeftSide: Story = {
 export const NavigationExample: Story = {
   args: {
     isOpen: false,
-    onClose: () => {},
+    onClose: () => { console.log('Drawer closed'); },
     children: <div />,
   },
   render: () => {
@@ -169,7 +167,7 @@ export const NavigationExample: Story = {
 export const FormExample: Story = {
   args: {
     isOpen: false,
-    onClose: () => {},
+    onClose: () => { console.log('Drawer closed'); },
     children: <div />,
   },
   render: () => {
@@ -219,7 +217,7 @@ export const FormExample: Story = {
 export const ShoppingCartExample: Story = {
   args: {
     isOpen: false,
-    onClose: () => {},
+    onClose: () => { console.log('Drawer closed'); },
     children: <div />,
   },
   render: () => {
@@ -268,7 +266,7 @@ export const ShoppingCartExample: Story = {
 export const InteractiveTest: Story = {
   args: {
     isOpen: false,
-    onClose: () => {},
+    onClose: () => { console.log('Drawer closed'); },
     children: <div />,
   },
   render: () => <DrawerDemo />,
@@ -280,7 +278,7 @@ export const InteractiveTest: Story = {
       await userEvent.click(openButton);
       
       const title = await canvas.findByText('Example Drawer');
-      await expect(title).toBeInTheDocument();
+      expect(title).toBeInTheDocument();
     });
     
     await step('Close drawer using close button', async () => {
@@ -288,10 +286,10 @@ export const InteractiveTest: Story = {
       const closeButton = canvas.getByLabelText('Close');
       await userEvent.click(closeButton);
       
-      await expect(canvas.queryByText('Example Drawer')).not.toBeInTheDocument();
+      expect(canvas.queryByText('Example Drawer')).not.toBeInTheDocument();
       
       // Assert focus returns to trigger button
-      await expect(openButton).toHaveFocus();
+      expect(openButton).toHaveFocus();
     });
     
     await step('Reopen and close with content button', async () => {
@@ -302,10 +300,10 @@ export const InteractiveTest: Story = {
       await expect(closeButton).toBeInTheDocument();
       await userEvent.click(closeButton);
       
-      await expect(canvas.queryByText('Example Drawer')).not.toBeInTheDocument();
+      expect(canvas.queryByText('Example Drawer')).not.toBeInTheDocument();
       
       // Assert focus returns to trigger button again
-      await expect(openButton).toHaveFocus();
+      expect(openButton).toHaveFocus();
     });
   },
 };
@@ -313,7 +311,7 @@ export const InteractiveTest: Story = {
 export const ScrollableContent: Story = {
   args: {
     isOpen: false,
-    onClose: () => {},
+    onClose: () => { console.log('Drawer closed'); },
     children: <div />,
   },
   render: () => {
@@ -351,7 +349,7 @@ export const ScrollableContent: Story = {
 export const NoTitleOrDescription: Story = {
   args: {
     isOpen: false,
-    onClose: () => {},
+    onClose: () => { console.log('Drawer closed'); },
     children: <div />,
   },
   render: () => {

@@ -432,7 +432,7 @@ export const SelectionInteraction: Story = {
       expect(args.onVariantSelect).toHaveBeenCalledWith(
         expect.objectContaining({
           label: 'Medium White T-Shirt',
-        })
+        }),
       );
     });
   },

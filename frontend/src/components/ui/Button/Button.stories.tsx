@@ -337,7 +337,7 @@ export const LoadingStates: Story = {
         </Button>
       </div>
       <div className="mt-4 text-sm text-muted-foreground">
-        Loading buttons should have aria-busy="true" for assistive technology
+        Loading buttons should have aria-busy=&quot;true&quot; for assistive technology
       </div>
     </div>
   ),

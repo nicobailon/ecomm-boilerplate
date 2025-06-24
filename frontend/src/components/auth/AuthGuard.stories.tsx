@@ -164,7 +164,7 @@ export const NonAdminUser: Story = {
             <div className="p-8 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
               <h2 className="text-2xl font-bold text-orange-800 dark:text-orange-200 mb-2">Unauthorized</h2>
               <p className="text-orange-700 dark:text-orange-300">
-                You don't have permission to access this resource.
+                You don&apos;t have permission to access this resource.
               </p>
             </div>
           } />

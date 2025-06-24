@@ -8,11 +8,10 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
-
 // Mock child component for demonstration
 const MockPage = ({ title, showSidebar = false }: { title: string; showSidebar?: boolean }) => (
   <div className="container mx-auto px-4 py-8">
-    <div className={showSidebar ? "flex gap-8" : ""}>
+    <div className={showSidebar ? 'flex gap-8' : ''}>
       {showSidebar && (
         <aside className="w-64 flex-shrink-0">
           <Card className="p-4">
@@ -54,7 +53,7 @@ const MockPage = ({ title, showSidebar = false }: { title: string; showSidebar?:
 );
 
 // Wrapper to provide routing context
-const LayoutWrapper = ({ children, initialPath = "/" }: { children: React.ReactNode; initialPath?: string }) => {
+const LayoutWrapper = ({ children, initialPath = '/' }: { children: React.ReactNode; initialPath?: string }) => {
   const mockUser = {
     _id: '1',
     name: 'John Doe',
@@ -315,7 +314,7 @@ export const CustomBackground: Story = {
                     <div className="container mx-auto px-4 text-center">
                       <h1 className="text-5xl font-bold mb-4">Custom Background Demo</h1>
                       <p className="text-xl opacity-90">
-                        The layout's gradient background adapts to different content styles
+                        The layout&apos;s gradient background adapts to different content styles
                       </p>
                     </div>
                   </div>

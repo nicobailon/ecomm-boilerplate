@@ -87,7 +87,7 @@ const ScaleOverlay = ({ isVisible, message }: { isVisible: boolean; message?: st
 const StatusOverlay = ({ 
   isVisible, 
   status, 
-  message 
+  message, 
 }: { 
   isVisible: boolean; 
   status: 'success' | 'error' | 'info';

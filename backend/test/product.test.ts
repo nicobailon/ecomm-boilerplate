@@ -10,7 +10,7 @@ describe('Product API Tests', () => {
   });
 
   it('should validate TypeScript compilation', () => {
-    const testString: string = 'TypeScript is working';
+    const testString = 'TypeScript is working';
     expect(typeof testString).toBe('string');
   });
 });

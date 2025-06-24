@@ -14,7 +14,7 @@ import { Toaster } from 'sonner';
 // Component that throws errors on demand
 const ErrorThrowingComponent = ({ 
   errorType, 
-  shouldError 
+  shouldError, 
 }: { 
   errorType: 'network' | 'server' | 'timeout' | 'auth' | 'none';
   shouldError: boolean;
@@ -49,7 +49,7 @@ const ErrorThrowingComponent = ({
 // Custom fallback component
 const CustomErrorFallback = ({ 
   error, 
-  retry 
+  retry, 
 }: { 
   error: Error | null; 
   retry?: () => void;
@@ -136,7 +136,7 @@ const CustomErrorFallback = ({
 // Demo component with controlled errors
 const ErrorBoundaryDemo = ({ 
   errorType = 'none',
-  customFallback 
+  customFallback, 
 }: { 
   errorType?: 'network' | 'server' | 'timeout' | 'auth' | 'none';
   customFallback?: boolean;
@@ -210,7 +210,7 @@ const TRPCIntegrationDemo = () => {
           products: [
             { id: 1, name: 'Product 1', price: 99.99 },
             { id: 2, name: 'Product 2', price: 149.99 },
-          ]
+          ],
         });
         setIsLoading(false);
       };

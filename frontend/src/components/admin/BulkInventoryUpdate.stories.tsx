@@ -468,7 +468,7 @@ export const FileUploadInteraction: Story = {
     });
     
     // Find file input
-    const fileInput = canvas.getByLabelText(/choose.*file|select.*file|upload.*csv/i) as HTMLInputElement;
+    const fileInput = canvas.getByLabelText(/choose.*file|select.*file|upload.*csv/i);
     
     // Create a CSV file
     const csvContent = `SKU,Inventory,Variant
@@ -481,8 +481,8 @@ JEANS-001,15,32W`;
     await userEvent.upload(fileInput, file);
     
     // Verify file was selected
-    expect(fileInput.files?.[0]).toBe(file);
-    expect(fileInput.files?.[0].name).toBe('inventory-update.csv');
+    expect((fileInput as HTMLInputElement).files?.[0]).toBe(file);
+    expect((fileInput as HTMLInputElement).files?.[0].name).toBe('inventory-update.csv');
   },
 };
 

@@ -13,7 +13,7 @@ import {
   Database,
   Activity,
   CheckCircle,
-  XCircle
+  XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from 'sonner';
@@ -21,7 +21,7 @@ import { Toaster } from 'sonner';
 // Component that simulates inventory-specific errors
 const InventoryComponent = ({ 
   errorType,
-  shouldError 
+  shouldError, 
 }: { 
   errorType: 'sync' | 'websocket' | 'database' | 'calculation' | 'none';
   shouldError: boolean;
@@ -52,7 +52,7 @@ const InventoryComponent = ({
       if (!shouldError) {
         setInventory(prev => ({
           ...prev,
-          available: Math.max(0, prev.available + Math.floor(Math.random() * 5 - 2))
+          available: Math.max(0, prev.available + Math.floor(Math.random() * 5 - 2)),
         }));
         setLastSync(new Date());
       }
@@ -100,7 +100,7 @@ const InventoryComponent = ({
 // Custom fallback for inventory errors
 const InventoryErrorFallback = ({ 
   error, 
-  reset 
+  reset, 
 }: { 
   error: Error; 
   reset: () => void;
@@ -129,28 +129,28 @@ const InventoryErrorFallback = ({
       return [
         'Real-time updates are temporarily unavailable',
         'Inventory data will refresh when connection is restored',
-        'You can continue working with cached data'
+        'You can continue working with cached data',
       ];
     }
     if (message.includes('database')) {
       return [
         'Unable to access inventory database',
         'Check your internet connection',
-        'Contact support if the issue persists'
+        'Contact support if the issue persists',
       ];
     }
     if (message.includes('sync')) {
       return [
         'Inventory data may be out of date',
         'Recent changes might not be reflected',
-        'Try refreshing to sync latest data'
+        'Try refreshing to sync latest data',
       ];
     }
     if (message.includes('calculation')) {
       return [
         'Inventory calculations detected an inconsistency',
         'This might indicate data corruption',
-        'Please contact support immediately'
+        'Please contact support immediately',
       ];
     }
     return ['An unexpected error occurred', 'Please try again or contact support'];
@@ -207,7 +207,7 @@ const InventoryErrorFallback = ({
 // Demo component
 const InventoryErrorDemo = ({ 
   errorType = 'none',
-  useCustomFallback = false 
+  useCustomFallback = false, 
 }: { 
   errorType?: 'sync' | 'websocket' | 'database' | 'calculation' | 'none';
   useCustomFallback?: boolean;
@@ -339,7 +339,6 @@ const MultipleInventoryComponents = () => {
   const triggerError = (component: keyof typeof errors) => {
     setErrors(prev => ({ ...prev, [component]: true }));
   };
-
 
   return (
     <div className="space-y-6">
@@ -677,7 +676,7 @@ export const ErrorDetails: Story = {
         return () => {
           process.env.NODE_ENV = originalEnv;
         };
-      }, []);
+      }, [originalEnv]);
       
       return <Demo />;
     },
@@ -724,7 +723,7 @@ export const LiveUpdates: Story = {
           
           <Button
             onClick={() => setShowError(!showError)}
-            variant={showError ? "outline" : "destructive"}
+            variant={showError ? 'outline' : 'destructive'}
           >
             {showError ? 'Resume Updates' : 'Break Connection'}
           </Button>

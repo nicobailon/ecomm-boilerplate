@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import { BrowserRouter } from 'react-router-dom';
 import { Breadcrumb } from './Breadcrumb';
 
@@ -260,7 +258,7 @@ export const AccessibilityFeatures: Story = {
           ]}
         />
         <p className="text-xs text-muted-foreground mt-2">
-          Last item marked with aria-current="page"
+          Last item marked with aria-current=&quot;page&quot;
         </p>
       </div>
     </div>

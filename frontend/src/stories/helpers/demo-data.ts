@@ -115,15 +115,15 @@ export const demoSettings = {
   accessibility: {
     screenReader: { 
       label: 'Screen Reader', 
-      description: 'Enable screen reader support' 
+      description: 'Enable screen reader support', 
     },
     highContrast: { 
       label: 'High Contrast', 
-      description: 'Increase color contrast for better visibility' 
+      description: 'Increase color contrast for better visibility', 
     },
     reduceMotion: { 
       label: 'Reduce Motion', 
-      description: 'Minimize animations and transitions' 
+      description: 'Minimize animations and transitions', 
     },
   },
 };

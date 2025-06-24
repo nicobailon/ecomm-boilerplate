@@ -55,6 +55,7 @@ const VideoPlayerComponent = ({ src, poster }: { src: string; poster: string }) 
       if (isPlaying) {
         videoRef.current.pause();
       } else {
+        // eslint-disable-next-line storybook/context-in-play-function
         videoRef.current.play();
       }
       setIsPlaying(!isPlaying);
@@ -430,7 +431,7 @@ export const ProgressiveImageLoading: Story = {
                   />
                 ) : (
                   <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-                    <span className="text-sm text-gray-400">Click "Load Images"</span>
+                    <span className="text-sm text-gray-400">Click &quot;Load Images&quot;</span>
                   </div>
                 )}
               </div>
@@ -693,7 +694,7 @@ export const AccessibilityFeatures: Story = {
 export const PerformanceOptimized: Story = {
   args: {
     images: Array.from({ length: 20 }, (_, i) => 
-      `https://picsum.photos/800/800?random=${i}`
+      `https://picsum.photos/800/800?random=${i}`,
     ),
     productName: 'Performance Test Gallery',
   },
@@ -744,9 +745,9 @@ export const InteractiveNavigation: Story = {
     // Cycle through all images
     const thumbnails = canvas.getAllByRole('button', { name: /view image/i });
     
-    for (let i = 0; i < thumbnails.length; i++) {
+    for (const thumbnail of thumbnails) {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      await userEvent.click(thumbnails[i]);
+      await userEvent.click(thumbnail);
     }
   },
 };

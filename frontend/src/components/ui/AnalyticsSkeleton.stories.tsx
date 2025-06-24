@@ -3,7 +3,7 @@ import {
   AnalyticsStatsSkeleton, 
   RevenueChartSkeleton, 
   TopProductsSkeleton,
-  CustomerActivitySkeleton 
+  CustomerActivitySkeleton,
 } from './AnalyticsSkeleton';
 
 const meta: Meta = {

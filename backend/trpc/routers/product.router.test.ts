@@ -10,9 +10,9 @@ describe('productRouter - enhanced create', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     
     adminCaller = appRouter.createCaller({
       user: { _id: 'admin123', role: 'admin' },
@@ -138,7 +138,7 @@ describe('productRouter - enhanced create', () => {
         'admin123',
         expect.objectContaining({
           collectionName: '  Trimmed Collection  ',
-        })
+        }),
       );
     });
 

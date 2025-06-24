@@ -23,8 +23,8 @@ const colors = {
 winston.addColors(colors);
 
 // Define which level to log based on environment
-const level = () => {
-  const env = process.env.NODE_ENV || 'development';
+const level = (): string => {
+  const env = process.env.NODE_ENV ?? 'development';
   const isDevelopment = env === 'development';
   return isDevelopment ? 'debug' : 'warn';
 };
@@ -34,7 +34,7 @@ const developmentFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.colorize({ all: true }),
   winston.format.printf(
-    (info) => `${info.timestamp} ${info.level}: ${info.message}`,
+    (info) => `${String(info.timestamp)} ${String(info.level)}: ${String(info.message)}`,
   ),
 );
 
@@ -161,8 +161,8 @@ export const logValidationError = (data: {
   operation: string;
   userId?: string;
   validationErrors: string[];
-  inputData?: Record<string, any>;
-}) => {
+  inputData?: Record<string, unknown>;
+}): void => {
   logger.warn('Validation error occurred', {
     service: 'ValidationService',
     operation: data.operation,
@@ -180,7 +180,7 @@ export const logTransactionError = (data: {
   userId: string;
   error: string;
   stack?: string;
-}) => {
+}): void => {
   logger.error('Transaction failed', {
     service: 'DatabaseService',
     operation: data.operation,
@@ -198,7 +198,7 @@ export const logAuthError = (data: {
   userId?: string;
   reason: string;
   ip?: string;
-}) => {
+}): void => {
   logger.warn('Authentication/Authorization error', {
     service: 'AuthService',
     operation: data.operation,

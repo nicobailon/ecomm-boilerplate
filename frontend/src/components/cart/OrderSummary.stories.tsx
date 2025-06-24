@@ -17,7 +17,6 @@ const mockStripe = {
   },
 };
 
-
 // Replace the Stripe import in the component with our mock
 (window as any).Stripe = mockStripe;
 
@@ -62,7 +61,7 @@ const mockProducts: Product[] = [
 ];
 
 // Helper to create cart data
-const createCartData = (items: Array<{ product: Product; quantity: number; variantId?: string; variantDetails?: any }>, coupon?: { code: string; discountPercentage: number }): Cart => {
+const createCartData = (items: { product: Product; quantity: number; variantId?: string; variantDetails?: any }[], coupon?: { code: string; discountPercentage: number }): Cart => {
   const subtotal = items.reduce((sum, item) => {
     const price = item.variantDetails?.price ?? item.product.price;
     return sum + (price * item.quantity);
@@ -88,8 +87,8 @@ const createCartData = (items: Array<{ product: Product; quantity: number; varia
 const mockAuthUser = { _id: 'user1', name: 'John Doe', email: 'john@example.com', role: 'customer' as const, cartItems: [] };
 
 // Create tRPC mock wrapper
-const createMockTRPCWrapper = (cartData: Cart | null, isAuthenticated: boolean = true, isLoading: boolean = false) => {
-  return (Story: React.ComponentType) => {
+const createMockTRPCWrapper = (cartData: Cart | null, isAuthenticated = true, isLoading = false) => {
+  const MockTRPCWrapper = (Story: React.ComponentType) => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -117,6 +116,8 @@ const createMockTRPCWrapper = (cartData: Cart | null, isAuthenticated: boolean =
       </trpc.Provider>
     );
   };
+  MockTRPCWrapper.displayName = 'MockTRPCWrapper';
+  return MockTRPCWrapper;
 };
 
 const meta = {
@@ -141,9 +142,9 @@ export const SingleItem: Story = {
   decorators: [
     createMockTRPCWrapper(
       createCartData([
-        { product: mockProducts[0], quantity: 1 }
+        { product: mockProducts[0], quantity: 1 },
       ]),
-      true
+      true,
     ),
   ],
 };
@@ -155,7 +156,7 @@ export const MultipleItems: Story = {
         { product: mockProducts[0], quantity: 2 },
         { product: mockProducts[1], quantity: 3 },
       ]),
-      true
+      true,
     ),
   ],
 };
@@ -174,7 +175,7 @@ export const WithVariants: Story = {
             color: 'Blue',
             price: 34.99,
             sku: 'TSH-L-BLU',
-          }
+          },
         },
         { 
           product: mockProducts[1], 
@@ -186,10 +187,10 @@ export const WithVariants: Story = {
             color: 'Black',
             price: 32.99,
             sku: 'TSH-M-BLK',
-          }
+          },
         },
       ]),
-      true
+      true,
     ),
   ],
 };
@@ -202,9 +203,9 @@ export const WithDiscount: Story = {
           { product: mockProducts[0], quantity: 1 },
           { product: mockProducts[1], quantity: 2 },
         ],
-        { code: 'SAVE20', discountPercentage: 20 }
+        { code: 'SAVE20', discountPercentage: 20 },
       ),
-      true
+      true,
     ),
   ],
 };
@@ -217,9 +218,9 @@ export const LargeDiscount: Story = {
           { product: mockProducts[0], quantity: 3 },
           { product: mockProducts[2], quantity: 1 },
         ],
-        { code: 'HALFOFF', discountPercentage: 50 }
+        { code: 'HALFOFF', discountPercentage: 50 },
       ),
-      true
+      true,
     ),
   ],
 };
@@ -231,7 +232,7 @@ export const GuestUser: Story = {
         { product: mockProducts[0], quantity: 1 },
         { product: mockProducts[1], quantity: 2 },
       ]),
-      false // Guest user
+      false, // Guest user
     ),
   ],
   play: async ({ canvasElement }) => {
@@ -253,7 +254,7 @@ export const ProcessingState: Story = {
       createCartData([
         { product: mockProducts[0], quantity: 1 },
       ]),
-      true
+      true,
     ),
   ],
   parameters: {
@@ -264,7 +265,7 @@ export const ProcessingState: Story = {
           await new Promise(resolve => setTimeout(resolve, 2000));
           return HttpResponse.json({
             id: 'cs_test_123',
-            adjustments: []
+            adjustments: [],
           });
         }),
       ],
@@ -288,7 +289,7 @@ export const InventoryAdjustment: Story = {
         { product: mockProducts[1], quantity: 10 }, // Requesting 10 but only 5 available
         { product: mockProducts[0], quantity: 2 },
       ]),
-      true
+      true,
     ),
   ],
   parameters: {
@@ -304,8 +305,8 @@ export const InventoryAdjustment: Story = {
                 requestedQuantity: 10,
                 adjustedQuantity: 5,
                 availableStock: 5,
-              }
-            ]
+              },
+            ],
           });
         }),
       ],
@@ -337,10 +338,10 @@ export const VariantInventoryAdjustment: Story = {
             color: 'Blue',
             price: 34.99,
             sku: 'TSH-L-BLU',
-          }
+          },
         },
       ]),
-      true
+      true,
     ),
   ],
   parameters: {
@@ -357,8 +358,8 @@ export const VariantInventoryAdjustment: Story = {
                 requestedQuantity: 8,
                 adjustedQuantity: 3,
                 availableStock: 3,
-              }
-            ]
+              },
+            ],
           });
         }),
       ],
@@ -372,7 +373,7 @@ export const PaymentError: Story = {
       createCartData([
         { product: mockProducts[0], quantity: 1 },
       ]),
-      true
+      true,
     ),
   ],
   parameters: {
@@ -381,9 +382,9 @@ export const PaymentError: Story = {
         http.post('/api/payments/create-checkout-session', () => {
           return HttpResponse.json(
             { 
-              error: 'Payment processing failed. Please check your payment details and try again.' 
+              error: 'Payment processing failed. Please check your payment details and try again.', 
             },
-            { status: 400 }
+            { status: 400 },
           );
         }),
       ],
@@ -407,7 +408,7 @@ export const ValidationError: Story = {
       createCartData([
         { product: mockProducts[2], quantity: 1 }, // Out of stock item
       ]),
-      true
+      true,
     ),
   ],
   parameters: {
@@ -417,10 +418,10 @@ export const ValidationError: Story = {
           return HttpResponse.json(
             { 
               errors: [
-                { field: 'products[0]', message: 'Product "Smart Watch Ultra" is out of stock' }
-              ]
+                { field: 'products[0]', message: 'Product "Smart Watch Ultra" is out of stock' },
+              ],
             },
-            { status: 400 }
+            { status: 400 },
           );
         }),
       ],
@@ -434,14 +435,14 @@ export const StripeError: Story = {
       createCartData([
         { product: mockProducts[0], quantity: 1 },
       ]),
-      true
+      true,
     ),
   ],
   beforeEach: () => {
     // Override Stripe mock to return an error
     (window as any).Stripe = {
       redirectToCheckout: async () => ({
-        error: { message: 'Your card was declined. Please use a different payment method.' }
+        error: { message: 'Your card was declined. Please use a different payment method.' },
       }),
     };
   },
@@ -460,7 +461,7 @@ export const HighValueOrder: Story = {
         { product: mockProducts[0], quantity: 5 },
         { product: mockProducts[2], quantity: 3 },
       ]),
-      true
+      true,
     ),
   ],
 };
@@ -472,7 +473,7 @@ export const MobileView: Story = {
         { product: mockProducts[0], quantity: 1 },
         { product: mockProducts[1], quantity: 2 },
       ], { code: 'MOBILE10', discountPercentage: 10 }),
-      true
+      true,
     ),
   ],
   parameters: {
@@ -488,7 +489,7 @@ export const TabletView: Story = {
       createCartData([
         { product: mockProducts[0], quantity: 2 },
       ]),
-      true
+      true,
     ),
   ],
   parameters: {

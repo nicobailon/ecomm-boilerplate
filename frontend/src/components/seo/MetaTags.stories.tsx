@@ -98,7 +98,7 @@ const MetaTagsDemo = ({
                   />
                 </div>
                 <div className="p-4">
-                  <p className="text-xs text-muted-foreground uppercase">{new URL(fullUrl).hostname}</p>
+                  <p className="text-xs text-muted-foreground uppercase">{new URL(fullUrl as string).hostname}</p>
                   <h5 className="font-semibold mt-1">{title}</h5>
                   {description && (
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{description}</p>
@@ -133,7 +133,7 @@ const MetaTagsDemo = ({
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{description}</p>
                   )}
                   <p className="text-xs text-muted-foreground mt-2">
-                    {new URL(fullUrl).hostname}
+                    {new URL(fullUrl as string).hostname}
                   </p>
                 </div>
               </div>
@@ -445,9 +445,9 @@ export const DynamicOGImage: Story = {
       
       // Simulate dynamic OG image generation
       const ogImageUrl = `https://og-image.vercel.app/${encodeURIComponent(
-        productName
+        productName,
       )}.png?theme=light&md=1&fontSize=100px&images=https%3A%2F%2Fassets.vercel.com%2Fimage%2Fupload%2Ffront%2Fassets%2Fdesign%2Fvercel-triangle-black.svg&images=${encodeURIComponent(
-        `https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=300&fit=crop`
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=300&fit=crop',
       )}&widths=300&heights=300&price=$${price}`;
       
       return (

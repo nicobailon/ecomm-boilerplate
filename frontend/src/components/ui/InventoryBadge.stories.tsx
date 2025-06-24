@@ -119,25 +119,25 @@ export const CustomThresholds: Story = {
       <div className="flex items-center gap-4">
         <InventoryBadge inventory={3} threshold={3} />
         <span className="text-sm text-muted-foreground">
-          Threshold: 3 (shows "In stock" at 4+)
+          Threshold: 3 (shows &quot;In stock&quot; at 4+)
         </span>
       </div>
       <div className="flex items-center gap-4">
         <InventoryBadge inventory={5} threshold={5} />
         <span className="text-sm text-muted-foreground">
-          Threshold: 5 (default - shows "In stock" at 6+)
+          Threshold: 5 (default - shows &quot;In stock&quot; at 6+)
         </span>
       </div>
       <div className="flex items-center gap-4">
         <InventoryBadge inventory={10} threshold={10} />
         <span className="text-sm text-muted-foreground">
-          Threshold: 10 (shows "In stock" at 11+)
+          Threshold: 10 (shows &quot;In stock&quot; at 11+)
         </span>
       </div>
       <div className="flex items-center gap-4">
         <InventoryBadge inventory={15} threshold={20} />
         <span className="text-sm text-muted-foreground">
-          Threshold: 20 (shows "Low stock" up to 20)
+          Threshold: 20 (shows &quot;Low stock&quot; up to 20)
         </span>
       </div>
     </div>

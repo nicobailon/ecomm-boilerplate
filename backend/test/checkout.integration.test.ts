@@ -2,15 +2,16 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import app from '../server.js';
-import { User } from '../models/user.model.js';
-import { Product } from '../models/product.model.js';
+import { User, type IUserDocument } from '../models/user.model.js';
+import { Product, type IProductDocument } from '../models/product.model.js';
 import jwt from 'jsonwebtoken';
+import { TypeGuards } from './helpers/typed-mock-utils.js';
 
 describe('Checkout Integration', () => {
   let mongoServer: MongoMemoryServer;
   let token: string;
-  let testUser: any;
-  let testProduct: any;
+  let testUser: IUserDocument;
+  let testProduct: IProductDocument & { _id: mongoose.Types.ObjectId };
 
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
@@ -38,12 +39,12 @@ describe('Checkout Integration', () => {
     // Generate JWT token
     token = jwt.sign(
       { userId: testUser._id },
-      process.env.ACCESS_TOKEN_SECRET || 'test-secret',
-      { expiresIn: '1h' }
+      process.env.ACCESS_TOKEN_SECRET ?? 'test-secret',
+      { expiresIn: '1h' },
     );
 
     // Create test product with variant
-    testProduct = await Product.create({
+    testProduct = (await Product.create({
       name: 'Test Product',
       description: 'Test description',
       price: 29.99,
@@ -59,7 +60,7 @@ describe('Checkout Integration', () => {
           images: [],
         },
       ],
-    });
+    })) as IProductDocument & { _id: mongoose.Types.ObjectId };
   });
 
   describe('POST /api/payments/create-checkout-session', () => {
@@ -82,7 +83,8 @@ describe('Checkout Integration', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('id');
-      expect(response.body.id).toMatch(/^cs_test_/); // Stripe session ID format
+      const responseBody = response.body as { id: string };
+      expect(responseBody.id).toMatch(/^cs_test_/); // Stripe session ID format
     });
 
     it('should create checkout session with coupon code', async () => {
@@ -123,8 +125,12 @@ describe('Checkout Integration', () => {
         .send(checkoutData);
 
       expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-      expect(response.body.errors).toBeDefined();
+      if (TypeGuards.isApiErrorResponse(response.body)) {
+        expect(response.body.success).toBe(false);
+        expect(response.body.errors).toBeDefined();
+      } else {
+        throw new Error('Expected error response');
+      }
     });
 
     it('should reject checkout with insufficient inventory', async () => {
@@ -144,8 +150,9 @@ describe('Checkout Integration', () => {
         .send(checkoutData);
 
       expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain('Insufficient inventory');
+      const body = response.body as { success: boolean; error: string };
+      expect(body.success).toBe(false);
+      expect(body.error).toContain('Insufficient inventory');
     });
 
     it('should reject checkout with null couponCode', async () => {
@@ -166,14 +173,17 @@ describe('Checkout Integration', () => {
         .send(checkoutData);
 
       expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-      expect(response.body.errors).toBeDefined();
-      expect(response.body.errors[0].message).toContain('Expected string');
+      const body = response.body as { success: boolean; errors: { message: string }[] };
+      expect(body).toHaveProperty('success', false);
+      expect(body).toHaveProperty('errors');
+      expect(Array.isArray(body.errors)).toBe(true);
+      expect(body.errors[0]).toHaveProperty('message');
+      expect(body.errors[0].message).toContain('Expected string');
     });
 
     it('should handle multiple products in single checkout', async () => {
       // Create another product
-      const secondProduct = await Product.create({
+      const secondProduct = (await Product.create({
         name: 'Second Product',
         description: 'Another test product',
         price: 19.99,
@@ -188,7 +198,7 @@ describe('Checkout Integration', () => {
             images: [],
           },
         ],
-      });
+      })) as IProductDocument & { _id: mongoose.Types.ObjectId };
 
       const checkoutData = {
         products: [
@@ -199,7 +209,7 @@ describe('Checkout Integration', () => {
             variantLabel: 'Large',
           },
           {
-            _id: (secondProduct as any)._id.toString(),
+            _id: secondProduct._id.toString(),
             quantity: 1,
             variantId: 'default',
             variantLabel: 'Default',

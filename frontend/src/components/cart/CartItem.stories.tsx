@@ -193,9 +193,9 @@ export const QuantitySelector: Story = {
           <div key={id} className="border rounded-lg p-4">
             <CartItem 
               item={createCartItem(
-                { ...mockProduct, _id: id, name: `Product ${id}` }, 
-                quantity
-              )} 
+                { ...mockProduct, _id: id, name: `Product ${id}` },
+                quantity,
+              )}
             />
           </div>
         ))}
@@ -384,9 +384,9 @@ const RealtimeInventoryCartItem = ({ item: initialItem }: { item: CartItemType &
               <div
                 key={i}
                 className="flex-1 bg-primary transition-all duration-300"
-                style={{ 
+                style={{
                   height: `${Math.max(10, (value / 50) * 100)}%`,
-                  opacity: 0.3 + (i / inventoryHistory.length) * 0.7
+                  opacity: 0.3 + (i / inventoryHistory.length) * 0.7,
                 }}
               />
             ))}
@@ -596,8 +596,8 @@ export const WithNetworkLatency: Story = {
     const canvas = within(canvasElement);
     
     // Find and click the increment button
-    const incrementButton = canvas.getAllByRole('button').find(btn => 
-      btn.textContent?.includes('+') || btn.getAttribute('aria-label')?.includes('Increase')
+    const incrementButton = canvas.getAllByRole('button').find(btn =>
+      btn.textContent?.includes('+') || btn.getAttribute('aria-label')?.includes('Increase'),
     );
     
     if (incrementButton) {
@@ -610,7 +610,7 @@ export const WithNetworkLatency: Story = {
     trpcMutation('cart.update', async ({ quantity }: any) => {
       // Simulate network latency
       await new Promise(resolve => setTimeout(resolve, 2000));
-      return { items: [createCartItem(mockProduct, quantity)] };
+      return { items: [createCartItem(mockProduct, Number(quantity))] };
     }, { delay: 2000 }),
   ]) as Partial<Story>),
 };

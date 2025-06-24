@@ -99,7 +99,7 @@ const InteractivePlayer = ({ item }: { item: MediaItem }) => {
         <div className="flex items-center gap-4">
           <Button
             size="sm"
-            variant={isPlaying ? "secondary" : "default"}
+            variant={isPlaying ? 'secondary' : 'default'}
             onClick={() => setIsPlaying(!isPlaying)}
           >
             {isPlaying ? (
@@ -360,7 +360,9 @@ export const ErrorState: Story = {
                   // Simulate error
                   setTimeout(() => setError(true), 500);
                 }}
-                onPause={() => {}}
+                onPause={() => {
+                  // No-op for error state demo
+                }}
               />
             )}
           </div>
@@ -472,8 +474,12 @@ export const AspectRatios: Story = {
                 <VideoPlayer
                   item={mockDirectVideo}
                   isPlaying={false}
-                  onPlay={() => {}}
-                  onPause={() => {}}
+                  onPlay={() => {
+                    // No-op for demo
+                  }}
+                  onPause={() => {
+                    // No-op for demo
+                  }}
                 />
               </div>
             </div>
@@ -543,8 +549,12 @@ export const LoadingState: Story = {
             <VideoPlayer
               item={mockDirectVideo}
               isPlaying={false}
-              onPlay={() => {}}
-              onPause={() => {}}
+              onPlay={() => {
+                // No-op for loading state demo
+              }}
+              onPause={() => {
+                // No-op for loading state demo
+              }}
             />
           )}
         </div>
@@ -573,7 +583,7 @@ export const NoThumbnailFallback: Story = {
           <InteractivePlayer item={itemWithoutThumbnail} />
           <div className="p-4 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">
-              YouTube videos automatically fallback to YouTube's thumbnail service
+              YouTube videos automatically fallback to YouTube&apos;s thumbnail service
             </p>
           </div>
         </div>

@@ -33,8 +33,8 @@ describe('InventoryService', () => {
         _id: '507f1f77bcf86cd799439011',
         variants: [
           { variantId: 'v1', inventory: 10 },
-          { variantId: 'v2', inventory: 5 }
-        ]
+          { variantId: 'v2', inventory: 5 },
+        ],
       };
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
@@ -47,8 +47,8 @@ describe('InventoryService', () => {
         _id: '507f1f77bcf86cd799439011',
         variants: [
           { variantId: 'v1', inventory: 3 },
-          { variantId: 'v2', inventory: 5 }
-        ]
+          { variantId: 'v2', inventory: 5 },
+        ],
       };
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
@@ -68,8 +68,8 @@ describe('InventoryService', () => {
         _id: '507f1f77bcf86cd799439011',
         variants: [
           { variantId: 'v1', inventory: 10 },
-          { variantId: 'v2', inventory: 5 }
-        ]
+          { variantId: 'v2', inventory: 5 },
+        ],
       };
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
@@ -87,8 +87,8 @@ describe('InventoryService', () => {
         _id: '507f1f77bcf86cd799439011',
         variants: [
           { variantId: 'v1', inventory: 10 },
-          { variantId: 'v2', inventory: 5 }
-        ]
+          { variantId: 'v2', inventory: 5 },
+        ],
       };
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
@@ -101,8 +101,8 @@ describe('InventoryService', () => {
         _id: '507f1f77bcf86cd799439011',
         variants: [
           { variantId: 'v1', inventory: 10 },
-          { variantId: 'v2', inventory: 5 }
-        ]
+          { variantId: 'v2', inventory: 5 },
+        ],
       };
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
@@ -119,7 +119,7 @@ describe('InventoryService', () => {
     it('should return 0 for products without variants', async () => {
       const mockProduct = {
         _id: '507f1f77bcf86cd799439011',
-        variants: []
+        variants: [],
       };
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
@@ -152,7 +152,7 @@ describe('InventoryService', () => {
         10,
         'restock',
         'user123',
-        { supplier: 'Test Supplier' }
+        { supplier: 'Test Supplier' },
       );
 
       expect(result.success).toBe(true);
@@ -176,8 +176,8 @@ describe('InventoryService', () => {
           'v1',
           -10,
           'sale',
-          'user123'
-        )
+          'user123',
+        ),
       ).rejects.toThrow(AppError);
     });
 
@@ -197,8 +197,8 @@ describe('InventoryService', () => {
           'v1',
           -10,
           'sale',
-          'user123'
-        )
+          'user123',
+        ),
       ).rejects.toThrow('Cannot sell 10 items. Only 5 available');
     });
   });
@@ -209,7 +209,7 @@ describe('InventoryService', () => {
         _id: '507f1f77bcf86cd799439011',
         variants: [
           { variantId: 'v1', inventory: 10 },
-          { variantId: 'v2', inventory: 5 }
+          { variantId: 'v2', inventory: 5 },
         ],
         lowStockThreshold: 5,
         allowBackorder: false,
@@ -295,7 +295,7 @@ describe('InventoryService', () => {
         set: mockCacheSet,
         del: vi.fn(),
         flush: vi.fn(),
-      } as any));
+      }));
 
       const result = await inventoryService.getInventoryMetrics();
 

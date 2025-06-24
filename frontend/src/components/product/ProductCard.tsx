@@ -93,11 +93,11 @@ const ProductCard = React.memo<ProductCardProps>(({ product }) => {
 				</div>
 				<button
 					className={cn(
-						'flex items-center justify-center rounded-lg px-5 py-2.5 text-center text-sm font-medium',
+						'flex items-center justify-center rounded-lg px-5 py-2.5 text-center text-sm font-medium border',
 						'focus:outline-none focus:ring-4 focus:ring-primary/50 disabled:opacity-50',
 						isOutOfStock 
-							? 'bg-muted text-muted-foreground cursor-not-allowed'
-							: 'bg-primary text-primary-foreground hover:bg-primary/90',
+							? 'bg-muted text-muted-foreground border-muted cursor-not-allowed'
+							: 'bg-primary text-primary-foreground border-primary hover:bg-primary/90',
 					)}
 					onClick={handleAddToCart}
 					disabled={addToCart.isPending || isOutOfStock || inventoryLoading}

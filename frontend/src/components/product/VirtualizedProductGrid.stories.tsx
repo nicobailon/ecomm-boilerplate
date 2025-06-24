@@ -77,7 +77,7 @@ const InfiniteScrollWrapper = ({ initialCount = 100 }: { initialCount?: number }
         </div>
         <Button
           size="sm"
-          variant="outline"
+          variant='outline'
           onClick={() => {
             setProducts(generateProducts(100));
             setHasMore(true);
@@ -286,35 +286,35 @@ export const VariableColumnCounts: Story = {
             <div className="flex gap-2">
               <Button
                 size="sm"
-                variant={columnCount === 2 ? "default" : "outline"}
+                variant={columnCount === 2 ? 'default' : 'outline'}
                 onClick={() => setColumnCount(2)}
               >
                 <Grid2X2 className="w-4 h-4" />
               </Button>
               <Button
                 size="sm"
-                variant={columnCount === 3 ? "default" : "outline"}
+                variant={columnCount === 3 ? 'default' : 'outline'}
                 onClick={() => setColumnCount(3)}
               >
                 3
               </Button>
               <Button
                 size="sm"
-                variant={columnCount === 4 ? "default" : "outline"}
+                variant={columnCount === 4 ? 'default' : 'outline'}
                 onClick={() => setColumnCount(4)}
               >
                 4
               </Button>
               <Button
                 size="sm"
-                variant={columnCount === 5 ? "default" : "outline"}
+                variant={columnCount === 5 ? 'default' : 'outline'}
                 onClick={() => setColumnCount(5)}
               >
                 5
               </Button>
               <Button
                 size="sm"
-                variant={columnCount === 6 ? "default" : "outline"}
+                variant={columnCount === 6 ? 'default' : 'outline'}
                 onClick={() => setColumnCount(6)}
               >
                 <Grid3X3 className="w-4 h-4" />
@@ -355,7 +355,7 @@ export const FullscreenMode: Story = {
             </h3>
             <Button
               size="sm"
-              variant="outline"
+              variant='outline'
               onClick={() => setIsFullscreen(!isFullscreen)}
             >
               <Maximize className="w-4 h-4 mr-2" />
@@ -405,13 +405,13 @@ export const ScrollToPosition: Story = {
           <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
             <span className="text-sm font-medium">Scroll to:</span>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => scrollToPosition('top')}>
+              <Button size="sm" variant='outline' onClick={() => scrollToPosition('top')}>
                 Top
               </Button>
-              <Button size="sm" variant="outline" onClick={() => scrollToPosition('middle')}>
+              <Button size="sm" variant='outline' onClick={() => scrollToPosition('middle')}>
                 Middle
               </Button>
-              <Button size="sm" variant="outline" onClick={() => scrollToPosition('bottom')}>
+              <Button size="sm" variant='outline' onClick={() => scrollToPosition('bottom')}>
                 Bottom
               </Button>
             </div>
@@ -617,7 +617,7 @@ export const ErrorBoundary: Story = {
             </p>
             <Button
               size="sm"
-              variant="destructive"
+              variant='destructive'
               className="mt-2"
               onClick={() => setHasError(true)}
             >
@@ -648,17 +648,10 @@ export const DynamicLoading: Story = {
   decorators: [
     () => {
       const [products, setProducts] = useState<Product[]>([]);
-      const [loadingCells, setLoadingCells] = useState<Set<number>>(new Set());
-      
+
       useEffect(() => {
         // Simulate loading products in batches
         const loadBatch = (startIndex: number, count: number) => {
-          const newLoadingCells = new Set(loadingCells);
-          for (let i = startIndex; i < startIndex + count; i++) {
-            newLoadingCells.add(i);
-          }
-          setLoadingCells(newLoadingCells);
-          
           setTimeout(() => {
             const newProducts = generateProducts(count);
             setProducts(prev => {
@@ -666,14 +659,6 @@ export const DynamicLoading: Story = {
               newProducts.forEach((product, i) => {
                 updated[startIndex + i] = product;
               });
-              return updated;
-            });
-            
-            setLoadingCells(prev => {
-              const updated = new Set(prev);
-              for (let i = startIndex; i < startIndex + count; i++) {
-                updated.delete(i);
-              }
               return updated;
             });
           }, Math.random() * 1000 + 500);
@@ -698,7 +683,7 @@ export const DynamicLoading: Story = {
           </div>
           <div className="border rounded-lg overflow-hidden">
             <VirtualizedProductGrid
-              products={products.filter(Boolean) as Product[]}
+              products={products.filter(Boolean)}
               columnCount={4}
               width={1200}
               height={600}

@@ -8,13 +8,13 @@ import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 // Mock type that matches the tRPC output structure without Mongoose document properties
-type Collection = {
+interface Collection {
   _id: string;
   name: string;
   slug: string;
   description?: string;
   isPublic: boolean;
-  products: Array<{
+  products: {
     _id: string;
     name: string;
     description: string;
@@ -25,7 +25,7 @@ type Collection = {
     updatedAt: string;
     slug?: string;
     collectionId?: string;
-  }>;
+  }[];
   owner: {
     _id: string;
     name: string;
@@ -33,7 +33,7 @@ type Collection = {
   };
   createdAt: string;
   updatedAt: string;
-};
+}
 
 const mockCollection: Collection = {
   _id: '1',
@@ -49,7 +49,7 @@ const mockCollection: Collection = {
   owner: {
     _id: 'owner1',
     name: 'John Doe',
-    email: 'john@example.com'
+    email: 'john@example.com',
   },
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),

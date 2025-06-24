@@ -10,7 +10,12 @@ import type { RouterOutputs } from '@/lib/trpc';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
-import { Grid2X2, List, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Grid2X2, List, ChevronLeft, ChevronRight, Cloud, CloudOff, AlertTriangle } from 'lucide-react';
+import { BrowserRouter } from 'react-router-dom';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { Toaster, toast } from 'sonner';
 
 type Product = RouterOutputs['product']['list']['products'][0];
 
@@ -513,10 +518,132 @@ export const EditProductInteraction: Story = {
       expect(args.onEditProduct).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Product 1',
-        })
+        }),
       );
     });
   },
+};
+
+// Network Error Scenarios for ProductsList
+export const OfflineProductsLoad: Story = {
+  args: {
+    onEditProduct: fn(),
+    onHighlightComplete: fn(),
+  },
+  decorators: [
+    (Story) => {
+      const mockQueryClient = new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: Infinity,
+            retry: false,
+          },
+        },
+      });
+      
+      const [isOnline, setIsOnline] = useState(navigator.onLine);
+      const [cacheProducts, _setCacheProducts] = useState(mockProducts.slice(0, 3));
+      const [syncQueue, setSyncQueue] = useState<string[]>([]);
+      
+      const simulateOffline = () => {
+        setIsOnline(false);
+        mockQueryClient.setQueryData(['product.list', undefined], {
+          products: cacheProducts,
+          pagination: {
+            page: 1,
+            pages: 1,
+            total: cacheProducts.length,
+            limit: 20,
+          },
+          _cached: true,
+          _lastSync: new Date(Date.now() - 300000),
+        });
+        toast.info('Offline mode - showing cached products');
+      };
+      
+      const simulateOnline = () => {
+        setIsOnline(true);
+        if (syncQueue.length > 0) {
+          toast.success(`Reconnected - syncing ${syncQueue.length} changes`);
+          setTimeout(() => {
+            setSyncQueue([]);
+            toast.success('All changes synced successfully');
+          }, 2000);
+        } else {
+          toast.success('Connection restored');
+        }
+        
+        mockQueryClient.setQueryData(['product.list', undefined], {
+          products: mockProducts.slice(0, 8),
+          pagination: {
+            page: 1,
+            pages: 1,
+            total: 8,
+            limit: 20,
+          },
+        });
+      };
+      
+      const queueChange = (action: string) => {
+        setSyncQueue(prev => [...prev, action]);
+        toast.info(`Queued: ${action}`);
+      };
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={mockQueryClient}>
+          <QueryClientProvider client={mockQueryClient}>
+            <BrowserRouter>
+              <div className="space-y-4">
+                <Card className={`p-4 ${
+                  isOnline ? 'border-green-200 bg-green-50' : 'border-orange-200 bg-orange-50'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {isOnline ? (
+                        <><Cloud className="w-4 h-4 text-green-600" />
+                        <span className="font-medium">Online</span></>
+                      ) : (
+                        <><CloudOff className="w-4 h-4 text-orange-600" />
+                        <span className="font-medium">Offline Mode</span></>
+                      )}
+                      {syncQueue.length > 0 && (
+                        <Badge variant="secondary">{syncQueue.length} queued</Badge>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={simulateOffline} disabled={!isOnline}>
+                        Go Offline
+                      </Button>
+                      <Button size="sm" onClick={simulateOnline} disabled={isOnline}>
+                        Reconnect
+                      </Button>
+                      {!isOnline && (
+                        <Button size="sm" variant="outline" onClick={() => queueChange('Product Edit')}>
+                          Queue Change
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {!isOnline && (
+                    <Alert className="mt-3">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        Showing cached data from 5 minutes ago. Changes will be queued until connection is restored.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </Card>
+                
+                <Story />
+              </div>
+              <Toaster position="top-right" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
 };
 
 export const MobileView: Story = {
@@ -665,7 +792,7 @@ const EnhancedProductsList = (props: ProductsListProps) => {
           <span className="text-sm text-muted-foreground">Sort by:</span>
           <Select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as 'name' | 'price' | 'date')}
             options={[
               { value: 'name', label: 'Name' },
               { value: 'price', label: 'Price' },

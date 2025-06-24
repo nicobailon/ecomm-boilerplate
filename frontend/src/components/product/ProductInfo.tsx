@@ -173,7 +173,7 @@ export function ProductInfo({ product, selectedVariant, onAddToCartSuccess }: Pr
           onClick={() => void handleAddToCart()}
           disabled={addToCart.isPending || isOutOfStock || needsVariantSelection || inventoryLoading}
           className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-8 py-3 
-            bg-primary text-primary-foreground font-medium rounded-lg
+            bg-primary text-primary-foreground font-medium rounded-lg border border-primary
             hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed
             transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           aria-label={

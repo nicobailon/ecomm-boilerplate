@@ -3,6 +3,26 @@ import mongoose from 'mongoose';
 import { Product } from '../../models/product.model.js';
 import { migrateVariantLabels } from '../../scripts/migrate-variant-label.js';
 
+interface TestVariant {
+  variantId: string;
+  label?: string;
+  size?: string;
+  color?: string;
+  price: number;
+  inventory: number;
+  reservedInventory: number;
+  images: string[];
+  sku?: string;
+}
+
+interface TestProduct {
+  _id: mongoose.Types.ObjectId;
+  name: string;
+  price: number;
+  variants: TestVariant[];
+  save: ReturnType<typeof vi.fn>;
+}
+
 vi.mock('../../models/product.model.js');
 
 describe('Product Variant Migration', () => {
@@ -15,9 +35,9 @@ describe('Product Variant Migration', () => {
     vi.spyOn(mongoose, 'connect').mockImplementation(mockConnect);
     vi.spyOn(mongoose, 'disconnect').mockImplementation(mockDisconnect);
     
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -27,7 +47,7 @@ describe('Product Variant Migration', () => {
 
   describe('migrateVariantLabels', () => {
     it('should create default variant for products without variants', async () => {
-      const mockProduct = {
+      const mockProduct: TestProduct = {
         _id: new mongoose.Types.ObjectId(),
         name: 'Test Product',
         price: 29.99,
@@ -58,7 +78,7 @@ describe('Product Variant Migration', () => {
     });
 
     it('should add labels to existing variants based on size and color', async () => {
-      const mockProduct = {
+      const mockProduct: TestProduct = {
         _id: new mongoose.Types.ObjectId(),
         name: 'Test Product with Variants',
         price: 39.99,
@@ -101,15 +121,15 @@ describe('Product Variant Migration', () => {
       expect(result.defaultVariantsCreated).toBe(0);
       expect(result.errors).toHaveLength(0);
 
-      expect((mockProduct.variants[0] as any).label).toBe('L - red');
-      expect((mockProduct.variants[1] as any).label).toBe('M');
-      expect((mockProduct.variants[2] as any).label).toBe('blue');
+      expect(mockProduct.variants[0].label).toBe('L - red');
+      expect(mockProduct.variants[1].label).toBe('M');
+      expect(mockProduct.variants[2].label).toBe('blue');
       
       expect(mockProduct.save).toHaveBeenCalled();
     });
 
     it('should skip variants that already have labels', async () => {
-      const mockProduct = {
+      const mockProduct: TestProduct = {
         _id: new mongoose.Types.ObjectId(),
         name: 'Product with Labels',
         price: 25.99,
@@ -142,7 +162,7 @@ describe('Product Variant Migration', () => {
     });
 
     it('should handle dry run mode without making changes', async () => {
-      const mockProduct = {
+      const mockProduct: TestProduct = {
         _id: new mongoose.Types.ObjectId(),
         name: 'Dry Run Product',
         price: 19.99,
@@ -164,7 +184,7 @@ describe('Product Variant Migration', () => {
     });
 
     it('should handle multiple products with mixed scenarios', async () => {
-      const mockProducts = [
+      const mockProducts: TestProduct[] = [
         {
           _id: new mongoose.Types.ObjectId(),
           name: 'Product 1 - No Variants',
@@ -219,18 +239,18 @@ describe('Product Variant Migration', () => {
       expect(result.errors).toHaveLength(0);
 
       expect(mockProducts[0].variants).toHaveLength(1);
-      expect((mockProducts[0].variants[0] as any).label).toBe('Default');
+      expect(mockProducts[0].variants[0].label).toBe('Default');
       expect(mockProducts[0].save).toHaveBeenCalled();
 
-      expect((mockProducts[1].variants[0] as any).label).toBe('L - red');
+      expect(mockProducts[1].variants[0].label).toBe('L - red');
       expect(mockProducts[1].save).toHaveBeenCalled();
 
-      expect((mockProducts[2].variants[0] as any).label).toBe('Premium');
+      expect(mockProducts[2].variants[0].label).toBe('Premium');
       expect(mockProducts[2].save).not.toHaveBeenCalled();
     });
 
     it('should handle errors gracefully and continue processing', async () => {
-      const mockProducts = [
+      const mockProducts: TestProduct[] = [
         {
           _id: new mongoose.Types.ObjectId(),
           name: 'Good Product',
@@ -267,7 +287,7 @@ describe('Product Variant Migration', () => {
       ];
 
       for (const testCase of testCases) {
-        const mockProduct = {
+        const mockProduct: TestProduct = {
           _id: new mongoose.Types.ObjectId(),
           name: `Test Product ${testCase.expected}`,
           price: 29.99,
@@ -289,7 +309,7 @@ describe('Product Variant Migration', () => {
 
         await migrateVariantLabels({ dryRun: false });
 
-        expect((mockProduct.variants[0] as any).label).toBe(testCase.expected);
+        expect(mockProduct.variants[0].label).toBe(testCase.expected);
         
         vi.clearAllMocks();
       }

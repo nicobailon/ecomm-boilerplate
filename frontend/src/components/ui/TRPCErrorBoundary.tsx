@@ -21,7 +21,7 @@ export class TRPCErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(_error: Error) {
+  componentDidCatch() {
     // tRPC error boundary handles errors silently to prevent app crashes
   }
 

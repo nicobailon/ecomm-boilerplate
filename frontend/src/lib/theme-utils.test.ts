@@ -45,7 +45,7 @@ describe('Theme Utilities', () => {
         },
       };
       
-      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as any);
+      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as unknown as CSSStyleDeclaration);
       
       expect(validateTheme()).toBe(true);
     });
@@ -55,8 +55,8 @@ describe('Theme Utilities', () => {
         getPropertyValue: () => '',
       };
       
-      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as any);
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as unknown as CSSStyleDeclaration);
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { console.log('Theme validation error'); });
       
       expect(validateTheme()).toBe(false);
       expect(consoleSpy).toHaveBeenCalled();
@@ -155,7 +155,7 @@ describe('Theme Utilities', () => {
         },
       };
       
-      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as any);
+      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as unknown as CSSStyleDeclaration);
       
       const result = validateThemeContrast();
       
@@ -166,7 +166,7 @@ describe('Theme Utilities', () => {
       
       // Secondary colors might have lower contrast, that's acceptable
       const criticalIssues = result.issues.filter(issue => 
-        ['main', 'card', 'primary', 'destructive'].includes(issue.pair)
+        ['main', 'card', 'primary', 'destructive'].includes(issue.pair),
       );
       
       expect(criticalIssues).toHaveLength(0);
@@ -187,7 +187,7 @@ describe('Theme Utilities', () => {
         },
       };
       
-      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as any);
+      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as unknown as CSSStyleDeclaration);
       
       const result = validateThemeContrast();
       expect(result.valid).toBe(false);

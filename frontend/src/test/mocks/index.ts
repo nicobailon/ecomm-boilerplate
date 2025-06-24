@@ -12,7 +12,7 @@ export const mockProduct: Product = {
   slug: 'premium-wireless-headphones',
   createdAt: new Date('2024-01-01').toISOString(),
   updatedAt: new Date('2024-01-15').toISOString(),
-  variants: []
+  variants: [],
 };
 
 export const mockProductOnSale: Product = {
@@ -31,16 +31,16 @@ export const mockProductOnSale: Product = {
       label: 'Black',
       color: '#000000',
       price: 199,
-      inventory: 15
+      inventory: 15,
     },
     {
       variantId: 'sw-silver',
       label: 'Silver',
       color: '#C0C0C0',
       price: 199,
-      inventory: 10
-    }
-  ]
+      inventory: 10,
+    },
+  ],
 };
 
 export const mockProductOutOfStock: Product = {
@@ -52,18 +52,18 @@ export const mockProductOutOfStock: Product = {
   price: 599,
   inventory: 0,
   sku: 'CAM-VINTAGE-001',
-  slug: 'vintage-camera'
+  slug: 'vintage-camera',
 };
 
 export const mockProducts: Product[] = [
   mockProduct,
   mockProductOnSale,
-  mockProductOutOfStock
+  mockProductOutOfStock,
 ];
 
 export const mockCartItem: CartItem = {
   product: mockProduct,
-  quantity: 2
+  quantity: 2,
 };
 
 export const mockUser: User = {
@@ -71,7 +71,7 @@ export const mockUser: User = {
   name: 'John Doe',
   email: 'john@example.com',
   role: 'customer',
-  cartItems: [mockCartItem]
+  cartItems: [mockCartItem],
 };
 
 export const mockOrder = {
@@ -81,8 +81,8 @@ export const mockOrder = {
     {
       product: mockProduct,
       quantity: 1,
-      price: mockProduct.price
-    }
+      price: mockProduct.price,
+    },
   ],
   totalAmount: 299,
   status: 'pending' as const,
@@ -92,11 +92,11 @@ export const mockOrder = {
     city: 'New York',
     state: 'NY',
     postalCode: '10001',
-    country: 'USA'
+    country: 'USA',
   },
   paymentStatus: 'pending' as const,
   createdAt: new Date('2024-01-20').toISOString(),
-  updatedAt: new Date('2024-01-20').toISOString()
+  updatedAt: new Date('2024-01-20').toISOString(),
 };
 
 export const mockCollection = {
@@ -104,5 +104,5 @@ export const mockCollection = {
   name: 'Electronics',
   slug: 'electronics',
   description: 'Latest electronic gadgets and accessories',
-  image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800&h=400&fit=crop'
+  image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800&h=400&fit=crop',
 };

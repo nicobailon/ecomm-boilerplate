@@ -1,7 +1,7 @@
 import { VariantAttributes } from '../types/variant-attributes.js';
 
 export function cleanVariantAttributes(
-  attributes: VariantAttributes | undefined
+  attributes: VariantAttributes | undefined,
 ): Record<string, string> | undefined {
   if (!attributes) return undefined;
   

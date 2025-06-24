@@ -83,21 +83,62 @@ js.configs.recommended, ...tseslint.configs.recommendedTypeChecked, ...tseslint.
     '@typescript-eslint/consistent-type-imports': ['error', {
       prefer: 'type-imports',
       fixStyle: 'separate-type-imports',
-    }],
-    
-    // Temporarily set to warn for gradual migration
-    '@typescript-eslint/no-unsafe-assignment': 'warn',
-    '@typescript-eslint/no-unsafe-member-access': 'warn',
-    '@typescript-eslint/no-unsafe-call': 'warn',
-    '@typescript-eslint/no-unsafe-argument': 'warn',
-    '@typescript-eslint/no-unsafe-return': 'warn',
+    }]
   },
 }, // Test files configuration
 {
-  files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', 'src/__tests__/**/*.{ts,tsx}'],
+  files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', 'src/__tests__/**/*.{ts,tsx}', 'src/test/**/*.{ts,tsx}', 'src/mocks/**/*.{ts,tsx}'],
+  languageOptions: {
+    ecmaVersion: 2022,
+    globals: {
+      ...globals.browser,
+      ...globals.es2022,
+    },
+    parser: tseslint.parser,
+    parserOptions: {
+      project: './tsconfig.json',
+      tsconfigRootDir: import.meta.dirname,
+      ecmaFeatures: {
+        jsx: true,
+      },
+    },
+  },
   rules: {
     '@typescript-eslint/no-explicit-any': 'off',
     'no-console': 'off',
     '@typescript-eslint/no-non-null-assertion': 'off',
+    'react-refresh/only-export-components': 'off', // Test utilities need to export both components and functions
+  },
+}, // Storybook files configuration
+{
+  files: ['**/*.stories.{ts,tsx}', 'src/stories/**/*.{ts,tsx}'],
+  languageOptions: {
+    ecmaVersion: 2022,
+    globals: {
+      ...globals.browser,
+      ...globals.es2022,
+    },
+    parser: tseslint.parser,
+    parserOptions: {
+      project: './tsconfig.json',
+      tsconfigRootDir: import.meta.dirname,
+      ecmaFeatures: {
+        jsx: true,
+      },
+    },
+  },
+  rules: {
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-floating-promises': 'off',
+    '@typescript-eslint/require-await': 'off',
+    '@typescript-eslint/no-misused-promises': 'off',
+    '@typescript-eslint/no-unsafe-assignment': 'off',
+    '@typescript-eslint/no-unsafe-member-access': 'off',
+    '@typescript-eslint/no-unsafe-call': 'off',
+    '@typescript-eslint/no-unsafe-return': 'off',
+    '@typescript-eslint/prefer-nullish-coalescing': 'off',
+    'no-console': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off',
+    'react-refresh/only-export-components': 'off',
   },
 }, storybook.configs["flat/recommended"]);

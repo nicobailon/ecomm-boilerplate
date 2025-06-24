@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import { Input } from '../Input';
 
 const meta = {
@@ -104,17 +102,17 @@ export const WithInteractionTest: Story = {
     const input = canvas.getByPlaceholderText('Type something...');
 
     // Test that input is initially empty
-    await expect(input).toHaveValue('');
+    expect(input).toHaveValue('');
 
     // Type into the input
     await userEvent.type(input, 'Hello Storybook!');
 
     // Verify the typed value
-    await expect(input).toHaveValue('Hello Storybook!');
+    expect(input).toHaveValue('Hello Storybook!');
 
     // Clear the input
     await userEvent.clear(input);
-    await expect(input).toHaveValue('');
+    expect(input).toHaveValue('');
   },
 };
 
@@ -127,16 +125,16 @@ export const EmailValidation: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const input = canvas.getByPlaceholderText('Enter your email') as HTMLInputElement;
+    const input = canvas.getByPlaceholderText('Enter your email');
 
     // Test invalid email
     await userEvent.type(input, 'invalid-email');
-    await expect(input.validity.valid).toBe(false);
+    expect((input as HTMLInputElement).validity.valid).toBe(false);
 
     // Clear and test valid email
     await userEvent.clear(input);
     await userEvent.type(input, 'valid@email.com');
-    await expect(input.validity.valid).toBe(true);
+    expect((input as HTMLInputElement).validity.valid).toBe(true);
   },
 };
 
@@ -151,11 +149,11 @@ export const DisabledInteraction: Story = {
     const input = canvas.getByPlaceholderText('Cannot type here');
 
     // Verify disabled state
-    await expect(input).toBeDisabled();
+    expect(input).toBeDisabled();
 
     // Try to type (should not change value)
     await userEvent.type(input, 'This should not appear');
-    await expect(input).toHaveValue('');
+    expect(input).toHaveValue('');
   },
 };
 
@@ -207,16 +205,16 @@ export const InForm: Story = {
     await userEvent.click(submitButton);
     
     // Inputs should be invalid (required)
-    await expect(usernameInput).toBeInvalid();
-    await expect(emailInput).toBeInvalid();
+    expect(usernameInput).toBeInvalid();
+    expect(emailInput).toBeInvalid();
 
     // Fill in valid data
     await userEvent.type(usernameInput, 'johndoe');
     await userEvent.type(emailInput, 'john@example.com');
 
     // Inputs should now be valid
-    await expect(usernameInput).toBeValid();
-    await expect(emailInput).toBeValid();
+    expect(usernameInput).toBeValid();
+    expect(emailInput).toBeValid();
   },
 };
 
@@ -242,7 +240,7 @@ export const CopyPasteTest: Story = {
     await userEvent.keyboard('{Control>}v{/Control}');
     
     // Verify pasted content
-    await expect(input).toHaveValue('Text to copy');
+    expect(input).toHaveValue('Text to copy');
   },
 };
 
@@ -394,7 +392,7 @@ export const WithLabelInteraction: Story = {
     
     // Click label should focus input
     await userEvent.click(label);
-    await expect(input).toHaveFocus();
+    expect(input).toHaveFocus();
   },
 };
 

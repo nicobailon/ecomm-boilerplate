@@ -86,7 +86,7 @@ const mockProductWithVariants: Product = {
 
 // Create wrapper with tRPC and mock data
 const createWrapper = (mockData?: { collections?: Collection[] }) => {
-  return (Story: React.ComponentType) => {
+  const Wrapper = (Story: React.ComponentType) => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -115,6 +115,9 @@ const createWrapper = (mockData?: { collections?: Collection[] }) => {
       </trpc.Provider>
     );
   };
+  
+  Wrapper.displayName = 'ProductFormWrapper';
+  return Wrapper;
 };
 
 const meta = {
@@ -337,7 +340,7 @@ export const ErrorHandling: Story = {
         http.post('/api/products', () => {
           return HttpResponse.json(
             { error: 'A product with this name already exists' },
-            { status: 400 }
+            { status: 400 },
           );
         }),
       ],
@@ -585,7 +588,7 @@ export const DuplicateSlugError: Story = {
               <h4 className="font-medium">Duplicate Slug Warning</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              The slug "wireless-headphones" is already in use
+              The slug &quot;wireless-headphones&quot; is already in use
             </p>
           </Card>
 

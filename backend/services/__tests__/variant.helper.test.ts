@@ -55,7 +55,7 @@ describe('Variant Helper', () => {
     });
 
     it('should return null variant when variants array is undefined', () => {
-      const result = getVariantOrDefault(undefined as any, 'Medium Red', 'M');
+      const result = getVariantOrDefault(undefined as unknown as IProductVariant[], 'Medium Red', 'M');
       expect(result.variant).toBeNull();
       expect(result.isVirtualDefault).toBe(true);
     });

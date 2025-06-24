@@ -48,7 +48,7 @@ export function withEndpointOverrides<T = unknown>(overrides: HttpHandler[]): Pa
  */
 export function withNetworkCondition<T>(
   condition: 'offline' | 'slow' | 'fast' = 'fast',
-  handlers: HttpHandler[] = scenarioPresets.default
+  handlers: HttpHandler[] = scenarioPresets.default,
 ): Partial<StoryObj<T>> {
   if (condition === 'offline') {
     return withScenario('networkErrors');
@@ -65,7 +65,7 @@ export function withNetworkCondition<T>(
  * Helper to simulate authentication states
  */
 export function withAuthState<T>(
-  state: 'authenticated' | 'unauthenticated' | 'admin' = 'authenticated'
+  state: 'authenticated' | 'unauthenticated' | 'admin' = 'authenticated',
 ): Partial<StoryObj<T>> {
   if (state === 'unauthenticated') {
     return withScenario('authFailure');

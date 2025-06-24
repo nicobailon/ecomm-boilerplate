@@ -28,9 +28,9 @@ vi.mock('mongoose', async (importOriginal) => {
 describe('ProductService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -73,7 +73,7 @@ describe('ProductService', () => {
         collectionId: mockObjectId('collection123'),
         toJSON: () => ({ _id: 'product123', ...productData, collectionId: 'collection123' }),
       }] as unknown as Awaited<ReturnType<typeof Product.create>>);
-      vi.mocked(Collection.findByIdAndUpdate).mockResolvedValue({} as unknown as Awaited<ReturnType<typeof Collection.findByIdAndUpdate>>);
+      vi.mocked(Collection.findByIdAndUpdate).mockResolvedValue({} as unknown);
 
       const result = await productService.createProductWithCollection(userId, productData);
 
@@ -105,7 +105,7 @@ describe('ProductService', () => {
         ...productData,
         toJSON: () => ({ _id: 'product123', ...productData }),
       }] as unknown as Awaited<ReturnType<typeof Product.create>>);
-      vi.mocked(Collection.findByIdAndUpdate).mockResolvedValue({} as unknown as Awaited<ReturnType<typeof Collection.findByIdAndUpdate>>);
+      vi.mocked(Collection.findByIdAndUpdate).mockResolvedValue({} as unknown);
 
       const result = await productService.createProductWithCollection(userId, productData);
 
@@ -123,7 +123,7 @@ describe('ProductService', () => {
       };
 
       await expect(
-        productService.createProductWithCollection(userId, productData)
+        productService.createProductWithCollection(userId, productData),
       ).rejects.toThrow('Provide either collectionId or collectionName, not both');
 
       expect(mockSession.startTransaction).not.toHaveBeenCalled();
@@ -138,7 +138,7 @@ describe('ProductService', () => {
       vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(null) as ReturnType<typeof Collection.findOne>);
 
       await expect(
-        productService.createProductWithCollection(userId, productData)
+        productService.createProductWithCollection(userId, productData),
       ).rejects.toThrow('Collection not found or access denied');
 
       expect(mockSession.abortTransaction).toHaveBeenCalled();
@@ -154,7 +154,7 @@ describe('ProductService', () => {
       vi.mocked(Collection.create).mockRejectedValue(new Error('Collection creation failed'));
 
       await expect(
-        productService.createProductWithCollection(userId, productData)
+        productService.createProductWithCollection(userId, productData),
       ).rejects.toThrow('Collection creation failed');
 
       expect(mockSession.abortTransaction).toHaveBeenCalled();
@@ -176,7 +176,7 @@ describe('ProductService', () => {
       vi.mocked(Product.create).mockRejectedValue(new Error('Product creation failed'));
 
       await expect(
-        productService.createProductWithCollection(userId, productData)
+        productService.createProductWithCollection(userId, productData),
       ).rejects.toThrow('Product creation failed');
 
       expect(mockSession.abortTransaction).toHaveBeenCalled();
@@ -198,7 +198,7 @@ describe('ProductService', () => {
         _id: mockObjectId('product123'),
         toJSON: () => ({ _id: 'product123' }),
       }] as unknown as Awaited<ReturnType<typeof Product.create>>);
-      vi.mocked(Collection.findByIdAndUpdate).mockResolvedValue({} as unknown as Awaited<ReturnType<typeof Collection.findByIdAndUpdate>>);
+      vi.mocked(Collection.findByIdAndUpdate).mockResolvedValue({} as unknown);
 
       await productService.createProductWithCollection(userId, productData);
 
@@ -213,7 +213,7 @@ describe('ProductService', () => {
         }),
         expect.objectContaining({
           session: mockSession,
-        })
+        }),
       );
     });
 
@@ -233,7 +233,7 @@ describe('ProductService', () => {
         _id: mockObjectId('product123'),
         toJSON: () => ({ _id: 'product123' }),
       }] as unknown as Awaited<ReturnType<typeof Product.create>>);
-      vi.mocked(Collection.findByIdAndUpdate).mockResolvedValue({} as unknown as Awaited<ReturnType<typeof Collection.findByIdAndUpdate>>);
+      vi.mocked(Collection.findByIdAndUpdate).mockResolvedValue({} as unknown);
 
       await productService.createProductWithCollection(userId, productData);
 
@@ -241,9 +241,9 @@ describe('ProductService', () => {
         expect.arrayContaining([
           expect.objectContaining({
             name: 'New Collection',
-          })
+          }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });

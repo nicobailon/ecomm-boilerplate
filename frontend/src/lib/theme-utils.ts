@@ -52,10 +52,10 @@ export function validateTheme(element: HTMLElement = document.documentElement): 
  */
 export function sanitizeRGB(value: string): string | null {
   // Support both space-separated and comma-separated formats
-  const match = value.match(/^(\d{1,3})[,\s]+(\d{1,3})[,\s]+(\d{1,3})$/);
+  const match = /^(\d{1,3})[,\s]+(\d{1,3})[,\s]+(\d{1,3})$/.exec(value);
   if (!match) return null;
   
-  const [_, r, g, b] = match;
+  const [, r, g, b] = match;
   const values = [r, g, b].map(Number);
   
   if (values.every(n => n >= 0 && n <= 255)) {
@@ -103,7 +103,7 @@ export function getContrastRatio(rgb1: string, rgb2: string): number {
 export function meetsContrastRequirements(
   foregroundRGB: string,
   backgroundRGB: string,
-  level: 'AA' | 'AAA' = 'AA'
+  level: 'AA' | 'AAA' = 'AA',
 ): boolean {
   const ratio = getContrastRatio(foregroundRGB, backgroundRGB);
   
@@ -119,10 +119,10 @@ export function meetsContrastRequirements(
  */
 export function validateThemeContrast(element: HTMLElement = document.documentElement): {
   valid: boolean;
-  issues: Array<{ pair: string; ratio: number; required: number }>;
+  issues: { pair: string; ratio: number; required: number }[];
 } {
   const computedStyle = getComputedStyle(element);
-  const issues: Array<{ pair: string; ratio: number; required: number }> = [];
+  const issues: { pair: string; ratio: number; required: number }[] = [];
   
   const colorPairs = [
     { bg: 'background', fg: 'foreground', name: 'main' },

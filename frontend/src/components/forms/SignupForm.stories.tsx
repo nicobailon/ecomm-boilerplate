@@ -78,8 +78,8 @@ const createMockSignup = (overrides?: Partial<SignupMutation>): SignupMutation =
     failureReason: null,
     submittedAt: 0,
     trpc: {
-      path: 'auth.signup'
-    }
+      path: 'auth.signup',
+    },
   };
   
   return { ...base, ...overrides } as SignupMutation;
@@ -276,7 +276,6 @@ const SignupFormWithPasswordStrength = () => {
     calculatePasswordStrength(password);
   }, [password]);
   
-  
   const getStrengthText = () => {
     if (passwordStrength <= 25) return 'Weak';
     if (passwordStrength <= 50) return 'Fair';
@@ -308,7 +307,7 @@ const SignupFormWithPasswordStrength = () => {
       <input
         type="hidden"
         onChange={() => {
-          const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement;
+          const passwordInput = document.querySelector('input[type="password"]')!;
           if (passwordInput) {
             passwordInput.addEventListener('input', (event) => {
               setPassword((event.target as HTMLInputElement).value);
@@ -403,7 +402,7 @@ const SignupFormWithTerms = () => {
             data-testid="marketing-checkbox"
           />
           <label htmlFor="marketing" className="ml-2 text-sm text-muted-foreground">
-            I'd like to receive marketing emails about products and updates
+            I&apos;d like to receive marketing emails about products and updates
           </label>
         </div>
       </div>
@@ -588,9 +587,9 @@ export const ComprehensiveFormTest: Story = {
                 message: 'Email already exists',
                 data: {
                   code: 'BAD_REQUEST' as const,
-                  httpStatus: 400
-                }
-              } as unknown as TRPCClientError<AppRouter>
+                  httpStatus: 400,
+                },
+              } as unknown as TRPCClientError<AppRouter>,
             }));
           }, 500);
         } else {
@@ -604,8 +603,8 @@ export const ComprehensiveFormTest: Story = {
                   name: 'John Doe',
                   email: data.email,
                   role: 'customer' as const,
-                  cartItems: []
-                } as User
+                  cartItems: [],
+                } as User,
               },
             }));
           }, 1000);
@@ -647,7 +646,7 @@ export const ComprehensiveFormTest: Story = {
       expect(mockMutate).toHaveBeenCalledWith(
         expect.objectContaining({
           email: 'newuser@example.com',
-        })
+        }),
       );
     });
   },
@@ -910,7 +909,7 @@ export const ReCAPTCHAError: Story = {
                 <div className="space-y-2">
                   <p className="font-medium">reCAPTCHA Verification Failed</p>
                   <p className="text-sm">
-                    Please verify that you're not a robot to continue.
+                    Please verify that you&apos;re not a robot to continue.
                   </p>
                   <Button
                     size="sm"

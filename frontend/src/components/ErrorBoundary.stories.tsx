@@ -150,7 +150,7 @@ const AsyncErrorComponent = () => {
     return <div>Loading...</div>;
   }
   
-  return <div>This won't render</div>;
+  return <div>This won&apos;t render</div>;
 };
 
 export const AsyncError: Story = {

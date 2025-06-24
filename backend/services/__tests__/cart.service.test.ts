@@ -6,7 +6,7 @@ import { IUserDocument } from '../../models/user.model.js';
 
 // Mock mongoose and models
 vi.mock('mongoose', async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = await importOriginal<typeof import('mongoose')>();
   
   // Create a mock ObjectId class
   class MockObjectId {
@@ -20,8 +20,14 @@ vi.mock('mongoose', async (importOriginal) => {
       return this.id;
     }
     
-    equals(other: any) {
-      return this.id === (other?.toString ? other.toString() : other);
+    equals(other: unknown) {
+      if (other instanceof MockObjectId) {
+        return this.id === other.id;
+      }
+      if (other && typeof other === 'object' && 'toString' in other) {
+        return this.id === String((other as { toString(): string }).toString());
+      }
+      return this.id === String(other);
     }
   }
   
@@ -55,7 +61,12 @@ vi.mock('../inventory.service.js', () => ({
 
 describe('CartService', () => {
   let mockUser: IUserDocument;
-  let mockSession: any;
+  let mockSession: {
+    startTransaction: ReturnType<typeof vi.fn>;
+    commitTransaction: ReturnType<typeof vi.fn>;
+    abortTransaction: ReturnType<typeof vi.fn>;
+    endSession: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -67,13 +78,19 @@ describe('CartService', () => {
       endSession: vi.fn(),
     };
     
-    vi.spyOn(mongoose, 'startSession').mockResolvedValue(mockSession);
-    
+    vi.spyOn(mongoose, 'startSession').mockResolvedValue(mockSession as unknown as mongoose.ClientSession);
+
     mockUser = {
       _id: new mongoose.Types.ObjectId('user123'),
+      name: 'Test User',
+      email: 'test@example.com',
+      password: 'hashedpassword',
+      role: 'customer',
       cartItems: [],
+      appliedCoupon: null,
       save: vi.fn().mockResolvedValue(true),
-    } as any;
+      comparePassword: vi.fn().mockResolvedValue(true),
+    } as unknown as IUserDocument;
   });
 
   afterEach(() => {
@@ -93,17 +110,20 @@ describe('CartService', () => {
         ],
       };
 
-      vi.mocked(Product.findById).mockImplementation(() => ({
+      const mockFindById = vi.spyOn(Product, 'findById');
+      mockFindById.mockImplementation(() => ({
         session: vi.fn().mockResolvedValue(product),
-      } as any));
+      }) as unknown as ReturnType<typeof Product.findById>);
 
-      vi.mocked(Product.findOneAndUpdate).mockResolvedValue(product);
+      const mockFindOneAndUpdate = vi.spyOn(Product, 'findOneAndUpdate');
+      mockFindOneAndUpdate.mockResolvedValue(product);
 
       // Add first variant
       await cartService.addToCart(mockUser, productId, 'var1');
       expect(mockUser.cartItems).toHaveLength(1);
       expect(mockUser.cartItems[0]).toMatchObject({
-        product: expect.objectContaining({ toString: expect.any(Function) }),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        product: expect.objectContaining({}),
         quantity: 1,
         variantId: 'var1',
         variantDetails: {
@@ -137,17 +157,18 @@ describe('CartService', () => {
         ],
       };
 
-      vi.mocked(Product.findById).mockImplementation(() => ({
+      const mockFindById2 = vi.spyOn(Product, 'findById');
+      mockFindById2.mockImplementation(() => ({
         session: vi.fn().mockResolvedValue(product),
-      } as any));
+      }) as unknown as ReturnType<typeof Product.findById>);
 
       // Mock inventory check to return false for out of stock
       const { inventoryService } = await import('../inventory.service.js');
-      vi.mocked(inventoryService.checkAvailability).mockResolvedValueOnce(false);
-      vi.mocked(inventoryService.getAvailableInventory).mockResolvedValueOnce(0);
+      vi.spyOn(inventoryService, 'checkAvailability').mockResolvedValueOnce(false);
+      vi.spyOn(inventoryService, 'getAvailableInventory').mockResolvedValueOnce(0);
       
       await expect(
-        cartService.addToCart(mockUser, productId, 'var1')
+        cartService.addToCart(mockUser, productId, 'var1'),
       ).rejects.toThrow('Variant var1 is out of stock');
     });
 
@@ -175,9 +196,10 @@ describe('CartService', () => {
         },
       }];
 
-      vi.mocked(Product.find).mockImplementation(() => ({
+      const mockFind = vi.spyOn(Product, 'find');
+      mockFind.mockImplementation(() => ({
         lean: vi.fn().mockResolvedValue([product]),
-      } as any));
+      }) as unknown as ReturnType<typeof Product.find>);
 
       const result = await cartService.calculateCartTotals(mockUser);
       
@@ -197,13 +219,14 @@ describe('CartService', () => {
         variants: [], // Empty variants array
       };
 
-      vi.mocked(Product.findById).mockImplementation(() => ({
+      const mockFindById3 = vi.spyOn(Product, 'findById');
+      mockFindById3.mockImplementation(() => ({
         session: vi.fn().mockResolvedValue(product),
-      } as any));
+      }) as unknown as ReturnType<typeof Product.findById>);
       
       // Mock inventory check for product without variants
       const { inventoryService } = await import('../inventory.service.js');
-      vi.mocked(inventoryService.checkAvailability).mockResolvedValue(true);
+      vi.spyOn(inventoryService, 'checkAvailability').mockResolvedValue(true);
       // No need to mock reserveInventory - inventory is checked but not reserved
 
       await cartService.addToCart(mockUser, productId);
@@ -231,20 +254,22 @@ describe('CartService', () => {
         variantId: 'var1',
       }];
 
-      vi.mocked(Product.findById).mockImplementation(() => ({
+      const mockFindById4 = vi.spyOn(Product, 'findById');
+      mockFindById4.mockImplementation(() => ({
         session: vi.fn().mockResolvedValue(product),
-      } as any));
-      
+      }) as unknown as ReturnType<typeof Product.findById>);
+
       // Mock the atomic update to succeed (validates but doesn't decrement)
-      vi.mocked(Product.findOneAndUpdate).mockResolvedValue(product);
+      const mockFindOneAndUpdate2 = vi.spyOn(Product, 'findOneAndUpdate');
+      mockFindOneAndUpdate2.mockResolvedValue(product);
 
       // Mock inventory check to fail
       const { inventoryService } = await import('../inventory.service.js');
-      vi.mocked(inventoryService.checkAvailability).mockResolvedValueOnce(false);
-      vi.mocked(inventoryService.getAvailableInventory).mockResolvedValueOnce(2);
+      vi.spyOn(inventoryService, 'checkAvailability').mockResolvedValueOnce(false);
+      vi.spyOn(inventoryService, 'getAvailableInventory').mockResolvedValueOnce(2);
       
       await expect(
-        cartService.addToCart(mockUser, productId, 'var1')
+        cartService.addToCart(mockUser, productId, 'var1'),
       ).rejects.toThrow('Cannot add more items. Only 2 available in stock');
     });
   });
@@ -265,18 +290,20 @@ describe('CartService', () => {
         variantId: 'var1',
       }];
 
-      vi.mocked(Product.findOneAndUpdate).mockResolvedValue(null); // Simulate not enough inventory
-      vi.mocked(Product.findById).mockImplementation(() => ({
+      const mockFindOneAndUpdate3 = vi.spyOn(Product, 'findOneAndUpdate');
+      mockFindOneAndUpdate3.mockResolvedValue(null); // Simulate not enough inventory
+      const mockFindById5 = vi.spyOn(Product, 'findById');
+      mockFindById5.mockImplementation(() => ({
         session: vi.fn().mockResolvedValue(product),
-      } as any));
+      }) as unknown as ReturnType<typeof Product.findById>);
 
       // Mock inventory check to fail for quantity update
       const { inventoryService } = await import('../inventory.service.js');
-      vi.mocked(inventoryService.checkAvailability).mockResolvedValueOnce(false);
-      vi.mocked(inventoryService.getAvailableInventory).mockResolvedValueOnce(3);
+      vi.spyOn(inventoryService, 'checkAvailability').mockResolvedValueOnce(false);
+      vi.spyOn(inventoryService, 'getAvailableInventory').mockResolvedValueOnce(3);
       
       await expect(
-        cartService.updateQuantity(mockUser, productId, 5, 'var1')
+        cartService.updateQuantity(mockUser, productId, 5, 'var1'),
       ).rejects.toThrow('Cannot update quantity. Only 3 available in stock');
     });
 
@@ -293,6 +320,7 @@ describe('CartService', () => {
       await cartService.updateQuantity(mockUser, productId, 0, 'var1');
       
       expect(mockUser.cartItems).toHaveLength(0);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockUser.save).toHaveBeenCalled();
     });
   });
@@ -367,9 +395,10 @@ describe('CartService', () => {
         // No variantDetails cached
       }];
 
-      vi.mocked(Product.find).mockImplementation(() => ({
+      const mockFind2 = vi.spyOn(Product, 'find');
+      mockFind2.mockImplementation(() => ({
         lean: vi.fn().mockResolvedValue([product]),
-      } as any));
+      } as unknown as ReturnType<typeof Product.find>));
 
       const result = await cartService.getCartProducts(mockUser);
       
@@ -414,9 +443,10 @@ describe('CartService', () => {
         },
       ];
 
-      vi.mocked(Product.find).mockImplementation(() => ({
+      const mockFind3 = vi.spyOn(Product, 'find');
+      mockFind3.mockImplementation(() => ({
         lean: vi.fn().mockResolvedValue([product]),
-      } as any));
+      } as unknown as ReturnType<typeof Product.find>));
 
       const result = await cartService.getCartProducts(mockUser);
       

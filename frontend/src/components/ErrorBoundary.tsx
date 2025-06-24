@@ -21,8 +21,8 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
   
-  public componentDidCatch(_error: Error, _errorInfo: ErrorInfo) {
-    // Error boundary handles errors silently to prevent app crashes
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
   
   private reset = () => {

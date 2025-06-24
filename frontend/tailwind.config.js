@@ -76,6 +76,10 @@ export default {
 			},
 			animation: {
 				highlight: 'highlight 1s ease-in-out 2',
+			},
+			scale: {
+				'102': '1.02',
+				'105': '1.05',
 			}
 		},
 	},

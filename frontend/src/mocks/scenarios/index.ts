@@ -3,7 +3,7 @@ import { handlers as defaultHandlers } from '../handlers';
 import { trpcScenarios } from '../utils/trpc-mock';
 import { 
   createMockProduct, 
-  createMockInventoryUpdate 
+  createMockInventoryUpdate, 
 } from '../factories';
 
 // Success scenarios
@@ -54,15 +54,15 @@ export const realtimeInventoryScenarios: HttpHandler[] = [
     Array.from({ length: 10 }, (_, i) => 
       createMockProduct({ 
         _id: `prod-${i}`,
-        inventory: Math.floor(Math.random() * 50) 
-      })
-    )
+        inventory: Math.floor(Math.random() * 50), 
+      }),
+    ),
   ),
   // Simulate inventory updates every 2 seconds
   trpcScenarios.success('inventory.subscribe', {
     updates: Array.from({ length: 5 }, (_, i) => 
-      createMockInventoryUpdate(`prod-${i}`, Math.floor(Math.random() * 100))
-    )
+      createMockInventoryUpdate(`prod-${i}`, Math.floor(Math.random() * 100)),
+    ),
   }, { delay: 2000 }),
 ];
 
@@ -70,15 +70,15 @@ export const realtimeInventoryScenarios: HttpHandler[] = [
 export const conflictScenarios: HttpHandler[] = [
   trpcScenarios.error('cart.update', { 
     message: 'Item quantity has been updated by another user', 
-    code: 'CONFLICT' 
+    code: 'CONFLICT', 
   }, { status: 409 }),
   trpcScenarios.error('inventory.update', { 
     message: 'Inventory has been modified, please refresh', 
-    code: 'CONFLICT' 
+    code: 'CONFLICT', 
   }, { status: 409 }),
   trpcScenarios.error('product.update', { 
     message: 'Product has been updated by another admin', 
-    code: 'CONFLICT' 
+    code: 'CONFLICT', 
   }, { status: 409 }),
 ];
 
@@ -89,8 +89,8 @@ export const performanceScenarios: HttpHandler[] = [
     products: Array.from({ length: 1000 }, (_, i) => 
       createMockProduct({ 
         _id: `perf-prod-${i}`,
-        name: `Performance Test Product ${i}` 
-      })
+        name: `Performance Test Product ${i}`, 
+      }),
     ),
     totalProducts: 10000,
     currentPage: 1,
@@ -100,9 +100,9 @@ export const performanceScenarios: HttpHandler[] = [
   // Slow network simulation
   trpcScenarios.success('inventory.getAll', 
     Array.from({ length: 100 }, (_, i) => 
-      createMockProduct({ _id: `slow-prod-${i}` })
+      createMockProduct({ _id: `slow-prod-${i}` }),
     ), 
-    { delay: 5000 }
+    { delay: 5000 },
   ),
 ];
 
@@ -122,7 +122,7 @@ export const partialDataScenarios: HttpHandler[] = [
         // Missing some fields to simulate partial data
         image: i === 1 ? '' : 'https://via.placeholder.com/400',
         description: i === 2 ? '' : 'Product description',
-      })
+      }),
     ),
     totalProducts: 10,
     currentPage: 1,

@@ -479,14 +479,14 @@ export const ProgressiveLoading: Story = {
     
     useEffect(() => {
       const loadProducts = async () => {
-        for (let i = 0; i < allProducts.length; i++) {
-          await new Promise(resolve => setTimeout(resolve, 300));
-          setLoadedProducts(prev => [...prev, allProducts[i]]);
-        }
+              for (const product of allProducts) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        setLoadedProducts(prev => [...prev, product]);
+      }
       };
       
       loadProducts();
-    }, []);
+    }, [allProducts]);
     
     return (
       <div className="space-y-4">
@@ -662,7 +662,7 @@ export const PlaceholderWhileLoading: Story = {
               <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">Finding Related Products</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                We're searching for products you might like...
+                We&apos;re searching for products you might like...
               </p>
               <Loader2 className="w-6 h-6 animate-spin mx-auto" />
             </div>
@@ -720,7 +720,7 @@ export const LoadingWithError: Story = {
             </div>
             <h3 className="text-lg font-medium mb-2">Unable to Load Products</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              We couldn't fetch related products at this time.
+              We couldn&apos;t fetch related products at this time.
             </p>
             <Button onClick={retry}>
               <RefreshCw className="w-4 h-4 mr-2" />

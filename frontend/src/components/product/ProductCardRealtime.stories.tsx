@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Progress } from '@/components/ui/Progress';
 import { Toaster, toast } from 'sonner';
-import { Wifi, WifiOff, AlertCircle, Users, Activity, Zap, AlertTriangle, Shield, CheckCircle2 } from 'lucide-react';
+import { Wifi, WifiOff, AlertCircle, Users, Activity, Zap, AlertTriangle, Shield, CheckCircle2, RefreshCw, Clock, Cloud, CloudOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const createQueryClient = () => new QueryClient({
@@ -80,11 +80,11 @@ const EnhancedWebSocketSimulator = ({
   onUpdate, 
   onConnectionChange,
   onBulkUpdate,
-  onConflict
+  onConflict,
 }: { 
   onUpdate: (productId: string, stock: number) => void;
   onConnectionChange?: (quality: 'excellent' | 'good' | 'poor' | 'offline') => void;
-  onBulkUpdate?: (updates: Array<{ productId: string; stock: number }>) => void;
+  onBulkUpdate?: (updates: { productId: string; stock: number }[]) => void;
   onConflict?: (productId: string, localValue: number, serverValue: number) => void;
 }) => {
   const [isConnected, setIsConnected] = useState(true);
@@ -104,7 +104,7 @@ const EnhancedWebSocketSimulator = ({
       // Simulate bulk update
       const updates = productIds.map(id => ({
         productId: id,
-        stock: Math.max(0, Math.floor(Math.random() * 50))
+        stock: Math.max(0, Math.floor(Math.random() * 50)),
       }));
       
       setTimeout(() => {
@@ -186,7 +186,7 @@ const EnhancedWebSocketSimulator = ({
     excellent: <Wifi className="w-4 h-4 text-green-500" />,
     good: <Activity className="w-4 h-4 text-yellow-500" />,
     poor: <AlertTriangle className="w-4 h-4 text-orange-500" />,
-    offline: <WifiOff className="w-4 h-4 text-red-500" />
+    offline: <WifiOff className="w-4 h-4 text-red-500" />,
   };
 
   return (
@@ -207,7 +207,7 @@ const EnhancedWebSocketSimulator = ({
           <div className="space-y-2">
             <Button 
               size="sm" 
-              variant={isConnected ? "destructive" : "default"} 
+              variant={isConnected ? 'destructive' : 'default'} 
               onClick={toggleConnection}
               className="w-full"
             >
@@ -330,9 +330,9 @@ const EnhancedWebSocketSimulator = ({
 // Conflict Resolution Component
 const ConflictResolver = ({ 
   conflicts, 
-  onResolve 
+  onResolve, 
 }: { 
-  conflicts: Array<{ productId: string; localValue: number; serverValue: number; timestamp: Date }>;
+  conflicts: { productId: string; localValue: number; serverValue: number; timestamp: Date }[];
   onResolve: (productId: string, resolvedValue: number) => void;
 }) => {
   if (conflicts.length === 0) return null;
@@ -396,7 +396,7 @@ const ConnectionQualityMonitor = ({ quality }: { quality: 'excellent' | 'good' |
     excellent: { color: 'text-green-500', bg: 'bg-green-50', label: 'Excellent', icon: Zap },
     good: { color: 'text-yellow-500', bg: 'bg-yellow-50', label: 'Good', icon: Activity },
     poor: { color: 'text-orange-500', bg: 'bg-orange-50', label: 'Poor', icon: AlertTriangle },
-    offline: { color: 'text-red-500', bg: 'bg-red-50', label: 'Offline', icon: WifiOff }
+    offline: { color: 'text-red-500', bg: 'bg-red-50', label: 'Offline', icon: WifiOff },
   };
   
   const config = qualityConfig[quality];
@@ -655,7 +655,7 @@ export const ConnectionStates: Story = {
                   <h3 className="font-semibold mb-2">Connection Status Demo</h3>
                   <Button 
                     size="sm" 
-                    variant={isConnected ? "destructive" : "default"}
+                    variant={isConnected ? 'destructive' : 'default'}
                     onClick={() => setIsConnected(!isConnected)}
                   >
                     {isConnected ? 'Simulate Disconnect' : 'Simulate Reconnect'}
@@ -789,7 +789,7 @@ export const DisabledRealtime: Story = {
               <div className="space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    Real-time updates are disabled. Stock status won't update automatically.
+                    Real-time updates are disabled. Stock status won&apos;t update automatically.
                   </p>
                 </div>
                 <Story />
@@ -845,6 +845,361 @@ export const PriceUpdate: Story = {
                   </div>
                 </div>
                 <ProductCardRealtime product={productWithDynamicPrice} enableRealtime />
+              </div>
+              <Toaster position="top-right" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
+};
+
+// Network Error Scenarios
+export const OfflineMode: Story = {
+  args: {
+    product: mockProduct,
+    enableRealtime: true,
+  },
+  decorators: [
+    () => {
+      const queryClient = createQueryClient();
+      const [isOnline, setIsOnline] = useState(navigator.onLine);
+      const [queuedUpdates, setQueuedUpdates] = useState<{id: string, data: any}[]>([]);
+      
+      queryClient.setQueryData(['inventory.product', mockProduct._id], {
+        productId: mockProduct._id,
+        availableStock: 8,
+        lowStockThreshold: 5,
+        allowBackorder: false,
+      });
+      
+      const simulateOffline = () => {
+        setIsOnline(false);
+        toast.info('Connection lost - entering offline mode');
+        
+        // Simulate queued updates
+        const update = { id: Date.now().toString(), data: { stock: 3, timestamp: new Date() } };
+        setQueuedUpdates(prev => [...prev, update]);
+      };
+      
+      const simulateOnline = () => {
+        setIsOnline(true);
+        toast.success('Connection restored - syncing queued updates');
+        
+        // Process queued updates
+        setTimeout(() => {
+          setQueuedUpdates([]);
+          toast.success(`${queuedUpdates.length} updates synced`);
+        }, 1500);
+      };
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <div className="space-y-4">
+                <Card className={`p-4 ${
+                  isOnline 
+                    ? 'border-green-200 bg-green-50' 
+                    : 'border-orange-200 bg-orange-50'
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      {isOnline ? (
+                        <><Cloud className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium">Online</span></>
+                      ) : (
+                        <><CloudOff className="w-4 h-4 text-orange-600" />
+                        <span className="text-sm font-medium">Offline Mode</span></>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={simulateOffline} disabled={!isOnline}>
+                        Go Offline
+                      </Button>
+                      <Button size="sm" onClick={simulateOnline} disabled={isOnline}>
+                        Reconnect
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {!isOnline && queuedUpdates.length > 0 && (
+                    <div className="text-sm text-orange-700">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {queuedUpdates.length} updates queued for sync
+                      </div>
+                    </div>
+                  )}
+                </Card>
+                
+                <ProductCardRealtime product={mockProduct} enableRealtime />
+              </div>
+              <Toaster position="top-right" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
+};
+
+export const TimeoutHandling: Story = {
+  args: {
+    product: mockProduct,
+    enableRealtime: true,
+  },
+  decorators: [
+    () => {
+      const queryClient = createQueryClient();
+      const [isLoading, setIsLoading] = useState(false);
+      const [hasTimedOut, setHasTimedOut] = useState(false);
+      const [retryCount, setRetryCount] = useState(0);
+      
+      const simulateTimeout = () => {
+        setIsLoading(true);
+        setHasTimedOut(false);
+        
+        // Simulate long loading that times out
+        setTimeout(() => {
+          setIsLoading(false);
+          setHasTimedOut(true);
+          setRetryCount(prev => prev + 1);
+          toast.error('Request timed out after 10 seconds');
+        }, 3000);
+      };
+      
+      const retryRequest = () => {
+        setHasTimedOut(false);
+        if (retryCount < 3) {
+          simulateTimeout();
+        } else {
+          toast.success('Request succeeded on retry');
+          setRetryCount(0);
+        }
+      };
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium">Timeout Simulation</h4>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={simulateTimeout} disabled={isLoading}>
+                        {isLoading ? (
+                          <><RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                          Loading...</>
+                        ) : (
+                          'Test Timeout'
+                        )}
+                      </Button>
+                      {hasTimedOut && (
+                        <Button size="sm" variant="outline" onClick={retryRequest}>
+                          Retry ({retryCount}/3)
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {isLoading && (
+                    <div className="text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        Waiting for server response...
+                      </div>
+                    </div>
+                  )}
+                  
+                  {hasTimedOut && (
+                    <Alert variant="destructive" className="mt-2">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Request timed out. The server may be overloaded or unreachable.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </Card>
+                
+                <ProductCardRealtime product={mockProduct} enableRealtime />
+              </div>
+              <Toaster position="top-right" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
+};
+
+export const PartialDataLoading: Story = {
+  args: {
+    product: mockProduct,
+    enableRealtime: true,
+  },
+  decorators: [
+    () => {
+      const queryClient = createQueryClient();
+      const [dataStage, setDataStage] = useState(0);
+      
+      const stages = [
+        { name: 'Basic Info', data: { productId: mockProduct._id } },
+        { name: 'Stock Info', data: { productId: mockProduct._id, availableStock: 12 } },
+        { name: 'Full Data', data: { 
+          productId: mockProduct._id, 
+          availableStock: 12, 
+          lowStockThreshold: 5,
+          allowBackorder: false, 
+        }},
+      ];
+      
+      const loadNextStage = () => {
+        if (dataStage < stages.length - 1) {
+          const nextStage = dataStage + 1;
+          setDataStage(nextStage);
+          
+          queryClient.setQueryData(['inventory.product', mockProduct._id], stages[nextStage].data);
+          toast.info(`Loaded: ${stages[nextStage].name}`);
+        }
+      };
+      
+      const resetData = () => {
+        setDataStage(0);
+        queryClient.removeQueries({ queryKey: ['inventory.product', mockProduct._id] });
+      };
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium">Partial Data Loading</h4>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={loadNextStage} disabled={dataStage >= stages.length - 1}>
+                        Load Next
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={resetData}>
+                        Reset
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-sm">Loading Progress:</div>
+                    <Progress value={(dataStage + 1) / stages.length * 100} className="h-2" />
+                    <div className="flex gap-2">
+                      {stages.map((stage, i) => (
+                        <Badge key={i} variant={i <= dataStage ? 'default' : 'secondary'}>
+                          {stage.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+                
+                <ProductCardRealtime product={mockProduct} enableRealtime />
+              </div>
+              <Toaster position="top-right" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
+};
+
+export const RetryMechanism: Story = {
+  args: {
+    product: mockProduct,
+    enableRealtime: true,
+  },
+  decorators: [
+    () => {
+      const queryClient = createQueryClient();
+      const [failureCount, setFailureCount] = useState(0);
+      const [isRetrying, setIsRetrying] = useState(false);
+      const [retryStrategy, setRetryStrategy] = useState<'exponential' | 'linear' | 'immediate'>('exponential');
+      
+      const attemptRequest = () => {
+        setIsRetrying(true);
+        
+        const shouldFail = failureCount < 2;
+        const delay = retryStrategy === 'exponential' 
+          ? Math.pow(2, failureCount) * 1000
+          : retryStrategy === 'linear'
+          ? (failureCount + 1) * 1000
+          : 500;
+          
+        setTimeout(() => {
+          if (shouldFail) {
+            setFailureCount(prev => prev + 1);
+            toast.error(`Attempt ${failureCount + 1} failed - retrying in ${delay/1000}s`);
+            attemptRequest();
+          } else {
+            setIsRetrying(false);
+            setFailureCount(0);
+            queryClient.setQueryData(['inventory.product', mockProduct._id], {
+              productId: mockProduct._id,
+              availableStock: 7,
+              lowStockThreshold: 5,
+              allowBackorder: false,
+            });
+            toast.success('Request succeeded!');
+          }
+        }, delay);
+      };
+      
+      const startRetryDemo = () => {
+        setFailureCount(0);
+        queryClient.removeQueries({ queryKey: ['inventory.product', mockProduct._id] });
+        attemptRequest();
+      };
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium">Retry Strategy Demo</h4>
+                    <div className="flex gap-2">
+                      <select 
+                        value={retryStrategy} 
+                        onChange={(e) => setRetryStrategy(e.target.value as 'exponential' | 'linear' | 'immediate')}
+                        className="text-sm border rounded px-2 py-1"
+                      >
+                        <option value="exponential">Exponential Backoff</option>
+                        <option value="linear">Linear Backoff</option>
+                        <option value="immediate">Immediate Retry</option>
+                      </select>
+                      <Button size="sm" onClick={startRetryDemo} disabled={isRetrying}>
+                        {isRetrying ? (
+                          <><RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                          Retrying...</>
+                        ) : (
+                          'Start Demo'
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {isRetrying && (
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">
+                        Retry attempt: {failureCount + 1}/3
+                      </div>
+                      <Progress value={(failureCount + 1) / 3 * 100} className="h-2" />
+                    </div>
+                  )}
+                </Card>
+                
+                <ProductCardRealtime product={mockProduct} enableRealtime />
               </div>
               <Toaster position="top-right" />
             </BrowserRouter>
@@ -1046,7 +1401,7 @@ export const BulkInventoryUpdates: Story = {
         });
       }, [inventoryData, queryClient]);
       
-      const handleBulkUpdate = (updates: Array<{ productId: string; stock: number }>) => {
+      const handleBulkUpdate = (updates: { productId: string; stock: number }[]) => {
         const newData = { ...inventoryData };
         updates.forEach(({ productId, stock }) => {
           newData[productId] = stock;
@@ -1130,7 +1485,7 @@ export const ConnectionQualityDemo: Story = {
       const queryClient = createQueryClient();
       const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor' | 'offline'>('excellent');
       const [inventoryData, setInventoryData] = useState({ prod1: 15 });
-      const [updateHistory, setUpdateHistory] = useState<Array<{ time: Date; quality: string; success: boolean }>>([]);
+      const [updateHistory, setUpdateHistory] = useState<{ time: Date; quality: string; success: boolean }[]>([]);
       
       useEffect(() => {
         queryClient.setQueryData(['inventory.product', mockProduct._id], {
@@ -1150,7 +1505,7 @@ export const ConnectionQualityDemo: Story = {
         
         setUpdateHistory(prev => [
           { time: new Date(), quality: connectionQuality, success },
-          ...prev.slice(0, 9)
+          ...prev.slice(0, 9),
         ]);
       };
       
@@ -1216,17 +1571,17 @@ export const ConflictResolution: Story = {
         prod3: 2,
         prod4: 0,
       });
-      const [conflicts, setConflicts] = useState<Array<{
+      const [conflicts, setConflicts] = useState<{
         productId: string;
         localValue: number;
         serverValue: number;
         timestamp: Date;
-      }>>([]);
-      const [resolutionHistory, setResolutionHistory] = useState<Array<{
+      }[]>([]);
+      const [resolutionHistory, setResolutionHistory] = useState<{
         productId: string;
         resolution: string;
         timestamp: Date;
-      }>>([]);
+      }[]>([]);
       
       const products = [
         mockProduct,
@@ -1253,7 +1608,7 @@ export const ConflictResolution: Story = {
       const handleConflict = (productId: string, localValue: number, serverValue: number) => {
         setConflicts(prev => [
           ...prev,
-          { productId, localValue, serverValue, timestamp: new Date() }
+          { productId, localValue, serverValue, timestamp: new Date() },
         ]);
         toast.error(`Conflict detected for Product ${productId.slice(-1)}!`);
       };
@@ -1265,9 +1620,9 @@ export const ConflictResolution: Story = {
           {
             productId,
             resolution: `Resolved to ${resolvedValue}`,
-            timestamp: new Date()
+            timestamp: new Date(),
           },
-          ...prev.slice(0, 4)
+          ...prev.slice(0, 4),
         ]);
         toast.success(`Conflict resolved for Product ${productId.slice(-1)}`);
       };
@@ -1330,12 +1685,12 @@ export const MultiUserSimulation: Story = {
     () => {
       const queryClient = createQueryClient();
       const [inventoryData, setInventoryData] = useState({ prod1: 50 });
-      const [userActions, setUserActions] = useState<Array<{
+      const [userActions, setUserActions] = useState<{
         userId: number;
         action: string;
         timestamp: Date;
         color: string;
-      }>>([]);
+      }[]>([]);
       const userColors = ['text-blue-500', 'text-green-500', 'text-purple-500', 'text-orange-500', 'text-pink-500'];
       
       useEffect(() => {
@@ -1355,7 +1710,7 @@ export const MultiUserSimulation: Story = {
           const quantity = Math.floor(Math.random() * 3) + 1;
           setInventoryData(prev => ({ 
             ...prev, 
-            prod1: Math.max(0, prev.prod1 - quantity) 
+            prod1: Math.max(0, prev.prod1 - quantity), 
           }));
         }
         
@@ -1364,9 +1719,9 @@ export const MultiUserSimulation: Story = {
             userId,
             action,
             timestamp: new Date(),
-            color: userColors[userId - 1]
+            color: userColors[userId - 1],
           },
-          ...prev.slice(0, 9)
+          ...prev.slice(0, 9),
         ]);
       };
       
@@ -1450,14 +1805,14 @@ export const PerformanceStressTest: Story = {
         totalUpdates: 0,
         droppedUpdates: 0,
         avgLatency: 0,
-        peakLatency: 0
+        peakLatency: 0,
       });
       const [products] = useState(() => 
         Array.from({ length: 20 }, (_, i) => ({
           ...mockProduct,
           _id: `stress-${i}`,
-          name: `Stress Test Product ${i + 1}`
-        }))
+          name: `Stress Test Product ${i + 1}`,
+        })),
       );
       
       useEffect(() => {
@@ -1480,7 +1835,7 @@ export const PerformanceStressTest: Story = {
             totalUpdates: prev.totalUpdates + 1,
             droppedUpdates: prev.droppedUpdates + (latency > 100 ? 1 : 0),
             avgLatency: (prev.avgLatency * prev.totalUpdates + latency) / (prev.totalUpdates + 1),
-            peakLatency: Math.max(prev.peakLatency, latency)
+            peakLatency: Math.max(prev.peakLatency, latency),
           }));
         }, 1000 / updateRate);
         

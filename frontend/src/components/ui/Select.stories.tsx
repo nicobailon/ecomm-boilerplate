@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import { useState } from 'react';
 import { Select } from './Select';
 
@@ -227,11 +225,11 @@ export const InteractionTest: Story = {
     
     // Select an option
     await userEvent.selectOptions(select, 'banana');
-    await expect(select).toHaveValue('banana');
+    expect(select).toHaveValue('banana');
     
     // Change selection
     await userEvent.selectOptions(select, 'orange');
-    await expect(select).toHaveValue('orange');
+    expect(select).toHaveValue('orange');
   },
 };
 
@@ -248,9 +246,9 @@ export const DynamicOptions: Story = {
         { value: 'tablets', label: 'Tablets' },
       ],
       clothing: [
-        { value: 'mens', label: "Men's Clothing" },
-        { value: 'womens', label: "Women's Clothing" },
-        { value: 'kids', label: "Kids' Clothing" },
+        { value: 'mens', label: 'Men\'s Clothing' },
+        { value: 'womens', label: 'Women\'s Clothing' },
+        { value: 'kids', label: 'Kids\' Clothing' },
       ],
       books: [
         { value: 'fiction', label: 'Fiction' },

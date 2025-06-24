@@ -1,4 +1,4 @@
-import { placeholderImages } from './placeholder-images';
+import { placeholderImages } from './placeholder-images-utils';
 
 export const mockProducts = [
   {

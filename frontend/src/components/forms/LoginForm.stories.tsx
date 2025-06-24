@@ -146,10 +146,10 @@ export const FullLoginFlow: Story = {
     const canvas = within(canvasElement);
     
     // Initial state - form should be empty
-    const emailInput = canvas.getByLabelText(/email/i) as HTMLInputElement;
-    const passwordInput = canvas.getByLabelText(/password/i) as HTMLInputElement;
-    expect(emailInput.value).toBe('');
-    expect(passwordInput.value).toBe('');
+    const emailInput = canvas.getByLabelText(/email/i);
+    const passwordInput = canvas.getByLabelText(/password/i);
+    expect((emailInput as HTMLInputElement).value).toBe('');
+    expect((passwordInput as HTMLInputElement).value).toBe('');
     
     // Try to submit empty form
     const submitButton = canvas.getByRole('button', { name: /sign in/i });
@@ -584,7 +584,7 @@ export const RateLimitError: Story = {
                 <div className="space-y-2">
                   <p className="font-medium">Too Many Requests</p>
                   <p className="text-sm">
-                    You've made too many login attempts. Please wait before trying again.
+                    You&apos;ve made too many login attempts. Please wait before trying again.
                   </p>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">{countdown}s remaining</Badge>
@@ -649,7 +649,7 @@ export const ServerError: Story = {
   decorators: [
     (_Story) => {
       const [serverError, setServerError] = useState<string | null>(
-        'Unable to connect to authentication server. Please try again later.'
+        'Unable to connect to authentication server. Please try again later.',
       );
       
       return (

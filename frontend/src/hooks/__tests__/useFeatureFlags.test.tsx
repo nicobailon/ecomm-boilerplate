@@ -5,7 +5,7 @@ import { useFeatureFlagsStore } from '@/stores/featureFlags.store';
 
 // Mock the fetch API
 const mockFetch = vi.fn();
-global.fetch = mockFetch as any;
+global.fetch = mockFetch as typeof fetch;
 
 describe('useFeatureFlags', () => {
   beforeEach(() => {

@@ -27,7 +27,11 @@ export function createMockExpressResponse(overrides?: Partial<Response>): Respon
   } as unknown as Response;
 }
 
-export async function createTestContext(user?: IUserDocument | null) {
+export async function createTestContext(user?: IUserDocument | null): Promise<{
+  req: CreateExpressContextOptions['req'];
+  res: CreateExpressContextOptions['res'];
+  user: IUserDocument | null;
+}> {
   const req = createMockExpressRequest();
   const res = createMockExpressResponse();
   const info = {} as CreateExpressContextOptions['info'];

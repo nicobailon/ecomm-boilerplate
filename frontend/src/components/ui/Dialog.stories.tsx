@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import {
   Dialog,
   DialogContent,
@@ -95,7 +93,7 @@ export const FormDialog: Story = {
         <DialogHeader>
           <DialogTitle>Edit profile</DialogTitle>
           <DialogDescription>
-            Make changes to your profile here. Click save when you're done.
+            Make changes to your profile here. Click save when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-4">
@@ -305,21 +303,21 @@ export const InteractiveTest: Story = {
       await userEvent.click(trigger);
       
       const title = await canvas.findByText('Interactive Test');
-      await expect(title).toBeInTheDocument();
+      expect(title).toBeInTheDocument();
     });
     
     await step('Interact with form', async () => {
       const input = canvas.getByPlaceholderText('Type something...');
       await userEvent.click(input);
       await userEvent.type(input, 'Test content');
-      await expect(input).toHaveValue('Test content');
+      expect(input).toHaveValue('Test content');
     });
     
     await step('Close dialog with cancel button', async () => {
       const cancelButton = canvas.getByText('Cancel');
       await userEvent.click(cancelButton);
       
-      await expect(canvas.queryByText('Interactive Test')).not.toBeInTheDocument();
+      expect(canvas.queryByText('Interactive Test')).not.toBeInTheDocument();
     });
     
     await step('Reopen and close with X button', async () => {
@@ -327,10 +325,10 @@ export const InteractiveTest: Story = {
       await userEvent.click(trigger);
       
       const closeButton = await canvas.findByLabelText('Close');
-      await expect(closeButton).toBeInTheDocument();
+      expect(closeButton).toBeInTheDocument();
       await userEvent.click(closeButton);
       
-      await expect(canvas.queryByText('Interactive Test')).not.toBeInTheDocument();
+      expect(canvas.queryByText('Interactive Test')).not.toBeInTheDocument();
     });
   },
 };

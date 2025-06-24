@@ -7,6 +7,11 @@ import { fn } from '@storybook/test';
 import { within, userEvent, expect, waitFor } from '@storybook/test';
 import type { RouterOutputs } from '@/lib/trpc';
 import { Toaster } from 'sonner';
+import { useState, useEffect, useMemo } from 'react';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Loader2, Package2, RefreshCw } from 'lucide-react';
 
 type Collection = RouterOutputs['collection']['getById'];
 
@@ -32,7 +37,7 @@ const mockCollection: Collection = {
       category: 'clothing',
       isFeatured: false,
       collectionId: '1',
-      slug: 'summer-dress'
+      slug: 'summer-dress',
     },
     { 
       _id: 'prod2' as any,
@@ -43,7 +48,7 @@ const mockCollection: Collection = {
       category: 'footwear',
       isFeatured: false,
       collectionId: '1',
-      slug: 'beach-sandals'
+      slug: 'beach-sandals',
     },
     { 
       _id: 'prod3' as any,
@@ -54,13 +59,13 @@ const mockCollection: Collection = {
       category: 'accessories',
       isFeatured: false,
       collectionId: '1',
-      slug: 'sun-hat'
+      slug: 'sun-hat',
     },
   ],
   owner: {
     _id: 'user1',
     name: 'Test User',
-    email: 'test@example.com'
+    email: 'test@example.com',
   } as any,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -195,8 +200,8 @@ export const EditFlow: Story = {
     });
     
     // Check that form is pre-filled
-    const nameInput = canvas.getByLabelText('Name') as HTMLInputElement;
-    expect(nameInput.value).toBe('Summer Collection');
+    const nameInput = canvas.getByLabelText('Name');
+    expect((nameInput as HTMLInputElement).value).toBe('Summer Collection');
     
     // Click manage products button
     const manageButton = canvas.getByRole('button', { name: /Manage Products/ });
@@ -344,7 +349,7 @@ export const LongContent: Story = {
         category: 'general',
         isFeatured: false,
         collectionId: '1',
-        slug: `product-${i + 1}`
+        slug: `product-${i + 1}`,
       })) as unknown as Collection['products'],
     } as unknown as Collection,
   },
@@ -458,8 +463,8 @@ export const CompleteEditWorkflow: Story = {
     
     // Step 1: Edit collection details
     await waitFor(() => {
-      const nameInput = canvas.getByLabelText('Name') as HTMLInputElement;
-      expect(nameInput.value).toBe('Summer Collection');
+      const nameInput = canvas.getByLabelText('Name');
+      expect((nameInput as HTMLInputElement).value).toBe('Summer Collection');
     });
     
     // Update name
@@ -561,7 +566,7 @@ export const FocusManagement: Story = {
     
     // Tab through all focusable elements
     const focusableElements = drawer.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
     expect(focusableElements.length).toBeGreaterThan(0);
   },
@@ -602,4 +607,587 @@ export const AccessibilityAnnouncements: Story = {
       expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
     });
   },
+};
+
+// Enhanced Loading State Stories
+export const InitialLoadingState: Story = {
+  args: {
+    isOpen: true,
+    collection: null,
+  },
+  decorators: [
+    () => (
+      <div className="min-h-screen bg-background">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50">
+          <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-background shadow-xl z-50">
+            <div className="flex h-full flex-col">
+              {/* Header Skeleton */}
+              <div className="flex items-center justify-between border-b px-6 py-4">
+                <Skeleton className="h-7 w-48" />
+                <Skeleton className="h-10 w-10 rounded-md" />
+              </div>
+              
+              {/* Form Loading Skeleton */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-6">
+                  {/* Name Field */}
+                  <div>
+                    <Skeleton className="h-4 w-12 mb-2" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  
+                  {/* Description Field */}
+                  <div>
+                    <Skeleton className="h-4 w-20 mb-2" />
+                    <Skeleton className="h-24 w-full" />
+                  </div>
+                  
+                  {/* Public Toggle */}
+                  <div className="flex items-center space-x-3">
+                    <Skeleton className="h-6 w-6 rounded" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                  
+                  {/* Products Section Skeleton */}
+                  <div className="pt-4">
+                    <Skeleton className="h-5 w-32 mb-4" />
+                    <div className="grid grid-cols-2 gap-3">
+                      {[1, 2, 3, 4].map(i => (
+                        <Skeleton key={i} className="h-24 rounded-lg" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Footer Skeleton */}
+              <div className="border-t px-6 py-4">
+                <div className="flex justify-end gap-3">
+                  <Skeleton className="h-10 w-20" />
+                  <Skeleton className="h-10 w-32" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+  ],
+  render: () => <div />,
+};
+
+export const LazyLoadingContent: Story = {
+  args: {
+    isOpen: true,
+    collection: null,
+  },
+  render: () => {
+    const [loadingSteps, setLoadingSteps] = useState({
+      drawer: true,
+      form: true,
+      products: true,
+    });
+    
+    useEffect(() => {
+      // Simulate drawer opening
+      setTimeout(() => {
+        setLoadingSteps(prev => ({ ...prev, drawer: false }));
+      }, 500);
+      
+      // Simulate form loading
+      setTimeout(() => {
+        setLoadingSteps(prev => ({ ...prev, form: false }));
+      }, 1200);
+      
+      // Simulate products loading
+      setTimeout(() => {
+        setLoadingSteps(prev => ({ ...prev, products: false }));
+      }, 2000);
+    }, []);
+    
+    if (loadingSteps.drawer) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Card className="p-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span>Opening drawer...</span>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50">
+          <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-background shadow-xl z-50 animate-in slide-in-from-right duration-300">
+            <div className="flex h-full flex-col">
+              <div className="flex items-center justify-between border-b px-6 py-4">
+                <h2 className="text-xl font-semibold">Create Collection</h2>
+                <Button variant="ghost" size="icon">
+                  <span className="sr-only">Close</span>
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </Button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6">
+                {loadingSteps.form ? (
+                  <div className="space-y-6">
+                    <Card className="p-4">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm text-muted-foreground">Loading form...</span>
+                      </div>
+                    </Card>
+                    <div className="space-y-4">
+                      {[1, 2, 3].map(i => (
+                        <Skeleton key={i} className="h-16 w-full" />
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-sm font-medium">Name</label>
+                      <input className="mt-1 w-full rounded-md border px-3 py-2" placeholder="Collection name" />
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium">Description</label>
+                      <textarea className="mt-1 w-full rounded-md border px-3 py-2" rows={4} placeholder="Collection description" />
+                    </div>
+                    
+                    {loadingSteps.products ? (
+                      <div>
+                        <h3 className="text-sm font-medium mb-3">Products</h3>
+                        <Card className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Package2 className="w-4 h-4 animate-pulse" />
+                            <span className="text-sm text-muted-foreground">Loading products...</span>
+                          </div>
+                        </Card>
+                      </div>
+                    ) : (
+                      <div>
+                        <h3 className="text-sm font-medium mb-3">Products</h3>
+                        <p className="text-sm text-muted-foreground">No products selected yet.</p>
+                        <Button variant="outline" className="mt-2">
+                          Select Products
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  },
+};
+
+export const ProductsLoadingState: Story = {
+  args: {
+    isOpen: true,
+    collection: mockCollection,
+  },
+  render: () => {
+    const [loadingProducts, setLoadingProducts] = useState(true);
+    const [products, setProducts] = useState<typeof mockCollection.products>([]);
+    
+    useEffect(() => {
+      // Simulate products loading
+      const timer = setTimeout(() => {
+        setProducts(mockCollection.products);
+        setLoadingProducts(false);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }, []);
+    
+    return (
+      <CollectionEditDrawer
+        isOpen={true}
+        collection={{
+          ...mockCollection,
+          products: loadingProducts ? [] : products,
+        } as Collection}
+        onClose={() => { console.log('Close drawer'); }}
+      />
+    );
+  },
+  decorators: [
+    (Story) => {
+      const [showProductsLoading, setShowProductsLoading] = useState(false);
+      
+      return (
+        <trpc.Provider client={createTRPCClient()} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <div className="min-h-screen bg-background">
+              <Card className="mb-4 p-4">
+                <h4 className="font-medium mb-2">Products Loading Demo</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Click &quot;Manage Products&quot; to see loading state
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => setShowProductsLoading(true)}
+                  disabled={showProductsLoading}
+                >
+                  {showProductsLoading ? 'Loading products...' : 'Trigger Loading'}
+                </Button>
+              </Card>
+              <Story />
+              <Toaster position="top-right" />
+            </div>
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    },
+  ],
+};
+
+export const ProgressiveFormLoading: Story = {
+  args: {
+    isOpen: true,
+    collection: null,
+  },
+  render: () => {
+    const [loadedFields, setLoadedFields] = useState<string[]>([]);
+    const fields = useMemo(() => ['name', 'description', 'public', 'products'], []);
+    
+    useEffect(() => {
+      fields.forEach((field, index) => {
+        setTimeout(() => {
+          setLoadedFields(prev => [...prev, field]);
+        }, 500 + index * 400);
+      });
+    }, [fields]);
+    
+    const isLoaded = (field: string) => loadedFields.includes(field);
+    
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50">
+          <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-background shadow-xl z-50">
+            <div className="flex h-full flex-col">
+              <div className="flex items-center justify-between border-b px-6 py-4">
+                <h2 className="text-xl font-semibold">Create Collection</h2>
+                <Button variant="ghost" size="icon">
+                  <span className="sr-only">Close</span>
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </Button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-6">
+                  {/* Name Field */}
+                  <div className={`transition-opacity duration-500 ${isLoaded('name') ? 'opacity-100' : 'opacity-0'}`}>
+                    {isLoaded('name') ? (
+                      <div>
+                        <label className="text-sm font-medium">Name</label>
+                        <input className="mt-1 w-full rounded-md border px-3 py-2" placeholder="Collection name" />
+                      </div>
+                    ) : (
+                      <div>
+                        <Skeleton className="h-4 w-12 mb-2" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Description Field */}
+                  <div className={`transition-opacity duration-500 ${isLoaded('description') ? 'opacity-100' : 'opacity-0'}`}>
+                    {isLoaded('description') ? (
+                      <div>
+                        <label className="text-sm font-medium">Description</label>
+                        <textarea className="mt-1 w-full rounded-md border px-3 py-2" rows={4} placeholder="Collection description" />
+                      </div>
+                    ) : (
+                      <div>
+                        <Skeleton className="h-4 w-20 mb-2" />
+                        <Skeleton className="h-24 w-full" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Public Toggle */}
+                  <div className={`transition-opacity duration-500 ${isLoaded('public') ? 'opacity-100' : 'opacity-0'}`}>
+                    {isLoaded('public') ? (
+                      <div className="flex items-center space-x-3">
+                        <input type="checkbox" className="h-4 w-4" />
+                        <label className="text-sm">Make this collection public</label>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-3">
+                        <Skeleton className="h-4 w-4 rounded" />
+                        <Skeleton className="h-4 w-40" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Products Preview */}
+                  <div className={`transition-opacity duration-500 ${isLoaded('products') ? 'opacity-100' : 'opacity-0'}`}>
+                    {isLoaded('products') ? (
+                      <div>
+                        <h3 className="text-sm font-medium mb-3">Products</h3>
+                        <p className="text-sm text-muted-foreground">No products selected yet.</p>
+                        <Button variant="outline" className="mt-2">Select Products</Button>
+                      </div>
+                    ) : (
+                      <div>
+                        <Skeleton className="h-5 w-20 mb-3" />
+                        <Skeleton className="h-16 w-full" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="border-t px-6 py-4">
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline">Cancel</Button>
+                  <Button disabled={loadedFields.length < fields.length}>
+                    {loadedFields.length < fields.length ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Continue to Product Selection'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  },
+};
+
+export const SavingState: Story = {
+  args: {
+    isOpen: true,
+    collection: mockCollection,
+  },
+  render: () => {
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+    
+    const handleSave = async () => {
+      setSaving(true);
+      
+      // Simulate save operation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setSaving(false);
+      setSaved(true);
+      
+      // Reset after showing success
+      setTimeout(() => setSaved(false), 2000);
+    };
+    
+    return (
+      <div className="min-h-screen bg-background">
+        <Card className="mb-4 p-4">
+          <h4 className="font-medium mb-2">Save State Demo</h4>
+          <p className="text-sm text-muted-foreground mb-3">
+            Click save to see the saving animation
+          </p>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : saved ? (
+              <>
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Saved!
+              </>
+            ) : (
+              'Save Collection'
+            )}
+          </Button>
+        </Card>
+        
+        <CollectionEditDrawer
+          isOpen={true}
+          collection={mockCollection}
+          onClose={() => { console.log('Close drawer'); }}
+        />
+      </div>
+    );
+  },
+};
+
+export const RefreshableData: Story = {
+  args: {
+    isOpen: true,
+    collection: mockCollection,
+  },
+  render: () => {
+    const [refreshing, setRefreshing] = useState(false);
+    const [data, setData] = useState(mockCollection);
+    const [lastRefreshed, setLastRefreshed] = useState(new Date());
+    
+    const refresh = async () => {
+      setRefreshing(true);
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Simulate updated data
+      setData({
+        ...data,
+        products: [
+          ...data.products,
+          {
+            _id: `prod${Date.now()}`,
+            name: `New Product ${data.products.length + 1}`,
+            description: 'Newly added product',
+            price: Math.floor(Math.random() * 100) + 10,
+            image: 'https://example.com/new.jpg',
+            category: 'general',
+            isFeatured: false,
+            collectionId: '1',
+            slug: `new-product-${data.products.length + 1}`,
+          } as any,
+        ],
+      } as Collection);
+      
+      setLastRefreshed(new Date());
+      setRefreshing(false);
+    };
+    
+    return (
+      <div className="min-h-screen bg-background">
+        <Card className="mb-4 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h4 className="font-medium">Collection Data</h4>
+              <p className="text-xs text-muted-foreground">
+                Last updated: {lastRefreshed.toLocaleTimeString()}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={refresh}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Refresh
+                </>
+              )}
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {data.products.length} products in collection
+          </p>
+        </Card>
+        
+        <div className={refreshing ? 'opacity-50 pointer-events-none' : ''}>
+          <CollectionEditDrawer
+            isOpen={true}
+            collection={data}
+            onClose={() => { console.log('Close drawer'); }}
+          />
+        </div>
+      </div>
+    );
+  },
+};
+
+export const ShimmerLoadingEffect: Story = {
+  args: {
+    isOpen: true,
+    collection: null,
+  },
+  decorators: [
+    () => (
+      <div className="min-h-screen bg-background">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50">
+          <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-background shadow-xl z-50">
+            <div className="flex h-full flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b px-6 py-4">
+                <h2 className="text-xl font-semibold">Create Collection</h2>
+                <Button variant="ghost" size="icon">
+                  <span className="sr-only">Close</span>
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </Button>
+              </div>
+              
+              {/* Content with shimmer */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-6">
+                  <div>
+                    <div className="h-4 w-12 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer rounded mb-2" />
+                    <div className="h-10 w-full bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer rounded" />
+                  </div>
+                  
+                  <div>
+                    <div className="h-4 w-20 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer rounded mb-2" />
+                    <div className="h-24 w-full bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer rounded" />
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="h-6 w-6 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer rounded" />
+                    <div className="h-4 w-40 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer rounded" />
+                  </div>
+                  
+                  <div>
+                    <div className="h-5 w-24 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer rounded mb-3" />
+                    <div className="grid grid-cols-2 gap-3">
+                      {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="h-24 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer rounded" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Footer */}
+              <div className="border-t px-6 py-4">
+                <div className="flex justify-end gap-3">
+                  <div className="h-10 w-20 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer rounded" />
+                  <div className="h-10 w-32 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer rounded" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <style>{`
+          @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+          .animate-shimmer {
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+          }
+        `}</style>
+      </div>
+    ),
+  ],
+  render: () => <div />,
 };

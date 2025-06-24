@@ -312,7 +312,7 @@ export const EditAction: Story = {
       expect(args.onEdit).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Summer Collection',
-        })
+        }),
       );
     });
   },
@@ -597,7 +597,7 @@ const EnhancedCollectionsList = (props: typeof CollectionsList.arguments) => {
             <span className="text-sm text-muted-foreground">Sort by:</span>
             <Select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'products')}
               options={[
                 { value: 'name', label: 'Name' },
                 { value: 'date', label: 'Date Created' },
@@ -623,7 +623,7 @@ const EnhancedCollectionsList = (props: typeof CollectionsList.arguments) => {
             <span className="text-muted-foreground">Active filters:</span>
             {searchQuery && (
               <Badge variant="secondary">
-                Search: "{searchQuery}"
+                Search: &quot;{searchQuery}&quot;
                 <button
                   onClick={() => setSearchQuery('')}
                   className="ml-1 text-xs hover:text-destructive"
@@ -818,9 +818,9 @@ export const WithSorting: Story = {
       
       // Create collections with different product counts for sorting
       const sortableCollections = [
-        { ...mockCollections[0], name: 'Alpha Collection', products: Array(10).fill('prod') as any[] },
-        { ...mockCollections[1], name: 'Beta Collection', products: Array(5).fill('prod') as any[] },
-        { ...mockCollections[2], name: 'Gamma Collection', products: Array(20).fill('prod') as any[] },
+        { ...mockCollections[0], name: 'Alpha Collection', products: Array(10).fill('prod') },
+        { ...mockCollections[1], name: 'Beta Collection', products: Array(5).fill('prod') },
+        { ...mockCollections[2], name: 'Gamma Collection', products: Array(20).fill('prod') },
       ];
       
       mockQueryClient.setQueryData(['collection.myCollections', undefined], {
@@ -917,7 +917,7 @@ export const CombinedFilters: Story = {
           slug: 'winter-essentials',
           description: 'Stay warm this winter',
           isPublic: true,
-          products: Array(25).fill('prod') as any[],
+          products: Array(25).fill('prod'),
           owner: 'user1',
           createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
           updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
@@ -928,7 +928,7 @@ export const CombinedFilters: Story = {
           slug: 'spring-collection',
           description: 'Fresh styles for spring',
           isPublic: false,
-          products: Array(15).fill('prod') as any[],
+          products: Array(15).fill('prod'),
           owner: 'user1',
           createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
           updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),

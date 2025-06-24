@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 import { demoProducts } from '@/stories/helpers/demo-data';
 
@@ -44,7 +42,7 @@ export const Default: Story = {
         <div className="space-y-2">
           <h3 className="text-lg font-medium">Account</h3>
           <p className="text-sm text-muted-foreground">
-            Make changes to your account here. Click save when you're done.
+            Make changes to your account here. Click save when you&apos;re done.
           </p>
         </div>
       </TabsContent>
@@ -52,7 +50,7 @@ export const Default: Story = {
         <div className="space-y-2">
           <h3 className="text-lg font-medium">Password</h3>
           <p className="text-sm text-muted-foreground">
-            Change your password here. After saving, you'll be logged out.
+            Change your password here. After saving, you&apos;ll be logged out.
           </p>
         </div>
       </TabsContent>
@@ -271,7 +269,7 @@ export const InteractionTest: Story = {
     expect(tab2Content).not.toBeVisible();
     
     // Test keyboard navigation
-    await tab3Trigger.focus();
+    tab3Trigger.focus();
     await userEvent.keyboard('{ArrowLeft}');
     expect(tab2Content).toBeVisible();
   },
@@ -292,7 +290,7 @@ export const WithDisabledTab: Story = {
         <p>This tab is active and clickable.</p>
       </TabsContent>
       <TabsContent value="disabled">
-        <p>You shouldn't see this content.</p>
+        <p>You shouldn&apos;t see this content.</p>
       </TabsContent>
       <TabsContent value="another">
         <p>This tab is also active and clickable.</p>

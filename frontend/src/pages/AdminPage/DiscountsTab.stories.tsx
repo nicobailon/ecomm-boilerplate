@@ -179,7 +179,7 @@ export const ScreenReaderSupport: Story = {
                 <ul className="mt-2 text-sm text-blue-800 list-disc list-inside">
                   <li>Table has proper semantic structure</li>
                   <li>Column headers are properly associated</li>
-                  <li>Status badges include role="status"</li>
+                  <li>Status badges include role=&quot;status&quot;</li>
                   <li>Actions have descriptive labels</li>
                   <li>Row count is announced</li>
                 </ul>
@@ -195,7 +195,7 @@ export const ScreenReaderSupport: Story = {
       );
     },
   ],
-  play: async ({ canvasElement }: any) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     
     // Wait for table to load
@@ -261,7 +261,7 @@ export const KeyboardNavigation: Story = {
       );
     },
   ],
-  play: async ({ canvasElement }: any) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     
     // Wait for table
@@ -375,7 +375,7 @@ export const FocusIndicators: Story = {
       );
     },
   ],
-  play: async ({ canvasElement }: any) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
@@ -412,7 +412,7 @@ export const HighContrastMode: Story = {
             <div className="min-h-screen p-6" style={{ 
               backgroundColor: '#000',
               color: '#fff',
-              filter: 'contrast(2)'
+              filter: 'contrast(2)',
             }}>
               <div className="bg-white text-black p-4 rounded-lg mb-6">
                 <h3 className="font-medium mb-2">High Contrast Mode</h3>
@@ -537,7 +537,7 @@ export const SortableColumns: Story = {
       );
     },
   ],
-  play: async ({ canvasElement }: any) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
@@ -798,7 +798,7 @@ export const DescriptiveActions: Story = {
       );
     },
   ],
-  play: async ({ canvasElement }: any) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     
     await waitFor(() => {

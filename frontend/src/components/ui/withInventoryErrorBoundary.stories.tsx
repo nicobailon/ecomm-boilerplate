@@ -96,7 +96,7 @@ const WrappedInventoryComponent = withInventoryErrorBoundary(InventoryComponent)
 // Custom error fallback
 const CustomInventoryFallback = ({ 
   error, 
-  reset 
+  reset, 
 }: { 
   error: Error; 
   reset: () => void;
@@ -134,7 +134,7 @@ const CustomInventoryFallback = ({
 // Component with custom fallback
 const WrappedWithCustomFallback = withInventoryErrorBoundary(
   InventoryComponent,
-  (error, reset) => <CustomInventoryFallback error={error} reset={reset} />
+  (error, reset) => <CustomInventoryFallback error={error} reset={reset} />,
 );
 
 // Multiple wrapped components demo
@@ -313,7 +313,7 @@ const ErrorRecoveryDemo = () => {
           </Button>
         </AlertDescription>
       </Alert>
-    )
+    ),
   );
   
   return (
@@ -625,7 +625,7 @@ export const WithRef: Story = {
               variant="outline"
               onClick={() => {
                 setBorderColor(prev => 
-                  prev === 'border-gray-200' ? 'border-blue-500' : 'border-gray-200'
+                  prev === 'border-gray-200' ? 'border-blue-500' : 'border-gray-200',
                 );
               }}
             >

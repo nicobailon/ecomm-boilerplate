@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CollectionService } from '../services/collection.service.js';
-import { Collection } from '../models/collection.model.js';
+import { Collection, type ICollection } from '../models/collection.model.js';
 import { Product } from '../models/product.model.js';
 import { AppError } from '../utils/AppError.js';
 import { generateSlug, generateUniqueSlug } from '../utils/slugify.js';
@@ -8,14 +8,17 @@ import {
   createMockSession, 
   createSessionableQuery, 
   createChainableQuery,
-  mockObjectId
+  mockObjectId,
 } from './helpers/mongoose-mocks.js';
+import { 
+  TypedMockUtils,
+} from './helpers/typed-mock-utils.js';
 
 vi.mock('../models/collection.model');
 vi.mock('../models/product.model');
 vi.mock('../utils/slugify');
 vi.mock('../utils/escapeRegex', () => ({
-  escapeRegExp: vi.fn((str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+  escapeRegExp: vi.fn((str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
 }));
 
 let mockSession: ReturnType<typeof createMockSession>;
@@ -55,37 +58,43 @@ describe('CollectionService', () => {
       };
 
       const mockProducts = [{ _id: 'product1' }, { _id: 'product2' }];
-      vi.mocked(Product.find).mockReturnValue(createChainableQuery(mockProducts) as any);
+      const mockProductFind = TypedMockUtils.createProductFindMock(mockProducts);
+      TypedMockUtils.bindMockToModel(Product, 'find', mockProductFind);
 
       vi.mocked(generateUniqueSlug).mockResolvedValue('my-collection');
       vi.mocked(generateSlug).mockReturnValue('my-collection');
 
       const mockCollection = {
-        _id: 'collection123',
+        _id: mockObjectId('collection123'),
         ...input,
         slug: 'my-collection',
-        owner: userId,
+        owner: mockObjectId(userId),
         save: vi.fn().mockResolvedValue(true),
-      };
+      } as const;
       
       // Mock the collection constructor to return our mock
       const CollectionConstructor = vi.fn().mockImplementation(() => mockCollection);
-      vi.mocked(Collection).mockImplementation(CollectionConstructor as any);
+      const mockedCollection = vi.mocked(Collection);
+      Object.defineProperty(mockedCollection, 'prototype', {
+        value: CollectionConstructor,
+        writable: true,
+        configurable: true,
+      });
       
       // Mock Collection.create to return an array (as it does with sessions)
-      vi.mocked(Collection.create).mockResolvedValue([mockCollection] as any);
+      const mockCollectionCreate = TypedMockUtils.createCollectionCreateMock([mockCollection as unknown as ICollection]);
+      TypedMockUtils.bindMockToModel(Collection, 'create', mockCollectionCreate);
       
       // Mock findById for the populated result
-      vi.mocked(Collection.findById).mockReturnValue({
-        populate: vi.fn().mockReturnValue({
-          populate: vi.fn().mockResolvedValue(mockCollection),
-        }),
-      } as any);
+      const mockCollectionFindById = TypedMockUtils.createCollectionFindByIdMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findById', mockCollectionFindById);
 
       const result = await collectionService.create(userId, input);
 
-      expect(generateUniqueSlug).toHaveBeenCalledWith('My Collection', expect.any(Function));
-      expect(Collection.create).toHaveBeenCalledWith({
+      const generateUniqueSlugMock = vi.mocked(generateUniqueSlug);
+      expect(generateUniqueSlugMock).toHaveBeenCalledWith('My Collection', expect.any(Function));
+      const collectionCreateMock = vi.mocked(Collection.create);
+      expect(collectionCreateMock).toHaveBeenCalledWith({
         name: input.name,
         description: input.description,
         slug: 'my-collection',
@@ -106,7 +115,8 @@ describe('CollectionService', () => {
       };
 
       const mockProducts = [{ _id: 'product1' }];
-      vi.mocked(Product.find).mockReturnValue(createChainableQuery(mockProducts) as any);
+      const mockProductFind = TypedMockUtils.createProductFindMock(mockProducts);
+      TypedMockUtils.bindMockToModel(Product, 'find', mockProductFind);
 
       await expect(collectionService.create(userId, input)).rejects.toBeInstanceOf(AppError);
       await expect(collectionService.create(userId, input)).rejects.toThrow('One or more product IDs are invalid');
@@ -123,18 +133,24 @@ describe('CollectionService', () => {
       vi.mocked(generateUniqueSlug).mockResolvedValue('empty-collection');
       
       const mockCollection = {
-        _id: 'collection123',
+        _id: mockObjectId('collection123'),
         name: input.name,
         slug: 'empty-collection',
-        owner: userId,
+        owner: mockObjectId(userId),
         products: [],
         productCount: 0,
+        description: '',
+        isPublic: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
-      vi.mocked(Collection.create).mockResolvedValue([mockCollection] as any);
+      const mockCollectionCreate = TypedMockUtils.createCollectionCreateMock([mockCollection]);
+      TypedMockUtils.bindMockToModel(Collection, 'create', mockCollectionCreate);
 
       const result = await collectionService.create(userId, input);
 
-      expect(Product.find).not.toHaveBeenCalled();
+      const productFindMock = vi.mocked(Product.find);
+      expect(productFindMock).not.toHaveBeenCalled();
       expect(result).toEqual(mockCollection);
     });
   });
@@ -155,7 +171,8 @@ describe('CollectionService', () => {
         save: vi.fn().mockResolvedValue(true),
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
       vi.mocked(generateUniqueSlug).mockResolvedValue('updated-name');
 
       await collectionService.update(collectionId, userId, input);
@@ -179,7 +196,8 @@ describe('CollectionService', () => {
         save: vi.fn().mockResolvedValue(true),
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       await collectionService.update(collectionId, userId, input);
 
@@ -188,10 +206,11 @@ describe('CollectionService', () => {
     });
 
     it('should throw error if collection not found or unauthorized', async () => {
-      vi.mocked(Collection.findOne).mockResolvedValue(null);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(null);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       await expect(
-        collectionService.update('collection123', 'user123', { name: 'New Name' })
+        collectionService.update('collection123', 'user123', { name: 'New Name' }),
       ).rejects.toThrow('Collection not found or unauthorized');
     });
   });
@@ -208,8 +227,10 @@ describe('CollectionService', () => {
         deleteOne: vi.fn().mockResolvedValue({ deletedCount: 1 }),
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
-      vi.mocked(Product.updateMany).mockResolvedValue({ modifiedCount: 2 } as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
+      const mockProductUpdateMany = vi.fn().mockResolvedValue({ modifiedCount: 2 });
+      TypedMockUtils.bindMockToModel(Product, 'updateMany', mockProductUpdateMany);
 
       await collectionService.delete(collectionId, userId);
 
@@ -220,7 +241,7 @@ describe('CollectionService', () => {
       expect(Product.updateMany).toHaveBeenCalledWith(
         { _id: { $in: mockCollection.products } },
         { $unset: { collectionId: 1 } },
-        { session: mockSession }
+        { session: mockSession },
       );
       expect(mockCollection.deleteOne).toHaveBeenCalledWith({ session: mockSession });
     });
@@ -229,7 +250,7 @@ describe('CollectionService', () => {
       vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(null) as any);
 
       await expect(
-        collectionService.delete('collection123', 'user123')
+        collectionService.delete('collection123', 'user123'),
       ).rejects.toThrow('Collection not found or unauthorized');
     });
   });
@@ -248,10 +269,12 @@ describe('CollectionService', () => {
         save: vi.fn().mockResolvedValue(true),
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       const mockProducts = [{ _id: 'product3' }, { _id: 'product4' }];
-      vi.mocked(Product.find).mockReturnValue(createChainableQuery(mockProducts) as any);
+      const mockProductFind = TypedMockUtils.createProductFindMock(mockProducts);
+      TypedMockUtils.bindMockToModel(Product, 'find', mockProductFind);
 
       await collectionService.addProducts(collectionId, userId, productIds);
 
@@ -273,10 +296,12 @@ describe('CollectionService', () => {
         save: vi.fn().mockResolvedValue(true),
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       const mockProducts = [{ _id: 'product1' }, { _id: 'product3' }];
-      vi.mocked(Product.find).mockReturnValue(createChainableQuery(mockProducts) as any);
+      const mockProductFind = TypedMockUtils.createProductFindMock(mockProducts);
+      TypedMockUtils.bindMockToModel(Product, 'find', mockProductFind);
 
       await collectionService.addProducts(collectionId, userId, productIds);
 
@@ -288,7 +313,7 @@ describe('CollectionService', () => {
       vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(null) as any);
 
       await expect(
-        collectionService.addProducts('collection123', 'user123', ['product1'])
+        collectionService.addProducts('collection123', 'user123', ['product1']),
       ).rejects.toThrow('Collection not found or unauthorized');
     });
 
@@ -299,11 +324,12 @@ describe('CollectionService', () => {
         products: [],
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
       vi.mocked(Product.find).mockReturnValue(createChainableQuery([]) as any);
 
       await expect(
-        collectionService.addProducts('collection123', 'user123', ['invalid'])
+        collectionService.addProducts('collection123', 'user123', ['invalid']),
       ).rejects.toThrow('One or more product IDs are invalid');
     });
   });
@@ -322,7 +348,8 @@ describe('CollectionService', () => {
         save: vi.fn().mockResolvedValue(true),
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       await collectionService.removeProducts(collectionId, userId, productIds);
 
@@ -342,11 +369,8 @@ describe('CollectionService', () => {
         isPublic: true,
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue({
-        populate: vi.fn().mockReturnValue({
-          populate: vi.fn().mockResolvedValue(mockCollection),
-        }),
-      } as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       const result = await collectionService.getById(collectionId);
 
@@ -364,11 +388,8 @@ describe('CollectionService', () => {
         isPublic: false,
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue({
-        populate: vi.fn().mockReturnValue({
-          populate: vi.fn().mockResolvedValue(mockCollection),
-        }),
-      } as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       const result = await collectionService.getById(collectionId, userId);
 
@@ -386,14 +407,11 @@ describe('CollectionService', () => {
         isPublic: false,
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue({
-        populate: vi.fn().mockReturnValue({
-          populate: vi.fn().mockResolvedValue(mockCollection),
-        }),
-      } as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       await expect(
-        collectionService.getById(collectionId, userId)
+        collectionService.getById(collectionId, userId),
       ).rejects.toThrow('Collection is private');
     });
 
@@ -417,15 +435,8 @@ describe('CollectionService', () => {
         { _id: '2', name: 'Collection 2' },
       ];
 
-      vi.mocked(Collection.find).mockReturnValue({
-        sort: vi.fn().mockReturnValue({
-          limit: vi.fn().mockReturnValue({
-            populate: vi.fn().mockReturnValue({
-              populate: vi.fn().mockResolvedValue(mockCollections),
-            }),
-          }),
-        }),
-      } as any);
+      const mockCollectionFind = TypedMockUtils.createCollectionFindMock(mockCollections as unknown as ICollection[]);
+      TypedMockUtils.bindMockToModel(Collection, 'find', mockCollectionFind);
 
       const result = await collectionService.list({ limit: 10 });
 
@@ -437,15 +448,8 @@ describe('CollectionService', () => {
       const userId = 'user123';
       const mockCollections = [{ _id: '1', name: 'My Collection' }];
 
-      vi.mocked(Collection.find).mockReturnValue({
-        sort: vi.fn().mockReturnValue({
-          limit: vi.fn().mockReturnValue({
-            populate: vi.fn().mockReturnValue({
-              populate: vi.fn().mockResolvedValue(mockCollections),
-            }),
-          }),
-        }),
-      } as any);
+      const mockCollectionFind = TypedMockUtils.createCollectionFindMock(mockCollections as unknown as ICollection[]);
+      TypedMockUtils.bindMockToModel(Collection, 'find', mockCollectionFind);
 
       await collectionService.list({ userId, isPublic: false, limit: 10 });
 
@@ -459,15 +463,8 @@ describe('CollectionService', () => {
       const cursor = 'cursor123';
       const mockCollections = [{ _id: '2', name: 'Collection 2' }];
 
-      vi.mocked(Collection.find).mockReturnValue({
-        sort: vi.fn().mockReturnValue({
-          limit: vi.fn().mockReturnValue({
-            populate: vi.fn().mockReturnValue({
-              populate: vi.fn().mockResolvedValue(mockCollections),
-            }),
-          }),
-        }),
-      } as any);
+      const mockCollectionFind = TypedMockUtils.createCollectionFindMock(mockCollections as unknown as ICollection[]);
+      TypedMockUtils.bindMockToModel(Collection, 'find', mockCollectionFind);
 
       await collectionService.list({ cursor, limit: 10 });
 
@@ -490,7 +487,8 @@ describe('CollectionService', () => {
         slug: 'quick-collection',
         owner: userId,
       };
-      vi.mocked(Collection.create).mockResolvedValue([mockCollection] as any);
+      const mockCollectionCreate = TypedMockUtils.createCollectionCreateMock([mockCollection as unknown as ICollection]);
+      TypedMockUtils.bindMockToModel(Collection, 'create', mockCollectionCreate);
 
       const result = await collectionService.quickCreate(userId, input);
 
@@ -509,7 +507,8 @@ describe('CollectionService', () => {
         slug: 'duplicate-name-2',
         owner: userId,
       };
-      vi.mocked(Collection.create).mockResolvedValue([mockCollection] as any);
+      const mockCollectionCreate = TypedMockUtils.createCollectionCreateMock([mockCollection as unknown as ICollection]);
+      TypedMockUtils.bindMockToModel(Collection, 'create', mockCollectionCreate);
 
       const result = await collectionService.quickCreate(userId, input);
 
@@ -523,7 +522,7 @@ describe('CollectionService', () => {
       vi.mocked(generateUniqueSlug).mockRejectedValue(new Error('Slug generation failed'));
 
       await expect(
-        collectionService.quickCreate(userId, input)
+        collectionService.quickCreate(userId, input),
       ).rejects.toThrow('Slug generation failed');
 
       expect(mockSession.abortTransaction).toHaveBeenCalled();
@@ -542,7 +541,8 @@ describe('CollectionService', () => {
         owner: userId,
         isPublic: true,
       };
-      vi.mocked(Collection.create).mockResolvedValue([mockCollection] as any);
+      const mockCollectionCreate = TypedMockUtils.createCollectionCreateMock([mockCollection as unknown as ICollection]);
+      TypedMockUtils.bindMockToModel(Collection, 'create', mockCollectionCreate);
 
       const result = await collectionService.quickCreate(userId, input);
 
@@ -558,7 +558,8 @@ describe('CollectionService', () => {
       const name = 'New Collection';
       const userId = 'user123';
 
-      vi.mocked(Collection.findOne).mockResolvedValue(null);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(null);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       const result = await collectionService.checkNameAvailability(userId, name);
 
@@ -578,7 +579,8 @@ describe('CollectionService', () => {
         owner: userId,
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       const result = await collectionService.checkNameAvailability(userId, name);
 
@@ -613,7 +615,8 @@ describe('CollectionService', () => {
       const name = 'Collection';
       const userId = 'user123';
 
-      vi.mocked(Collection.findOne).mockResolvedValue(null);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(null);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       await collectionService.checkNameAvailability(name, userId);
 
@@ -638,10 +641,12 @@ describe('CollectionService', () => {
         save: vi.fn().mockResolvedValue(true),
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       const mockProducts = [{ _id: 'product1' }, { _id: 'product2' }];
-      vi.mocked(Product.find).mockReturnValue(createChainableQuery(mockProducts) as any);
+      const mockProductFind = TypedMockUtils.createProductFindMock(mockProducts);
+      TypedMockUtils.bindMockToModel(Product, 'find', mockProductFind);
 
       await collectionService.setProductsForCollection(collectionId, userId, productIds);
 
@@ -662,7 +667,8 @@ describe('CollectionService', () => {
         save: vi.fn().mockResolvedValue(true),
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
 
       await collectionService.setProductsForCollection(collectionId, userId, []);
 
@@ -674,7 +680,7 @@ describe('CollectionService', () => {
       vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(null) as any);
 
       await expect(
-        collectionService.setProductsForCollection('collection123', 'user123', [])
+        collectionService.setProductsForCollection('collection123', 'user123', []),
       ).rejects.toThrow('Collection not found or unauthorized');
     });
 
@@ -685,11 +691,12 @@ describe('CollectionService', () => {
         products: [],
       };
 
-      vi.mocked(Collection.findOne).mockReturnValue(createSessionableQuery(mockCollection) as any);
+      const mockCollectionFindOne = TypedMockUtils.createCollectionFindOneMock(mockCollection as unknown as ICollection);
+      TypedMockUtils.bindMockToModel(Collection, 'findOne', mockCollectionFindOne);
       vi.mocked(Product.find).mockReturnValue(createChainableQuery([]) as any);
 
       await expect(
-        collectionService.setProductsForCollection('collection123', 'user123', ['invalid'])
+        collectionService.setProductsForCollection('collection123', 'user123', ['invalid']),
       ).rejects.toThrow('One or more product IDs are invalid');
     });
   });

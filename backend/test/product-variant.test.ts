@@ -25,7 +25,7 @@ describe('Product Variant Schema', () => {
             price: 29.99,
             inventory: 50,
             images: ['https://example.com/variant1.jpg'],
-            sku: 'TSH-BLK-M'
+            sku: 'TSH-BLK-M',
           },
           {
             variantId: 'v2',
@@ -34,16 +34,18 @@ describe('Product Variant Schema', () => {
             price: 29.99,
             inventory: 30,
             images: ['https://example.com/variant2.jpg'],
-            sku: 'TSH-WHT-L'
-          }
-        ]
+            sku: 'TSH-WHT-L',
+          },
+        ],
       };
 
       const mockProduct = { ...productData, _id: 'product123', save: vi.fn() };
       mockProduct.save.mockResolvedValue(mockProduct);
-      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      const MockedProduct = vi.mocked(Product);
+      MockedProduct.mockImplementation(() => mockProduct as unknown as InstanceType<typeof Product>);
 
-      const product = new (Product as any)(productData);
+      const ProductConstructor = Product as unknown as new (data: typeof productData) => typeof mockProduct;
+      const product = new ProductConstructor(productData);
       const saved = await product.save();
 
       expect(saved.variants).toHaveLength(2);
@@ -65,19 +67,21 @@ describe('Product Variant Schema', () => {
             variantId: 'v1',
             size: 'INVALID_SIZE' as any,
             price: 29.99,
-            inventory: 10
-          }
-        ]
+            inventory: 10,
+          },
+        ],
       };
 
       const mockProduct = {
         ...productData,
-        save: vi.fn().mockRejectedValue(new Error('Validation failed: Invalid size'))
+        save: vi.fn().mockRejectedValue(new Error('Validation failed: Invalid size')),
       };
       
-      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      const MockedProduct = vi.mocked(Product);
+      MockedProduct.mockImplementation(() => mockProduct as unknown as InstanceType<typeof Product>);
       
-      const product = new (Product as any)(productData);
+      const ProductConstructor = Product as unknown as new (data: typeof productData) => typeof mockProduct;
+      const product = new ProductConstructor(productData);
       
       await expect(product.save()).rejects.toThrow('Validation failed: Invalid size');
     });
@@ -92,9 +96,9 @@ describe('Product Variant Schema', () => {
         variants: [
           {
             variantId: 'v1',
-            size: 'M'
-          }
-        ]
+            size: 'M',
+          },
+        ],
       };
 
       const product = new Product(productData);
@@ -115,21 +119,23 @@ describe('Product Variant Schema', () => {
             price: 29.99,
             inventory: 100,
             images: [],
-            sku: 'PROD-001'
-          }
-        ]
+            sku: 'PROD-001',
+          },
+        ],
       };
 
       const mockProduct = {
         ...productData,
         _id: 'product123',
-        save: vi.fn()
+        save: vi.fn(),
       };
       mockProduct.save.mockResolvedValue(mockProduct);
       
-      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      const MockedProduct = vi.mocked(Product);
+      MockedProduct.mockImplementation(() => mockProduct as unknown as InstanceType<typeof Product>);
       
-      const product = new (Product as any)(productData);
+      const ProductConstructor = Product as unknown as new (data: typeof productData) => typeof mockProduct;
+      const product = new ProductConstructor(productData);
       const saved = await product.save();
 
       expect(saved.variants[0].size).toBeUndefined();
@@ -148,17 +154,18 @@ describe('Product Variant Schema', () => {
           {
             variantId: 'v1',
             price: -10,
-            inventory: 50
-          }
-        ]
+            inventory: 50,
+          },
+        ],
       };
 
       const mockProduct = {
         ...productData,
-        save: vi.fn().mockRejectedValue(new Error('Validation failed: price must be positive'))
+        save: vi.fn().mockRejectedValue(new Error('Validation failed: price must be positive')),
       };
       
-      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      const MockedProduct = vi.mocked(Product);
+      MockedProduct.mockImplementation(() => mockProduct as unknown as InstanceType<typeof Product>);
       
       const product = new Product(productData);
       
@@ -176,17 +183,18 @@ describe('Product Variant Schema', () => {
           {
             variantId: 'v1',
             price: 29.99,
-            inventory: -5
-          }
-        ]
+            inventory: -5,
+          },
+        ],
       };
 
       const mockProduct = {
         ...productData,
-        save: vi.fn().mockRejectedValue(new Error('Validation failed: inventory must be non-negative'))
+        save: vi.fn().mockRejectedValue(new Error('Validation failed: inventory must be non-negative')),
       };
       
-      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      const MockedProduct = vi.mocked(Product);
+      MockedProduct.mockImplementation(() => mockProduct as unknown as InstanceType<typeof Product>);
       
       const product = new Product(productData);
       
@@ -203,19 +211,21 @@ describe('Product Variant Schema', () => {
         variants: [
           {
             variantId: 'v1',
-            price: 29.99
-          }
-        ]
+            price: 29.99,
+          },
+        ],
       };
 
       const mockProduct = {
         ...productData,
-        save: vi.fn().mockRejectedValue(new Error('Validation failed'))
+        save: vi.fn().mockRejectedValue(new Error('Validation failed')),
       };
       
-      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      const MockedProduct = vi.mocked(Product);
+      MockedProduct.mockImplementation(() => mockProduct as unknown as InstanceType<typeof Product>);
       
-      const product = new (Product as any)(productData);
+      const ProductConstructor = Product as unknown as new (data: typeof productData) => typeof mockProduct;
+      const product = new ProductConstructor(productData);
       await expect(product.save()).rejects.toThrow('Validation failed');
     });
 
@@ -226,19 +236,21 @@ describe('Product Variant Schema', () => {
         price: 29.99,
         image: 'https://example.com/image.jpg',
         slug: 'test-product-7',
-        variants: []
+        variants: [],
       };
 
       const mockProduct = {
         ...productData,
         _id: 'product123',
-        save: vi.fn()
+        save: vi.fn(),
       };
       mockProduct.save.mockResolvedValue(mockProduct);
       
-      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      const MockedProduct = vi.mocked(Product);
+      MockedProduct.mockImplementation(() => mockProduct as unknown as InstanceType<typeof Product>);
       
-      const product = new (Product as any)(productData);
+      const ProductConstructor = Product as unknown as new (data: typeof productData) => typeof mockProduct;
+      const product = new ProductConstructor(productData);
       const saved = await product.save();
 
       expect(saved.variants).toHaveLength(0);
@@ -251,17 +263,19 @@ describe('Product Variant Schema', () => {
         name: 'Test Product',
         description: 'Test description',
         price: 29.99,
-        image: 'https://example.com/image.jpg'
+        image: 'https://example.com/image.jpg',
       };
 
       const mockProduct = {
         ...productData,
-        save: vi.fn().mockRejectedValue(new Error('Validation failed: slug is required'))
+        save: vi.fn().mockRejectedValue(new Error('Validation failed: slug is required')),
       };
       
-      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      const MockedProduct = vi.mocked(Product);
+      MockedProduct.mockImplementation(() => mockProduct as unknown as InstanceType<typeof Product>);
       
-      const product = new (Product as any)(productData);
+      const ProductConstructor = Product as unknown as new (data: typeof productData) => typeof mockProduct;
+      const product = new ProductConstructor(productData);
       
       await expect(product.save()).rejects.toThrow('Validation failed: slug is required');
     });
@@ -272,7 +286,7 @@ describe('Product Variant Schema', () => {
         description: 'Test description',
         price: 29.99,
         image: 'https://example.com/image.jpg',
-        slug: 'unique-slug'
+        slug: 'unique-slug',
       };
 
       const productData2 = {
@@ -280,19 +294,19 @@ describe('Product Variant Schema', () => {
         description: 'Test description',
         price: 39.99,
         image: 'https://example.com/image2.jpg',
-        slug: 'unique-slug'
+        slug: 'unique-slug',
       };
 
       const mockProduct1 = {
         ...productData1,
         _id: 'product1',
-        save: vi.fn()
+        save: vi.fn(),
       };
       mockProduct1.save.mockResolvedValue(mockProduct1);
       
       const mockProduct2 = {
         ...productData2,
-        save: vi.fn().mockRejectedValue(new Error('E11000 duplicate key error'))
+        save: vi.fn().mockRejectedValue(new Error('E11000 duplicate key error')),
       };
       
       vi.mocked(Product).mockImplementationOnce(() => mockProduct1 as any)
@@ -316,7 +330,7 @@ describe('Product Variant Schema', () => {
         price: 19.99,
         image: 'https://example.com/related.jpg',
         slug: 'related-product',
-        save: vi.fn().mockResolvedValue(this)
+        save: vi.fn().mockResolvedValue(this),
       };
       
       const mainProductId = new mongoose.Types.ObjectId();
@@ -328,7 +342,7 @@ describe('Product Variant Schema', () => {
         image: 'https://example.com/main.jpg',
         slug: 'main-product',
         relatedProducts: [relatedProductId],
-        save: vi.fn()
+        save: vi.fn(),
       };
       mainProduct.save.mockResolvedValue(mainProduct);
       
@@ -351,18 +365,19 @@ describe('Product Variant Schema', () => {
         description: 'Description',
         price: 29.99,
         image: 'https://example.com/image.jpg',
-        slug: 'product-slug'
+        slug: 'product-slug',
       };
       
       const mockProduct = {
         ...productData,
         _id: 'product123',
         relatedProducts: [],
-        save: vi.fn()
+        save: vi.fn(),
       };
       mockProduct.save.mockResolvedValue(mockProduct);
       
-      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      const MockedProduct = vi.mocked(Product);
+      MockedProduct.mockImplementation(() => mockProduct as unknown as InstanceType<typeof Product>);
       
       const product = new Product(productData);
       const saved = await product.save();
@@ -380,11 +395,12 @@ describe('Product Variant Schema', () => {
         image: 'https://example.com/image.jpg',
         slug: 'test-product-soft',
         isDeleted: false,
-        save: vi.fn()
+        save: vi.fn(),
       };
       mockProduct.save.mockResolvedValue(mockProduct);
       
-      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      const MockedProduct = vi.mocked(Product);
+      MockedProduct.mockImplementation(() => mockProduct as unknown as InstanceType<typeof Product>);
       
       const product = new (Product as any)(mockProduct);
       const saved = await product.save();
@@ -400,11 +416,12 @@ describe('Product Variant Schema', () => {
         image: 'https://example.com/image.jpg',
         slug: 'test-product-soft-2',
         isDeleted: true,
-        save: vi.fn()
+        save: vi.fn(),
       };
       mockProduct.save.mockResolvedValue(mockProduct);
       
-      vi.mocked(Product).mockImplementation(() => mockProduct as any);
+      const MockedProduct = vi.mocked(Product);
+      MockedProduct.mockImplementation(() => mockProduct as unknown as InstanceType<typeof Product>);
       
       const product = new (Product as any)(mockProduct);
       const saved = await product.save();
@@ -419,7 +436,7 @@ describe('Product Variant Schema', () => {
         _id_: { key: { _id: 1 } },
         slug_1_isDeleted_1: { key: { slug: 1, isDeleted: 1 } },
         'variants.sku_1': { key: { 'variants.sku': 1 } },
-        relatedProducts_1: { key: { relatedProducts: 1 } }
+        relatedProducts_1: { key: { relatedProducts: 1 } },
       };
       
       vi.mocked(Product.collection.getIndexes).mockResolvedValue(mockIndexes as any);

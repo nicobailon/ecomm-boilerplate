@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import { useState, useRef } from 'react';
 import { Dropdown } from './Dropdown';
 import { Button } from './Button';
@@ -241,7 +239,7 @@ export const NotificationDropdown: Story = {
                 <div className="flex-1">
                   <p className="text-sm font-medium">Low stock alert</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Product "Wireless Mouse" is running low
+                    Product &quot;Wireless Mouse&quot; is running low
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">1 day ago</p>
                 </div>
@@ -415,11 +413,11 @@ export const SearchableDropdown: Story = {
 
     const items = [
       'Apple', 'Banana', 'Cherry', 'Date', 'Elderberry',
-      'Fig', 'Grape', 'Honeydew', 'Kiwi', 'Lemon'
+      'Fig', 'Grape', 'Honeydew', 'Kiwi', 'Lemon',
     ];
 
     const filteredItems = items.filter(item =>
-      item.toLowerCase().includes(search.toLowerCase())
+      item.toLowerCase().includes(search.toLowerCase()),
     );
 
     return (

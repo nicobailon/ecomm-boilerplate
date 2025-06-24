@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Menu, X, Search, User as UserIcon, ChevronDown } from 'lucide-react';
 
-
 const mockCustomerUser: User = {
   _id: '1',
   name: 'John Doe',
@@ -252,7 +251,7 @@ export const ScrolledState: Story = {
         <h1 className="text-2xl font-bold mb-4">Page Content</h1>
         <p className="mb-4">The navbar has a backdrop blur effect and semi-transparent background.</p>
         <div className="h-[800px] bg-muted rounded-lg p-4">
-          <p>Scroll down to see the navbar's fixed positioning and backdrop effect.</p>
+          <p>Scroll down to see the navbar&apos;s fixed positioning and backdrop effect.</p>
         </div>
       </div>
     </div>

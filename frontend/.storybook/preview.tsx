@@ -144,9 +144,9 @@ const preview: Preview = {
       </QueryClientProvider>
     ),
     (Story, context) => {
-      const theme = context.globals.theme || 'light';
+      const theme = (context.globals.theme as string) ?? 'light';
       return (
-        <ThemeProvider defaultTheme={theme} storageKey="storybook-theme">
+        <ThemeProvider defaultTheme={theme as 'light' | 'dark'} storageKey="storybook-theme">
           <Story />
         </ThemeProvider>
       );

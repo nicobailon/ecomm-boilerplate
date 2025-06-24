@@ -14,7 +14,7 @@ describe('CouponService', () => {
     _id: mockUserId,
     email: 'test@example.com',
     appliedCoupon: null,
-    save: vi.fn()
+    save: vi.fn(),
   };
 
   beforeEach(() => {
@@ -31,22 +31,23 @@ describe('CouponService', () => {
         discountPercentage: 20,
         expirationDate: new Date(Date.now() + 86400000), // Tomorrow
         isActive: true,
-        save: vi.fn()
+        save: vi.fn(),
       };
 
-      vi.mocked(Coupon.findOne).mockResolvedValue(mockCoupon);
+      const mockCouponFindOne = vi.mocked(Coupon.findOne);
+      mockCouponFindOne.mockResolvedValue(mockCoupon);
 
       const result = await couponService.validateCoupon(mockUserId, 'SAVE20');
 
       expect(result).toEqual({
         message: 'Coupon is valid',
         code: 'SAVE20',
-        discountPercentage: 20
+        discountPercentage: 20,
       });
-      expect(Coupon.findOne).toHaveBeenCalledWith({
+      expect(mockCouponFindOne).toHaveBeenCalledWith({
         code: 'SAVE20',
         userId: mockUserId,
-        isActive: true
+        isActive: true,
       });
     });
 
@@ -54,7 +55,7 @@ describe('CouponService', () => {
       vi.mocked(Coupon.findOne).mockResolvedValue(null);
 
       await expect(
-        couponService.validateCoupon(mockUserId, 'INVALID')
+        couponService.validateCoupon(mockUserId, 'INVALID'),
       ).rejects.toThrow(new AppError('Coupon not found', 404));
     });
 
@@ -64,13 +65,13 @@ describe('CouponService', () => {
         discountPercentage: 20,
         expirationDate: new Date(Date.now() - 86400000), // Yesterday
         isActive: true,
-        save: vi.fn()
+        save: vi.fn(),
       };
 
       vi.mocked(Coupon.findOne).mockResolvedValue(mockExpiredCoupon);
 
       await expect(
-        couponService.validateCoupon(mockUserId, 'EXPIRED20')
+        couponService.validateCoupon(mockUserId, 'EXPIRED20'),
       ).rejects.toThrow(new AppError('Coupon expired', 404));
 
       expect(mockExpiredCoupon.isActive).toBe(false);
@@ -84,27 +85,29 @@ describe('CouponService', () => {
         discountPercentage: 20,
         expirationDate: new Date(now.getTime() - 1), // 1ms in the past
         isActive: true,
-        save: vi.fn()
+        save: vi.fn(),
       };
 
-      vi.mocked(Coupon.findOne).mockResolvedValue(mockCoupon);
+      const mockCouponFindOne = vi.mocked(Coupon.findOne);
+      mockCouponFindOne.mockResolvedValue(mockCoupon);
 
       await expect(
-        couponService.validateCoupon(mockUserId, 'EDGE20')
+        couponService.validateCoupon(mockUserId, 'EDGE20'),
       ).rejects.toThrow(new AppError('Coupon expired', 404));
     });
 
     it('should convert coupon codes to uppercase', async () => {
-      vi.mocked(Coupon.findOne).mockResolvedValue(null);
+      const mockCouponFindOne = vi.mocked(Coupon.findOne);
+      mockCouponFindOne.mockResolvedValue(null);
 
       await expect(
-        couponService.validateCoupon(mockUserId, 'save20')
+        couponService.validateCoupon(mockUserId, 'save20'),
       ).rejects.toThrow(new AppError('Coupon not found', 404));
 
-      expect(Coupon.findOne).toHaveBeenCalledWith({
+      expect(mockCouponFindOne).toHaveBeenCalledWith({
         code: 'SAVE20', // Converted to uppercase
         userId: mockUserId,
-        isActive: true
+        isActive: true,
       });
     });
 
@@ -116,7 +119,7 @@ describe('CouponService', () => {
         isActive: true,
         maxUses: 100,
         currentUses: 10,
-        save: vi.fn()
+        save: vi.fn(),
       };
 
       vi.mocked(Coupon.findOne)
@@ -128,7 +131,7 @@ describe('CouponService', () => {
       expect(result).toEqual({
         message: 'Coupon is valid',
         code: 'GENERAL20',
-        discountPercentage: 20
+        discountPercentage: 20,
       });
     });
 
@@ -140,7 +143,7 @@ describe('CouponService', () => {
         isActive: true,
         maxUses: 5,
         currentUses: 5,
-        save: vi.fn()
+        save: vi.fn(),
       };
 
       vi.mocked(Coupon.findOne)
@@ -148,7 +151,7 @@ describe('CouponService', () => {
         .mockResolvedValueOnce(mockCoupon);
 
       await expect(
-        couponService.validateCoupon(mockUserId, 'LIMITED10')
+        couponService.validateCoupon(mockUserId, 'LIMITED10'),
       ).rejects.toThrow(new AppError('Coupon has reached maximum usage limit', 400));
     });
 
@@ -159,7 +162,7 @@ describe('CouponService', () => {
         expirationDate: new Date(Date.now() + 86400000),
         isActive: true,
         minimumPurchaseAmount: 50,
-        save: vi.fn()
+        save: vi.fn(),
       };
 
       vi.mocked(Coupon.findOne)
@@ -167,7 +170,7 @@ describe('CouponService', () => {
         .mockResolvedValueOnce(mockCoupon);
 
       await expect(
-        couponService.validateCoupon(mockUserId, 'MIN50', 30)
+        couponService.validateCoupon(mockUserId, 'MIN50', 30),
       ).rejects.toThrow(new AppError('Minimum purchase amount of $50 required', 400));
     });
   });
@@ -179,16 +182,17 @@ describe('CouponService', () => {
         discountPercentage: 30,
         expirationDate: new Date(Date.now() + 86400000),
         isActive: true,
-        save: vi.fn()
+        save: vi.fn(),
       };
 
-      vi.mocked(Coupon.findOne).mockResolvedValue(mockCoupon);
+      const mockCouponFindOne = vi.mocked(Coupon.findOne);
+      mockCouponFindOne.mockResolvedValue(mockCoupon);
 
       await couponService.applyCouponToUser(mockUser as any, 'SAVE30');
 
       expect(mockUser.appliedCoupon).toEqual({
         code: 'SAVE30',
-        discountPercentage: 30
+        discountPercentage: 30,
       });
       expect(mockUser.save).toHaveBeenCalled();
     });
@@ -196,7 +200,7 @@ describe('CouponService', () => {
     it('should replace existing coupon when applying new one', async () => {
       mockUser.appliedCoupon = {
         code: 'OLD10',
-        discountPercentage: 10
+        discountPercentage: 10,
       } as any;
 
       const mockCoupon = {
@@ -204,16 +208,17 @@ describe('CouponService', () => {
         discountPercentage: 20,
         expirationDate: new Date(Date.now() + 86400000),
         isActive: true,
-        save: vi.fn()
+        save: vi.fn(),
       };
 
-      vi.mocked(Coupon.findOne).mockResolvedValue(mockCoupon);
+      const mockCouponFindOne = vi.mocked(Coupon.findOne);
+      mockCouponFindOne.mockResolvedValue(mockCoupon);
 
       await couponService.applyCouponToUser(mockUser as any, 'NEW20');
 
       expect(mockUser.appliedCoupon).toEqual({
         code: 'NEW20',
-        discountPercentage: 20
+        discountPercentage: 20,
       });
     });
 
@@ -223,20 +228,21 @@ describe('CouponService', () => {
         discountPercentage: 25,
         expirationDate: new Date(Date.now() + 86400000),
         isActive: true,
-        save: vi.fn()
+        save: vi.fn(),
       };
 
-      vi.mocked(Coupon.findOne).mockResolvedValue(mockCoupon);
+      const mockCouponFindOne = vi.mocked(Coupon.findOne);
+      mockCouponFindOne.mockResolvedValue(mockCoupon);
       mockUser.save.mockRejectedValue(new Error('Database error'));
 
       await expect(
-        couponService.applyCouponToUser(mockUser as any, 'SAVE25')
+        couponService.applyCouponToUser(mockUser as any, 'SAVE25'),
       ).rejects.toThrow('Database error');
 
       // User object was modified but not saved
       expect(mockUser.appliedCoupon).toEqual({
         code: 'SAVE25',
-        discountPercentage: 25
+        discountPercentage: 25,
       });
     });
   });
@@ -245,7 +251,7 @@ describe('CouponService', () => {
     it('should remove coupon from user successfully', async () => {
       mockUser.appliedCoupon = {
         code: 'REMOVE20',
-        discountPercentage: 20
+        discountPercentage: 20,
       } as any;
 
       await couponService.removeCouponFromUser(mockUser as any);
@@ -266,12 +272,12 @@ describe('CouponService', () => {
     it('should handle database save errors when removing', async () => {
       mockUser.appliedCoupon = {
         code: 'ERROR20',
-        discountPercentage: 20
+        discountPercentage: 20,
       } as any;
       mockUser.save.mockRejectedValue(new Error('Save failed'));
 
       await expect(
-        couponService.removeCouponFromUser(mockUser as any)
+        couponService.removeCouponFromUser(mockUser as any),
       ).rejects.toThrow('Save failed');
 
       // Coupon was removed from object but not persisted
@@ -293,14 +299,15 @@ describe('CouponService', () => {
           discountPercentage: testCase.percentage,
           expirationDate: new Date(Date.now() + 86400000),
           isActive: true,
-          save: vi.fn()
+          save: vi.fn(),
         };
 
-        vi.mocked(Coupon.findOne).mockResolvedValue(mockCoupon);
+        const mockCouponFindOne = vi.mocked(Coupon.findOne);
+      mockCouponFindOne.mockResolvedValue(mockCoupon);
 
         const result = await couponService.validateCoupon(
           mockUserId, 
-          `DISCOUNT${testCase.percentage}`
+          `DISCOUNT${testCase.percentage}`,
         );
 
         expect(result.discountPercentage).toBe(testCase.percentage);
@@ -313,16 +320,17 @@ describe('CouponService', () => {
         discountPercentage: 20,
         expirationDate: new Date(Date.now() + 86400000),
         isActive: true,
-        save: vi.fn()
+        save: vi.fn(),
       };
 
-      vi.mocked(Coupon.findOne).mockResolvedValue(mockCoupon);
+      const mockCouponFindOne = vi.mocked(Coupon.findOne);
+      mockCouponFindOne.mockResolvedValue(mockCoupon);
 
       // Simulate concurrent validations
       const validations = await Promise.all([
         couponService.validateCoupon(mockUserId, 'CONCURRENT20'),
         couponService.validateCoupon(mockUserId, 'CONCURRENT20'),
-        couponService.validateCoupon(mockUserId, 'CONCURRENT20')
+        couponService.validateCoupon(mockUserId, 'CONCURRENT20'),
       ]);
 
       expect(validations).toHaveLength(3);
@@ -411,7 +419,7 @@ describe('CouponService', () => {
             discountPercentage: 10,
             expirationDate: '2024-12-31T23:59:59Z',
             isActive: true,
-          })
+          }),
         ).rejects.toThrow(new AppError('A discount code with this name already exists', 409));
       });
     });
@@ -442,7 +450,7 @@ describe('CouponService', () => {
         vi.mocked(Coupon.findById).mockResolvedValue(null);
 
         await expect(
-          couponService.updateDiscount('invalid-id', { isActive: false })
+          couponService.updateDiscount('invalid-id', { isActive: false }),
         ).rejects.toThrow(new AppError('Discount not found', 404));
       });
     });
@@ -509,11 +517,11 @@ describe('CouponService', () => {
             isActive: true,
             $or: [
               { maxUses: { $exists: false } },
-              { $expr: { $lt: ['$currentUses', '$maxUses'] } }
-            ]
+              { $expr: { $lt: ['$currentUses', '$maxUses'] } },
+            ],
           },
           { $inc: { currentUses: 1 } },
-          { new: true, runValidators: true }
+          { new: true, runValidators: true },
         );
         expect(mockUpdatedCoupon.save).not.toHaveBeenCalled();
       });
@@ -557,7 +565,7 @@ describe('CouponService', () => {
         vi.mocked(Coupon.findOne).mockResolvedValue(null);
 
         await expect(
-          couponService.incrementUsage('NOTFOUND')
+          couponService.incrementUsage('NOTFOUND'),
         ).rejects.toThrow(new AppError('Coupon not found', 404));
       });
 
@@ -569,7 +577,7 @@ describe('CouponService', () => {
         } as any);
 
         await expect(
-          couponService.incrementUsage('INACTIVE')
+          couponService.incrementUsage('INACTIVE'),
         ).rejects.toThrow(new AppError('Coupon is no longer active', 400));
       });
 
@@ -583,7 +591,7 @@ describe('CouponService', () => {
         } as any);
 
         await expect(
-          couponService.incrementUsage('MAXED')
+          couponService.incrementUsage('MAXED'),
         ).rejects.toThrow(new AppError('Coupon has reached maximum usage limit', 400));
       });
     });

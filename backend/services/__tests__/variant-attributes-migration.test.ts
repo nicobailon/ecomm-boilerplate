@@ -2,11 +2,32 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
 import { generateVariantLabel } from '../../utils/variantLabel.js';
 
+interface LegacyVariant {
+  variantId: string;
+  label?: string;
+  size?: string;
+  color?: string;
+  material?: string;
+  style?: string;
+  finish?: string;
+  price: number;
+  inventory: number;
+  reservedInventory: number;
+  images: string[];
+  attributes?: Record<string, string>;
+}
+
+interface MigrationProduct {
+  _id: mongoose.Types.ObjectId;
+  name: string;
+  variants: LegacyVariant[];
+}
+
 vi.mock('../../models/product.model.js');
 
 beforeEach(() => {
-  vi.spyOn(console, 'log').mockImplementation(() => {});
-  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
 
 afterEach(() => {
@@ -25,7 +46,7 @@ describe('Variant Attributes Migration', () => {
       const label = generateVariantLabel({ 
         size: 'L', 
         color: '#FF0000', 
-        material: 'Cotton' 
+        material: 'Cotton', 
       });
       expect(label).toBe('L / #FF0000 / Cotton');
     });
@@ -35,7 +56,7 @@ describe('Variant Attributes Migration', () => {
         size: 'S',
         style: 'Classic',
         color: '#0000FF',
-        finish: 'Matte'
+        finish: 'Matte',
       });
       expect(label).toBe('S / #0000FF / Classic / Matte');
     });
@@ -49,21 +70,19 @@ describe('Variant Attributes Migration', () => {
       const label = generateVariantLabel({ 
         size: 'M',
         color: undefined,
-        material: 'Wool' 
+        material: 'Wool', 
       });
       expect(label).toBe('M / Wool');
     });
   });
 
   describe('Migration Process Simulation', () => {
-    function simulateMigration(product: any) {
+    function simulateMigration(product: MigrationProduct) {
       const variantTypes = new Set<string>();
-      const updatedVariants = product.variants.map((variant: any) => {
-        const variantUpdate: any = { ...variant };
+      const updatedVariants = product.variants.map((variant: LegacyVariant) => {
+        const variantUpdate: LegacyVariant = { ...variant };
         
-        if (!variantUpdate.attributes) {
-          variantUpdate.attributes = {};
-        }
+        variantUpdate.attributes ??= {};
 
         if (variant.size) {
           variantUpdate.attributes.size = variant.size;
@@ -78,7 +97,7 @@ describe('Variant Attributes Migration', () => {
         // Also check existing attributes for variantTypes
         if (variantUpdate.attributes) {
           Object.keys(variantUpdate.attributes).forEach(key => {
-            if (variantUpdate.attributes[key]) {
+            if (variantUpdate.attributes![key]) {
               variantTypes.add(key);
             }
           });

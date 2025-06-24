@@ -134,7 +134,7 @@ export const MixedInventoryLevels: Story = {
           {
             availableStock: i % 4 === 0 ? 0 : i % 3 === 0 ? 5 : Math.floor(Math.random() * 100),
             lowStockThreshold: 10,
-          }
+          },
         );
       }
       
@@ -476,7 +476,7 @@ export const AllColumnsSorting: Story = {
     const canvas = within(canvasElement);
     
     // Test all sort columns
-    const columns: Array<{ testId: string; name: string }> = [
+    const columns: { testId: string; name: string }[] = [
       { testId: 'sort-name', name: 'name' },
       { testId: 'sort-stock', name: 'stock' },
       { testId: 'sort-threshold', name: 'threshold' },
@@ -582,19 +582,19 @@ export const PreSortedByStock: Story = {
       for (let i = 1; i <= 10; i++) {
         mockQueryClient.setQueryData(
           ['inventory.product', `product-${i}`, undefined, undefined],
-          { availableStock: 0, lowStockThreshold: 10 }
+          { availableStock: 0, lowStockThreshold: 10 },
         );
       }
       for (let i = 11; i <= 20; i++) {
         mockQueryClient.setQueryData(
           ['inventory.product', `product-${i}`, undefined, undefined],
-          { availableStock: 5, lowStockThreshold: 10 }
+          { availableStock: 5, lowStockThreshold: 10 },
         );
       }
       for (let i = 21; i <= 30; i++) {
         mockQueryClient.setQueryData(
           ['inventory.product', `product-${i}`, undefined, undefined],
-          { availableStock: 100, lowStockThreshold: 10 }
+          { availableStock: 100, lowStockThreshold: 10 },
         );
       }
       
@@ -623,7 +623,7 @@ export const ScreenReaderAnnouncements: Story = {
             This table includes proper ARIA labels and live regions for screen reader announcements.
           </p>
           <ul className="mt-2 text-sm text-blue-800 list-disc list-inside">
-            <li>Table has role="table" with caption</li>
+            <li>Table has role=&quot;table&quot; with caption</li>
             <li>Stock updates are announced via aria-live regions</li>
             <li>Row count and position are announced</li>
             <li>Interactive elements have descriptive labels</li>
@@ -776,7 +776,7 @@ export const HighContrastMode: Story = {
           filter: 'contrast(2)', 
           backgroundColor: '#000',
           padding: '1rem',
-          borderRadius: '0.5rem'
+          borderRadius: '0.5rem',
         }}>
           <VirtualizedInventoryTable {...args} />
         </div>
@@ -901,7 +901,7 @@ export const RowSelectionAnnouncements: Story = {
         setAnnouncement(
           selected 
             ? `${product?.name} selected. ${newSet.size} items selected total.`
-            : `${product?.name} deselected. ${newSet.size} items selected total.`
+            : `${product?.name} deselected. ${newSet.size} items selected total.`,
         );
         
         return newSet;

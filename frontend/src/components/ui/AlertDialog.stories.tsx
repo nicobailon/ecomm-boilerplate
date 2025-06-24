@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within } from '@storybook/test';
-import { expect } from 'vitest';
-import { userEvent } from '@storybook/test';
+import { within, expect, userEvent } from '@storybook/test';
 import { useState } from 'react';
 import {
   AlertDialog,
@@ -110,9 +108,9 @@ export const WithLongContent: Story = {
             <br />
             4. We reserve the right to terminate your account at any time.
             <br />
-            5. Our service is provided "as is" without any warranties.
+            5. Our service is provided &quot;as is&quot; without any warranties.
             <br /><br />
-            By clicking "I Agree", you acknowledge that you have read and understood
+            By clicking &quot;I Agree&quot;, you acknowledge that you have read and understood
             these terms and agree to be bound by them.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -240,7 +238,7 @@ export const InteractionTest: Story = {
     await userEvent.click(cancelButton);
     
     // Dialog should be closed
-    await expect(dialog).not.toBeInTheDocument();
+    expect(dialog).not.toBeInTheDocument();
   },
 };
 
@@ -257,7 +255,7 @@ export const CustomStyling: Story = {
             Special Offer! 🎉
           </AlertDialogTitle>
           <AlertDialogDescription className="text-purple-700 dark:text-purple-300">
-            You've been selected for a special discount! Would you like to apply
+            You&apos;ve been selected for a special discount! Would you like to apply
             a 25% discount to your next purchase?
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -336,7 +334,7 @@ export const MultipleActions: Story = {
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
           <AlertDialogCancel asChild>
-            <Button variant="ghost">Don't Save</Button>
+            <Button variant="ghost">Don&apos;t Save</Button>
           </AlertDialogCancel>
           <AlertDialogCancel asChild>
             <Button variant="outline">Cancel</Button>

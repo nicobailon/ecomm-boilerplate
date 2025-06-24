@@ -4,16 +4,16 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]',
+  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] border',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 dark:hover:bg-primary/80',
-        destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 dark:hover:bg-destructive/80',
-        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
-        secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 dark:hover:bg-secondary/70',
-        ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
-        link: 'text-primary underline-offset-4 hover:underline dark:text-primary',
+        default: 'border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 dark:hover:bg-primary/80',
+        destructive: 'border-destructive bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 dark:hover:bg-destructive/80',
+        outline: 'border-input bg-background hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
+        secondary: 'border-secondary bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 dark:hover:bg-secondary/70',
+        ghost: 'border-transparent hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
+        link: 'border-transparent text-primary underline-offset-4 hover:underline dark:text-primary',
       },
       size: {
         default: 'h-10 px-4 py-2',

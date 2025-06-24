@@ -5,4 +5,4 @@ export interface VariantAttributes {
   [key: string]: string | undefined;
 }
 
-export type VariantTypes = Array<keyof VariantAttributes>;
+export type VariantTypes = (keyof VariantAttributes)[];

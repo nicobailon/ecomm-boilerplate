@@ -72,7 +72,6 @@ export interface InventoryQueryParams {
   search?: string;
 }
 
-
 export interface InventoryTurnoverData {
   productId: string;
   productName: string;

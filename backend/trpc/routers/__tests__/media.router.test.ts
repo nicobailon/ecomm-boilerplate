@@ -5,6 +5,8 @@ import { AppError } from '../../../utils/AppError.js';
 import { IProductWithVariants } from '../../../types/product.types.js';
 import { IMediaItem } from '../../../types/media.types.js';
 import { Product } from '../../../models/product.model.js';
+import type { IUserDocument } from '../../../models/user.model.js';
+import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 
 // Mock the services
 vi.mock('../../../services/product.service.js', () => ({
@@ -34,24 +36,33 @@ vi.mock('../../../services/media.service.js', () => ({
 }));
 
 // Create a mock user that satisfies IUserDocument interface
-const createMockUser = () => ({
-  _id: 'admin123',
-  id: 'admin123',
-  name: 'Admin User',
-  email: 'admin@test.com',
-  password: 'hashed',
-  role: 'admin' as const,
-  cartItems: [],
-  appliedCoupon: null,
-  comparePassword: vi.fn(),
-  ...({} as any), // Include Document properties
+const createMockUser = () => {
+  return {
+    _id: 'admin123',
+    id: 'admin123',
+    name: 'Admin User',
+    email: 'admin@test.com',
+    password: 'hashed',
+    role: 'admin' as const,
+    cartItems: [],
+    appliedCoupon: null,
+    comparePassword: vi.fn(),
+  } as unknown as IUserDocument;
+};
+
+type MockContext = {
+  user: IUserDocument | null;
+  req: CreateExpressContextOptions['req'];
+  res: CreateExpressContextOptions['res'];
+};
+
+const createMockContext = (): MockContext => ({
+  user: createMockUser(),
+  req: {} as CreateExpressContextOptions['req'],
+  res: {} as CreateExpressContextOptions['res'],
 });
 
-const mockContext = {
-  user: createMockUser(),
-  req: {} as any,
-  res: {} as any,
-};
+const mockContext = createMockContext();
 
 describe('Media Router', () => {
   beforeEach(() => {
@@ -99,14 +110,14 @@ describe('Media Router', () => {
       expect(productService.updateMediaGallery).toHaveBeenCalledWith(
         'product123',
         mediaItems,
-        'admin123'
+        'admin123',
       );
       expect(result).toEqual(mockProduct);
     });
 
     it('should handle media gallery update errors', async () => {
       (productService.updateMediaGallery as any).mockRejectedValue(
-        new AppError('Product not found', 404)
+        new AppError('Product not found', 404),
       );
 
       const caller = appRouter.createCaller(mockContext);
@@ -115,7 +126,7 @@ describe('Media Router', () => {
         caller.media.updateGallery({
           productId: 'nonexistent',
           mediaItems: [],
-        })
+        }),
       ).rejects.toThrow('Product not found');
     });
 
@@ -134,7 +145,7 @@ describe('Media Router', () => {
         caller.media.updateGallery({
           productId: 'product123',
           mediaItems,
-        })
+        }),
       ).rejects.toThrow();
     });
   });
@@ -176,14 +187,14 @@ describe('Media Router', () => {
           { id: 'media1', order: 1 },
           { id: 'media2', order: 0 },
         ],
-        'admin123'
+        'admin123',
       );
       expect(result).toEqual(mockProduct);
     });
 
     it('should handle reorder errors gracefully', async () => {
       (productService.reorderMediaItems as any).mockRejectedValue(
-        new AppError('Concurrent modification detected', 409)
+        new AppError('Concurrent modification detected', 409),
       );
 
       const caller = appRouter.createCaller(mockContext);
@@ -192,7 +203,7 @@ describe('Media Router', () => {
         caller.media.reorderItems({
           productId: 'product123',
           mediaOrder: [{ id: 'media1', order: 0 }],
-        })
+        }),
       ).rejects.toThrow('Concurrent modification detected');
     });
 
@@ -203,7 +214,7 @@ describe('Media Router', () => {
         caller.media.reorderItems({
           productId: 'product123',
           mediaOrder: [{ id: 'media1', order: 6 }], // Invalid order > 5
-        })
+        }),
       ).rejects.toThrow();
     });
   });
@@ -239,14 +250,14 @@ describe('Media Router', () => {
       expect(productService.deleteMediaItem).toHaveBeenCalledWith(
         'product123',
         'media1',
-        'admin123'
+        'admin123',
       );
       expect(result).toEqual(mockProduct);
     });
 
     it('should handle delete errors', async () => {
       (productService.deleteMediaItem as any).mockRejectedValue(
-        new AppError('Cannot delete the last image', 400)
+        new AppError('Cannot delete the last image', 400),
       );
 
       const caller = appRouter.createCaller(mockContext);
@@ -255,7 +266,7 @@ describe('Media Router', () => {
         caller.media.deleteItem({
           productId: 'product123',
           mediaId: 'media1',
-        })
+        }),
       ).rejects.toThrow('Cannot delete the last image');
     });
   });
@@ -286,7 +297,7 @@ describe('Media Router', () => {
           videoId: 'dQw4w9WgXcQ',
         }),
         getYouTubeThumbnail: vi.fn().mockResolvedValue(
-          'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg'
+          'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
         ),
       };
 
@@ -306,10 +317,10 @@ describe('Media Router', () => {
       });
 
       expect(mockMediaService.validateYouTubeUrl).toHaveBeenCalledWith(
-        'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       );
       expect(mockMediaService.getYouTubeThumbnail).toHaveBeenCalledWith(
-        'dQw4w9WgXcQ'
+        'dQw4w9WgXcQ',
       );
       expect(productService.addMediaItem).toHaveBeenCalledWith(
         'product123',
@@ -320,7 +331,7 @@ describe('Media Router', () => {
           thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
           order: 0,
         }),
-        'admin123'
+        'admin123',
       );
       expect(result).toEqual(mockProduct);
     });
@@ -346,7 +357,7 @@ describe('Media Router', () => {
           productId: 'product123',
           url: 'https://example.com/not-youtube',
           title: 'Invalid Video',
-        })
+        }),
       ).rejects.toThrow('Invalid YouTube URL');
     });
 
@@ -391,7 +402,7 @@ describe('Media Router', () => {
           title: 'Test Video',
           order: 0,
         }),
-        'admin123'
+        'admin123',
       );
       expect(result).toEqual(mockProduct);
     });
@@ -475,7 +486,7 @@ describe('Media Router', () => {
             name: 'new1.jpg',
           },
         ],
-        1 // existing count
+        1, // existing count
       );
       expect(productService.updateMediaGallery).toHaveBeenCalledWith(
         'product123',
@@ -483,7 +494,7 @@ describe('Media Router', () => {
           expect.objectContaining({ id: 'existing1' }),
           expect.objectContaining({ id: 'new1' }),
         ]),
-        'admin123'
+        'admin123',
       );
     });
 
@@ -503,7 +514,7 @@ describe('Media Router', () => {
               name: 'test.jpg',
             },
           ],
-        })
+        }),
       ).rejects.toThrow('Product not found');
     });
 
@@ -557,7 +568,7 @@ describe('Media Router', () => {
             order: 0,
           }),
         ]),
-        'admin123'
+        'admin123',
       );
     });
   });
@@ -605,7 +616,7 @@ describe('Media Router', () => {
       expect(result).toBeDefined();
       expect(Product.find).toHaveBeenCalledWith({ 
         isDeleted: { $ne: true }, 
-        _id: 'product123' 
+        _id: 'product123', 
       });
     });
 
@@ -673,21 +684,21 @@ describe('Media Router', () => {
         caller.media.updateGallery({
           productId: 'product123',
           mediaItems: [],
-        })
+        }),
       ).rejects.toThrow();
 
       await expect(
         caller.media.reorderItems({
           productId: 'product123',
           mediaOrder: [],
-        })
+        }),
       ).rejects.toThrow();
 
       await expect(
         caller.media.deleteItem({
           productId: 'product123',
           mediaId: 'media1',
-        })
+        }),
       ).rejects.toThrow();
     });
   });

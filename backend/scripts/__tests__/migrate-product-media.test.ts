@@ -1,30 +1,31 @@
 import { describe, it, expect, beforeEach, vi, beforeAll, afterAll } from 'vitest';
-import mongoose from 'mongoose';
+import mongoose, { ConnectionStates } from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { Product } from '../../models/product.model.js';
 import { connectDB } from '../../lib/db.js';
+import type { IMediaItem } from '../../types/product.types.js';
 
 // Mock nanoid to return predictable IDs for testing
 vi.mock('nanoid', () => ({
-  nanoid: vi.fn((length: number) => `test-id-${length}`)
+  nanoid: vi.fn((length: number) => `test-id-${length}`),
 }));
 
 // Mock the db connection to use test database
 vi.mock('../../lib/db.js', () => ({
-  connectDB: vi.fn()
+  connectDB: vi.fn(),
 }));
 
 describe('Product Media Migration Integration', () => {
   let mongoServer: MongoMemoryServer;
-  let mockConnectDB: any;
+  let mockConnectDB: ReturnType<typeof vi.fn>;
 
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
     
-    mockConnectDB = connectDB as any;
+    mockConnectDB = connectDB as ReturnType<typeof vi.fn>;
     mockConnectDB.mockImplementation(async () => {
-      if (mongoose.connection.readyState === 0) {
+      if (mongoose.connection.readyState === ConnectionStates.disconnected) {
         await mongoose.connect(mongoUri);
       }
     });
@@ -34,7 +35,7 @@ describe('Product Media Migration Integration', () => {
   }, 30000);
 
   afterAll(async () => {
-    if (mongoose.connection.readyState !== 0) {
+    if (mongoose.connection.readyState !== ConnectionStates.disconnected) {
       await mongoose.disconnect();
     }
     await mongoServer.stop();
@@ -42,7 +43,7 @@ describe('Product Media Migration Integration', () => {
 
   beforeEach(async () => {
     // Ensure connection and clear the database before each test
-    if (mongoose.connection.readyState !== 1) {
+    if (mongoose.connection.readyState !== ConnectionStates.connected) {
       const mongoUri = mongoServer.getUri();
       await mongoose.connect(mongoUri);
     }
@@ -63,7 +64,7 @@ describe('Product Media Migration Integration', () => {
         description: 'Test Description',
         price: 99.99,
         image: 'https://example.com/main-image.jpg',
-        slug: 'test-product'
+        slug: 'test-product',
       });
 
       // Simulate the migration logic
@@ -76,7 +77,7 @@ describe('Product Media Migration Integration', () => {
           title: `${product.name} - Main Image`,
           order: 0,
           createdAt: new Date(),
-          metadata: {}
+          metadata: {},
         }];
 
         product.mediaGallery = mediaItems;
@@ -91,7 +92,7 @@ describe('Product Media Migration Integration', () => {
         type: 'image',
         url: 'https://example.com/main-image.jpg',
         title: 'Test Product - Main Image',
-        order: 0
+        order: 0,
       });
     });
 
@@ -110,11 +111,11 @@ describe('Product Media Migration Integration', () => {
             price: 149.99,
             images: [
               'https://example.com/variant-1-image-1.jpg',
-              'https://example.com/variant-1-image-2.jpg'
+              'https://example.com/variant-1-image-2.jpg',
             ],
             inventory: 10,
             color: 'Red',
-            size: 'M'
+            size: 'M',
           },
           {
             variantId: 'variant-2',
@@ -122,19 +123,19 @@ describe('Product Media Migration Integration', () => {
             price: 159.99,
             images: [
               'https://example.com/variant-2-image-1.jpg',
-              'https://example.com/main-image.jpg' // Duplicate of main image
+              'https://example.com/main-image.jpg', // Duplicate of main image
             ],
             inventory: 5,
             color: 'Blue',
-            size: 'L'
-          }
-        ]
+            size: 'L',
+          },
+        ],
       });
 
       // Simulate the migration logic
       const product = await Product.findById(testProduct._id);
       if (product && !product.mediaGallery?.length) {
-        const mediaItems: any[] = [];
+        const mediaItems: IMediaItem[] = [];
         
         // Add main image
         if (product.image) {
@@ -145,7 +146,7 @@ describe('Product Media Migration Integration', () => {
             title: `${product.name} - Main Image`,
             order: 0,
             createdAt: new Date(),
-            metadata: {}
+            metadata: {},
           });
         }
 
@@ -166,13 +167,13 @@ describe('Product Media Migration Integration', () => {
           const variantImage = variantImageArray[i];
           
           mediaItems.push({
-            id: `test-id-6`,
+            id: 'test-id-6',
             type: 'image' as const,
             url: variantImage,
             title: `${product.name} - Variant Image ${order}`,
             order: order++,
             createdAt: new Date(),
-            metadata: {}
+            metadata: {},
           });
         }
 
@@ -210,14 +211,14 @@ describe('Product Media Migration Integration', () => {
             title: 'Existing Image',
             order: 0,
             createdAt: new Date(),
-            metadata: {}
-          }
-        ]
+            metadata: {},
+          },
+        ],
       });
 
       // Migration should skip this product
       const product = await Product.findById(testProduct._id);
-      const originalGalleryLength = product?.mediaGallery?.length || 0;
+      const originalGalleryLength = product?.mediaGallery?.length ?? 0;
 
       // Simulate migration check
       const shouldMigrate = product && !product.mediaGallery?.length;
@@ -235,7 +236,7 @@ describe('Product Media Migration Integration', () => {
         name: 'No Image Product',
         description: 'Product without images',
         price: 99.99,
-        slug: 'no-image-product'
+        slug: 'no-image-product',
         // No image field, no variants
       });
       await testProduct.save({ validateBeforeSave: false });
@@ -243,7 +244,7 @@ describe('Product Media Migration Integration', () => {
       // Simulate migration logic
       const product = await Product.findById(testProduct._id);
       if (product && !product.mediaGallery?.length) {
-        const mediaItems: any[] = [];
+        const mediaItems: IMediaItem[] = [];
         
         // No main image to add
         // No variants to process
@@ -259,7 +260,7 @@ describe('Product Media Migration Integration', () => {
     it('should respect maximum media limit of 6 items', async () => {
       // Create product with many variant images
       const manyImages = Array.from({ length: 10 }, (_, i) => 
-        `https://example.com/variant-image-${i + 1}.jpg`
+        `https://example.com/variant-image-${i + 1}.jpg`,
       );
 
       const testProduct = await Product.create({
@@ -276,15 +277,15 @@ describe('Product Media Migration Integration', () => {
             images: manyImages,
             inventory: 10,
             color: 'Red',
-            size: 'M'
-          }
-        ]
+            size: 'M',
+          },
+        ],
       });
 
       // Simulate migration logic with limit
       const product = await Product.findById(testProduct._id);
       if (product && !product.mediaGallery?.length) {
-        const mediaItems: any[] = [];
+        const mediaItems: IMediaItem[] = [];
         
         // Add main image
         if (product.image) {
@@ -295,7 +296,7 @@ describe('Product Media Migration Integration', () => {
             title: `${product.name} - Main Image`,
             order: 0,
             createdAt: new Date(),
-            metadata: {}
+            metadata: {},
           });
         }
 
@@ -322,7 +323,7 @@ describe('Product Media Migration Integration', () => {
             title: `${product.name} - Variant Image ${order}`,
             order: order++,
             createdAt: new Date(),
-            metadata: {}
+            metadata: {},
           });
         }
 
@@ -347,12 +348,11 @@ describe('Product Media Migration Integration', () => {
         description: 'Test',
         price: 99.99,
         image: 'https://example.com/image.jpg',
-        slug: 'test-product'
+        slug: 'test-product',
       });
 
       // Simulate a database error during migration
-      const originalSave = Product.prototype.save;
-      Product.prototype.save = vi.fn().mockRejectedValue(new Error('Database error'));
+      const saveSpy = vi.spyOn(Product.prototype, 'save').mockRejectedValue(new Error('Database error'));
 
       let migrationError: Error | null = null;
       
@@ -367,7 +367,7 @@ describe('Product Media Migration Integration', () => {
             title: `${product.name} - Main Image`,
             order: 0,
             createdAt: new Date(),
-            metadata: {}
+            metadata: {},
           }];
           await product.save({ validateBeforeSave: false });
         }
@@ -376,7 +376,7 @@ describe('Product Media Migration Integration', () => {
       }
 
       // Restore original save method
-      Product.prototype.save = originalSave;
+      saveSpy.mockRestore();
 
       // Verify error was caught
       expect(migrationError).toBeInstanceOf(Error);

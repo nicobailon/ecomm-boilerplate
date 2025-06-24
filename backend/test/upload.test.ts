@@ -10,16 +10,16 @@ import jwt from 'jsonwebtoken';
 vi.mock('../models/user.model');
 vi.mock('uploadthing/express', () => ({
   createUploadthingExpressHandler: vi.fn(() => {
-    return (_req: any, res: any) => {
+    return (_req: unknown, res: { json: (data: unknown) => void }) => {
       // Simulate successful upload response
       res.json({
         url: 'https://uploadthing.com/f/test-file-key',
         key: 'test-file-key',
         name: 'test-image.jpg',
-        size: 1024
+        size: 1024,
       });
     };
-  })
+  }),
 }));
 
 // Set up test environment variables
@@ -55,12 +55,13 @@ describe('Upload Routes', () => {
         _id: adminUserId,
         role: 'admin',
         email: 'admin@test.com',
-        name: 'Admin User'
+        name: 'Admin User',
       };
 
-      vi.mocked(User.findById).mockReturnValue({
-        select: vi.fn().mockResolvedValue(mockAdminUser)
-      } as any);
+      const mockUserFindById = vi.mocked(User.findById);
+      mockUserFindById.mockReturnValue({
+        select: vi.fn().mockResolvedValue(mockAdminUser),
+      } as unknown as ReturnType<typeof User.findById>);
 
       const response = await request(app)
         .post('/api/uploadthing')
@@ -78,11 +79,11 @@ describe('Upload Routes', () => {
         _id: customerUserId,
         role: 'customer',
         email: 'customer@test.com',
-        name: 'Customer User'
+        name: 'Customer User',
       };
 
       vi.mocked(User.findById).mockReturnValue({
-        select: vi.fn().mockResolvedValue(mockCustomerUser)
+        select: vi.fn().mockResolvedValue(mockCustomerUser),
       } as any);
 
       const response = await request(app)
@@ -109,12 +110,13 @@ describe('Upload Routes', () => {
         _id: adminUserId,
         role: 'admin',
         email: 'admin@test.com',
-        name: 'Admin User'
+        name: 'Admin User',
       };
 
-      vi.mocked(User.findById).mockReturnValue({
-        select: vi.fn().mockResolvedValue(mockAdminUser)
-      } as any);
+      const mockUserFindById = vi.mocked(User.findById);
+      mockUserFindById.mockReturnValue({
+        select: vi.fn().mockResolvedValue(mockAdminUser),
+      } as unknown as ReturnType<typeof User.findById>);
 
       const response = await request(app)
         .post('/api/uploadthing')
@@ -130,7 +132,7 @@ describe('Upload Routes', () => {
       const expiredToken = jwt.sign(
         { userId: adminUserId },
         process.env.ACCESS_TOKEN_SECRET!,
-        { expiresIn: '-1h' } // Already expired
+        { expiresIn: '-1h' }, // Already expired
       );
 
       const response = await request(app)

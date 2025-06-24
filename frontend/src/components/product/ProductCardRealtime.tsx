@@ -168,11 +168,11 @@ export const ProductCardRealtime = memo(function ProductCardRealtime({
           onClick={(e) => { void handleQuickAdd(e); }}
           disabled={isOutOfStock || addToCart.isPending}
           className={cn(
-            'w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors',
+            'w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors border',
             'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
             isOutOfStock
-              ? 'bg-muted text-muted-foreground cursor-not-allowed'
-              : 'bg-primary text-primary-foreground hover:bg-primary/90',
+              ? 'bg-muted text-muted-foreground border-muted cursor-not-allowed'
+              : 'bg-primary text-primary-foreground border-primary hover:bg-primary/90',
           )}
         >
           <ShoppingCart className="w-4 h-4" />

@@ -8,15 +8,15 @@ vi.mock('../../services/auth.service.js');
 
 describe('Auth Router', () => {
   let mockResponse: Partial<Response>;
-  let cookieStore: Record<string, any> = {};
+  let cookieStore: Record<string, { value: string; options?: unknown }> = {};
 
   beforeEach(() => {
     cookieStore = {};
     mockResponse = {
-      cookie: vi.fn((name: string, value: string, options?: any) => {
+      cookie: vi.fn((name: string, value: string, options?: unknown) => {
         cookieStore[name] = { value, options };
         return mockResponse as Response;
-      }) as any,
+      }) as Response['cookie'],
       clearCookie: vi.fn((name: string) => {
         delete cookieStore[name];
         return mockResponse as Response;
@@ -151,7 +151,7 @@ describe('Auth Router', () => {
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         'accessToken',
         'newAccess789',
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });

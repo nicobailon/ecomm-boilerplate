@@ -23,8 +23,8 @@ export class InventoryErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(_error: Error, _errorInfo: React.ErrorInfo) {
-    // Error boundary handles errors silently to prevent app crashes
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('InventoryErrorBoundary caught an error:', error, errorInfo);
   }
 
   handleReset = () => {

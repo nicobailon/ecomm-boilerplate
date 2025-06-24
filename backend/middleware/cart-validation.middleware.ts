@@ -203,7 +203,11 @@ export const includeCartValidationWarnings = (
   if (req.validatedCart?.hasChanges) {
     const originalJson = res.json.bind(res);
     res.json = function <T>(data: T): Response<T> {
-      const { hasChanges, removedItems, reducedItems } = req.validatedCart!;
+      const validatedCart = req.validatedCart;
+      if (!validatedCart) {
+        return originalJson(data);
+      }
+      const { hasChanges, removedItems, reducedItems } = validatedCart;
       return originalJson({
         ...data,
         cartValidation: {

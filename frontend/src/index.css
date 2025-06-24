@@ -4,91 +4,181 @@
 
 @layer base {
   :root {
-    --background: 255 255 255;
-    --foreground: 17 24 39;
+    --background: 255, 255, 255;
+    --foreground: 17, 24, 39;
     
-    --card: 255 255 255;
-    --card-foreground: 17 24 39;
+    --card: 255, 255, 255;
+    --card-foreground: 17, 24, 39;
     
-    --popover: 255 255 255;
-    --popover-foreground: 17 24 39;
+    --popover: 255, 255, 255;
+    --popover-foreground: 17, 24, 39;
     
-    --primary: 16 185 129;
-    --primary-foreground: 255 255 255;
+    --primary: 16, 185, 129;
+    --primary-foreground: 255, 255, 255;
     
-    --secondary: 243 244 246;
-    --secondary-foreground: 17 24 39;
+    --secondary: 243, 244, 246;
+    --secondary-foreground: 17, 24, 39;
     
-    --muted: 243 244 246;
-    --muted-foreground: 107 114 128;
+    --muted: 243, 244, 246;
+    --muted-foreground: 107, 114, 128;
     
-    --accent: 16 185 129;
-    --accent-foreground: 255 255 255;
+    --accent: 16, 185, 129;
+    --accent-foreground: 255, 255, 255;
     
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
+    --destructive: 239, 68, 68;
+    --destructive-foreground: 255, 255, 255;
     
-    --border: 229 231 235;
-    --input: 229 231 235;
-    --ring: 16 185 129;
+    --border: 229, 231, 235;
+    --input: 229, 231, 235;
+    --ring: 16, 185, 129;
     
-    --success: 34 197 94;
-    --success-foreground: 255 255 255;
+    --success: 34, 197, 94;
+    --success-foreground: 255, 255, 255;
     
-    --warning: 234 179 8;
-    --warning-foreground: 255 255 255;
+    --warning: 234, 179, 8;
+    --warning-foreground: 255, 255, 255;
     
-    --info: 59 130 246;
-    --info-foreground: 255 255 255;
+    --info: 59, 130, 246;
+    --info-foreground: 255, 255, 255;
     
-    --gradient-primary: linear-gradient(to right, rgb(16 185 129), rgb(59 130 246));
-    --gradient-secondary: linear-gradient(to bottom, rgb(243 244 246), rgb(229 231 235));
-    --gradient-accent: linear-gradient(135deg, rgb(16 185 129), rgb(34 197 94));
+    --gradient-primary: linear-gradient(to right, rgb(16, 185, 129), rgb(59, 130, 246));
+    --gradient-secondary: linear-gradient(to bottom, rgb(243, 244, 246), rgb(229, 231, 235));
+    --gradient-accent: linear-gradient(135deg, rgb(16, 185, 129), rgb(34, 197, 94));
     
     --radius: 0.5rem;
   }
   
   .dark {
-    --background: 17 24 39;
-    --foreground: 243 244 246;
+    --background: 17, 24, 39;
+    --foreground: 243, 244, 246;
     
-    --card: 31 41 55;
-    --card-foreground: 243 244 246;
+    --card: 31, 41, 55;
+    --card-foreground: 243, 244, 246;
     
-    --popover: 31 41 55;
-    --popover-foreground: 243 244 246;
+    --popover: 31, 41, 55;
+    --popover-foreground: 243, 244, 246;
     
-    --primary: 16 185 129;
-    --primary-foreground: 255 255 255;
+    --primary: 16, 185, 129;
+    --primary-foreground: 255, 255, 255;
     
-    --secondary: 55 65 81;
-    --secondary-foreground: 243 244 246;
+    --secondary: 55, 65, 81;
+    --secondary-foreground: 243, 244, 246;
     
-    --muted: 55 65 81;
-    --muted-foreground: 156 163 175;
+    --muted: 55, 65, 81;
+    --muted-foreground: 156, 163, 175;
     
-    --accent: 16 185 129;
-    --accent-foreground: 17 24 39;
+    --accent: 16, 185, 129;
+    --accent-foreground: 17, 24, 39;
     
-    --destructive: 185 28 28;
-    --destructive-foreground: 255 255 255;
+    --destructive: 185, 28, 28;
+    --destructive-foreground: 255, 255, 255;
     
-    --border: 55 65 81;
-    --input: 55 65 81;
-    --ring: 16 185 129;
+    --border: 55, 65, 81;
+    --input: 55, 65, 81;
+    --ring: 16, 185, 129;
     
-    --success: 34 197 94;
-    --success-foreground: 255 255 255;
+    --success: 34, 197, 94;
+    --success-foreground: 255, 255, 255;
     
-    --warning: 234 179 8;
-    --warning-foreground: 17 24 39;
+    --warning: 234, 179, 8;
+    --warning-foreground: 17, 24, 39;
     
-    --info: 59 130 246;
-    --info-foreground: 255 255 255;
+    --info: 59, 130, 246;
+    --info-foreground: 255, 255, 255;
     
-    --gradient-primary: linear-gradient(to right, rgb(16 185 129), rgb(59 130 246));
-    --gradient-secondary: linear-gradient(to bottom, rgb(55 65 81), rgb(31 41 55));
-    --gradient-accent: linear-gradient(135deg, rgb(16 185 129), rgb(34 197 94));
+    --gradient-primary: linear-gradient(to right, rgb(16, 185, 129), rgb(59, 130, 246));
+    --gradient-secondary: linear-gradient(to bottom, rgb(55, 65, 81), rgb(31, 41, 55));
+    --gradient-accent: linear-gradient(135deg, rgb(16, 185, 129), rgb(34, 197, 94));
+  }
+  
+  .theme-modern {
+    --background: 255, 255, 255;
+    --foreground: 0, 0, 0;
+    
+    --card: 255, 255, 255;
+    --card-foreground: 0, 0, 0;
+    
+    --popover: 255, 255, 255;
+    --popover-foreground: 0, 0, 0;
+    
+    --primary: 0, 0, 0;
+    --primary-foreground: 255, 255, 255;
+    
+    --secondary: 245, 245, 245;
+    --secondary-foreground: 0, 0, 0;
+    
+    --muted: 245, 245, 245;
+    --muted-foreground: 115, 115, 115;
+    
+    --accent: 0, 0, 0;
+    --accent-foreground: 255, 255, 255;
+    
+    --destructive: 220, 38, 38;
+    --destructive-foreground: 255, 255, 255;
+    
+    --border: 229, 229, 229;
+    --input: 229, 229, 229;
+    --ring: 0, 0, 0;
+    
+    --success: 34, 197, 94;
+    --success-foreground: 255, 255, 255;
+    
+    --warning: 234, 179, 8;
+    --warning-foreground: 0, 0, 0;
+    
+    --info: 59, 130, 246;
+    --info-foreground: 255, 255, 255;
+    
+    --gradient-primary: linear-gradient(to right, rgb(0, 0, 0), rgb(64, 64, 64));
+    --gradient-secondary: linear-gradient(to bottom, rgb(245, 245, 245), rgb(229, 229, 229));
+    --gradient-accent: linear-gradient(135deg, rgb(0, 0, 0), rgb(32, 32, 32));
+    
+    --radius: 0rem;
+  }
+  
+  .theme-playful {
+    --background: 255, 249, 246;
+    --foreground: 92, 45, 145;
+    
+    --card: 255, 255, 255;
+    --card-foreground: 92, 45, 145;
+    
+    --popover: 255, 255, 255;
+    --popover-foreground: 92, 45, 145;
+    
+    --primary: 236, 72, 153;
+    --primary-foreground: 255, 255, 255;
+    
+    --secondary: 254, 220, 86;
+    --secondary-foreground: 92, 45, 145;
+    
+    --muted: 253, 237, 189;
+    --muted-foreground: 124, 58, 237;
+    
+    --accent: 52, 211, 153;
+    --accent-foreground: 92, 45, 145;
+    
+    --destructive: 239, 68, 68;
+    --destructive-foreground: 255, 255, 255;
+    
+    --border: 236, 72, 153;
+    --input: 251, 207, 232;
+    --ring: 236, 72, 153;
+    
+    --success: 52, 211, 153;
+    --success-foreground: 92, 45, 145;
+    
+    --warning: 251, 191, 36;
+    --warning-foreground: 92, 45, 145;
+    
+    --info: 99, 102, 241;
+    --info-foreground: 255, 255, 255;
+    
+    --gradient-primary: linear-gradient(to right, rgb(236, 72, 153), rgb(124, 58, 237));
+    --gradient-secondary: linear-gradient(to bottom, rgb(254, 220, 86), rgb(52, 211, 153));
+    --gradient-accent: linear-gradient(135deg, rgb(52, 211, 153), rgb(99, 102, 241));
+    
+    --radius: 1.5rem;
   }
 }
 
@@ -99,6 +189,8 @@
 body {
   background-color: rgb(var(--background));
   color: rgb(var(--foreground));
+  /* CSS containment for better theme switching performance */
+  contain: paint style;
 }
 
 @layer base {
@@ -107,13 +199,224 @@ body {
     @apply transition-colors duration-200;
   }
   
-  /* Disable transitions during theme switch */
-  .theme-transition-disable * {
-    @apply !transition-none;
+  /* More specific transitions for better performance */
+  body,
+  .card,
+  .button,
+  .input,
+  .alert {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  /* Optimize gradient transitions by using pseudo-elements */
+  .gradient-bg {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .gradient-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+  }
+  
+  .gradient-bg.active::before {
+    opacity: 1;
+  }
+  
+  /* Disable transitions during theme switch to prevent flash */
+  .theme-transitioning * {
+    transition: none !important;
+  }
+  
+  /* Disable transitions on interactive elements for better performance */
+  .theme-transitioning input,
+  .theme-transitioning textarea,
+  .theme-transitioning select,
+  .theme-transitioning button {
+    transition: none !important;
   }
   
   /* Ensure smooth transitions for backgrounds and borders */
   html {
     @apply transition-colors duration-200;
+  }
+  
+  /* Accessibility: Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  
+  /* Accessibility: High contrast mode */
+  @media (prefers-contrast: high) {
+    :root {
+      --border: 0, 0, 0;
+      --ring: 0, 0, 0;
+    }
+    
+    .dark {
+      --border: 255, 255, 255;
+      --ring: 255, 255, 255;
+    }
+    
+    * {
+      outline-width: 2px !important;
+    }
+  }
+  
+  /* Variant Selector Custom Classes */
+  .variant-button {
+    position: relative;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .variant-button.active {
+    background: var(--variant-active-bg) !important;
+    color: var(--variant-active-fg) !important;
+    border-color: var(--variant-active-border) !important;
+    box-shadow: var(--variant-active-shadow), var(--variant-active-ring) !important;
+    transform: scale(1.05);
+  }
+  
+  .variant-button.active::before {
+    content: '✓';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--variant-active-bg);
+    color: var(--variant-active-fg);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+  }
+  
+  .variant-button:hover:not(.active):not(:disabled) {
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Component-level design tokens */
+  :root {
+    /* Heights */
+    --button-height: 2.5rem;
+    --button-height-sm: 2rem;
+    --button-height-lg: 3rem;
+    --input-height: 2.5rem;
+    
+    /* Spacing */
+    --card-padding: 1.5rem;
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-5: 1.25rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-10: 2.5rem;
+    --spacing-12: 3rem;
+    --spacing-16: 4rem;
+    
+    /* Typography */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    
+    /* Line Heights */
+    --line-height-none: 1;
+    --line-height-tight: 1.25;
+    --line-height-snug: 1.375;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.625;
+    --line-height-loose: 2;
+    
+    /* Letter Spacing */
+    --letter-spacing-tighter: -0.05em;
+    --letter-spacing-tight: -0.025em;
+    --letter-spacing-normal: 0;
+    --letter-spacing-wide: 0.025em;
+    --letter-spacing-wider: 0.05em;
+    --letter-spacing-widest: 0.1em;
+    
+    /* Font Weights */
+    --font-weight-thin: 100;
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+    --shadow-none: 0 0 #0000;
+    
+    /* Other */
+    --modal-backdrop: rgba(0, 0, 0, 0.5);
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+    
+    /* Variant selector styles */
+    --variant-active-bg: rgb(var(--primary));
+    --variant-active-fg: rgb(var(--primary-foreground));
+    --variant-active-border: rgb(var(--primary));
+    --variant-active-shadow: 0 4px 12px rgba(var(--primary), 0.25);
+    --variant-active-ring: 0 0 0 2px rgba(var(--primary), 0.2);
+  }
+  
+  /* UploadThing Button Styling */
+  button[data-ut-element="button"] {
+    border: 1px solid rgb(var(--primary)) !important;
+    background-color: rgb(var(--primary)) !important;
+    color: rgb(var(--primary-foreground)) !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.375rem !important;
+    transition: all 0.2s !important;
+  }
+  
+  button[data-ut-element="button"]:hover {
+    background-color: rgb(var(--primary) / 0.9) !important;
+  }
+  
+  button[data-ut-element="button"]:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+  }
+  
+  div[data-ut-element="allowed-content"] {
+    color: rgb(var(--muted-foreground)) !important;
+    font-size: 0.75rem !important;
+  }
+  
+  label[data-ut-element="label"] {
+    color: rgb(var(--foreground)) !important;
   }
 }

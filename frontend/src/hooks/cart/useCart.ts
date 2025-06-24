@@ -326,7 +326,7 @@ export const useApplyCoupon = () => {
       
       return data as unknown as ApiResponse<{ success: boolean; message: string; cart: Cart }>;
     },
-    onMutate: async (_code: string) => {
+    onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });
       const previousCart = queryClient.getQueryData<Cart>(['cart']);
       return { previousCart };

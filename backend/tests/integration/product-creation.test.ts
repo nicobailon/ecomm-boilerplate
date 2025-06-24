@@ -412,7 +412,7 @@ describe('Product Creation Integration Tests', () => {
       try {
         // This should handle the slug conflict gracefully
         await caller.product.create(productData);
-      } catch (error) {
+      } catch {
         // Even if it fails, verify no partial data was left
         const productCountAfter = await Product.countDocuments();
         expect(productCountAfter).toBe(productCountBefore);
@@ -458,7 +458,7 @@ describe('Product Creation Integration Tests', () => {
       const caller = appRouter.createCaller(ctx);
 
       await expect(caller.product.create(productData)).rejects.toThrow(
-        'Provide either collectionId or collectionName, not both'
+        'Provide either collectionId or collectionName, not both',
       );
     });
   });

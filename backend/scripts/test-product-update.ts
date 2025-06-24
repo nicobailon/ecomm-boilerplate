@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import { Product, IProductDocument } from '../models/product.model.js';
+import { Product } from '../models/product.model.js';
 import { productService } from '../services/product.service.js';
 import { IProductWithVariants } from '../types/product.types.js';
 
@@ -16,7 +16,7 @@ async function testProductUpdate(): Promise<void> {
     console.error('Connected to MongoDB');
 
     // Find a product with variants
-    const productDoc = await Product.findOne({ 'variants.0': { $exists: true } }) as IProductDocument | null;
+    const productDoc = await Product.findOne({ 'variants.0': { $exists: true } });
     
     if (!productDoc) {
       console.error('No product with variants found');

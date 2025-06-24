@@ -65,7 +65,7 @@ describe('inventoryRouter', () => {
       const caller = inventoryRouter.createCaller(() => ctx);
 
       vi.spyOn(inventoryService, 'checkAvailability').mockRejectedValue(
-        new AppError('Product not found', 404)
+        new AppError('Product not found', 404),
       );
 
       await expect(
@@ -73,7 +73,7 @@ describe('inventoryRouter', () => {
           productId: '507f1f77bcf86cd799439011',
           variantId: 'v1',
           quantity: 5,
-        })
+        }),
       ).rejects.toThrow('Product not found');
     });
   });
@@ -96,7 +96,7 @@ describe('inventoryRouter', () => {
       };
 
       vi.spyOn(inventoryService, 'getProductInventoryInfo').mockResolvedValue(
-        mockInventoryInfo
+        mockInventoryInfo,
       );
 
       const result = await caller.getProductInventory({
@@ -112,13 +112,13 @@ describe('inventoryRouter', () => {
       const caller = inventoryRouter.createCaller(() => ctx);
 
       vi.spyOn(inventoryService, 'getProductInventoryInfo').mockRejectedValue(
-        new AppError('Product not found', 404)
+        new AppError('Product not found', 404),
       );
 
       await expect(
         caller.getProductInventory({
           productId: '507f1f77bcf86cd799439011',
-        })
+        }),
       ).rejects.toThrow('Product not found');
     });
   });
@@ -156,7 +156,8 @@ describe('inventoryRouter', () => {
       });
 
       expect(result).toEqual(mockResult);
-      expect(inventoryService.updateInventory).toHaveBeenCalledWith(
+      const updateInventoryMock = vi.mocked(inventoryService.updateInventory);
+      expect(updateInventoryMock).toHaveBeenCalledWith(
         '507f1f77bcf86cd799439011',
         'v1',
         10,
@@ -164,7 +165,7 @@ describe('inventoryRouter', () => {
         'user123',
         { supplier: 'Supplier A' },
         0, // retryCount
-        undefined // variantLabel
+        undefined, // variantLabel
       );
     });
 
@@ -182,7 +183,7 @@ describe('inventoryRouter', () => {
           productId: '507f1f77bcf86cd799439011',
           adjustment: 10,
           reason: 'restock',
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -195,7 +196,7 @@ describe('inventoryRouter', () => {
           productId: '507f1f77bcf86cd799439011',
           adjustment: 10,
           reason: 'restock',
-        })
+        }),
       ).rejects.toThrow();
     });
   });
@@ -313,7 +314,7 @@ describe('inventoryRouter', () => {
       ];
 
       vi.spyOn(inventoryService, 'getInventoryTurnover').mockResolvedValue(
-        mockTurnoverData
+        mockTurnoverData,
       );
 
       const result = await caller.getInventoryTurnover({

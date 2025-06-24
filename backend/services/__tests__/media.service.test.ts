@@ -8,7 +8,7 @@ vi.mock('../../lib/redis.js', () => ({
   redis: {
     get: vi.fn(),
     setex: vi.fn(),
-  }
+  },
 }));
 
 describe('MediaService', () => {
@@ -18,61 +18,65 @@ describe('MediaService', () => {
 
   beforeEach(() => {
     mediaService = new MediaService();
-    mockRedisGet = redis.get as MockedFunction<typeof redis.get>;
-    mockRedisSetex = redis.setex as MockedFunction<typeof redis.setex>;
+    mockRedisGet = vi.fn();
+    mockRedisSetex = vi.fn();
+    Object.assign(redis, {
+      get: mockRedisGet,
+      setex: mockRedisSetex,
+    });
     vi.clearAllMocks();
   });
 
   describe('processMediaUpload', () => {
-    it('should process valid image uploads successfully', async () => {
+    it('should process valid image uploads successfully', () => {
       const files = [
         {
           url: 'https://utfs.io/f/test-image.jpg',
           type: 'image/jpeg',
           size: 1024 * 1024, // 1MB
-          name: 'test-image.jpg'
-        }
+          name: 'test-image.jpg',
+        },
       ];
 
-      const result = await mediaService.processMediaUpload(files, 0);
+      const result = mediaService.processMediaUpload(files, 0);
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
-        id: expect.any(String),
+        id: expect.any(String) as string,
         type: 'image',
         url: 'https://utfs.io/f/test-image.jpg',
         title: 'test-image.jpg',
         order: 0,
-        createdAt: expect.any(Date),
+        createdAt: expect.any(Date) as Date,
         metadata: {
-          size: 1024 * 1024
-        }
+          size: 1024 * 1024,
+        },
       });
     });
 
-    it('should process valid video uploads successfully', async () => {
+    it('should process valid video uploads successfully', () => {
       const files = [
         {
           url: 'https://utfs.io/f/test-video.mp4',
           type: 'video/mp4',
           size: 5 * 1024 * 1024, // 5MB
-          name: 'test-video.mp4'
-        }
+          name: 'test-video.mp4',
+        },
       ];
 
-      const result = await mediaService.processMediaUpload(files, 0);
+      const result = mediaService.processMediaUpload(files, 0);
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
-        id: expect.any(String),
+        id: expect.any(String) as string,
         type: 'video',
         url: 'https://utfs.io/f/test-video.mp4',
         title: 'test-video.mp4',
         order: 0,
-        createdAt: expect.any(Date),
+        createdAt: expect.any(Date) as Date,
         metadata: {
-          size: 5 * 1024 * 1024
-        }
+          size: 5 * 1024 * 1024,
+        },
       });
     });
 
@@ -82,16 +86,16 @@ describe('MediaService', () => {
           url: 'https://utfs.io/f/test-image.jpg',
           type: 'image/jpeg', 
           size: 1024,
-          name: 'test.jpg'
-        }
+          name: 'test.jpg',
+        },
       ];
 
       await expect(
-        mediaService.processMediaUpload(files, MEDIA_LIMITS.MAX_ITEMS)
+        mediaService.processMediaUpload(files, MEDIA_LIMITS.MAX_ITEMS),
       ).rejects.toThrow(AppError);
       
       await expect(
-        mediaService.processMediaUpload(files, MEDIA_LIMITS.MAX_ITEMS)
+        mediaService.processMediaUpload(files, MEDIA_LIMITS.MAX_ITEMS),
       ).rejects.toThrow(`Cannot exceed ${MEDIA_LIMITS.MAX_ITEMS} total media items`);
     });
 
@@ -101,36 +105,36 @@ describe('MediaService', () => {
           url: 'https://utfs.io/f/test-file.txt',
           type: 'text/plain',
           size: 1024,
-          name: 'test.txt'
-        }
+          name: 'test.txt',
+        },
       ];
 
       await expect(
-        mediaService.processMediaUpload(files, 0)
+        mediaService.processMediaUpload(files, 0),
       ).rejects.toThrow(AppError);
       
       await expect(
-        mediaService.processMediaUpload(files, 0)
+        mediaService.processMediaUpload(files, 0),
       ).rejects.toThrow('Unsupported file type: text/plain');
     });
 
-    it('should assign correct order based on existing media count', async () => {
+    it('should assign correct order based on existing media count', () => {
       const files = [
         {
           url: 'https://utfs.io/f/image1.jpg',
           type: 'image/jpeg',
           size: 1024,
-          name: 'image1.jpg'
+          name: 'image1.jpg',
         },
         {
           url: 'https://utfs.io/f/image2.jpg',
           type: 'image/jpeg',
           size: 1024,
-          name: 'image2.jpg'
-        }
+          name: 'image2.jpg',
+        },
       ];
 
-      const result = await mediaService.processMediaUpload(files, 2);
+      const result = mediaService.processMediaUpload(files, 2);
 
       expect(result[0].order).toBe(2);
       expect(result[1].order).toBe(3);
@@ -138,36 +142,36 @@ describe('MediaService', () => {
   });
 
   describe('validateYouTubeUrl', () => {
-    it('should validate standard YouTube watch URLs', async () => {
-      const result = await mediaService.validateYouTubeUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    it('should validate standard YouTube watch URLs', () => {
+      const result = mediaService.validateYouTubeUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
       
       expect(result.isValid).toBe(true);
       expect(result.videoId).toBe('dQw4w9WgXcQ');
     });
 
-    it('should validate shortened YouTube URLs', async () => {
-      const result = await mediaService.validateYouTubeUrl('https://youtu.be/dQw4w9WgXcQ');
+    it('should validate shortened YouTube URLs', () => {
+      const result = mediaService.validateYouTubeUrl('https://youtu.be/dQw4w9WgXcQ');
       
       expect(result.isValid).toBe(true);
       expect(result.videoId).toBe('dQw4w9WgXcQ');
     });
 
-    it('should validate YouTube embed URLs', async () => {
-      const result = await mediaService.validateYouTubeUrl('https://www.youtube.com/embed/dQw4w9WgXcQ');
+    it('should validate YouTube embed URLs', () => {
+      const result = mediaService.validateYouTubeUrl('https://www.youtube.com/embed/dQw4w9WgXcQ');
       
       expect(result.isValid).toBe(true);
       expect(result.videoId).toBe('dQw4w9WgXcQ');
     });
 
-    it('should reject invalid YouTube URLs', async () => {
-      const result = await mediaService.validateYouTubeUrl('https://example.com/video');
+    it('should reject invalid YouTube URLs', () => {
+      const result = mediaService.validateYouTubeUrl('https://example.com/video');
       
       expect(result.isValid).toBe(false);
       expect(result.videoId).toBeUndefined();
     });
 
-    it('should reject malformed URLs', async () => {
-      const result = await mediaService.validateYouTubeUrl('not-a-url');
+    it('should reject malformed URLs', () => {
+      const result = mediaService.validateYouTubeUrl('not-a-url');
       
       expect(result.isValid).toBe(false);
       expect(result.videoId).toBeUndefined();
@@ -175,15 +179,15 @@ describe('MediaService', () => {
   });
 
   describe('getYouTubeThumbnail', () => {
-    it('should return thumbnail URL for valid video ID', async () => {
+    it('should return thumbnail URL for valid video ID', () => {
       const videoId = 'dQw4w9WgXcQ';
-      const thumbnailUrl = await mediaService.getYouTubeThumbnail(videoId);
+      const thumbnailUrl = mediaService.getYouTubeThumbnail(videoId);
       
       expect(thumbnailUrl).toBe(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`);
     });
 
-    it('should handle empty video ID', async () => {
-      const thumbnailUrl = await mediaService.getYouTubeThumbnail('');
+    it('should handle empty video ID', () => {
+      const thumbnailUrl = mediaService.getYouTubeThumbnail('');
       
       expect(thumbnailUrl).toBe('https://img.youtube.com/vi//maxresdefault.jpg');
     });
@@ -197,19 +201,19 @@ describe('MediaService', () => {
           type: 'image' as const,
           url: 'https://utfs.io/f/image.jpg',
           order: 0,
-          createdAt: new Date()
+          createdAt: new Date(),
         },
         {
           id: 'media2',
           type: 'video' as const,
           url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
           order: 1,
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       ];
 
       await expect(
-        mediaService.validateMediaGallery(mediaItems)
+        mediaService.validateMediaGallery(mediaItems),
       ).resolves.not.toThrow();
     });
 
@@ -219,11 +223,11 @@ describe('MediaService', () => {
         type: 'image' as const,
         url: 'https://utfs.io/f/image.jpg',
         order: i,
-        createdAt: new Date()
+        createdAt: new Date(),
       }));
 
       await expect(
-        mediaService.validateMediaGallery(mediaItems)
+        mediaService.validateMediaGallery(mediaItems),
       ).rejects.toThrow(`Maximum ${MEDIA_LIMITS.MAX_ITEMS} media items allowed`);
     });
 
@@ -234,41 +238,41 @@ describe('MediaService', () => {
           type: 'image' as const,
           url: 'https://utfs.io/f/image.jpg',
           order: 0,
-          createdAt: new Date()
+          createdAt: new Date(),
         },
         {
           id: 'media2',
           type: 'image' as const,
           url: 'https://utfs.io/f/image2.jpg',
           order: 2, // Missing order 1
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       ];
 
       await expect(
-        mediaService.validateMediaGallery(mediaItems)
+        mediaService.validateMediaGallery(mediaItems),
       ).rejects.toThrow('Media items must have sequential order starting from 0');
     });
 
-    it('should validate and set thumbnail for YouTube videos', async () => {
-      const mediaItems: Array<{
+    it('should validate and set thumbnail for YouTube videos', () => {
+      const mediaItems: {
         id: string;
         type: 'video';
         url: string;
         order: number;
         createdAt: Date;
         thumbnail?: string;
-      }> = [
+      }[] = [
         {
           id: 'media1',
           type: 'video' as const,
           url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
           order: 0,
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       ];
 
-      await mediaService.validateMediaGallery(mediaItems);
+      mediaService.validateMediaGallery(mediaItems);
 
       expect(mediaItems[0].thumbnail).toBe('https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg');
     });
@@ -280,12 +284,12 @@ describe('MediaService', () => {
           type: 'video' as const,
           url: 'https://example.com/fake-video',
           order: 0,
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       ];
 
       await expect(
-        mediaService.validateMediaGallery(mediaItems)
+        mediaService.validateMediaGallery(mediaItems),
       ).rejects.toThrow('Invalid YouTube URL: https://example.com/fake-video');
     });
 
@@ -296,12 +300,12 @@ describe('MediaService', () => {
           type: 'image' as const,
           url: 'http://insecure.com/image.jpg', // HTTP instead of HTTPS
           order: 0,
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       ];
 
       await expect(
-        mediaService.validateMediaGallery(mediaItems)
+        mediaService.validateMediaGallery(mediaItems),
       ).rejects.toThrow('Insecure URL detected: http://insecure.com/image.jpg');
     });
   });
@@ -309,7 +313,7 @@ describe('MediaService', () => {
   describe('deleteMediaFiles', () => {
     it('should handle empty URL array', async () => {
       await expect(
-        mediaService.deleteMediaFiles([])
+        mediaService.deleteMediaFiles([]),
       ).resolves.not.toThrow();
     });
 
@@ -317,7 +321,7 @@ describe('MediaService', () => {
       const urls = [
         'https://utfs.io/f/image1.jpg',
         'https://example.com/image2.jpg', // Non-UploadThing URL should be filtered out
-        'https://utfs.io/f/image3.jpg'
+        'https://utfs.io/f/image3.jpg',
       ];
 
       // Should complete without errors and filter correctly
@@ -345,26 +349,26 @@ describe('MediaService', () => {
       expect(mockRedisGet).toHaveBeenCalledWith('media:metadata:media123');
       expect(result).toMatchObject({
         views: 0,
-        lastViewed: expect.any(Date)
+        lastViewed: expect.any(Date) as Date,
       });
       expect(mockRedisSetex).toHaveBeenCalledWith(
         'media:metadata:media123',
         3600,
-        expect.any(String)
+        expect.any(String) as string,
       );
     });
 
     it('should handle Redis errors gracefully', async () => {
       mockRedisGet.mockRejectedValue(new Error('Redis connection failed'));
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       const result = await mediaService.getMediaMetadata('media123');
 
       expect(result).toMatchObject({
         views: 0,
-        lastViewed: expect.any(Date)
+        lastViewed: expect.any(Date) as Date,
       });
-      expect(consoleSpy).toHaveBeenCalledWith('Redis error:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith('Redis error:', expect.any(Error) as Error);
 
       consoleSpy.mockRestore();
     });
@@ -375,7 +379,7 @@ describe('MediaService', () => {
       it('should return "image" for image MIME types', () => {
         const mediaService = new MediaService();
         // Access private method for testing
-        const getMediaType = (mediaService as any).getMediaType.bind(mediaService);
+        const getMediaType = (mediaService as unknown as { getMediaType: (type: string) => string }).getMediaType.bind(mediaService);
         
         expect(getMediaType('image/jpeg')).toBe('image');
         expect(getMediaType('image/png')).toBe('image');
@@ -384,7 +388,7 @@ describe('MediaService', () => {
 
       it('should return "video" for video MIME types', () => {
         const mediaService = new MediaService();
-        const getMediaType = (mediaService as any).getMediaType.bind(mediaService);
+        const getMediaType = (mediaService as unknown as { getMediaType: (type: string) => string }).getMediaType.bind(mediaService);
         
         expect(getMediaType('video/mp4')).toBe('video');
         expect(getMediaType('video/webm')).toBe('video');
@@ -392,7 +396,7 @@ describe('MediaService', () => {
 
       it('should throw error for unsupported MIME types', () => {
         const mediaService = new MediaService();
-        const getMediaType = (mediaService as any).getMediaType.bind(mediaService);
+        const getMediaType = (mediaService as unknown as { getMediaType: (type: string) => string }).getMediaType.bind(mediaService);
         
         expect(() => getMediaType('text/plain')).toThrow('Unsupported media type: text/plain');
         expect(() => getMediaType('application/pdf')).toThrow('Unsupported media type: application/pdf');
@@ -402,7 +406,7 @@ describe('MediaService', () => {
     describe('isValidFileType', () => {
       it('should validate supported image types', () => {
         const mediaService = new MediaService();
-        const isValidFileType = (mediaService as any).isValidFileType.bind(mediaService);
+        const isValidFileType = (mediaService as unknown as { isValidFileType: (type: string) => boolean }).isValidFileType.bind(mediaService);
         
         expect(isValidFileType('image/jpeg')).toBe(true);
         expect(isValidFileType('image/png')).toBe(true);
@@ -411,7 +415,7 @@ describe('MediaService', () => {
 
       it('should validate supported video types', () => {
         const mediaService = new MediaService();
-        const isValidFileType = (mediaService as any).isValidFileType.bind(mediaService);
+        const isValidFileType = (mediaService as unknown as { isValidFileType: (type: string) => boolean }).isValidFileType.bind(mediaService);
         
         expect(isValidFileType('video/mp4')).toBe(true);
         expect(isValidFileType('video/webm')).toBe(true);
@@ -419,7 +423,7 @@ describe('MediaService', () => {
 
       it('should reject unsupported file types', () => {
         const mediaService = new MediaService();
-        const isValidFileType = (mediaService as any).isValidFileType.bind(mediaService);
+        const isValidFileType = (mediaService as unknown as { isValidFileType: (type: string) => boolean }).isValidFileType.bind(mediaService);
         
         expect(isValidFileType('text/plain')).toBe(false);
         expect(isValidFileType('application/pdf')).toBe(false);
@@ -430,7 +434,7 @@ describe('MediaService', () => {
     describe('isSecureUrl', () => {
       it('should accept HTTPS URLs from allowed domains', () => {
         const mediaService = new MediaService();
-        const isSecureUrl = (mediaService as any).isSecureUrl.bind(mediaService);
+        const isSecureUrl = (mediaService as unknown as { isSecureUrl: (url: string) => boolean }).isSecureUrl.bind(mediaService);
         
         expect(isSecureUrl('https://utfs.io/f/image.jpg')).toBe(true);
         expect(isSecureUrl('https://youtube.com/watch?v=abc')).toBe(true);
@@ -440,14 +444,14 @@ describe('MediaService', () => {
 
       it('should reject HTTP URLs', () => {
         const mediaService = new MediaService();
-        const isSecureUrl = (mediaService as any).isSecureUrl.bind(mediaService);
+        const isSecureUrl = (mediaService as unknown as { isSecureUrl: (url: string) => boolean }).isSecureUrl.bind(mediaService);
         
         expect(isSecureUrl('http://utfs.io/f/image.jpg')).toBe(false);
       });
 
       it('should reject URLs from disallowed domains', () => {
         const mediaService = new MediaService();
-        const isSecureUrl = (mediaService as any).isSecureUrl.bind(mediaService);
+        const isSecureUrl = (mediaService as unknown as { isSecureUrl: (url: string) => boolean }).isSecureUrl.bind(mediaService);
         
         expect(isSecureUrl('https://malicious.com/image.jpg')).toBe(false);
         expect(isSecureUrl('https://example.com/video.mp4')).toBe(false);
@@ -455,7 +459,7 @@ describe('MediaService', () => {
 
       it('should reject malformed URLs', () => {
         const mediaService = new MediaService();
-        const isSecureUrl = (mediaService as any).isSecureUrl.bind(mediaService);
+        const isSecureUrl = (mediaService as unknown as { isSecureUrl: (url: string) => boolean }).isSecureUrl.bind(mediaService);
         
         expect(isSecureUrl('not-a-url')).toBe(false);
         expect(isSecureUrl('')).toBe(false);

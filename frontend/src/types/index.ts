@@ -1,5 +1,7 @@
 import type { MediaItem } from './media';
 
+export type { MediaItem } from './media';
+
 // These will be imported from backend later
 export interface User {
   _id: string;

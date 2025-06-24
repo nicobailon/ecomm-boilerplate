@@ -1,0 +1,318 @@
+import { Meta, ColorPalette, ColorItem, Typeset } from '@storybook/addon-docs/blocks';
+
+<Meta title="Documentation/Design Tokens" />
+
+# Design Tokens
+
+Design tokens are the visual design atoms of our design system — specifically, they are named entities that store visual design attributes. We use them to maintain visual consistency across our product.
+
+## Color System
+
+Our color system is built on CSS custom properties that adapt to different themes. Each color has a main value and a foreground value for proper contrast.
+
+### Semantic Colors
+
+<ColorPalette>
+  <ColorItem
+    title="Background"
+    subtitle="Main app background"
+    colors={{
+      Light: 'rgb(255, 255, 255)',
+      Dark: 'rgb(17, 24, 39)',
+      Modern: 'rgb(255, 255, 255)',
+      Playful: 'rgb(255, 249, 246)',
+    }}
+  />
+  <ColorItem
+    title="Foreground"
+    subtitle="Main text color"
+    colors={{
+      Light: 'rgb(17, 24, 39)',
+      Dark: 'rgb(243, 244, 246)',
+      Modern: 'rgb(0, 0, 0)',
+      Playful: 'rgb(92, 45, 145)',
+    }}
+  />
+  <ColorItem
+    title="Primary"
+    subtitle="Primary brand color"
+    colors={{
+      Light: 'rgb(16, 185, 129)',
+      Dark: 'rgb(16, 185, 129)',
+      Modern: 'rgb(0, 0, 0)',
+      Playful: 'rgb(236, 72, 153)',
+    }}
+  />
+  <ColorItem
+    title="Secondary"
+    subtitle="Secondary actions"
+    colors={{
+      Light: 'rgb(243, 244, 246)',
+      Dark: 'rgb(55, 65, 81)',
+      Modern: 'rgb(245, 245, 245)',
+      Playful: 'rgb(254, 220, 86)',
+    }}
+  />
+  <ColorItem
+    title="Destructive"
+    subtitle="Error and destructive actions"
+    colors={{
+      Light: 'rgb(239, 68, 68)',
+      Dark: 'rgb(185, 28, 28)',
+      Modern: 'rgb(220, 38, 38)',
+      Playful: 'rgb(239, 68, 68)',
+    }}
+  />
+</ColorPalette>
+
+### State Colors
+
+<ColorPalette>
+  <ColorItem
+    title="Success"
+    subtitle="Success states"
+    colors={{
+      Default: 'rgb(34, 197, 94)',
+      Foreground: 'rgb(255, 255, 255)',
+    }}
+  />
+  <ColorItem
+    title="Warning"
+    subtitle="Warning states"
+    colors={{
+      Default: 'rgb(234, 179, 8)',
+      Foreground: 'rgb(255, 255, 255)',
+    }}
+  />
+  <ColorItem
+    title="Info"
+    subtitle="Informational states"
+    colors={{
+      Default: 'rgb(59, 130, 246)',
+      Foreground: 'rgb(255, 255, 255)',
+    }}
+  />
+</ColorPalette>
+
+### UI Colors
+
+<ColorPalette>
+  <ColorItem
+    title="Border"
+    subtitle="Default borders"
+    colors={{
+      Light: 'rgb(229, 231, 235)',
+      Dark: 'rgb(55, 65, 81)',
+      Modern: 'rgb(229, 229, 229)',
+      Playful: 'rgb(236, 72, 153)',
+    }}
+  />
+  <ColorItem
+    title="Muted"
+    subtitle="Muted backgrounds and text"
+    colors={{
+      Background: 'rgb(243, 244, 246)',
+      Foreground: 'rgb(107, 114, 128)',
+    }}
+  />
+</ColorPalette>
+
+## Typography
+
+Our typography system uses a modular scale to maintain consistent and harmonious text sizes across the application.
+
+### Font Sizes
+
+```css
+--font-size-xs: 0.75rem;    /* 12px */
+--font-size-sm: 0.875rem;   /* 14px */
+--font-size-base: 1rem;     /* 16px */
+--font-size-lg: 1.125rem;   /* 18px */
+--font-size-xl: 1.25rem;    /* 20px */
+--font-size-2xl: 1.5rem;    /* 24px */
+--font-size-3xl: 1.875rem;  /* 30px */
+--font-size-4xl: 2.25rem;   /* 36px */
+```
+
+### Typography Scale
+
+<Typeset
+  fontSizes={[
+    12,
+    14,
+    16,
+    18,
+    20,
+    24,
+    30,
+    36,
+  ]}
+  sampleText="The quick brown fox jumps over the lazy dog"
+/>
+
+### Font Weights
+
+- **Thin**: 100
+- **Light**: 300
+- **Normal**: 400
+- **Medium**: 500
+- **Semibold**: 600
+- **Bold**: 700
+- **Extrabold**: 800
+
+### Line Heights
+
+```css
+--line-height-none: 1;
+--line-height-tight: 1.25;
+--line-height-snug: 1.375;
+--line-height-normal: 1.5;
+--line-height-relaxed: 1.625;
+--line-height-loose: 2;
+```
+
+### Letter Spacing
+
+```css
+--letter-spacing-tighter: -0.05em;
+--letter-spacing-tight: -0.025em;
+--letter-spacing-normal: 0;
+--letter-spacing-wide: 0.025em;
+--letter-spacing-wider: 0.05em;
+--letter-spacing-widest: 0.1em;
+```
+
+## Spacing
+
+Our spacing system is based on a 4px unit (0.25rem). This creates a consistent rhythm throughout the interface.
+
+### Spacing Scale
+
+```css
+--spacing-1: 0.25rem;   /* 4px */
+--spacing-2: 0.5rem;    /* 8px */
+--spacing-3: 0.75rem;   /* 12px */
+--spacing-4: 1rem;      /* 16px */
+--spacing-5: 1.25rem;   /* 20px */
+--spacing-6: 1.5rem;    /* 24px */
+--spacing-8: 2rem;      /* 32px */
+--spacing-10: 2.5rem;   /* 40px */
+--spacing-12: 3rem;     /* 48px */
+--spacing-16: 4rem;     /* 64px */
+```
+
+### Component Spacing
+
+- **Card Padding**: 1.5rem (24px)
+- **Button Height**: 2.5rem (40px)
+- **Input Height**: 2.5rem (40px)
+- **Focus Ring Width**: 2px
+- **Focus Ring Offset**: 2px
+
+## Border Radius
+
+Border radius values adapt based on the active theme:
+
+- **Default Theme**: 0.5rem (8px)
+- **Modern Theme**: 0rem (sharp corners)
+- **Playful Theme**: 1.5rem (24px)
+
+## Shadows
+
+Our shadow system provides depth and hierarchy to UI elements:
+
+```css
+--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+--shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+--shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+--shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+--shadow-none: 0 0 #0000;
+```
+
+## Gradients
+
+Theme-specific gradient definitions for decorative elements:
+
+### Primary Gradient
+- Light/Dark: `linear-gradient(to right, rgb(16, 185, 129), rgb(59, 130, 246))`
+- Modern: `linear-gradient(to right, rgb(0, 0, 0), rgb(64, 64, 64))`
+- Playful: `linear-gradient(to right, rgb(236, 72, 153), rgb(124, 58, 237))`
+
+### Secondary Gradient
+- Light: `linear-gradient(to bottom, rgb(243, 244, 246), rgb(229, 231, 235))`
+- Dark: `linear-gradient(to bottom, rgb(55, 65, 81), rgb(31, 41, 55))`
+- Modern: `linear-gradient(to bottom, rgb(245, 245, 245), rgb(229, 229, 229))`
+- Playful: `linear-gradient(to bottom, rgb(254, 220, 86), rgb(52, 211, 153))`
+
+### Accent Gradient
+- Light/Dark: `linear-gradient(135deg, rgb(16, 185, 129), rgb(34, 197, 94))`
+- Modern: `linear-gradient(135deg, rgb(0, 0, 0), rgb(32, 32, 32))`
+- Playful: `linear-gradient(135deg, rgb(52, 211, 153), rgb(99, 102, 241))`
+
+## Animation
+
+### Timing
+
+- **Fast**: 200ms (color transitions)
+- **Normal**: 300ms (general transitions)
+- **Slow**: 500ms (complex animations)
+
+### Easing
+
+- **Default**: `ease`
+- **In-Out**: `ease-in-out`
+- **Spring**: Custom spring physics for drawers and modals
+
+## Usage in Code
+
+### Using CSS Variables
+
+```css
+.custom-element {
+  background: rgb(var(--primary));
+  color: rgb(var(--primary-foreground));
+  padding: var(--spacing-4);
+  border-radius: var(--radius);
+}
+```
+
+### Using Tailwind Classes
+
+```jsx
+<div className="bg-primary text-primary-foreground p-4 rounded-lg">
+  Content
+</div>
+```
+
+### With Opacity
+
+```jsx
+<div className="bg-primary/50"> /* 50% opacity */
+  Semi-transparent primary background
+</div>
+```
+
+## Accessibility Considerations
+
+- All color combinations meet WCAG AA standards (4.5:1 for normal text, 3:1 for large text)
+- Focus indicators use a 2px ring with proper contrast
+- Reduced motion preferences are respected
+- High contrast mode adapts borders and outlines
+
+## Theme Customization
+
+To create a custom theme, define all required CSS variables:
+
+```css
+.theme-custom {
+  --background: 255, 255, 255;
+  --foreground: 0, 0, 0;
+  /* ... all other required variables */
+  --radius: 0.5rem;
+}
+```
+
+See the [Theme Guide](/docs/ui-primitives-theme--docs) for detailed instructions on creating custom themes.

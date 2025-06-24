@@ -20,5 +20,14 @@ export interface CartProductWithQuantity {
   collectionId?: Types.ObjectId;
   isFeatured: boolean;
   category?: string;
+  slug?: string;
   quantity: number;
+  variantId?: string;
+  variantDetails?: {
+    label?: string;
+    size?: string;
+    color?: string;
+    price: number;
+    sku?: string;
+  };
 }

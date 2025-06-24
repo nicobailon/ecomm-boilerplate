@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import { appRouter } from './app.router.js';
 import { collectionService } from '../../services/collection.service.js';
+import type { Request, Response } from 'express';
 
 vi.mock('../../services/collection.service');
 
@@ -13,12 +14,13 @@ describe('collectionRouter', () => {
     vi.clearAllMocks();
     
     caller = appRouter.createCaller({
-      req: { cookies: {} },
+      req: { cookies: {} } as Request,
       res: {
         cookie: vi.fn(),
         clearCookie: vi.fn(),
-      },
-    } as any);
+      } as unknown as Response,
+      user: null,
+    });
 
     authedCaller = appRouter.createCaller({
       user: { _id: 'user123', role: 'customer' },
@@ -70,7 +72,7 @@ describe('collectionRouter', () => {
       const input = { name: 'My Collection', products: ['507f1f77bcf86cd799439999'] };
       
       vi.mocked(collectionService.create).mockRejectedValue(
-        new Error('One or more product IDs are invalid')
+        new Error('One or more product IDs are invalid'),
       );
 
       await expect(authedCaller.collection.create(input)).rejects.toThrow(TRPCError);
@@ -101,7 +103,7 @@ describe('collectionRouter', () => {
       expect(collectionService.update).toHaveBeenCalledWith(
         'collection123',
         'user123',
-        input.data
+        input.data,
       );
       expect(result).toEqual(mockUpdatedCollection);
     });
@@ -153,7 +155,7 @@ describe('collectionRouter', () => {
       expect(collectionService.addProducts).toHaveBeenCalledWith(
         'collection123',
         'user123',
-        ['507f1f77bcf86cd799439001', '507f1f77bcf86cd799439002']
+        ['507f1f77bcf86cd799439001', '507f1f77bcf86cd799439002'],
       );
       expect(result).toEqual(mockUpdatedCollection);
     });
@@ -194,7 +196,7 @@ describe('collectionRouter', () => {
       expect(collectionService.removeProducts).toHaveBeenCalledWith(
         'collection123',
         'user123',
-        ['507f1f77bcf86cd799439001']
+        ['507f1f77bcf86cd799439001'],
       );
       expect(result).toEqual(mockUpdatedCollection);
     });

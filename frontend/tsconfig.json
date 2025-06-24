@@ -28,7 +28,8 @@
   "include": [
     "src/**/*",
     "../backend/**/*.ts",
-    "../shared/**/*"
+    "../shared/**/*",
+    ".storybook/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }

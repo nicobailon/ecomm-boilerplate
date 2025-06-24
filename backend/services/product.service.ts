@@ -499,7 +499,7 @@ class ProductService {
       // Wrap other errors with transaction context
       throw new AppError(
         `Transaction failed during product creation: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        500
+        500,
       );
     } finally {
       await session.endSession();

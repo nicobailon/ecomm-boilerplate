@@ -16,7 +16,6 @@ export function validateEnvVariables(): void {
     'NODE_ENV',
     'UPLOADTHING_TOKEN',
   ];
-  
 
   const missingVars: string[] = [];
 

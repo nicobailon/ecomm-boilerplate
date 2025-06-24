@@ -44,9 +44,9 @@ describe('ProductService - Variant Label Feature', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -60,7 +60,7 @@ describe('ProductService - Variant Label Feature', () => {
       });
 
       it('should update inventory using variant label', async () => {
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
         const result = await productService.updateVariantInventory(
           mockProductId.toString(),
@@ -68,7 +68,7 @@ describe('ProductService - Variant Label Feature', () => {
           5,
           'increment',
           3,
-          'Small - Blue'
+          'Small - Blue',
         );
 
         expect(result.inventory).toBe(15);
@@ -76,7 +76,7 @@ describe('ProductService - Variant Label Feature', () => {
       });
 
       it('should map size to label when only variantId provided', async () => {
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
         const result = await productService.updateVariantInventory(
           mockProductId.toString(),
@@ -84,7 +84,7 @@ describe('ProductService - Variant Label Feature', () => {
           5,
           'increment',
           3,
-          undefined
+          undefined,
         );
 
         expect(result.inventory).toBe(15);
@@ -92,7 +92,7 @@ describe('ProductService - Variant Label Feature', () => {
       });
 
       it('should prefer label over variantId when both provided', async () => {
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
         const result = await productService.updateVariantInventory(
           mockProductId.toString(),
@@ -100,7 +100,7 @@ describe('ProductService - Variant Label Feature', () => {
           5,
           'increment',
           3,
-          'Medium - Blue'
+          'Medium - Blue',
         );
 
         expect(result.inventory).toBe(20);
@@ -108,7 +108,7 @@ describe('ProductService - Variant Label Feature', () => {
       });
 
       it('should handle variant not found error', async () => {
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
         await expect(
           productService.updateVariantInventory(
@@ -117,8 +117,8 @@ describe('ProductService - Variant Label Feature', () => {
             5,
             'increment',
             3,
-            'Large - Blue'
-          )
+            'Large - Blue',
+          ),
         ).rejects.toThrow(AppError);
       });
     });
@@ -129,7 +129,7 @@ describe('ProductService - Variant Label Feature', () => {
       });
 
       it('should update inventory using variantId (legacy mode)', async () => {
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
         const result = await productService.updateVariantInventory(
           mockProductId.toString(),
@@ -137,7 +137,7 @@ describe('ProductService - Variant Label Feature', () => {
           5,
           'increment',
           3,
-          undefined
+          undefined,
         );
 
         expect(result.inventory).toBe(15);
@@ -145,7 +145,7 @@ describe('ProductService - Variant Label Feature', () => {
       });
 
       it('should ignore label in legacy mode', async () => {
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
         const result = await productService.updateVariantInventory(
           mockProductId.toString(),
@@ -153,7 +153,7 @@ describe('ProductService - Variant Label Feature', () => {
           20,
           'set',
           3,
-          'Small - Blue'
+          'Small - Blue',
         );
 
         expect(result.inventory).toBe(20);
@@ -162,7 +162,7 @@ describe('ProductService - Variant Label Feature', () => {
       });
 
       it('should handle size lookup in legacy mode', async () => {
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
         const result = await productService.updateVariantInventory(
           mockProductId.toString(),
@@ -170,7 +170,7 @@ describe('ProductService - Variant Label Feature', () => {
           5,
           'decrement',
           3,
-          undefined
+          undefined,
         );
 
         expect(result.inventory).toBe(10);
@@ -183,7 +183,7 @@ describe('ProductService - Variant Label Feature', () => {
         const versionError = new Error('VersionError');
         versionError.name = 'VersionError';
 
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
         mockProduct.save
           .mockRejectedValueOnce(versionError)
           .mockResolvedValueOnce(true);
@@ -193,7 +193,7 @@ describe('ProductService - Variant Label Feature', () => {
           'variant-1',
           5,
           'increment',
-          3
+          3,
         );
 
         expect(result.inventory).toBe(15);
@@ -204,7 +204,7 @@ describe('ProductService - Variant Label Feature', () => {
         const versionError = new Error('VersionError');
         versionError.name = 'VersionError';
 
-        vi.mocked(Product.findById).mockResolvedValue(mockProduct);
+        vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
         mockProduct.save.mockRejectedValue(versionError);
 
         await expect(
@@ -213,8 +213,8 @@ describe('ProductService - Variant Label Feature', () => {
             'variant-1',
             5,
             'increment',
-            3
-          )
+            3,
+          ),
         ).rejects.toThrow('Failed to update inventory for variant after 3 retries');
       });
     });
@@ -253,12 +253,13 @@ describe('ProductService - Variant Label Feature', () => {
           save: vi.fn(),
         };
 
-        vi.mocked(Product.prototype.save).mockResolvedValue(createdProduct);
+        vi.spyOn(Product.prototype, 'save').mockResolvedValue(createdProduct);
 
         const result = await productService.createProduct(productData);
 
         expect(result).toBeDefined();
         // Since the mock returns the product data directly, we can verify the call was made
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         expect(Product.prototype.save).toHaveBeenCalledTimes(1);
       });
     });

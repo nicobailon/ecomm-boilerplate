@@ -77,14 +77,14 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ featuredProducts })
 											</div>
 										</div>
 										<div className='p-4'>
-											<h3 className='text-lg font-semibold mb-2 text-white hover:text-primary transition-colors'>{product.name}</h3>
+											<h3 className='text-lg font-semibold mb-2 text-foreground hover:text-primary transition-colors'>{product.name}</h3>
 											<p className='text-primary font-medium mb-4'>
 												${product.price.toFixed(2)}
 											</p>
 											<button
 												onClick={(e) => handleAddToCart(e, product)}
 												disabled={addToCart.isPending}
-												className='w-full bg-primary hover:bg-primary/80 text-primary-foreground font-semibold py-2 px-4 rounded transition-colors duration-300 
+												className='w-full bg-primary hover:bg-primary/80 text-primary-foreground font-semibold py-2 px-4 rounded border border-primary transition-colors duration-300 
 												flex items-center justify-center disabled:opacity-50'
 											>
 												<ShoppingCart className='w-5 h-5 mr-2' />
@@ -99,8 +99,8 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ featuredProducts })
 					<button
 						onClick={prevSlide}
 						disabled={isStartDisabled}
-						className={`absolute top-1/2 -left-4 transform -translate-y-1/2 p-2 rounded-full transition-colors duration-300 ${
-							isStartDisabled ? 'bg-muted cursor-not-allowed' : 'bg-primary hover:bg-primary/80'
+						className={`absolute top-1/2 -left-4 transform -translate-y-1/2 p-2 rounded-full transition-colors duration-300 border ${
+							isStartDisabled ? 'bg-muted border-muted cursor-not-allowed' : 'bg-primary border-primary hover:bg-primary/80'
 						}`}
 					>
 						<ChevronLeft className='w-6 h-6' />
@@ -109,8 +109,8 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ featuredProducts })
 					<button
 						onClick={nextSlide}
 						disabled={isEndDisabled}
-						className={`absolute top-1/2 -right-4 transform -translate-y-1/2 p-2 rounded-full transition-colors duration-300 ${
-							isEndDisabled ? 'bg-muted cursor-not-allowed' : 'bg-primary hover:bg-primary/80'
+						className={`absolute top-1/2 -right-4 transform -translate-y-1/2 p-2 rounded-full transition-colors duration-300 border ${
+							isEndDisabled ? 'bg-muted border-muted cursor-not-allowed' : 'bg-primary border-primary hover:bg-primary/80'
 						}`}
 					>
 						<ChevronRight className='w-6 h-6' />

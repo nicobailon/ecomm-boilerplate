@@ -27,3 +27,10 @@ dist-ssr
 *.md
 !README.md
 !CLAUDE.md
+
+# Test coverage
+coverage/
+*.lcov
+*storybook.log
+storybook-static
+.storybook/local

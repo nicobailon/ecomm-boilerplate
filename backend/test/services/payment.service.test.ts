@@ -27,10 +27,10 @@ describe('PaymentService - Coupon Integration', () => {
     
     // Mock mongoose session
     const mockSession = {
-      withTransaction: vi.fn(async (fn) => await fn()),
+      withTransaction: vi.fn(async (fn: () => Promise<unknown>) => await fn()),
       endSession: vi.fn(),
     };
-    vi.spyOn(mongoose, 'startSession').mockResolvedValue(mockSession as any);
+    vi.spyOn(mongoose, 'startSession').mockResolvedValue(mockSession as unknown as mongoose.ClientSession);
   });
 
   afterEach(() => {
@@ -74,7 +74,7 @@ describe('PaymentService - Coupon Integration', () => {
       const sessionId = await paymentService.createCheckoutSession(
         mockUser as any,
         mockProducts,
-        'USER20'
+        'USER20',
       );
 
       expect(sessionId).toBe('test-session-id');
@@ -91,7 +91,7 @@ describe('PaymentService - Coupon Integration', () => {
           metadata: expect.objectContaining({
             couponCode: 'USER20',
           }),
-        })
+        }),
       );
     });
 
@@ -116,7 +116,7 @@ describe('PaymentService - Coupon Integration', () => {
       const sessionId = await paymentService.createCheckoutSession(
         mockUser as any,
         mockProducts,
-        'summer20'
+        'summer20',
       );
 
       expect(sessionId).toBe('test-session-id');
@@ -138,7 +138,7 @@ describe('PaymentService - Coupon Integration', () => {
 
       // Total is $200 (50*2 + 100*1), which is less than $300
       await expect(
-        paymentService.createCheckoutSession(mockUser as any, mockProducts, 'MIN100')
+        paymentService.createCheckoutSession(mockUser as any, mockProducts, 'MIN100'),
       ).rejects.toThrow(new AppError('Minimum purchase amount of $300 required', 400));
     });
 
@@ -157,7 +157,7 @@ describe('PaymentService - Coupon Integration', () => {
         .mockResolvedValueOnce(mockCoupon);
 
       await expect(
-        paymentService.createCheckoutSession(mockUser as any, mockProducts, 'MAXED')
+        paymentService.createCheckoutSession(mockUser as any, mockProducts, 'MAXED'),
       ).rejects.toThrow(new AppError('Coupon has reached maximum usage limit', 400));
     });
   });
@@ -199,7 +199,7 @@ describe('PaymentService - Coupon Integration', () => {
 
     it('should use transaction for atomicity', async () => {
       const mockSession = {
-        withTransaction: vi.fn(async (fn) => await fn()),
+        withTransaction: vi.fn(async (fn: () => Promise<unknown>) => await fn()),
         endSession: vi.fn(),
       };
       vi.mocked(mongoose.startSession).mockResolvedValue(mockSession as any);
@@ -213,7 +213,7 @@ describe('PaymentService - Coupon Integration', () => {
 
     it('should rollback on coupon increment failure', async () => {
       vi.mocked(couponService.incrementUsage).mockRejectedValue(
-        new AppError('Coupon has reached maximum usage limit', 400)
+        new AppError('Coupon has reached maximum usage limit', 400),
       );
 
       const mockSession = {
@@ -229,7 +229,7 @@ describe('PaymentService - Coupon Integration', () => {
       vi.mocked(mongoose.startSession).mockResolvedValue(mockSession as any);
 
       await expect(
-        paymentService.processCheckoutSuccess(mockSessionId)
+        paymentService.processCheckoutSuccess(mockSessionId),
       ).rejects.toThrow();
 
       expect(Order.prototype.save).not.toHaveBeenCalled();
@@ -273,7 +273,7 @@ describe('PaymentService - Coupon Integration', () => {
       
       // Second call should fail
       vi.mocked(couponService.incrementUsage).mockRejectedValueOnce(
-        new AppError('Coupon has reached maximum usage limit', 400)
+        new AppError('Coupon has reached maximum usage limit', 400),
       );
 
       const mockProducts = [{ _id: '507f1f77bcf86cd799439011', quantity: 1 }];
@@ -290,7 +290,7 @@ describe('PaymentService - Coupon Integration', () => {
       const session1 = await paymentService.createCheckoutSession(
         mockUser as any,
         mockProducts,
-        'LIMITED1'
+        'LIMITED1',
       );
       expect(session1).toBe('session1');
 
@@ -318,7 +318,7 @@ describe('PaymentService - Coupon Integration', () => {
 
       // Second checkout should fail during processing
       await expect(
-        paymentService.processCheckoutSuccess('session2')
+        paymentService.processCheckoutSuccess('session2'),
       ).rejects.toThrow();
     });
   });

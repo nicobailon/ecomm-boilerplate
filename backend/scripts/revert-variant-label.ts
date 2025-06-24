@@ -100,7 +100,7 @@ async function revertVariantLabels(options: RevertOptions = {}): Promise<RevertR
             
             if (!dryRun) {
               // Create a new variant without the label property
-              const { label, ...variantWithoutLabel } = variant;
+              const { label: _label, ...variantWithoutLabel } = variant;
               // Replace the variant in the array
               const variantIndex = product.variants.findIndex(v => v.variantId === variant.variantId);
               if (variantIndex !== -1) {

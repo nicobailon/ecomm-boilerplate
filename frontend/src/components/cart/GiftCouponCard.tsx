@@ -45,7 +45,7 @@ const GiftCouponCard = () => {
 					</p>
 					<Link 
 						to="/login" 
-						className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 focus:outline-none focus:ring-4 focus:ring-ring"
+						className="inline-flex items-center justify-center rounded-lg bg-primary border border-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 focus:outline-none focus:ring-4 focus:ring-ring"
 					>
 						Sign in to use vouchers
 					</Link>
@@ -83,7 +83,7 @@ const GiftCouponCard = () => {
 				{!coupon && (
 					<motion.button
 						type='button'
-						className='flex w-full items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 focus:outline-none focus:ring-4 focus:ring-ring disabled:opacity-50'
+						className='flex w-full items-center justify-center rounded-lg bg-primary border border-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 focus:outline-none focus:ring-4 focus:ring-ring disabled:opacity-50'
 						whileHover={{ scale: 1.05 }}
 						whileTap={{ scale: 0.95 }}
 						onClick={handleApplyCoupon}
@@ -111,7 +111,7 @@ const GiftCouponCard = () => {
 
 					<motion.button
 						type='button'
-						className='mt-2 flex w-full items-center justify-center rounded-lg bg-destructive 
+						className='mt-2 flex w-full items-center justify-center rounded-lg bg-destructive border border-destructive
             px-5 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/80 focus:outline-none
              focus:ring-4 focus:ring-ring disabled:opacity-50'
 						whileHover={{ scale: 1.05 }}

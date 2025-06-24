@@ -4,6 +4,8 @@ import { couponService } from '../../services/coupon.service.js';
 import { cartService } from '../../services/cart.service.js';
 import { TRPCError } from '@trpc/server';
 import { AppError } from '../../utils/AppError.js';
+import type { Request, Response } from 'express';
+import type { IUserDocument } from '../../models/user.model.js';
 
 vi.mock('../../services/coupon.service.js');
 vi.mock('../../services/cart.service.js');
@@ -13,23 +15,23 @@ describe('Coupon tRPC Router', () => {
   const mockAdminUserId = 'admin123';
   
   const mockContext = {
-    req: {} as any,
-    res: {} as any,
+    req: {} as Request,
+    res: {} as Response,
     user: {
       _id: mockUserId,
       email: 'user@example.com',
       role: 'customer',
-    } as any,
+    } as unknown as IUserDocument,
   };
 
   const mockAdminContext = {
-    req: {} as any,
-    res: {} as any,
+    req: {} as Request,
+    res: {} as Response,
     user: {
       _id: mockAdminUserId,
       email: 'admin@example.com',
       role: 'admin',
-    } as any,
+    } as unknown as IUserDocument,
   };
 
   beforeEach(() => {
@@ -63,7 +65,7 @@ describe('Coupon tRPC Router', () => {
         const caller = couponRouter.createCaller(mockContext);
 
         await expect(
-          caller.listAll({ page: 1, limit: 20 })
+          caller.listAll({ page: 1, limit: 20 }),
         ).rejects.toThrow(TRPCError);
       });
     });
@@ -104,7 +106,7 @@ describe('Coupon tRPC Router', () => {
         };
 
         vi.mocked(couponService.createDiscount).mockRejectedValue(
-          new AppError('A discount code with this name already exists', 409)
+          new AppError('A discount code with this name already exists', 409),
         );
 
         const caller = couponRouter.createCaller(mockAdminContext);
@@ -138,7 +140,7 @@ describe('Coupon tRPC Router', () => {
         expect(result).toEqual(mockUpdatedDiscount);
         expect(couponService.updateDiscount).toHaveBeenCalledWith(
           mockInput.id,
-          mockInput.data
+          mockInput.data,
         );
       });
 
@@ -149,7 +151,7 @@ describe('Coupon tRPC Router', () => {
         };
 
         vi.mocked(couponService.updateDiscount).mockRejectedValue(
-          new AppError('Discount not found', 404)
+          new AppError('Discount not found', 404),
         );
 
         const caller = couponRouter.createCaller(mockAdminContext);
@@ -207,7 +209,7 @@ describe('Coupon tRPC Router', () => {
         expect(result).toEqual(mockValidResponse);
         expect(couponService.validateCoupon).toHaveBeenCalledWith(
           mockUserId,
-          'SAVE20'
+          'SAVE20',
         );
       });
     });

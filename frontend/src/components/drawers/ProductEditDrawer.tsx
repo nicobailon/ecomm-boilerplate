@@ -28,7 +28,7 @@ export const ProductEditDrawer = ({ isOpen, product, onClose }: ProductEditDrawe
       description="Update product details and save changes"
       className="sm:max-w-2xl"
     >
-      <div className="mt-6">
+      <div className="mt-6 overflow-y-auto max-h-[calc(100vh-180px)] pr-1">
         {isLoading ? (
           <div className="flex justify-center py-8">
             <LoadingSpinner />
@@ -36,7 +36,7 @@ export const ProductEditDrawer = ({ isOpen, product, onClose }: ProductEditDrawe
         ) : (
           <ProductForm
             mode="edit"
-            initialData={(fullProduct as Product) ?? product} // Use full product data if available, fallback to passed product
+            initialData={(fullProduct as Product) ?? product}
             onSuccess={() => {
               onClose();
             }}

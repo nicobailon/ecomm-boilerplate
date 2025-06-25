@@ -21,7 +21,7 @@ describe('Theme Integration', () => {
     
     // Check localStorage - the storage key should match what's used in ThemeProvider
     await waitFor(() => {
-      expect(localStorage.getItem('app-theme')).toBe('dark');
+      void expect(localStorage.getItem('app-theme')).toBe('dark');
     });
   });
 
@@ -39,17 +39,17 @@ describe('Theme Integration', () => {
     
     // Check root element
     await waitFor(() => {
-      expect(document.documentElement.classList.contains('dark')).toBe(true);
+      void expect(document.documentElement.classList.contains('dark')).toBe(true);
     });
     
     // Check various components have theme classes
     const button = container.querySelector('button');
-    expect(button?.className).toMatch(/bg-primary/);
-    expect(button?.className).toMatch(/text-primary-foreground/);
+    void expect(button?.className).toMatch(/bg-primary/);
+    void expect(button?.className).toMatch(/text-primary-foreground/);
     
     const input = container.querySelector('input');
-    expect(input?.className).toMatch(/bg-background/);
-    expect(input?.className).toMatch(/text-foreground/);
+    void expect(input?.className).toMatch(/bg-background/);
+    void expect(input?.className).toMatch(/text-foreground/);
   });
 
   it('should handle theme keyboard shortcut', async () => {
@@ -63,7 +63,7 @@ describe('Theme Integration', () => {
     });
     
     await waitFor(() => {
-      expect(localStorage.getItem('app-theme')).toBe('dark');
+      void expect(localStorage.getItem('app-theme')).toBe('dark');
     });
   });
 
@@ -90,7 +90,7 @@ describe('Theme Integration', () => {
     
     hardcodedPatterns.forEach(pattern => {
       const matches = html.match(pattern);
-      expect(matches).toBeNull();
+      void expect(matches).toBeNull();
     });
   });
 });

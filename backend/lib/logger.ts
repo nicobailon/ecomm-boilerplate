@@ -24,7 +24,7 @@ winston.addColors(colors);
 
 // Define which level to log based on environment
 const level = (): string => {
-  const env = process.env.NODE_ENV ?? 'development';
+  const env = process.env.NODE_ENV || 'development';
   const isDevelopment = env === 'development';
   return isDevelopment ? 'debug' : 'warn';
 };
@@ -208,6 +208,87 @@ export const logAuthError = (data: {
     ip: data.ip,
     timestamp: new Date().toISOString(),
   });
+};
+
+// Helper functions for email verification
+export const logEmailVerification = {
+  tokenGenerated: (data: {
+    userId: string;
+    email: string;
+    tokenExpiry: Date;
+  }) => {
+    logger.info('Email verification token generated', {
+      service: 'AuthService',
+      operation: 'generateEmailVerificationToken',
+      status: 'success',
+      userId: data.userId,
+      email: data.email,
+      tokenExpiry: data.tokenExpiry.toISOString(),
+      timestamp: new Date().toISOString(),
+    });
+  },
+
+  verificationSuccess: (data: {
+    userId: string;
+    email: string;
+  }) => {
+    logger.info('Email verified successfully', {
+      service: 'AuthService',
+      operation: 'verifyEmail',
+      status: 'success',
+      userId: data.userId,
+      email: data.email,
+      timestamp: new Date().toISOString(),
+    });
+  },
+
+  verificationFailed: (data: {
+    token: string;
+    reason: string;
+  }) => {
+    logger.warn('Email verification failed', {
+      service: 'AuthService',
+      operation: 'verifyEmail',
+      status: 'failed',
+      tokenHash: data.token.substring(0, 8) + '...', // Log only partial token for security
+      reason: data.reason,
+      timestamp: new Date().toISOString(),
+    });
+  },
+
+  resendAttempt: (data: {
+    userId: string;
+    email: string;
+    attemptNumber: number;
+    maxAttempts: number;
+  }) => {
+    logger.info('Email verification resend requested', {
+      service: 'AuthService',
+      operation: 'resendVerificationEmail',
+      status: 'attempt',
+      userId: data.userId,
+      email: data.email,
+      attemptNumber: data.attemptNumber,
+      maxAttempts: data.maxAttempts,
+      timestamp: new Date().toISOString(),
+    });
+  },
+
+  rateLimitExceeded: (data: {
+    userId: string;
+    email: string;
+    attemptNumber: number;
+  }) => {
+    logger.warn('Email verification rate limit exceeded', {
+      service: 'AuthService',
+      operation: 'resendVerificationEmail',
+      status: 'rate_limited',
+      userId: data.userId,
+      email: data.email,
+      attemptNumber: data.attemptNumber,
+      timestamp: new Date().toISOString(),
+    });
+  },
 };
 
 export default logger;

@@ -67,3 +67,19 @@ export const getProfile = asyncHandler(async (req: AuthRequest, res: Response) =
   await Promise.resolve();
   res.json(req.user);
 });
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body as { email: string };
+  
+  await authService.forgotPassword(email);
+  
+  res.json({ message: 'Password reset email sent' });
+});
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body as { token: string; newPassword: string };
+  
+  await authService.resetPassword(token, newPassword);
+  
+  res.json({ message: 'Password reset successfully' });
+});

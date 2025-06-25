@@ -81,10 +81,10 @@ describe('Checkout Integration', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(checkoutData);
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('id');
+      void expect(response.status).toBe(200);
+      void expect(response.body).toHaveProperty('id');
       const responseBody = response.body as { id: string };
-      expect(responseBody.id).toMatch(/^cs_test_/); // Stripe session ID format
+      void expect(responseBody.id).toMatch(/^cs_test_/); // Stripe session ID format
     });
 
     it('should create checkout session with coupon code', async () => {
@@ -105,8 +105,8 @@ describe('Checkout Integration', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(checkoutData);
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('id');
+      void expect(response.status).toBe(200);
+      void expect(response.body).toHaveProperty('id');
     });
 
     it('should reject checkout with invalid product ID', async () => {
@@ -124,10 +124,10 @@ describe('Checkout Integration', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(checkoutData);
 
-      expect(response.status).toBe(400);
+      void expect(response.status).toBe(400);
       if (TypeGuards.isApiErrorResponse(response.body)) {
-        expect(response.body.success).toBe(false);
-        expect(response.body.errors).toBeDefined();
+        void expect(response.body.success).toBe(false);
+        void expect(response.body.errors).toBeDefined();
       } else {
         throw new Error('Expected error response');
       }
@@ -149,10 +149,10 @@ describe('Checkout Integration', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(checkoutData);
 
-      expect(response.status).toBe(400);
+      void expect(response.status).toBe(400);
       const body = response.body as { success: boolean; error: string };
-      expect(body.success).toBe(false);
-      expect(body.error).toContain('Insufficient inventory');
+      void expect(body.success).toBe(false);
+      void expect(body.error).toContain('Insufficient inventory');
     });
 
     it('should reject checkout with null couponCode', async () => {
@@ -172,13 +172,13 @@ describe('Checkout Integration', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(checkoutData);
 
-      expect(response.status).toBe(400);
+      void expect(response.status).toBe(400);
       const body = response.body as { success: boolean; errors: { message: string }[] };
-      expect(body).toHaveProperty('success', false);
-      expect(body).toHaveProperty('errors');
-      expect(Array.isArray(body.errors)).toBe(true);
-      expect(body.errors[0]).toHaveProperty('message');
-      expect(body.errors[0].message).toContain('Expected string');
+      void expect(body).toHaveProperty('success', false);
+      void expect(body).toHaveProperty('errors');
+      void expect(Array.isArray(body.errors)).toBe(true);
+      void expect(body.errors[0]).toHaveProperty('message');
+      void expect(body.errors[0].message).toContain('Expected string');
     });
 
     it('should handle multiple products in single checkout', async () => {
@@ -222,8 +222,8 @@ describe('Checkout Integration', () => {
         .set('Authorization', `Bearer ${token}`)
         .send(checkoutData);
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('id');
+      void expect(response.status).toBe(200);
+      void expect(response.body).toHaveProperty('id');
     });
 
     it('should reject checkout without authentication', async () => {
@@ -241,7 +241,7 @@ describe('Checkout Integration', () => {
         .post('/api/payments/create-checkout-session')
         .send(checkoutData);
 
-      expect(response.status).toBe(401);
+      void expect(response.status).toBe(401);
     });
   });
 });

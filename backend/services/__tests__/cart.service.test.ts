@@ -120,8 +120,8 @@ describe('CartService', () => {
 
       // Add first variant
       await cartService.addToCart(mockUser, productId, 'var1');
-      expect(mockUser.cartItems).toHaveLength(1);
-      expect(mockUser.cartItems[0]).toMatchObject({
+      void expect(mockUser.cartItems).toHaveLength(1);
+      void expect(mockUser.cartItems[0]).toMatchObject({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         product: expect.objectContaining({}),
         quantity: 1,
@@ -136,8 +136,8 @@ describe('CartService', () => {
 
       // Add second variant of same product
       await cartService.addToCart(mockUser, productId, 'var2');
-      expect(mockUser.cartItems).toHaveLength(2);
-      expect(mockUser.cartItems[1]).toMatchObject({
+      void expect(mockUser.cartItems).toHaveLength(2);
+      void expect(mockUser.cartItems[1]).toMatchObject({
         variantId: 'var2',
         variantDetails: {
           size: 'L',
@@ -203,8 +203,8 @@ describe('CartService', () => {
 
       const result = await cartService.calculateCartTotals(mockUser);
       
-      expect(result.subtotal).toBe(240); // 2 * 120 (variant price), not 2 * 100
-      expect(result.totalAmount).toBe(240);
+      void expect(result.subtotal).toBe(240); // 2 * 120 (variant price), not 2 * 100
+      void expect(result.totalAmount).toBe(240);
     });
 
     it('should handle products without variants', async () => {
@@ -231,8 +231,8 @@ describe('CartService', () => {
 
       await cartService.addToCart(mockUser, productId);
       
-      expect(mockUser.cartItems).toHaveLength(1);
-      expect(mockUser.cartItems[0]).toMatchObject({
+      void expect(mockUser.cartItems).toHaveLength(1);
+      void expect(mockUser.cartItems[0]).toMatchObject({
         quantity: 1,
         variantId: undefined,
         variantDetails: undefined,
@@ -319,9 +319,9 @@ describe('CartService', () => {
 
       await cartService.updateQuantity(mockUser, productId, 0, 'var1');
       
-      expect(mockUser.cartItems).toHaveLength(0);
+      void expect(mockUser.cartItems).toHaveLength(0);
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(mockUser.save).toHaveBeenCalled();
+      void expect(mockUser.save).toHaveBeenCalled();
     });
   });
 
@@ -345,8 +345,8 @@ describe('CartService', () => {
 
       await cartService.removeFromCart(mockUser, productId, 'var1');
       
-      expect(mockUser.cartItems).toHaveLength(1);
-      expect(mockUser.cartItems[0].variantId).toBe('var2');
+      void expect(mockUser.cartItems).toHaveLength(1);
+      void expect(mockUser.cartItems[0].variantId).toBe('var2');
     });
 
     it('should handle backward compatibility for items without variantId', async () => {
@@ -368,8 +368,8 @@ describe('CartService', () => {
 
       await cartService.removeFromCart(mockUser, productId);
       
-      expect(mockUser.cartItems).toHaveLength(1);
-      expect(mockUser.cartItems[0].variantId).toBe('var1');
+      void expect(mockUser.cartItems).toHaveLength(1);
+      void expect(mockUser.cartItems[0].variantId).toBe('var1');
     });
   });
 
@@ -402,7 +402,7 @@ describe('CartService', () => {
 
       const result = await cartService.getCartProducts(mockUser);
       
-      expect(result[0]).toMatchObject({
+      void expect(result[0]).toMatchObject({
         price: 55, // Variant price
         variantDetails: {
           size: 'M',
@@ -450,11 +450,11 @@ describe('CartService', () => {
 
       const result = await cartService.getCartProducts(mockUser);
       
-      expect(result).toHaveLength(2);
-      expect(result[0].variantId).toBe('var1');
-      expect(result[0].price).toBe(42);
-      expect(result[1].variantId).toBe('var2');
-      expect(result[1].price).toBe(44);
+      void expect(result).toHaveLength(2);
+      void expect(result[0].variantId).toBe('var1');
+      void expect(result[0].price).toBe(42);
+      void expect(result[1].variantId).toBe('var2');
+      void expect(result[1].price).toBe(44);
     });
   });
 });

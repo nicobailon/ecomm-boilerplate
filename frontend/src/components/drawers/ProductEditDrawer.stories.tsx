@@ -675,7 +675,7 @@ export const NoProduct: Story = {
               <Story 
                 isOpen={false} 
                 product={null}
-                onClose={() => { console.log('Close drawer'); }} 
+                onClose={() => {}} 
               />
             </div>
             <Toaster position="top-right" />
@@ -1408,7 +1408,7 @@ export const SavingProgressState: Story = {
                 <p className="text-sm text-muted-foreground mb-3">
                   Click &quot;Save Product&quot; to see detailed save progress
                 </p>
-                <Button onClick={saveProduct} disabled={isSaving}>
+                <Button onClick={() => { void saveProduct(); }} disabled={isSaving}>
                   {isSaving ? 'Saving...' : 'Save Product'}
                 </Button>
                 {isSaving && (
@@ -1520,7 +1520,7 @@ export const RefreshableProductData: Story = {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={refreshProduct}
+                    onClick={() => { void refreshProduct(); }}
                     disabled={isRefreshing}
                   >
                     {isRefreshing ? (
@@ -1723,10 +1723,10 @@ export const ImageUploadLoadingState: Story = {
                   Simulate image upload with progress indicators
                 </p>
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={() => simulateUpload('image1.jpg')}>
+                  <Button size="sm" onClick={() => { void simulateUpload('image1.jpg'); }}>
                     Upload Image 1
                   </Button>
-                  <Button size="sm" onClick={() => simulateUpload('image2.jpg')}>
+                  <Button size="sm" onClick={() => { void simulateUpload('image2.jpg'); }}>
                     Upload Image 2
                   </Button>
                 </div>
@@ -1815,7 +1815,7 @@ export const VariantBatchLoadingState: Story = {
                 <p className="text-sm text-muted-foreground mb-3">
                   Simulate loading product variants with inventory data
                 </p>
-                <Button onClick={loadVariants} disabled={isLoadingVariants}>
+                <Button onClick={() => { void loadVariants(); }} disabled={isLoadingVariants}>
                   {isLoadingVariants ? 'Loading Variants...' : 'Load Variants'}
                 </Button>
                 

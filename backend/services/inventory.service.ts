@@ -142,7 +142,7 @@ export class InventoryService {
   ): Promise<InventoryAdjustmentResult> {
     const MAX_INVENTORY = 999999;
     const MAX_RETRIES = 3;
-    const correlationId = metadata?.correlationId as string || generateCorrelationId();
+    const correlationId = metadata?.correlationId as string ?? generateCorrelationId();
     const startTime = Date.now();
     
     this.logger.info('inventory.update.start', {
@@ -226,7 +226,7 @@ export class InventoryService {
         
         throw new AppError(
           adjustment < 0 
-            ? `Insufficient inventory. Current: ${product.variants[0]?.inventory || 0}, Requested adjustment: ${adjustment}`
+            ? `Insufficient inventory. Current: ${product.variants[0]?.inventory ?? 0}, Requested adjustment: ${adjustment}`
             : `Inventory limit exceeded. Maximum allowed: ${MAX_INVENTORY}`,
           400,
         );
@@ -312,7 +312,7 @@ export class InventoryService {
           retryCount,
           error: error,
         });
-        
+
         // Retry the operation with exponential backoff
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 100));
         return this.updateInventory(
@@ -501,7 +501,7 @@ export class InventoryService {
     ];
 
     const results = await Product.aggregate<InventoryMetricsResult>(pipeline as mongoose.PipelineStage[]);
-    const metrics: InventoryMetrics = results[0] ?? {
+    const metrics: InventoryMetrics = results.length > 0 && results[0] ? results[0] : {
       totalProducts: 0,
       totalValue: 0,
       outOfStockCount: 0,
@@ -541,7 +541,7 @@ export class InventoryService {
     ];
 
     const results = await Product.aggregate<StockValueResult>(pipeline);
-    return results[0]?.totalValue ?? 0;
+    return results.length > 0 && results[0] ? results[0].totalValue : 0;
   }
 
   async getOutOfStockProducts(): Promise<{
@@ -742,7 +742,7 @@ export class InventoryService {
       keysToInvalidate.push(CACHE_KEYS.PRODUCT_INVENTORY(productId, variantId, undefined));
       
       // Invalidate variant-less keys for both label and non-label
-      if (variantLabel || variantId) {
+      if (variantLabel ?? variantId) {
         keysToInvalidate.push(CACHE_KEYS.PRODUCT_INVENTORY(productId, undefined, undefined));
       }
     } else {

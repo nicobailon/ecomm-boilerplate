@@ -972,7 +972,7 @@ export const RefreshableVariants: Story = {
             <Button
               size="sm"
               variant="outline"
-              onClick={refreshVariants}
+              onClick={() => { void refreshVariants(); }}
               disabled={loading}
             >
               {loading ? (
@@ -1022,7 +1022,7 @@ export const StaggeredLoading: Story = {
         }
       };
 
-      loadTypes();
+      loadTypes().catch(() => {});
     }, []);
 
     const isLoaded = (typeName: string) => loadedTypes.includes(typeName);
@@ -1119,7 +1119,7 @@ export const LoadingWithError: Story = {
             <p className="text-xs text-muted-foreground">
               Please check your connection and try again
             </p>
-            <Button size="sm" onClick={retry}>
+            <Button size="sm" onClick={() => { void retry(); }}>
               <RefreshCw className="w-3 h-3 mr-1" />
               Try Again
             </Button>

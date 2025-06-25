@@ -2,6 +2,9 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi } from 'vitest';
 import ProductDetailPage from './ProductDetailPage';
+import type { Product } from '@/types';
+import { createMockQueryResult } from '@/test/mocks/query-mocks';
+
 
 // Mocks must be hoisted
 vi.mock('@/hooks/queries/useProduct');
@@ -15,66 +18,91 @@ import { useProductAnalytics } from '@/hooks/useProductAnalytics';
 import { useUnifiedAddToCart } from '@/hooks/cart/useUnifiedCart';
 import { useRelatedProducts } from '@/hooks/queries/useRelatedProducts';
 
-// Type the mocks
-const mockUseProduct = useProduct as ReturnType<typeof vi.fn>;
-const mockUseProductAnalytics = useProductAnalytics as ReturnType<typeof vi.fn>;
-const mockUseUnifiedAddToCart = useUnifiedAddToCart as ReturnType<typeof vi.fn>;
-const mockUseRelatedProducts = useRelatedProducts as ReturnType<typeof vi.fn>;
+// Type the mocks properly
+const mockUseProduct = vi.mocked(useProduct);
+const mockUseProductAnalytics = vi.mocked(useProductAnalytics);
+const mockUseUnifiedAddToCart = vi.mocked(useUnifiedAddToCart);
+const mockUseRelatedProducts = vi.mocked(useRelatedProducts);
 
 describe('ProductDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
     // Default mock implementations
-    mockUseProduct.mockReturnValue({
-      data: {
-        product: {
-          _id: '123',
-          name: 'Test Product',
-          slug: 'test-product',
-          description: 'Test description',
-          price: 29.99,
-          image: 'https://example.com/image.jpg',
-          variants: [
-            {
-              variantId: 'v1',
-              size: 'M',
-              color: '#000000',
-              price: 29.99,
-              inventory: 50,
-              images: ['https://example.com/variant.jpg'],
-              sku: 'TEST-SKU',
+    const mockProductData = {
+      ...createMockQueryResult<{ product: Product }>({
+        data: {
+          product: {
+            _id: '123',
+            name: 'Test Product',
+            slug: 'test-product',
+            description: 'Test description',
+            price: 29.99,
+            image: 'https://example.com/image.jpg',
+            variants: [
+              {
+                variantId: 'v1',
+                label: 'Size M',
+                color: '#000000',
+                price: 29.99,
+                inventory: 50,
+                images: ['https://example.com/variant.jpg'],
+                sku: 'TEST-SKU',
+              },
+            ],
+            collectionId: {
+              _id: 'col123',
+              name: 'Test Collection',
+              slug: 'test-collection',
             },
-          ],
-          collectionId: {
-            _id: 'col123',
-            name: 'Test Collection',
-            slug: 'test-collection',
+            isFeatured: false,
+            createdAt: '2025-01-01T00:00:00.000Z',
+            updatedAt: '2025-01-01T00:00:00.000Z'
           },
-          isFeatured: false,
-          createdAt: '2025-01-01T00:00:00.000Z',
-          updatedAt: '2025-01-01T00:00:00.000Z',
         },
+        isLoading: false,
+        isSuccess: true,
+        isFetched: true,
+        isFetchedAfterMount: true,
+        dataUpdatedAt: Date.now(),
+      }),
+      trpc: {
+        path: 'product.bySlug',
+        queryKey: ['product.bySlug', { slug: 'test-product' }],
       },
-      isLoading: false,
-      error: null,
-    } as any);
+    };
+    
+    mockUseProduct.mockReturnValue(mockProductData as unknown as ReturnType<typeof useProduct>);
 
-    mockUseProductAnalytics.mockReturnValue({
-      trackView: vi.fn(),
-    } as any);
+    // useProductAnalytics returns void
+    mockUseProductAnalytics.mockReturnValue(undefined);
 
-    mockUseUnifiedAddToCart.mockReturnValue({
+    const mockAddToCartMutation = {
       mutate: vi.fn(),
-      mutateAsync: vi.fn(),
+      mutateAsync: vi.fn().mockResolvedValue(undefined),
       isPending: false,
-    } as any);
+      isError: false,
+      error: null,
+    };
+    
+    mockUseUnifiedAddToCart.mockReturnValue(mockAddToCartMutation as ReturnType<typeof useUnifiedAddToCart>);
 
-    mockUseRelatedProducts.mockReturnValue({
-      data: {
-        products: [],
+    const mockRelatedProductsData = {
+      ...createMockQueryResult<Product[]>({
+        data: [],
+        isLoading: false,
+        isSuccess: true,
+        isFetched: true,
+        isFetchedAfterMount: true,
+        dataUpdatedAt: Date.now(),
+      }),
+      trpc: {
+        path: 'product.related',
+        queryKey: ['product.related', { productId: '123' }],
       },
-    } as any);
+    };
+    
+    mockUseRelatedProducts.mockReturnValue(mockRelatedProductsData as ReturnType<typeof useRelatedProducts>);
   });
 
   const renderProductDetailPage = (slug = 'test-product') => {
@@ -92,52 +120,76 @@ describe('ProductDetailPage', () => {
 
     // Product name appears in multiple places (breadcrumb and heading)
     const productNames = screen.getAllByText('Test Product');
-    expect(productNames.length).toBeGreaterThan(0);
+    void expect(productNames.length).toBeGreaterThan(0);
     
-    expect(screen.getByText('Test description')).toBeInTheDocument();
-    expect(screen.getByText('$29.99')).toBeInTheDocument();
+    void expect(screen.getByText('Test description')).toBeInTheDocument();
+    void expect(screen.getByText('$29.99')).toBeInTheDocument();
   });
 
   it('displays breadcrumb navigation', () => {
     renderProductDetailPage();
 
-    expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(screen.getByText('Test Collection')).toBeInTheDocument();
-    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toBeInTheDocument();
+    void expect(screen.getByText('Home')).toBeInTheDocument();
+    void expect(screen.getByText('Test Collection')).toBeInTheDocument();
+    void expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toBeInTheDocument();
   });
 
   it('shows variant selector when variants exist', () => {
     renderProductDetailPage();
 
-    expect(screen.getByText('Size')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Size M/ })).toBeInTheDocument();
+    void expect(screen.getByText('Size')).toBeInTheDocument();
+    void expect(screen.getByRole('button', { name: /Size M/ })).toBeInTheDocument();
   });
 
   it('displays loading state', () => {
-    mockUseProduct.mockReturnValueOnce({
-      data: null,
-      isLoading: true,
-      error: null,
-      isError: false,
-    } as any);
+    const mockLoadingData = {
+      ...createMockQueryResult<{ product: Product }>({
+        data: undefined,
+        isLoading: true,
+        isPending: true,
+        isSuccess: false,
+        isFetched: false,
+        status: 'pending',
+        fetchStatus: 'fetching',
+      }),
+      trpc: {
+        path: 'product.bySlug',
+        queryKey: ['product.bySlug', { slug: 'test-product' }],
+      },
+    };
+    
+    mockUseProduct.mockReturnValueOnce(mockLoadingData as unknown as ReturnType<typeof useProduct>);
 
     renderProductDetailPage();
 
     // Check for skeleton elements
     const skeletons = document.querySelectorAll('.animate-pulse');
-    expect(skeletons.length).toBeGreaterThan(0);
+    void expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('displays error state', () => {
-    mockUseProduct.mockReturnValueOnce({
-      data: null,
-      isLoading: false,
-      error: { message: 'Not found' },
-      isError: true,
-    } as any);
+    const mockErrorData = {
+      ...createMockQueryResult<{ product: Product }>({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Not found'),
+        isError: true,
+        isSuccess: false,
+        isFetched: true,
+        isFetchedAfterMount: true,
+        errorUpdatedAt: Date.now(),
+        status: 'error',
+      }),
+      trpc: {
+        path: 'product.bySlug',
+        queryKey: ['product.bySlug', { slug: 'test-product' }],
+      },
+    };
+    
+    mockUseProduct.mockReturnValueOnce(mockErrorData as unknown as ReturnType<typeof useProduct>);
 
     renderProductDetailPage();
 
-    expect(screen.getByText('Product Not Found')).toBeInTheDocument();
+    void expect(screen.getByText('Product Not Found')).toBeInTheDocument();
   });
 });

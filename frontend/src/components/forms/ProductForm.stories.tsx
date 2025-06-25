@@ -169,9 +169,9 @@ export const ValidationFlow: Story = {
     
     // Check for validation errors
     await waitFor(() => {
-      expect(canvas.getByText(/name must be at least 1 character/i)).toBeInTheDocument();
-      expect(canvas.getByText(/description must be at least 1 character/i)).toBeInTheDocument();
-      expect(canvas.getByText(/price must be a positive number/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/name must be at least 1 character/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/description must be at least 1 character/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/price must be a positive number/i)).toBeInTheDocument();
     });
   },
 };
@@ -179,7 +179,7 @@ export const ValidationFlow: Story = {
 export const SuccessfulCreation: Story = {
   args: {
     mode: 'create',
-    onSuccess: (product) => console.log('Product created:', product),
+    onSuccess: () => {},
   },
   decorators: [createWrapper({ collections: mockCollections })],
   parameters: {
@@ -218,7 +218,7 @@ export const SuccessfulCreation: Story = {
     // Check for success toast
     const body = within(document.body);
     await waitFor(() => {
-      expect(body.getByText(/product created/i)).toBeInTheDocument();
+      void expect(body.getByText(/product created/i)).toBeInTheDocument();
     });
   },
 };
@@ -236,10 +236,10 @@ export const ImageUpload: Story = {
     
     // Check upload button exists
     const uploadButton = canvas.getByText(/choose files/i);
-    expect(uploadButton).toBeInTheDocument();
+    void expect(uploadButton).toBeInTheDocument();
     
     // The upload button should be from UploadThing
-    expect(uploadButton.closest('button')).toHaveAttribute('data-ut-element', 'button');
+    void expect(uploadButton.closest('button')).toHaveAttribute('data-ut-element', 'button');
   },
 };
 
@@ -278,7 +278,7 @@ export const VariantManagement: Story = {
     // Verify only one variant remains
     await waitFor(() => {
       const remainingVariants = canvas.getAllByLabelText(/variant label/i);
-      expect(remainingVariants).toHaveLength(1);
+      void expect(remainingVariants).toHaveLength(1);
     });
   },
 };
@@ -287,7 +287,7 @@ export const UpdateProduct: Story = {
   args: {
     mode: 'edit',
     initialData: mockProduct,
-    onSuccess: (product) => console.log('Product updated:', product),
+    onSuccess: () => {},
   },
   decorators: [createWrapper({ collections: mockCollections })],
   parameters: {
@@ -324,7 +324,7 @@ export const UpdateProduct: Story = {
     // Check for success toast
     const body = within(document.body);
     await waitFor(() => {
-      expect(body.getByText(/product updated/i)).toBeInTheDocument();
+      void expect(body.getByText(/product updated/i)).toBeInTheDocument();
     });
   },
 };
@@ -361,7 +361,7 @@ export const ErrorHandling: Story = {
     // Check for error toast
     const body = within(document.body);
     await waitFor(() => {
-      expect(body.getByText(/a product with this name already exists/i)).toBeInTheDocument();
+      void expect(body.getByText(/a product with this name already exists/i)).toBeInTheDocument();
     });
   },
 };
@@ -402,7 +402,7 @@ export const CollectionCreation: Story = {
     
     // Create new collection option should appear
     await waitFor(() => {
-      expect(canvas.getByText(/create "new spring collection"/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/create "new spring collection"/i)).toBeInTheDocument();
     });
     
     // Click to create
@@ -410,7 +410,7 @@ export const CollectionCreation: Story = {
     
     // Collection should be selected
     await waitFor(() => {
-      expect(collectionSelect).toHaveValue('New Spring Collection');
+      void expect(collectionSelect).toHaveValue('New Spring Collection');
     });
   },
 };
@@ -434,7 +434,7 @@ export const LoadingStates: Story = {
       queryClient.setQueryData(['collections.list', { limit: 100 }], undefined);
       // setQueryState doesn't exist in React Query v5, use setQueryData instead
       queryClient.setQueryData(['collections.list', { limit: 100 }], undefined);
-      queryClient.invalidateQueries({ queryKey: ['collections.list', { limit: 100 }] });
+      void queryClient.invalidateQueries({ queryKey: ['collections.list', { limit: 100 }] });
 
       return (
         <trpc.Provider client={createTRPCClient()} queryClient={queryClient}>
@@ -470,7 +470,7 @@ export const KeyboardShortcuts: Story = {
     
     // Alternative: just demonstrate that the form can be submitted
     const submitButton = canvas.getByRole('button', { name: /create product/i });
-    expect(submitButton).toBeInTheDocument();
+    void expect(submitButton).toBeInTheDocument();
   },
 };
 
@@ -487,7 +487,7 @@ export const BulkMode: Story = {
     await userEvent.click(bulkModeSwitch);
     
     // Verify it's enabled
-    expect(bulkModeSwitch).toBeChecked();
+    void expect(bulkModeSwitch).toBeChecked();
   },
 };
 

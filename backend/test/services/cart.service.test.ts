@@ -83,7 +83,7 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         cartItems: [],
         subtotal: 0,
         totalAmount: 0,
@@ -103,7 +103,7 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         cartItems: [createExpectedCartItem(mockProduct, 2)],
         subtotal: 39.98,
         totalAmount: 39.98,
@@ -129,9 +129,9 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.subtotal).toBe(56.50); // (10.50 * 3) + (25.00 * 1)
-      expect(result.totalAmount).toBe(56.50);
-      expect(result.cartItems).toHaveLength(2);
+      void expect(result.subtotal).toBe(56.50); // (10.50 * 3) + (25.00 * 1)
+      void expect(result.totalAmount).toBe(56.50);
+      void expect(result.cartItems).toHaveLength(2);
     });
 
     it('should handle floating point precision correctly', async () => {
@@ -146,8 +146,8 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.subtotal).toBe(0.30); // Should be 0.30, not 0.30000000000000004
-      expect(result.totalAmount).toBe(0.30);
+      void expect(result.subtotal).toBe(0.30); // Should be 0.30, not 0.30000000000000004
+      void expect(result.totalAmount).toBe(0.30);
     });
   });
 
@@ -165,9 +165,9 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.subtotal).toBe(100.00);
-      expect(result.totalAmount).toBe(80.00); // 20% off
-      expect(result.appliedCoupon).toEqual({
+      void expect(result.subtotal).toBe(100.00);
+      void expect(result.totalAmount).toBe(80.00); // 20% off
+      void expect(result.appliedCoupon).toEqual({
         code: 'SAVE20',
         discountPercentage: 20,
       });
@@ -186,8 +186,8 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.subtotal).toBe(99.99);
-      expect(result.totalAmount).toBe(0);
+      void expect(result.subtotal).toBe(99.99);
+      void expect(result.totalAmount).toBe(0);
     });
 
     it('should handle 0% discount coupon', async () => {
@@ -203,8 +203,8 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.subtotal).toBe(50.00);
-      expect(result.totalAmount).toBe(50.00);
+      void expect(result.subtotal).toBe(50.00);
+      void expect(result.totalAmount).toBe(50.00);
     });
 
     it('should handle decimal percentage discounts', async () => {
@@ -220,8 +220,8 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.subtotal).toBe(80.00);
-      expect(result.totalAmount).toBe(70.00); // 12.5% off = $10 discount
+      void expect(result.subtotal).toBe(80.00);
+      void expect(result.totalAmount).toBe(70.00); // 12.5% off = $10 discount
     });
 
     it('should round discount calculations correctly', async () => {
@@ -237,8 +237,8 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.subtotal).toBe(10.00);
-      expect(result.totalAmount).toBe(6.67); // 33.33% off, rounded to 2 decimals
+      void expect(result.subtotal).toBe(10.00);
+      void expect(result.totalAmount).toBe(6.67); // 33.33% off, rounded to 2 decimals
     });
   });
 
@@ -254,7 +254,7 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         cartItems: [],
         subtotal: 0,
         totalAmount: 0,
@@ -277,9 +277,9 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.cartItems).toHaveLength(1);
-      expect(result.subtotal).toBe(50.00);
-      expect(result.totalAmount).toBe(50.00);
+      void expect(result.cartItems).toHaveLength(1);
+      void expect(result.subtotal).toBe(50.00);
+      void expect(result.totalAmount).toBe(50.00);
     });
 
     it('should handle very large quantities', async () => {
@@ -294,8 +294,8 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.subtotal).toBe(10000.00);
-      expect(result.totalAmount).toBe(10000.00);
+      void expect(result.subtotal).toBe(10000.00);
+      void expect(result.totalAmount).toBe(10000.00);
     });
 
     it('should handle very small prices with discounts', async () => {
@@ -311,8 +311,8 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.subtotal).toBe(0.01);
-      expect(result.totalAmount).toBe(0.01); // Rounded up from 0.005
+      void expect(result.subtotal).toBe(0.01);
+      void expect(result.totalAmount).toBe(0.01); // Rounded up from 0.005
     });
 
     it('should maintain calculation consistency across multiple calls', async () => {
@@ -335,8 +335,8 @@ describe('CartService - calculateCartTotals', () => {
 
       // All results should be identical
       results.forEach(result => {
-        expect(result.subtotal).toBe(93.59);
-        expect(result.totalAmount).toBe(86.32); // After 7.77% discount
+        void expect(result.subtotal).toBe(93.59);
+        void expect(result.totalAmount).toBe(86.32); // After 7.77% discount
       });
     });
   });
@@ -366,9 +366,9 @@ describe('CartService - calculateCartTotals', () => {
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
       // Expected subtotal: 10*1 + 20*2 + 30*3 + ... + 100*10 = 3850
-      expect(result.subtotal).toBe(3850.00);
-      expect(result.totalAmount).toBe(2887.50); // 25% off
-      expect(result.cartItems).toHaveLength(10);
+      void expect(result.subtotal).toBe(3850.00);
+      void expect(result.totalAmount).toBe(2887.50); // 25% off
+      void expect(result.cartItems).toHaveLength(10);
     });
 
     it('should handle updating quantities with applied coupon', async () => {
@@ -384,8 +384,8 @@ describe('CartService - calculateCartTotals', () => {
 
       // Initial calculation
       const result1 = await cartService.calculateCartTotals(user as IUserDocument);
-      expect(result1.subtotal).toBe(100.00);
-      expect(result1.totalAmount).toBe(85.00);
+      void expect(result1.subtotal).toBe(100.00);
+      void expect(result1.totalAmount).toBe(85.00);
 
       // Simulate quantity update
       if (user.cartItems?.[0]) {
@@ -394,11 +394,11 @@ describe('CartService - calculateCartTotals', () => {
       
       // Recalculate
       const result2 = await cartService.calculateCartTotals(user as IUserDocument);
-      expect(result2.subtotal).toBe(200.00);
-      expect(result2.totalAmount).toBe(170.00);
+      void expect(result2.subtotal).toBe(200.00);
+      void expect(result2.totalAmount).toBe(170.00);
       
       // Coupon should still be applied
-      expect(result2.appliedCoupon).toEqual({
+      void expect(result2.appliedCoupon).toEqual({
         code: 'UPDATE15',
         discountPercentage: 15,
       });
@@ -430,15 +430,15 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.cartItems[0].price).toBe(29.99); // Should use variant price
-      expect(result.cartItems[0].variantId).toBe('var-1');
-      expect(result.cartItems[0].variantDetails).toEqual({
+      void expect(result.cartItems[0].price).toBe(29.99); // Should use variant price
+      void expect(result.cartItems[0].variantId).toBe('var-1');
+      void expect(result.cartItems[0].variantDetails).toEqual({
         size: 'M',
         color: 'Blue',
         price: 29.99,
         sku: 'SHIRT-M-BLUE',
       });
-      expect(result.subtotal).toBe(59.98); // 29.99 * 2
+      void expect(result.subtotal).toBe(59.98); // 29.99 * 2
     });
 
     it('should handle mixed cart with variants and non-variants', async () => {
@@ -472,10 +472,10 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.subtotal).toBe(80.00); // (35.00 * 1) + (15.00 * 3)
-      expect(result.cartItems).toHaveLength(2);
-      expect(result.cartItems[0].price).toBe(35.00); // Variant price
-      expect(result.cartItems[1].price).toBe(15.00); // Base price
+      void expect(result.subtotal).toBe(80.00); // (35.00 * 1) + (15.00 * 3)
+      void expect(result.cartItems).toHaveLength(2);
+      void expect(result.cartItems[0].price).toBe(35.00); // Variant price
+      void expect(result.cartItems[1].price).toBe(15.00); // Base price
     });
 
     it('should fetch variant details if not cached', async () => {
@@ -496,8 +496,8 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.cartItems[0].price).toBe(22.50);
-      expect(result.cartItems[0].variantDetails).toEqual({
+      void expect(result.cartItems[0].price).toBe(22.50);
+      void expect(result.cartItems[0].variantDetails).toEqual({
         size: 'S',
         color: 'Red',
         price: 22.50,
@@ -531,8 +531,8 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.cartItems).toHaveLength(2);
-      expect(result.subtotal).toBe(77.00); // (25.00 * 2) + (27.00 * 1)
+      void expect(result.cartItems).toHaveLength(2);
+      void expect(result.subtotal).toBe(77.00); // (25.00 * 2) + (27.00 * 1)
     });
 
     it('should apply coupon discount to variant prices', async () => {
@@ -557,8 +557,8 @@ describe('CartService - calculateCartTotals', () => {
 
       const result = await cartService.calculateCartTotals(user as IUserDocument);
 
-      expect(result.subtotal).toBe(200.00); // 100.00 * 2
-      expect(result.totalAmount).toBe(140.00); // 30% off
+      void expect(result.subtotal).toBe(200.00); // 100.00 * 2
+      void expect(result.totalAmount).toBe(140.00); // 30% off
     });
   });
 
@@ -575,10 +575,10 @@ describe('CartService - calculateCartTotals', () => {
       const user = createMockUser([]);
       await cartService.addToCart(user as IUserDocument, productId, 'var-1');
 
-      expect(user.save).toHaveBeenCalled();
-      expect(user.cartItems).toHaveLength(1);
-      expect(user.cartItems?.[0]?.variantId).toBe('var-1');
-      expect(user.cartItems?.[0]?.variantDetails).toEqual({
+      void expect(user.save).toHaveBeenCalled();
+      void expect(user.cartItems).toHaveLength(1);
+      void expect(user.cartItems?.[0]?.variantId).toBe('var-1');
+      void expect(user.cartItems?.[0]?.variantDetails).toEqual({
         size: 'M',
         color: 'Blue',
         price: 25.00,
@@ -639,8 +639,8 @@ describe('CartService - calculateCartTotals', () => {
 
       await cartService.addToCart(user as IUserDocument, productId, 'var-1');
 
-      expect(user.cartItems).toHaveLength(1);
-      expect(user.cartItems?.[0]?.quantity).toBe(2);
+      void expect(user.cartItems).toHaveLength(1);
+      void expect(user.cartItems?.[0]?.quantity).toBe(2);
     });
 
     it('should check inventory limits when adding to existing', async () => {
@@ -681,8 +681,8 @@ describe('CartService - calculateCartTotals', () => {
 
       await cartService.updateQuantity(user as IUserDocument, productId, 5, 'var-1');
 
-      expect(user.cartItems?.[0]?.quantity).toBe(5);
-      expect(user.save).toHaveBeenCalled();
+      void expect(user.cartItems?.[0]?.quantity).toBe(5);
+      void expect(user.save).toHaveBeenCalled();
     });
 
     it('should check inventory when updating variant quantity', async () => {
@@ -721,7 +721,7 @@ describe('CartService - calculateCartTotals', () => {
 
       await cartService.updateQuantity(user as IUserDocument, productId, 0, 'var-1');
 
-      expect(user.cartItems).toHaveLength(0);
+      void expect(user.cartItems).toHaveLength(0);
     });
   });
 
@@ -736,8 +736,8 @@ describe('CartService - calculateCartTotals', () => {
 
       await cartService.removeFromCart(user as IUserDocument, productId, 'var-1');
 
-      expect(user.cartItems).toHaveLength(2);
-      expect(user.cartItems?.find(item => item.variantId === 'var-1')).toBeUndefined();
+      void expect(user.cartItems).toHaveLength(2);
+      void expect(user.cartItems?.find(item => item.variantId === 'var-1')).toBeUndefined();
     });
 
     it('should remove non-variant item when variantId is not specified', async () => {
@@ -749,8 +749,8 @@ describe('CartService - calculateCartTotals', () => {
 
       await cartService.removeFromCart(user as IUserDocument, productId);
 
-      expect(user.cartItems).toHaveLength(1);
-      expect(user.cartItems?.[0]?.variantId).toBe('var-1');
+      void expect(user.cartItems).toHaveLength(1);
+      void expect(user.cartItems?.[0]?.variantId).toBe('var-1');
     });
   });
 });

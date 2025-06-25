@@ -26,6 +26,12 @@ const LoginPage: React.FC = () => {
 				<div className='bg-card py-8 px-4 shadow sm:rounded-lg sm:px-10'>
 					<LoginForm />
 
+					<div className='mt-6 text-center'>
+						<Link to='/forgot-password' className='text-sm font-medium text-primary hover:text-primary/80'>
+							Forgot your password?
+						</Link>
+					</div>
+
 					<p className='mt-8 text-center text-sm text-muted-foreground'>
 						Not a member?{' '}
 						<Link to='/signup' className='font-medium text-primary hover:text-primary/80'>

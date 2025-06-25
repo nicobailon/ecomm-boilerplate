@@ -68,31 +68,31 @@ describe('ProductEditDrawer', () => {
   it('renders when open with product', () => {
     render(<ProductEditDrawer {...defaultProps} />);
     
-    expect(screen.getByTestId('drawer')).toBeInTheDocument();
-    expect(screen.getByText('Edit Product: Test Product')).toBeInTheDocument();
-    expect(screen.getByText('Update product details and save changes')).toBeInTheDocument();
-    expect(screen.getByTestId('product-form')).toBeInTheDocument();
+    void expect(screen.getByTestId('drawer')).toBeInTheDocument();
+    void expect(screen.getByText('Edit Product: Test Product')).toBeInTheDocument();
+    void expect(screen.getByText('Update product details and save changes')).toBeInTheDocument();
+    void expect(screen.getByTestId('product-form')).toBeInTheDocument();
   });
 
   it('does not render when product is null', () => {
     render(<ProductEditDrawer {...defaultProps} product={null} />);
     
-    expect(screen.queryByTestId('drawer')).not.toBeInTheDocument();
+    void expect(screen.queryByTestId('drawer')).not.toBeInTheDocument();
   });
 
   it('does not render when closed', () => {
     render(<ProductEditDrawer {...defaultProps} isOpen={false} />);
     
-    expect(screen.queryByTestId('drawer')).not.toBeInTheDocument();
+    void expect(screen.queryByTestId('drawer')).not.toBeInTheDocument();
   });
 
   it('passes correct props to ProductForm', () => {
     render(<ProductEditDrawer {...defaultProps} />);
     
     const productForm = screen.getByTestId('product-form');
-    expect(productForm).toBeInTheDocument();
-    expect(screen.getByText('Mode: edit')).toBeInTheDocument();
-    expect(screen.getByText('Product: Test Product')).toBeInTheDocument();
+    void expect(productForm).toBeInTheDocument();
+    void expect(screen.getByText('Mode: edit')).toBeInTheDocument();
+    void expect(screen.getByText('Product: Test Product')).toBeInTheDocument();
   });
 
   it('calls onClose when form submission is successful', () => {
@@ -102,6 +102,6 @@ describe('ProductEditDrawer', () => {
     const saveButton = screen.getByText('Save Product');
     saveButton.click();
     
-    expect(onClose).toHaveBeenCalledTimes(1);
+    void expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

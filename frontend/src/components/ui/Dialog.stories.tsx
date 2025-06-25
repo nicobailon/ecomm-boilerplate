@@ -303,21 +303,21 @@ export const InteractiveTest: Story = {
       await userEvent.click(trigger);
       
       const title = await canvas.findByText('Interactive Test');
-      expect(title).toBeInTheDocument();
+      void expect(title).toBeInTheDocument();
     });
     
     await step('Interact with form', async () => {
       const input = canvas.getByPlaceholderText('Type something...');
       await userEvent.click(input);
       await userEvent.type(input, 'Test content');
-      expect(input).toHaveValue('Test content');
+      void expect(input).toHaveValue('Test content');
     });
     
     await step('Close dialog with cancel button', async () => {
       const cancelButton = canvas.getByText('Cancel');
       await userEvent.click(cancelButton);
       
-      expect(canvas.queryByText('Interactive Test')).not.toBeInTheDocument();
+      void expect(canvas.queryByText('Interactive Test')).not.toBeInTheDocument();
     });
     
     await step('Reopen and close with X button', async () => {
@@ -325,10 +325,10 @@ export const InteractiveTest: Story = {
       await userEvent.click(trigger);
       
       const closeButton = await canvas.findByLabelText('Close');
-      expect(closeButton).toBeInTheDocument();
+      void expect(closeButton).toBeInTheDocument();
       await userEvent.click(closeButton);
       
-      expect(canvas.queryByText('Interactive Test')).not.toBeInTheDocument();
+      void expect(canvas.queryByText('Interactive Test')).not.toBeInTheDocument();
     });
   },
 };

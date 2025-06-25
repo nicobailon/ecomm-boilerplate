@@ -248,7 +248,7 @@ export const InteractionTest: Story = {
     
     // Check initial state
     const tab1Content = canvas.getByText('Content for Tab 1');
-    expect(tab1Content).toBeVisible();
+    void expect(tab1Content).toBeVisible();
     
     // Click on Tab 2
     const tab2Trigger = canvas.getByRole('tab', { name: 'Tab 2' });
@@ -256,8 +256,8 @@ export const InteractionTest: Story = {
     
     // Check Tab 2 is active
     const tab2Content = canvas.getByText('Content for Tab 2');
-    expect(tab2Content).toBeVisible();
-    expect(tab1Content).not.toBeVisible();
+    void expect(tab2Content).toBeVisible();
+    void expect(tab1Content).not.toBeVisible();
     
     // Click on Tab 3
     const tab3Trigger = canvas.getByRole('tab', { name: 'Tab 3' });
@@ -265,13 +265,13 @@ export const InteractionTest: Story = {
     
     // Check Tab 3 is active
     const tab3Content = canvas.getByText('Content for Tab 3');
-    expect(tab3Content).toBeVisible();
-    expect(tab2Content).not.toBeVisible();
+    void expect(tab3Content).toBeVisible();
+    void expect(tab2Content).not.toBeVisible();
     
     // Test keyboard navigation
     tab3Trigger.focus();
     await userEvent.keyboard('{ArrowLeft}');
-    expect(tab2Content).toBeVisible();
+    void expect(tab2Content).toBeVisible();
   },
 };
 

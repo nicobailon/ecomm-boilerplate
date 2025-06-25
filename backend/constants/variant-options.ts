@@ -44,12 +44,12 @@ export const isValidHexColor = (color: string): boolean => {
 };
 
 export const isValidColor = (color: string): boolean => {
-  return isValidHexColor(color) || color in COLOR_PRESETS;
+  return isValidHexColor(color) ?? color in COLOR_PRESETS;
 };
 
 export const getColorValue = (color: string): string => {
   if (isValidHexColor(color)) {
     return color;
   }
-  return COLOR_PRESETS[color as ColorPreset] || color;
+  return COLOR_PRESETS[color as ColorPreset] ?? color;
 };

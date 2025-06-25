@@ -39,8 +39,8 @@ describe('Auth Hooks', () => {
       const { result } = renderHook(() => useLogin(), { wrapper: createWrapper() });
       const loginMutation = result.current;
       
-      expect(loginMutation.mutate).toBeDefined();
-      expect(loginMutation.isPending).toBe(false);
+      void expect(loginMutation.mutate).toBeDefined();
+      void expect(loginMutation.isPending).toBe(false);
     });
   });
 
@@ -49,8 +49,8 @@ describe('Auth Hooks', () => {
       const { result } = renderHook(() => useSignup(), { wrapper: createWrapper() });
       const signupMutation = result.current;
       
-      expect(signupMutation.mutate).toBeDefined();
-      expect(signupMutation.isPending).toBe(false);
+      void expect(signupMutation.mutate).toBeDefined();
+      void expect(signupMutation.isPending).toBe(false);
     });
   });
 
@@ -59,8 +59,8 @@ describe('Auth Hooks', () => {
       const { result } = renderHook(() => useLogout(), { wrapper: createWrapper() });
       const logoutMutation = result.current;
       
-      expect(logoutMutation.mutate).toBeDefined();
-      expect(logoutMutation.isPending).toBe(false);
+      void expect(logoutMutation.mutate).toBeDefined();
+      void expect(logoutMutation.isPending).toBe(false);
     });
   });
 });

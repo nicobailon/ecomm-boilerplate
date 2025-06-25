@@ -35,8 +35,8 @@ describe('CacheService', () => {
 
       const result = await cacheService.get<typeof testData>('test-key');
 
-      expect(result).toEqual(testData);
-      expect(mockRedis.get).toHaveBeenCalledWith('test-key');
+      void expect(result).toEqual(testData);
+      void expect(mockRedis.get).toHaveBeenCalledWith('test-key');
     });
 
     it('should return null when key does not exist', async () => {
@@ -44,8 +44,8 @@ describe('CacheService', () => {
 
       const result = await cacheService.get('non-existent-key');
 
-      expect(result).toBeNull();
-      expect(mockRedis.get).toHaveBeenCalledWith('non-existent-key');
+      void expect(result).toBeNull();
+      void expect(mockRedis.get).toHaveBeenCalledWith('non-existent-key');
     });
 
     it('should handle JSON parse errors gracefully', async () => {
@@ -56,8 +56,8 @@ describe('CacheService', () => {
 
       const result = await cacheService.get('test-key');
 
-      expect(result).toBeNull();
-      expect(consoleError).toHaveBeenCalled();
+      void expect(result).toBeNull();
+      void expect(consoleError).toHaveBeenCalled();
       
       consoleError.mockRestore();
     });
@@ -70,8 +70,8 @@ describe('CacheService', () => {
 
       const result = await cacheService.get('test-key');
 
-      expect(result).toBeNull();
-      expect(consoleError).toHaveBeenCalledWith(
+      void expect(result).toBeNull();
+      void expect(consoleError).toHaveBeenCalledWith(
         'Cache get error:',
         expect.any(Error),
       );
@@ -87,7 +87,7 @@ describe('CacheService', () => {
 
       await cacheService.set('test-key', testData, 300);
 
-      expect(mockRedis.set).toHaveBeenCalledWith(
+      void expect(mockRedis.set).toHaveBeenCalledWith(
         'test-key',
         JSON.stringify(testData),
         'EX',
@@ -101,7 +101,7 @@ describe('CacheService', () => {
 
       await cacheService.set('test-key', testData);
 
-      expect(mockRedis.set).toHaveBeenCalledWith(
+      void expect(mockRedis.set).toHaveBeenCalledWith(
         'test-key',
         JSON.stringify(testData),
         'EX',
@@ -117,7 +117,7 @@ describe('CacheService', () => {
 
       await cacheService.set('test-key', { data: 'test' }, 300);
 
-      expect(consoleError).toHaveBeenCalledWith(
+      void expect(consoleError).toHaveBeenCalledWith(
         'Cache set error:',
         expect.any(Error),
       );
@@ -132,7 +132,7 @@ describe('CacheService', () => {
 
       await cacheService.del('test-key');
 
-      expect(mockRedis.del).toHaveBeenCalledWith('test-key');
+      void expect(mockRedis.del).toHaveBeenCalledWith('test-key');
     });
 
     it('should delete single key from cache only', async () => {
@@ -140,7 +140,7 @@ describe('CacheService', () => {
 
       await cacheService.del('test-key');
 
-      expect(mockRedis.del).toHaveBeenCalledWith('test-key');
+      void expect(mockRedis.del).toHaveBeenCalledWith('test-key');
     });
 
     it('should handle delete errors gracefully', async () => {
@@ -151,7 +151,7 @@ describe('CacheService', () => {
 
       await cacheService.del('test-key');
 
-      expect(consoleError).toHaveBeenCalledWith(
+      void expect(consoleError).toHaveBeenCalledWith(
         'Cache delete error:',
         expect.any(Error),
       );
@@ -166,7 +166,7 @@ describe('CacheService', () => {
 
       await cacheService.flush();
 
-      expect(mockRedis.flushall).toHaveBeenCalled();
+      void expect(mockRedis.flushall).toHaveBeenCalled();
     });
 
     it('should handle flush errors gracefully', async () => {
@@ -177,7 +177,7 @@ describe('CacheService', () => {
 
       await cacheService.flush();
 
-      expect(consoleError).toHaveBeenCalledWith(
+      void expect(consoleError).toHaveBeenCalledWith(
         'Cache flush error:',
         expect.any(Error),
       );
@@ -200,7 +200,7 @@ describe('CacheService', () => {
       
       await cacheService.set(cacheKey, inventoryInfo, 30);
 
-      expect(mockRedis.set).toHaveBeenCalledWith(
+      void expect(mockRedis.set).toHaveBeenCalledWith(
         cacheKey,
         JSON.stringify(inventoryInfo),
         'EX',
@@ -217,8 +217,8 @@ describe('CacheService', () => {
       await cacheService.set('key2', { data: 'value2' }, 60);
       await cacheService.del('key1');
 
-      expect(mockRedis.set).toHaveBeenCalledTimes(2);
-      expect(mockRedis.del).toHaveBeenCalledWith('key1');
+      void expect(mockRedis.set).toHaveBeenCalledTimes(2);
+      void expect(mockRedis.del).toHaveBeenCalledWith('key1');
     });
   });
 });

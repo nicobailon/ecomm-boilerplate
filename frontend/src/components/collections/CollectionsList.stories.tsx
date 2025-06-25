@@ -300,7 +300,7 @@ export const EditAction: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText('Summer Collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Summer Collection')).toBeInTheDocument();
     });
     
     // Click on the collection name
@@ -309,7 +309,7 @@ export const EditAction: Story = {
     
     // Check that onEdit was called
     await waitFor(() => {
-      expect(args.onEdit).toHaveBeenCalledWith(
+      void expect(args.onEdit).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Summer Collection',
         }),
@@ -350,7 +350,7 @@ export const DeleteAction: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText('Summer Collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Summer Collection')).toBeInTheDocument();
     });
     
     // Mock window.confirm
@@ -715,7 +715,7 @@ export const WithSearch: Story = {
     
     // Wait for collections to load
     await waitFor(() => {
-      expect(canvas.getByText('Summer Collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Summer Collection')).toBeInTheDocument();
     });
     
     // Test search functionality
@@ -724,7 +724,7 @@ export const WithSearch: Story = {
     
     // Should show active filter
     await waitFor(() => {
-      expect(canvas.getByText('Search: "Summer"')).toBeInTheDocument();
+      void expect(canvas.getByText('Search: "Summer"')).toBeInTheDocument();
     });
     
     // Clear search
@@ -733,7 +733,7 @@ export const WithSearch: Story = {
     
     // Search should be cleared
     await waitFor(() => {
-      expect(searchInput).toHaveValue('');
+      void expect(searchInput).toHaveValue('');
     });
   },
 };
@@ -774,7 +774,7 @@ export const WithFiltering: Story = {
     
     // Wait for collections to load
     await waitFor(() => {
-      expect(canvas.getByText('Summer Collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Summer Collection')).toBeInTheDocument();
     });
     
     // Click public filter
@@ -783,7 +783,7 @@ export const WithFiltering: Story = {
     
     // Should show active filter
     await waitFor(() => {
-      expect(canvas.getByText('public only')).toBeInTheDocument();
+      void expect(canvas.getByText('public only')).toBeInTheDocument();
     });
     
     // Click private filter
@@ -792,7 +792,7 @@ export const WithFiltering: Story = {
     
     // Should update active filter
     await waitFor(() => {
-      expect(canvas.getByText('private only')).toBeInTheDocument();
+      void expect(canvas.getByText('private only')).toBeInTheDocument();
     });
     
     // Click all filter to reset
@@ -844,7 +844,7 @@ export const WithSorting: Story = {
     
     // Wait for collections to load
     await waitFor(() => {
-      expect(canvas.getByText('Alpha Collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Alpha Collection')).toBeInTheDocument();
     });
     
     // Change sort to product count
@@ -956,7 +956,7 @@ export const CombinedFilters: Story = {
     
     // Wait for collections to load
     await waitFor(() => {
-      expect(canvas.getByText('Summer Collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Summer Collection')).toBeInTheDocument();
     });
     
     // Apply multiple filters
@@ -968,8 +968,8 @@ export const CombinedFilters: Story = {
     
     // Should show both active filters
     await waitFor(() => {
-      expect(canvas.getByText('Search: "Collection"')).toBeInTheDocument();
-      expect(canvas.getByText('public only')).toBeInTheDocument();
+      void expect(canvas.getByText('Search: "Collection"')).toBeInTheDocument();
+      void expect(canvas.getByText('public only')).toBeInTheDocument();
     });
   },
 };

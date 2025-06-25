@@ -19,13 +19,13 @@ describe('Theme-aware Components', () => {
     it('should have correct classes in light mode', () => {
       const { container } = renderWithTheme(<Button>Test</Button>, 'light');
       const button = container.querySelector('button');
-      expect(button).toHaveClass('bg-primary', 'text-primary-foreground');
+      void expect(button).toHaveClass('bg-primary', 'text-primary-foreground');
     });
 
     it('should have correct classes in dark mode', () => {
       const { container } = renderWithTheme(<Button>Test</Button>, 'dark');
       const button = container.querySelector('button');
-      expect(button).toHaveClass('dark:hover:bg-primary/80');
+      void expect(button).toHaveClass('dark:hover:bg-primary/80');
     });
   });
 
@@ -33,7 +33,7 @@ describe('Theme-aware Components', () => {
     it('should use semantic colors', () => {
       const { container } = renderWithTheme(<Input />);
       const input = container.querySelector('input');
-      expect(input).toHaveClass('text-foreground', 'bg-background');
+      void expect(input).toHaveClass('text-foreground', 'bg-background');
     });
   });
 
@@ -41,7 +41,7 @@ describe('Theme-aware Components', () => {
     it('should have text-foreground class', () => {
       const { container } = renderWithTheme(<Label>Test Label</Label>);
       const label = container.querySelector('label');
-      expect(label).toHaveClass('text-foreground');
+      void expect(label).toHaveClass('text-foreground');
     });
   });
 
@@ -52,7 +52,7 @@ describe('Theme-aware Components', () => {
         const { container } = renderWithTheme(
           <Badge variant={variant as 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning'}>Test</Badge>,
         );
-        expect(container.firstChild).toBeTruthy();
+        void expect(container.firstChild).toBeTruthy();
       });
     });
   });

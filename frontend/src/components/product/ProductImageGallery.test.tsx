@@ -16,8 +16,8 @@ describe('ProductImageGallery', () => {
       />,
     );
 
-    expect(screen.getByAltText('Test Product - Image 1')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /View image/ })).not.toBeInTheDocument();
+    void expect(screen.getByAltText('Test Product - Image 1')).toBeInTheDocument();
+    void expect(screen.queryByRole('button', { name: /View image/ })).not.toBeInTheDocument();
   });
 
   it('renders multiple images with thumbnails', () => {
@@ -28,10 +28,10 @@ describe('ProductImageGallery', () => {
       />,
     );
 
-    expect(screen.getByAltText('Test Product - Image 1')).toBeInTheDocument();
+    void expect(screen.getByAltText('Test Product - Image 1')).toBeInTheDocument();
     
     const thumbnails = screen.getAllByRole('button', { name: /View image/ });
-    expect(thumbnails).toHaveLength(3);
+    void expect(thumbnails).toHaveLength(3);
   });
 
   it('changes main image when thumbnail is clicked', () => {
@@ -45,8 +45,8 @@ describe('ProductImageGallery', () => {
     const secondThumbnail = screen.getByRole('button', { name: 'View image 2' });
     fireEvent.click(secondThumbnail);
 
-    expect(screen.getByAltText('Test Product - Image 2')).toBeInTheDocument();
-    expect(secondThumbnail).toHaveAttribute('aria-current', 'true');
+    void expect(screen.getByAltText('Test Product - Image 2')).toBeInTheDocument();
+    void expect(secondThumbnail).toHaveAttribute('aria-current', 'true');
   });
 
   it('shows placeholder when no images provided', () => {
@@ -57,7 +57,7 @@ describe('ProductImageGallery', () => {
       />,
     );
 
-    expect(screen.getByText('No image available')).toBeInTheDocument();
+    void expect(screen.getByText('No image available')).toBeInTheDocument();
   });
 
   it('renders mobile dots indicator on small screens', () => {
@@ -75,6 +75,6 @@ describe('ProductImageGallery', () => {
     );
 
     const dots = screen.getAllByRole('button', { name: /Go to image/ });
-    expect(dots).toHaveLength(3);
+    void expect(dots).toHaveLength(3);
   });
 });

@@ -1,21 +1,17 @@
-import { ShoppingCart, UserPlus, LogIn, LogOut, Lock } from 'lucide-react';
+import { ShoppingCart, UserPlus, LogIn, Lock } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { useCurrentUser, useLogout } from '@/hooks/auth/useAuth';
+import { useCurrentUser } from '@/hooks/auth/useAuth';
 import { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
 import { ThemeToggle } from '../ui/theme-toggle';
+import { UserMenu } from './UserMenu';
 
 const Navbar: React.FC = () => {
 	const { data: user } = useCurrentUser();
 	const { totalQuantity } = useUnifiedCart();
-	const logout = useLogout();
 	const location = useLocation();
 	
 	const isAdmin = user?.role === 'admin';
 	const cartItemsCount = totalQuantity;
-
-	const handleLogout = () => {
-		logout.mutate();
-	};
 
 	return (
 		<header className='fixed top-0 left-0 w-full bg-background/90 backdrop-blur-md shadow-lg z-40 transition-all duration-300 border-b border-border'>
@@ -75,17 +71,7 @@ const Navbar: React.FC = () => {
 						)}
 
 						{user ? (
-							<button
-								className='bg-muted hover:bg-muted/80 text-foreground py-2 px-4 
-						rounded-md flex items-center transition duration-300 ease-in-out disabled:opacity-50'
-								onClick={handleLogout}
-								disabled={logout.isPending}
-							>
-								<LogOut size={18} />
-								<span className='hidden sm:inline ml-2'>
-									{logout.isPending ? 'Logging out...' : 'Log Out'}
-								</span>
-							</button>
+							<UserMenu />
 						) : (
 							<>
 								<Link

@@ -1288,7 +1288,7 @@ export const RefreshableDiscountData: Story = {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={refreshData}
+                    onClick={() => { void refreshData(); }}
                     disabled={isRefreshing}
                   >
                     {isRefreshing ? (

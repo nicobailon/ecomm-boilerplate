@@ -86,7 +86,7 @@ export class MediaService {
     for (const item of mediaItems) {
       // For video items, validate YouTube URLs specifically
       if (item.type === 'video') {
-        if (item.url.includes('youtube.com') || item.url.includes('youtu.be')) {
+        if (item.url.includes('youtube.com') ?? item.url.includes('youtu.be')) {
           const validation = this.validateYouTubeUrl(item.url);
           if (!validation.isValid) {
             throw new AppError(`Invalid YouTube URL: ${item.url}`, 400);

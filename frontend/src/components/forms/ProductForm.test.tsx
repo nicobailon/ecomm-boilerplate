@@ -172,16 +172,16 @@ describe('ProductForm - Variant Submission', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(mockCreateProduct).toHaveBeenCalled();
+        void expect(mockCreateProduct).toHaveBeenCalled();
         const callArgs = mockCreateProduct.mock.calls[0]?.[0] as ProductSubmissionData | undefined;
-        console.log('Create product called with:', callArgs);
+        // Verify create product was called with correct data
         
         // Since VariantEditor is not part of this test and we're not adding variants
         // manually, we should just verify the form submitted successfully
-        expect(callArgs).toHaveProperty('name', 'Test Product');
-        expect(callArgs).toHaveProperty('description', 'Test Description for the product');
-        expect(callArgs).toHaveProperty('price', 100);
-        expect(callArgs).toHaveProperty('image', 'https://example.com/test-image.jpg');
+        void expect(callArgs).toHaveProperty('name', 'Test Product');
+        void expect(callArgs).toHaveProperty('description', 'Test Description for the product');
+        void expect(callArgs).toHaveProperty('price', 100);
+        void expect(callArgs).toHaveProperty('image', 'https://example.com/test-image.jpg');
       });
     });
 
@@ -227,13 +227,13 @@ describe('ProductForm - Variant Submission', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(mockUpdateProduct).toHaveBeenCalled();
+        void expect(mockUpdateProduct).toHaveBeenCalled();
         const callArgs = mockUpdateProduct.mock.calls[0]?.[0] as UpdateProductArgs | undefined;
         
         // Check that existing variant IDs are preserved
-        expect(callArgs?.data.variants?.[0]?.variantId).toBe('existing-variant-id-1');
+        void expect(callArgs?.data.variants?.[0]?.variantId).toBe('existing-variant-id-1');
         // Transform should be called but should preserve existing ID
-        expect(mockTransformVariant).toHaveBeenCalled();
+        void expect(mockTransformVariant).toHaveBeenCalled();
       });
     });
 
@@ -289,16 +289,16 @@ describe('ProductForm - Variant Submission', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(mockCreateProduct).toHaveBeenCalled();
+        void expect(mockCreateProduct).toHaveBeenCalled();
         const callArgs = mockCreateProduct.mock.calls[0]?.[0] as ProductSubmissionData | undefined;
         
         // If variants exist, check price calculation
         if (callArgs?.variants && callArgs.variants.length > 0) {
           callArgs.variants.forEach((variant) => {
-            expect(variant).toHaveProperty('price');
-            expect(variant).not.toHaveProperty('priceAdjustment');
-            expect(typeof variant.price).toBe('number');
-            expect(variant.price).toBeGreaterThanOrEqual(0);
+            void void expect(variant).toHaveProperty('price');
+            void expect(variant).not.toHaveProperty('priceAdjustment');
+            void expect(typeof variant.price).toBe('number');
+            void expect(variant.price).toBeGreaterThanOrEqual(0);
           });
         }
       });
@@ -324,7 +324,7 @@ describe('ProductForm - Variant Submission', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(mockCreateProduct).toHaveBeenCalled();
+        void expect(mockCreateProduct).toHaveBeenCalled();
         // Base price should be handled properly by form validation
       });
     });
@@ -359,12 +359,12 @@ describe('ProductForm - Variant Submission', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(mockUpdateProduct).toHaveBeenCalled();
+        void expect(mockUpdateProduct).toHaveBeenCalled();
         const callArgs = mockUpdateProduct.mock.calls[0]?.[0] as UpdateProductArgs | undefined;
         
         // Check that price is absolute and positive
-        expect(callArgs?.data.variants?.[0].price).toBe(80);
-        expect(callArgs?.data.variants?.[0].price).toBeGreaterThanOrEqual(0);
+        void expect(callArgs?.data.variants?.[0].price).toBe(80);
+        void expect(callArgs?.data.variants?.[0].price).toBeGreaterThanOrEqual(0);
       });
     });
   });
@@ -400,7 +400,7 @@ describe('ProductForm - Variant Submission', () => {
       await user.click(screen.getByRole('button', { name: /create product/i }));
 
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith(
+        void expect(consoleSpy).toHaveBeenCalledWith(
           'Submitting variants:',
           expect.any(Array),
         );

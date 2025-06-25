@@ -248,14 +248,14 @@ export const SearchResults: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByPlaceholderText(/Search products/)).toBeInTheDocument();
+      void expect(canvas.getByPlaceholderText(/Search products/)).toBeInTheDocument();
     });
     
     const searchInput = canvas.getByPlaceholderText(/Search products/);
     await userEvent.type(searchInput, 'search');
     
     await waitFor(() => {
-      expect(canvas.getByText('Search Result 1')).toBeInTheDocument();
+      void expect(canvas.getByText('Search Result 1')).toBeInTheDocument();
     }, { timeout: 2000 });
   },
 };
@@ -356,15 +356,15 @@ export const SelectAllInteraction: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText('Select Page')).toBeInTheDocument();
+      void expect(canvas.getByText('Select Page')).toBeInTheDocument();
     });
     
     const selectAllButton = canvas.getByText('Select Page');
     await userEvent.click(selectAllButton);
     
     await waitFor(() => {
-      expect(canvas.getByText('5 products selected')).toBeInTheDocument();
-      expect(canvas.getByText('Deselect Page')).toBeInTheDocument();
+      void expect(canvas.getByText('5 products selected')).toBeInTheDocument();
+      void expect(canvas.getByText('Deselect Page')).toBeInTheDocument();
     });
   },
 };
@@ -411,15 +411,15 @@ export const ClearSelectionInteraction: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText('Clear All (3)')).toBeInTheDocument();
+      void expect(canvas.getByText('Clear All (3)')).toBeInTheDocument();
     });
     
     const clearButton = canvas.getByText('Clear All (3)');
     await userEvent.click(clearButton);
     
     await waitFor(() => {
-      expect(canvas.getByText('0 products selected')).toBeInTheDocument();
-      expect(canvas.queryByText(/Clear All/)).not.toBeInTheDocument();
+      void expect(canvas.getByText('0 products selected')).toBeInTheDocument();
+      void expect(canvas.queryByText(/Clear All/)).not.toBeInTheDocument();
     });
   },
 };
@@ -476,15 +476,15 @@ export const Pagination: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText('Page 1 of 3')).toBeInTheDocument();
+      void expect(canvas.getByText('Page 1 of 3')).toBeInTheDocument();
     });
     
     const nextButton = canvas.getByText('Next');
     await userEvent.click(nextButton);
     
     await waitFor(() => {
-      expect(canvas.getByText('Page 2 of 3')).toBeInTheDocument();
-      expect(canvas.getByText('Product 21')).toBeInTheDocument();
+      void expect(canvas.getByText('Page 2 of 3')).toBeInTheDocument();
+      void expect(canvas.getByText('Product 21')).toBeInTheDocument();
     });
   },
 };
@@ -577,7 +577,7 @@ export const ApplyChangesFlow: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText('Product 2')).toBeInTheDocument();
+      void expect(canvas.getByText('Product 2')).toBeInTheDocument();
     });
     
     // Click on product 2 checkbox
@@ -588,7 +588,7 @@ export const ApplyChangesFlow: Story = {
     
     // Apply button should appear
     await waitFor(() => {
-      expect(canvas.getByText('Apply Changes')).toBeInTheDocument();
+      void expect(canvas.getByText('Apply Changes')).toBeInTheDocument();
     });
     
     const applyButton = canvas.getByText('Apply Changes');
@@ -596,7 +596,7 @@ export const ApplyChangesFlow: Story = {
     
     // Check that onSelectionChange was called
     await waitFor(() => {
-      expect(args.onSelectionChange).toHaveBeenCalledWith(['prod1', 'prod2']);
+      void expect(args.onSelectionChange).toHaveBeenCalledWith(['prod1', 'prod2']);
     });
   },
 };
@@ -693,14 +693,14 @@ export const NoSearchResults: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByPlaceholderText(/Search products/)).toBeInTheDocument();
+      void expect(canvas.getByPlaceholderText(/Search products/)).toBeInTheDocument();
     });
     
     const searchInput = canvas.getByPlaceholderText(/Search products/);
     await userEvent.type(searchInput, 'nonexistent');
     
     await waitFor(() => {
-      expect(canvas.getByText('No products found matching your search.')).toBeInTheDocument();
+      void expect(canvas.getByText('No products found matching your search.')).toBeInTheDocument();
     }, { timeout: 2000 });
   },
 };
@@ -747,24 +747,24 @@ export const KeyboardNavigation: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByPlaceholderText(/Search products/)).toBeInTheDocument();
+      void expect(canvas.getByPlaceholderText(/Search products/)).toBeInTheDocument();
     });
     
     // Focus search input
     const searchInput = canvas.getByPlaceholderText(/Search products/);
     await userEvent.click(searchInput);
-    expect(document.activeElement).toBe(searchInput);
+    void expect(document.activeElement).toBe(searchInput);
     
     // Tab to first checkbox
     await userEvent.tab();
     await userEvent.tab(); // Skip select all button
     
     const firstCheckbox = canvas.getAllByRole('checkbox')[1]; // Skip "select all" checkbox
-    expect(document.activeElement).toBe(firstCheckbox);
+    void expect(document.activeElement).toBe(firstCheckbox);
     
     // Space to select
     await userEvent.keyboard(' ');
-    expect(firstCheckbox).toBeChecked();
+    void expect(firstCheckbox).toBeChecked();
     
     // Tab through more products
     await userEvent.tab();
@@ -779,7 +779,7 @@ export const KeyboardNavigation: Story = {
     
     // Should have 2 selected
     await waitFor(() => {
-      expect(canvas.getByText('2 products selected')).toBeInTheDocument();
+      void expect(canvas.getByText('2 products selected')).toBeInTheDocument();
     });
   },
 };
@@ -826,22 +826,22 @@ export const AccessibilityFeatures: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText('Product 1')).toBeInTheDocument();
+      void expect(canvas.getByText('Product 1')).toBeInTheDocument();
     });
     
     // Check all checkboxes have labels
     const checkboxes = canvas.getAllByRole('checkbox');
     checkboxes.forEach(checkbox => {
-      expect(checkbox).toHaveAccessibleName();
+      void expect(checkbox).toHaveAccessibleName();
     });
     
     // Check search input has label
     const searchInput = canvas.getByPlaceholderText(/Search products/);
-    expect(searchInput).toHaveAccessibleName();
+    void expect(searchInput).toHaveAccessibleName();
     
     // Check selection status is announced
     const statusText = canvas.getByText('1 product selected');
-    expect(statusText).toBeInTheDocument();
+    void expect(statusText).toBeInTheDocument();
     
     // Select another product
     const product2Checkbox = checkboxes[2]; // Product 2
@@ -849,7 +849,7 @@ export const AccessibilityFeatures: Story = {
     
     // Status should update
     await waitFor(() => {
-      expect(canvas.getByText('2 products selected')).toBeInTheDocument();
+      void expect(canvas.getByText('2 products selected')).toBeInTheDocument();
     });
   },
 };
@@ -1295,7 +1295,7 @@ export const MSWIntegration: Story = {
     
     // Wait for products to load
     await waitFor(() => {
-      expect(canvas.getByText(/products? selected/)).toBeInTheDocument();
+      void expect(canvas.getByText(/products? selected/)).toBeInTheDocument();
     }, { timeout: 5000 });
   },
 };

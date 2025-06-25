@@ -7,6 +7,7 @@ export const createMockUser = (overrides?: Partial<User>): User => ({
   email: 'test@example.com',
   role: 'customer',
   cartItems: [],
+  emailVerified: true,
   ...overrides,
 });
 

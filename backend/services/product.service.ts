@@ -712,7 +712,7 @@ class ProductService {
   
   calculateVariantPrice(basePrice: number, variant: IProductVariant): number {
     // For now, use variant price if specified, otherwise use base price
-    return variant.price || basePrice;
+    return variant.price ?? basePrice;
   }
   
   async checkVariantAvailability(productId: string, variantId?: string, variantLabel?: string): Promise<boolean> {
@@ -812,7 +812,7 @@ class ProductService {
           await new Promise(resolve => setTimeout(resolve, Math.pow(RETRY_CONFIG.EXPONENTIAL_BACKOFF_BASE, retryCount) * RETRY_CONFIG.BASE_RETRY_DELAY_MS));
           continue;
         }
-        
+
         // Re-throw other errors or if max retries reached
         throw error;
       }
@@ -934,7 +934,7 @@ class ProductService {
         throw new AppError('Product not found', 404);
       }
       
-      const oldMediaUrls = (product.mediaGallery || [])
+      const oldMediaUrls = (product.mediaGallery ?? [])
         .filter((m) => m.url.includes('utfs.io'))
         .map((m) => m.url);
       

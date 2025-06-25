@@ -192,7 +192,7 @@ const RequestSimulator = ({
       // Retry logic
       if (retryCount < 3) {
         setTimeout(() => {
-          makeRequest(url, retryCount + 1);
+          void makeRequest(url, retryCount + 1);
         }, 1000 * (retryCount + 1));
       }
       return;
@@ -227,7 +227,7 @@ const RequestSimulator = ({
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Request Simulator</h3>
         <Button
-          onClick={() => makeRequest('/api/products')}
+          onClick={() => { void makeRequest('/api/products'); }}
           size="sm"
         >
           Make Request
@@ -341,7 +341,7 @@ const OfflineQueue = () => {
 
   useEffect(() => {
     if (isOnline) {
-      syncQueue();
+      void syncQueue();
     }
   }, [isOnline, syncQueue]);
 
@@ -376,7 +376,7 @@ const OfflineQueue = () => {
           Add Order
         </Button>
         <Button
-          onClick={() => syncQueue()}
+          onClick={() => { void syncQueue(); }}
           size="sm"
           disabled={!isOnline || queue.filter(i => i.status === 'queued').length === 0}
         >
@@ -470,7 +470,7 @@ const PartialDataLoader = () => {
       
       <div className="flex gap-2">
         <Button
-          onClick={() => sections.forEach(s => loadSection(s))}
+          onClick={() => sections.forEach(s => void loadSection(s))}
           size="sm"
         >
           Load All
@@ -494,7 +494,7 @@ const PartialDataLoader = () => {
             <div className="flex items-center justify-between">
               <h4 className="font-medium capitalize">{section}</h4>
               <Button
-                onClick={() => loadSection(section)}
+                onClick={() => { void loadSection(section); }}
                 size="sm"
                 variant="ghost"
                 disabled={loading[section]}

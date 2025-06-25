@@ -72,7 +72,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       vi.mocked(cartService.calculateCartTotals).mockResolvedValue(mockCartResponse);
 
       // All requests should be pending
-      expect(mockApplyCouponToUser).toHaveBeenCalledTimes(3);
+      void expect(mockApplyCouponToUser).toHaveBeenCalledTimes(3);
 
             // Resolve the database operation  
       applyCouponResolve?.();
@@ -83,8 +83,8 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       await Promise.resolve();
 
       // All requests should complete successfully
-      expect(jsonMock).toHaveBeenCalledTimes(3);
-      expect(jsonMock).toHaveBeenCalledWith({
+      void expect(jsonMock).toHaveBeenCalledTimes(3);
+      void expect(jsonMock).toHaveBeenCalledWith({
         success: true,
         message: 'Coupon applied successfully',
         cart: mockCartResponse,
@@ -119,7 +119,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       ]);
 
       // Should replace the existing coupon
-      expect(mockUser.appliedCoupon.code).toBe('NEW20');
+      void expect(mockUser.appliedCoupon.code).toBe('NEW20');
     });
 
     it('should handle error in one request without affecting others', async () => {
@@ -154,8 +154,8 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       ]);
 
       // Two should succeed, one should fail
-      expect(jsonMock).toHaveBeenCalledTimes(2);
-      expect(nextFn2).toHaveBeenCalledWith(expect.objectContaining({
+      void expect(jsonMock).toHaveBeenCalledTimes(2);
+      void expect(nextFn2).toHaveBeenCalledWith(expect.objectContaining({
         message: 'Database connection lost',
       }));
     });
@@ -195,13 +195,13 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       await Promise.all([request1, request2, request3]);
 
       // All should complete successfully
-      expect(jsonMock).toHaveBeenCalledTimes(3);
-      expect(jsonMock).toHaveBeenCalledWith({
+      void expect(jsonMock).toHaveBeenCalledTimes(3);
+      void expect(jsonMock).toHaveBeenCalledWith({
         success: true,
         message: 'Coupon removed successfully',
         cart: mockCartResponse,
       });
-      expect(mockUser.appliedCoupon).toBeNull();
+      void expect(mockUser.appliedCoupon).toBeNull();
     });
 
     it('should handle removal when no coupon exists', async () => {
@@ -223,8 +223,8 @@ describe('CouponController - Concurrent Usage Prevention', () => {
         removeCoupon(mockReq as any, mockRes as any, vi.fn()),
       ]);
 
-      expect(jsonMock).toHaveBeenCalledTimes(2);
-      expect(mockUser.appliedCoupon).toBeNull();
+      void expect(jsonMock).toHaveBeenCalledTimes(2);
+      void expect(mockUser.appliedCoupon).toBeNull();
     });
   });
 
@@ -281,7 +281,7 @@ describe('CouponController - Concurrent Usage Prevention', () => {
       await Promise.all([applyRequest, removeRequest]);
 
       // Both should complete, final state depends on execution order
-      expect(jsonMock).toHaveBeenCalledTimes(2);
+      void expect(jsonMock).toHaveBeenCalledTimes(2);
     });
 
     it('should maintain data integrity with rapid apply/remove cycles', async () => {
@@ -298,8 +298,11 @@ describe('CouponController - Concurrent Usage Prevention', () => {
             totalAmount: 90,
             appliedCoupon: { code: `CYCLE${i}`, discountPercentage: 10 },
           });
-          applyCoupon(mockReq as AuthRequest, mockRes as Response, vi.fn());
-          operations.push(Promise.resolve());
+          operations.push(
+            new Promise<void>((resolve) => {
+              void applyCoupon(mockReq as AuthRequest, mockRes as Response, () => resolve());
+            }),
+          );
         } else {
           vi.mocked(couponService.removeCouponFromUser).mockResolvedValueOnce(undefined);
           vi.mocked(cartService.calculateCartTotals).mockResolvedValueOnce({
@@ -308,15 +311,18 @@ describe('CouponController - Concurrent Usage Prevention', () => {
             totalAmount: 100,
             appliedCoupon: null,
           });
-          removeCoupon(mockReq as AuthRequest, mockRes as Response, vi.fn());
-          operations.push(Promise.resolve());
+          operations.push(
+            new Promise<void>((resolve) => {
+              void removeCoupon(mockReq as AuthRequest, mockRes as Response, () => resolve());
+            }),
+          );
         }
       }
 
       await Promise.all(operations);
 
       // All operations should complete
-      expect(jsonMock).toHaveBeenCalledTimes(10);
+      void expect(jsonMock).toHaveBeenCalledTimes(10);
     });
   });
 });

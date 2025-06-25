@@ -7,6 +7,8 @@ import { AppError } from '../utils/AppError.js';
 import { IUserDocument } from '../models/user.model.js';
 import { couponService } from './coupon.service.js';
 import { inventoryService } from './inventory.service.js';
+import { IPopulatedOrderDocument } from './email.service.js';
+import { queueEmail } from '../lib/email-queue.js';
 
 interface ProductCheckout {
   _id: string;
@@ -24,6 +26,7 @@ interface CheckoutProduct {
     color?: string;
     sku?: string;
   };
+  variantLabel?: string;
 }
 
 interface InventoryAdjustment {
@@ -69,6 +72,7 @@ export class PaymentService {
       let productPrice = serverProduct.price;
       let productName = serverProduct.name;
       let variantDetails: CheckoutProduct['variantDetails'];
+      let variantLabel: string | undefined;
 
       // Handle variant pricing and validation
       if (requestedProduct.variantId) {
@@ -86,6 +90,7 @@ export class PaymentService {
         // Determine actual quantity that can be fulfilled
         let actualQuantity = requestedProduct.quantity;
         const variantInfoStr = variant.label ? ` (${variant.label})` : '';
+        variantLabel = variant.label;
         
         if (availableStock === 0) {
           // Skip this item entirely if out of stock
@@ -171,7 +176,7 @@ export class PaymentService {
           },
           unit_amount: amount,
         },
-        quantity: requestedProduct.quantity || 1,
+        quantity: requestedProduct.quantity ?? 1,
       });
 
       checkoutProducts.push({
@@ -180,6 +185,7 @@ export class PaymentService {
         price: productPrice,
         variantId: requestedProduct.variantId,
         variantDetails,
+        variantLabel,
       });
     }
 
@@ -201,7 +207,7 @@ export class PaymentService {
       });
       
       // If not found, try general discount code
-      coupon ??= await Coupon.findOne({ 
+      coupon = coupon ?? await Coupon.findOne({ 
         code: couponCode.toUpperCase(), 
         userId: { $exists: false }, 
         isActive: true, 
@@ -268,6 +274,8 @@ export class PaymentService {
     const dbSession = await mongoose.startSession();
     let orderId: mongoose.Types.ObjectId | undefined;
     let totalAmount: number | undefined;
+    let populatedOrder: IPopulatedOrderDocument | null = null;
+    let user: IUserDocument | null = null;
 
     try {
       await dbSession.withTransaction(async () => {
@@ -278,6 +286,10 @@ export class PaymentService {
 
         // Create order
         const products = JSON.parse(session.metadata?.products ?? '[]') as CheckoutProduct[];
+        const originalAmount = session.metadata?.couponCode 
+          ? (session.amount_subtotal ?? session.amount_total ?? 0) / 100
+          : undefined;
+          
         const newOrder = new Order({
           user: session.metadata?.userId,
           products: products.map(product => ({
@@ -286,14 +298,32 @@ export class PaymentService {
             price: product.price,
             variantId: product.variantId,
             variantDetails: product.variantDetails,
+            variantLabel: product.variantLabel,
           })),
           totalAmount: (session.amount_total ?? 0) / 100,
           stripeSessionId: sessionId,
+          shippingAddress: session.shipping_details?.address ? {
+            line1: session.shipping_details.address.line1 ?? '123 Default Street',
+            line2: session.shipping_details.address.line2 ?? undefined,
+            city: session.shipping_details.address.city ?? 'Default City',
+            state: session.shipping_details.address.state ?? 'CA',
+            postalCode: session.shipping_details.address.postal_code ?? '12345',
+            country: session.shipping_details.address.country ?? 'USA',
+          } : undefined,
+          paymentMethod: 'card',
+          paymentIntentId: session.payment_intent as string,
+          couponCode: session.metadata?.couponCode ?? undefined,
+          originalAmount,
         });
 
         await newOrder.save({ session: dbSession });
         orderId = newOrder._id;
         totalAmount = newOrder.totalAmount;
+        
+        // Populate order for email
+        populatedOrder = await Order.findById(orderId)
+          .populate('products.product', 'name image price')
+          .session(dbSession) as unknown as IPopulatedOrderDocument;
 
         // Decrement inventory for each product
         for (const product of products) {
@@ -311,12 +341,13 @@ export class PaymentService {
         const userId = session.metadata?.userId;
         if (userId) {
           const { User } = await import('../models/user.model.js');
-          const user = await User.findById(userId).session(dbSession);
+          const foundUser = await User.findById(userId).session(dbSession);
           
-          if (user) {
-            user.cartItems = [];
-            user.appliedCoupon = null;
-            await user.save({ session: dbSession });
+          if (foundUser) {
+            foundUser.cartItems = [];
+            foundUser.appliedCoupon = null;
+            await foundUser.save({ session: dbSession });
+            user = foundUser;
           }
         }
       });
@@ -326,6 +357,19 @@ export class PaymentService {
 
     if (!orderId || totalAmount === undefined) {
       throw new AppError('Order creation failed', 500);
+    }
+    
+    // Send order confirmation email using data from transaction
+    try {
+      if (user && populatedOrder) {
+        await queueEmail('orderConfirmation', {
+          order: populatedOrder,
+          user,
+        });
+      }
+    } catch (emailError) {
+      // Log error but don't fail the order process
+      console.error('Failed to send order confirmation email:', emailError);
     }
     
     return {

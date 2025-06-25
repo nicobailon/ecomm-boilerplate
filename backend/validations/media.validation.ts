@@ -16,11 +16,11 @@ export const mediaItemSchema = z.object({
   type: z.enum(['image', 'video']),
   url: z.string().url().max(2048).refine(
     (url) => {
-      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      if (url.includes('youtube.com') ?? url.includes('youtu.be')) {
         return validateYouTubeUrl(url);
       }
       if (!url.includes('youtube')) {
-        return url.startsWith('https://utfs.io/') || url.startsWith('https://');
+        return url.startsWith('https://utfs.io/') ?? url.startsWith('https://');
       }
       return true;
     },

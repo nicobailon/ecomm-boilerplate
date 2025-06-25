@@ -15,6 +15,7 @@ A feature-rich, scalable, and modern e-commerce solution built with the MERN sta
 -   **Admin Dashboard**: A protected area for administrators to manage products and view sales analytics.
 -   **Efficient Caching**: **Redis** integration for caching frequently accessed data and improving performance.
 -   **File & Image Uploads**: Simple and reliable file uploads powered by **UploadThing**.
+-   **Email System**: Asynchronous email processing with templates for order confirmations, welcome emails, and password resets.
 -   **Styled with Tailwind CSS**: A utility-first CSS framework for rapid UI development.
 
 ## 🛠️ Tech Stack
@@ -26,6 +27,7 @@ A feature-rich, scalable, and modern e-commerce solution built with the MERN sta
 | **Payments**     | Stripe                                                                                                  |
 | **Database**     | MongoDB, Redis (Upstash)                                                                                |
 | **File Uploads** | UploadThing                                                                                             |
+| **Email**        | Resend, Bull Queue, EJS Templates                                                                      |
 
 ## 🚀 Getting Started
 
@@ -60,6 +62,7 @@ A feature-rich, scalable, and modern e-commerce solution built with the MERN sta
         -   `ACCESS_TOKEN_SECRET` & `REFRESH_TOKEN_SECRET` (generate with `openssl rand -base64 32`)
         -   `STRIPE_SECRET_KEY`
         -   `UPLOADTHING_APP_ID` & `UPLOADTHING_SECRET`
+        -   `RESEND_API_KEY` & `EMAIL_ENABLED=true` (for email functionality)
 
 4.  **Run the application in development mode:**
     ```bash
@@ -100,15 +103,77 @@ The application features a role-based system with `customer` and `admin` roles. 
 -   Admins log in using the same page as regular customers.
 -   Once logged in, an "Admin" or "Dashboard" link will appear in the navigation, leading to the protected admin area.
 
+## 📧 Email System
+
+The application includes a robust email system for transactional emails with the following features:
+
+### Email Types
+
+1. **Welcome Emails**: Sent automatically when users sign up
+2. **Order Confirmations**: Sent after successful payment processing
+3. **Password Reset**: Sent when users request password recovery
+4. **Stock Notifications**: Sent when out-of-stock items become available
+
+### Architecture
+
+-   **Asynchronous Processing**: Uses Bull queue with Redis for non-blocking email delivery
+-   **Template Engine**: EJS templates with base layout for consistent branding
+-   **Fallback Mechanism**: Automatically falls back to synchronous sending if queue is unavailable
+-   **Rate Limiting**: Prevents email abuse with configurable limits (5 emails per 15 minutes)
+
+### Email Templates
+
+  Email templates are located at: `/backend/templates/emails/`.
+
+  The templates include:
+  - welcome.ejs - New user registration
+  - order-confirmation.ejs - Purchase confirmation
+  - password-reset.ejs - Password recovery
+  - stock-notification.ejs - Back in stock alerts
+  - layouts/base.ejs - Base layout wrapper
+
+### Configuration
+
+1. **Required Environment Variables**:
+   ```
+   RESEND_API_KEY=your-resend-api-key
+   EMAIL_ENABLED=true
+   ```
+
+2. **Email Features**:
+   - HTML and plain text versions of all emails
+   - Template caching for improved performance
+   - XSS protection in templates
+   - Automatic retry with exponential backoff
+   - Comprehensive error logging
+
+### Security
+
+-   **Opt-in Design**: Emails only sent when both API key exists AND `EMAIL_ENABLED=true`
+-   **URL Sanitization**: Prevents javascript: and data: URLs in emails
+-   **Rate Limiting**: Applied to all email-sending endpoints
+-   **Unsubscribe Support**: CAN-SPAM compliant with token-based unsubscribe links
+
+For detailed documentation, see `/backend/docs/email-system.md`.
+
 ## 📜 Available Scripts
 
+### Development & Build
 -   `npm run dev`: Starts the backend server in development mode.
 -   `npm run dev:all`: Starts both backend and frontend servers concurrently.
 -   `npm run build`: Builds the backend and frontend for production.
 -   `npm run start`: Starts the application using `ts-node`.
 -   `npm run start:prod`: Starts the compiled production build from the `dist` folder.
+
+### Testing & Linting
 -   `npm test`: Runs tests for the application.
--   `npm run lint`: Lints the codebase.
+-   `npm run lint`: Lints both backend and frontend code.
+-   `npm run lint --prefix frontend`: Lints frontend code only.
+-   `npx eslint backend`: Lints backend code only.
+
+### Admin Management
+-   `npm run list-users`: Lists all users and their roles.
+-   `npm run make-admin <email>`: Promotes a user to admin role.
 
 ## 🤝 Contributing
 

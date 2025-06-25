@@ -428,7 +428,7 @@ export const TouchGestureNavigation: Story = {
     ]);
     
     await waitFor(() => {
-      expect(canvas.getByText('1 / 3')).toBeInTheDocument();
+      void expect(canvas.getByText('1 / 3')).toBeInTheDocument();
     });
     
     // Simulate swipe left
@@ -439,7 +439,7 @@ export const TouchGestureNavigation: Story = {
     ]);
     
     await waitFor(() => {
-      expect(canvas.getByText('2 / 3')).toBeInTheDocument();
+      void expect(canvas.getByText('2 / 3')).toBeInTheDocument();
     });
   },
 };
@@ -488,7 +488,7 @@ export const PinchToZoomInteraction: Story = {
     // Check for zoom indicator
     await waitFor(() => {
       const zoomIndicator = canvas.queryByText(/\d+%/);
-      expect(zoomIndicator).toBeInTheDocument();
+      void expect(zoomIndicator).toBeInTheDocument();
     });
     
     // Simulate pinch zoom out
@@ -536,7 +536,7 @@ export const DoubleTapToZoom: Story = {
     // Wait for zoom animation
     await waitFor(() => {
       const zoomIndicator = canvas.queryByText(/200%/);
-      expect(zoomIndicator).toBeInTheDocument();
+      void expect(zoomIndicator).toBeInTheDocument();
     }, { timeout: 2000 });
     
     // Double tap again to zoom out
@@ -545,7 +545,7 @@ export const DoubleTapToZoom: Story = {
     // Zoom should reset
     await waitFor(() => {
       const zoomIndicator = canvas.queryByText(/\d+%/);
-      expect(zoomIndicator).not.toBeInTheDocument();
+      void expect(zoomIndicator).not.toBeInTheDocument();
     });
   },
 };
@@ -616,7 +616,7 @@ export const SwipeVelocityDetection: Story = {
     
     await waitFor(() => {
       const velocityInfo = canvasElement.querySelector('.bg-orange-100');
-      expect(velocityInfo).toBeInTheDocument();
+      void expect(velocityInfo).toBeInTheDocument();
     });
     
     // Slow swipe
@@ -671,7 +671,7 @@ export const MultiTouchGestures: Story = {
     // Check touch counter updated
     await waitFor(() => {
       const touchCount = canvasElement.querySelector('.text-indigo-800');
-      expect(touchCount).toBeInTheDocument();
+      void expect(touchCount).toBeInTheDocument();
     });
   },
 };
@@ -712,7 +712,7 @@ export const GestureAccessibility: Story = {
     // Test keyboard alternatives
     await userEvent.keyboard('{ArrowRight}');
     await waitFor(() => {
-      expect(canvas.getByText('2 / 4')).toBeInTheDocument();
+      void expect(canvas.getByText('2 / 4')).toBeInTheDocument();
     });
     
     // Test zoom with keyboard

@@ -5,6 +5,10 @@ import {
   HomePage,
   SignUpPage,
   LoginPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  VerifyEmailPage,
+  EmailVerificationSentPage,
   AdminPage,
   CartPage,
   CollectionPage,
@@ -45,6 +49,34 @@ export const router = createBrowserRouter([
         element: (
           <AuthGuard requireAuth={false} redirectTo="/">
             <LoginPage />
+          </AuthGuard>
+        ),
+      },
+      {
+        path: 'forgot-password',
+        element: (
+          <AuthGuard requireAuth={false} redirectTo="/">
+            <ForgotPasswordPage />
+          </AuthGuard>
+        ),
+      },
+      {
+        path: 'reset-password',
+        element: (
+          <AuthGuard requireAuth={false} redirectTo="/">
+            <ResetPasswordPage />
+          </AuthGuard>
+        ),
+      },
+      {
+        path: 'verify-email/:token',
+        element: <VerifyEmailPage />,
+      },
+      {
+        path: 'email-verification-sent',
+        element: (
+          <AuthGuard requireAuth={true} redirectTo="/login">
+            <EmailVerificationSentPage />
           </AuthGuard>
         ),
       },

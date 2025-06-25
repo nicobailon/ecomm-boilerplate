@@ -55,10 +55,10 @@ describe('Auth Router', () => {
         password: 'password123',
       });
 
-      expect(result.user).toEqual(mockUser);
-      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
-      expect(cookieStore.accessToken.value).toBe('access123');
-      expect(cookieStore.refresh.value).toBe('refresh123');
+      void expect(result.user).toEqual(mockUser);
+      void expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
+      void expect(cookieStore.accessToken.value).toBe('access123');
+      void expect(cookieStore.refresh.value).toBe('refresh123');
     });
 
     it('should throw BAD_REQUEST for existing user', async () => {
@@ -110,8 +110,8 @@ describe('Auth Router', () => {
         password: 'password123',
       });
 
-      expect(result.user).toEqual(mockUser);
-      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
+      void expect(result.user).toEqual(mockUser);
+      void expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -127,9 +127,9 @@ describe('Auth Router', () => {
 
       const result = await caller.auth.logout();
 
-      expect(result.success).toBe(true);
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith('accessToken');
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith('refresh');
+      void expect(result.success).toBe(true);
+      void expect(mockResponse.clearCookie).toHaveBeenCalledWith('accessToken');
+      void expect(mockResponse.clearCookie).toHaveBeenCalledWith('refresh');
     });
   });
 
@@ -147,8 +147,8 @@ describe('Auth Router', () => {
         refreshToken: 'refresh123',
       });
 
-      expect(result.accessToken).toBe('newAccess789');
-      expect(mockResponse.cookie).toHaveBeenCalledWith(
+      void expect(result.accessToken).toBe('newAccess789');
+      void expect(mockResponse.cookie).toHaveBeenCalledWith(
         'accessToken',
         'newAccess789',
         expect.any(Object),
@@ -176,7 +176,7 @@ describe('Auth Router', () => {
 
       const result = await caller.auth.profile();
 
-      expect(result).toEqual(mockProfile);
+      void expect(result).toEqual(mockProfile);
     });
 
     it('should throw UNAUTHORIZED when not authenticated', async () => {

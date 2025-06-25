@@ -41,8 +41,8 @@ describe('Upload Routes', () => {
     app.use('/api/uploadthing', uploadRoutes);
 
     // Create tokens
-    adminToken = jwt.sign({ userId: adminUserId }, process.env.ACCESS_TOKEN_SECRET!);
-    customerToken = jwt.sign({ userId: customerUserId }, process.env.ACCESS_TOKEN_SECRET!);
+    adminToken = jwt.sign({ userId: adminUserId }, process.env.ACCESS_TOKEN_SECRET);
+    customerToken = jwt.sign({ userId: customerUserId }, process.env.ACCESS_TOKEN_SECRET);
 
     // Reset mocks
     vi.clearAllMocks();
@@ -68,9 +68,9 @@ describe('Upload Routes', () => {
         .set('Cookie', `accessToken=${adminToken}`)
         .send({ files: [{ name: 'test-image.jpg', type: 'image/jpeg' }] });
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('url');
-      expect(response.body.url).toContain('uploadthing.com');
+      void expect(response.status).toBe(200);
+      void expect(response.body).toHaveProperty('url');
+      void expect(response.body.url).toContain('uploadthing.com');
     });
 
     it('should reject customer users from uploading files', async () => {
@@ -91,8 +91,8 @@ describe('Upload Routes', () => {
         .set('Cookie', `accessToken=${customerToken}`)
         .send({ files: [{ name: 'test-image.jpg', type: 'image/jpeg' }] });
 
-      expect(response.status).toBe(403);
-      expect(response.body.message).toBe('Access denied - Admin only');
+      void expect(response.status).toBe(403);
+      void expect(response.body.message).toBe('Access denied - Admin only');
     });
 
     it('should reject unauthenticated requests', async () => {
@@ -100,8 +100,8 @@ describe('Upload Routes', () => {
         .post('/api/uploadthing')
         .send({ files: [{ name: 'test-image.jpg', type: 'image/jpeg' }] });
 
-      expect(response.status).toBe(401);
-      expect(response.body.message).toContain('Unauthorized');
+      void expect(response.status).toBe(401);
+      void expect(response.body.message).toContain('Unauthorized');
     });
 
     it('should accept authentication via Authorization header', async () => {
@@ -123,15 +123,15 @@ describe('Upload Routes', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ files: [{ name: 'test-image.jpg', type: 'image/jpeg' }] });
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('url');
+      void expect(response.status).toBe(200);
+      void expect(response.body).toHaveProperty('url');
     });
 
     it('should handle expired tokens correctly', async () => {
       // Create an expired token
       const expiredToken = jwt.sign(
         { userId: adminUserId },
-        process.env.ACCESS_TOKEN_SECRET!,
+        process.env.ACCESS_TOKEN_SECRET,
         { expiresIn: '-1h' }, // Already expired
       );
 
@@ -140,8 +140,8 @@ describe('Upload Routes', () => {
         .set('Cookie', `accessToken=${expiredToken}`)
         .send({ files: [{ name: 'test-image.jpg', type: 'image/jpeg' }] });
 
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe('Unauthorized - Access token expired');
+      void expect(response.status).toBe(401);
+      void expect(response.body.message).toBe('Unauthorized - Access token expired');
     });
   });
 });

@@ -60,6 +60,7 @@ const ExtendedDiscountForm = ({
     setIsSubmitting(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
     
+    // Prepare discount data with selected products and restrictions
     const fullData = {
       ...data,
       discountType,
@@ -67,7 +68,8 @@ const ExtendedDiscountForm = ({
       userRestrictions,
     };
     
-    console.log('Submitting discount:', fullData);
+    // Submit discount data
+    console.log('Full discount data:', fullData);
     toast.success(mode === 'create' ? 'Discount created!' : 'Discount updated!');
     setIsSubmitting(false);
   };
@@ -298,7 +300,7 @@ export const CodeGeneration: Story = {
     
     // Check that a code was generated
     const codeInput = canvas.getByPlaceholderText('SUMMER2024');
-    expect((codeInput as HTMLInputElement).value).toMatch(/^[A-Z]+\d+[A-Z]+$/);
+    void expect((codeInput as HTMLInputElement).value).toMatch(/^[A-Z]+\d+[A-Z]+$/);
   },
 };
 
@@ -318,7 +320,7 @@ export const PercentageSlider: Story = {
     
     // Should update slider
     const slider = canvas.getByRole('slider', { name: /discount percentage slider/i });
-    expect(slider).toHaveAttribute('aria-valuenow', '35');
+    void expect(slider).toHaveAttribute('aria-valuenow', '35');
   },
 };
 
@@ -344,8 +346,8 @@ export const ValidationErrors: Story = {
     
     // Should show validation errors
     await waitFor(() => {
-      expect(canvas.getByText(/discount code must be/i)).toBeInTheDocument();
-      expect(canvas.getByText(/must be between 0 and 100/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/discount code must be/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/must be between 0 and 100/i)).toBeInTheDocument();
     });
   },
 };
@@ -400,7 +402,7 @@ export const ProductRestrictions: Story = {
     // Select some products
     await waitFor(() => {
       const firstProduct = canvas.getByText('Premium Headphones');
-      expect(firstProduct).toBeInTheDocument();
+      void expect(firstProduct).toBeInTheDocument();
     });
   },
 };
@@ -450,7 +452,7 @@ export const ActiveStatusToggle: Story = {
     
     // Should show disabled message
     await waitFor(() => {
-      expect(canvas.getByText(/code is disabled/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/code is disabled/i)).toBeInTheDocument();
     });
     
     // Toggle back
@@ -458,7 +460,7 @@ export const ActiveStatusToggle: Story = {
     
     // Should show active message
     await waitFor(() => {
-      expect(canvas.getByText(/customers can use this code/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/customers can use this code/i)).toBeInTheDocument();
     });
   },
 };
@@ -616,7 +618,7 @@ export const BulkCodeGeneration: Story = {
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        navigator.clipboard.writeText(code);
+                        void navigator.clipboard.writeText(code);
                         toast.success(`Copied ${code}`);
                       }}
                     >

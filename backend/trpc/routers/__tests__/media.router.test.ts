@@ -50,11 +50,11 @@ const createMockUser = () => {
   } as unknown as IUserDocument;
 };
 
-type MockContext = {
+interface MockContext {
   user: IUserDocument | null;
   req: CreateExpressContextOptions['req'];
   res: CreateExpressContextOptions['res'];
-};
+}
 
 const createMockContext = (): MockContext => ({
   user: createMockUser(),
@@ -107,12 +107,12 @@ describe('Media Router', () => {
         mediaItems,
       });
 
-      expect(productService.updateMediaGallery).toHaveBeenCalledWith(
+      void expect(productService.updateMediaGallery).toHaveBeenCalledWith(
         'product123',
         mediaItems,
         'admin123',
       );
-      expect(result).toEqual(mockProduct);
+      void expect(result).toEqual(mockProduct);
     });
 
     it('should handle media gallery update errors', async () => {
@@ -181,7 +181,7 @@ describe('Media Router', () => {
         ],
       });
 
-      expect(productService.reorderMediaItems).toHaveBeenCalledWith(
+      void expect(productService.reorderMediaItems).toHaveBeenCalledWith(
         'product123',
         [
           { id: 'media1', order: 1 },
@@ -189,7 +189,7 @@ describe('Media Router', () => {
         ],
         'admin123',
       );
-      expect(result).toEqual(mockProduct);
+      void expect(result).toEqual(mockProduct);
     });
 
     it('should handle reorder errors gracefully', async () => {
@@ -247,12 +247,12 @@ describe('Media Router', () => {
         mediaId: 'media1',
       });
 
-      expect(productService.deleteMediaItem).toHaveBeenCalledWith(
+      void expect(productService.deleteMediaItem).toHaveBeenCalledWith(
         'product123',
         'media1',
         'admin123',
       );
-      expect(result).toEqual(mockProduct);
+      void expect(result).toEqual(mockProduct);
     });
 
     it('should handle delete errors', async () => {
@@ -316,13 +316,13 @@ describe('Media Router', () => {
         title: 'Test Video',
       });
 
-      expect(mockMediaService.validateYouTubeUrl).toHaveBeenCalledWith(
+      void expect(mockMediaService.validateYouTubeUrl).toHaveBeenCalledWith(
         'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       );
-      expect(mockMediaService.getYouTubeThumbnail).toHaveBeenCalledWith(
+      void expect(mockMediaService.getYouTubeThumbnail).toHaveBeenCalledWith(
         'dQw4w9WgXcQ',
       );
-      expect(productService.addMediaItem).toHaveBeenCalledWith(
+      void expect(productService.addMediaItem).toHaveBeenCalledWith(
         'product123',
         expect.objectContaining({
           type: 'video',
@@ -333,7 +333,7 @@ describe('Media Router', () => {
         }),
         'admin123',
       );
-      expect(result).toEqual(mockProduct);
+      void expect(result).toEqual(mockProduct);
     });
 
     it('should handle invalid YouTube URLs', async () => {
@@ -394,7 +394,7 @@ describe('Media Router', () => {
         title: 'Test Video',
       });
 
-      expect(productService.addMediaItem).toHaveBeenCalledWith(
+      void expect(productService.addMediaItem).toHaveBeenCalledWith(
         'product123',
         expect.objectContaining({
           type: 'video',
@@ -404,7 +404,7 @@ describe('Media Router', () => {
         }),
         'admin123',
       );
-      expect(result).toEqual(mockProduct);
+      void expect(result).toEqual(mockProduct);
     });
   });
 
@@ -476,8 +476,8 @@ describe('Media Router', () => {
         ],
       });
 
-      expect(productService.getProductById).toHaveBeenCalledWith('product123');
-      expect(mockMediaService.processMediaUpload).toHaveBeenCalledWith(
+      void expect(productService.getProductById).toHaveBeenCalledWith('product123');
+      void expect(mockMediaService.processMediaUpload).toHaveBeenCalledWith(
         [
           {
             url: 'https://example.com/new1.jpg',
@@ -488,7 +488,7 @@ describe('Media Router', () => {
         ],
         1, // existing count
       );
-      expect(productService.updateMediaGallery).toHaveBeenCalledWith(
+      void expect(productService.updateMediaGallery).toHaveBeenCalledWith(
         'product123',
         expect.arrayContaining([
           expect.objectContaining({ id: 'existing1' }),
@@ -558,7 +558,7 @@ describe('Media Router', () => {
         ],
       });
 
-      expect(productService.updateMediaGallery).toHaveBeenCalledWith(
+      void expect(productService.updateMediaGallery).toHaveBeenCalledWith(
         'product123',
         expect.arrayContaining([
           expect.objectContaining({
@@ -595,13 +595,13 @@ describe('Media Router', () => {
 
       const result = await caller.media.getMediaStats({});
 
-      expect(result).toHaveProperty('totalProducts');
-      expect(result).toHaveProperty('productsWithMedia');
-      expect(result).toHaveProperty('totalMediaItems');
-      expect(result).toHaveProperty('totalImages');
-      expect(result).toHaveProperty('totalVideos');
-      expect(result).toHaveProperty('averageMediaPerProduct');
-      expect(result).toHaveProperty('productsAtCapacity');
+      void expect(result).toHaveProperty('totalProducts');
+      void expect(result).toHaveProperty('productsWithMedia');
+      void expect(result).toHaveProperty('totalMediaItems');
+      void expect(result).toHaveProperty('totalImages');
+      void expect(result).toHaveProperty('totalVideos');
+      void expect(result).toHaveProperty('averageMediaPerProduct');
+      void expect(result).toHaveProperty('productsAtCapacity');
     });
 
     it('should filter by productId when provided', async () => {
@@ -613,8 +613,8 @@ describe('Media Router', () => {
         productId: 'product123',
       });
 
-      expect(result).toBeDefined();
-      expect(Product.find).toHaveBeenCalledWith({ 
+      void expect(result).toBeDefined();
+      void expect(Product.find).toHaveBeenCalledWith({ 
         isDeleted: { $ne: true }, 
         _id: 'product123', 
       });
@@ -632,7 +632,7 @@ describe('Media Router', () => {
         },
       });
 
-      expect(result).toBeDefined();
+      void expect(result).toBeDefined();
     });
   });
 
@@ -656,11 +656,11 @@ describe('Media Router', () => {
 
       const result = await caller.media.findOrphanedMedia();
 
-      expect(result).toHaveProperty('usedUrlCount');
-      expect(result).toHaveProperty('usedUrls');
-      expect(result).toHaveProperty('message');
-      expect(result.message).toContain('UploadThing API integration');
-      expect(result.usedUrls).toEqual(expect.arrayContaining([
+      void expect(result).toHaveProperty('usedUrlCount');
+      void expect(result).toHaveProperty('usedUrls');
+      void expect(result).toHaveProperty('message');
+      void expect(result.message).toContain('UploadThing API integration');
+      void expect(result.usedUrls).toEqual(expect.arrayContaining([
         'https://example.com/main.jpg',
         'https://example.com/media1.jpg',
         'https://example.com/thumb1.jpg',

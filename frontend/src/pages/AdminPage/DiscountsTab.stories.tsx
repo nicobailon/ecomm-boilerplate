@@ -201,23 +201,23 @@ export const ScreenReaderSupport: Story = {
     // Wait for table to load
     await waitFor(() => {
       const table = canvas.getByRole('table');
-      expect(table).toBeInTheDocument();
+      void expect(table).toBeInTheDocument();
     });
     
     // Check table has proper structure
     canvas.getByRole('table');
     const headers = canvas.getAllByRole('columnheader');
-    expect(headers.length).toBeGreaterThan(0);
+    void expect(headers.length).toBeGreaterThan(0);
     
     // Check status badges have role
     const statusBadges = canvas.getAllByText(/Active|Inactive|Expired/);
     statusBadges.forEach(badge => {
-      expect(badge.closest('[role="status"]')).toBeInTheDocument();
+      void expect(badge.closest('[role="status"]')).toBeInTheDocument();
     });
     
     // Check action buttons have labels
     const editButtons = canvas.getAllByRole('button', { name: /edit/i });
-    expect(editButtons.length).toBeGreaterThan(0);
+    void expect(editButtons.length).toBeGreaterThan(0);
   },
 };
 
@@ -266,29 +266,29 @@ export const KeyboardNavigation: Story = {
     
     // Wait for table
     await waitFor(() => {
-      expect(canvas.getByRole('table')).toBeInTheDocument();
+      void expect(canvas.getByRole('table')).toBeInTheDocument();
     });
     
     // Focus on search input
     const searchInput = canvas.getByLabelText(/search discount codes/i);
     searchInput.focus();
-    expect(document.activeElement).toBe(searchInput);
+    void expect(document.activeElement).toBe(searchInput);
     
     // Tab to filter select
     await userEvent.tab();
     const filterSelect = canvas.getByRole('combobox');
-    expect(document.activeElement).toBe(filterSelect);
+    void expect(document.activeElement).toBe(filterSelect);
     
     // Tab to create button
     await userEvent.tab();
     const createButton = canvas.getByRole('button', { name: /create discount/i });
-    expect(document.activeElement).toBe(createButton);
+    void expect(document.activeElement).toBe(createButton);
     
     // Tab to first table row action
     await userEvent.tab();
     await userEvent.tab(); // Skip table headers
     const firstEditButton = canvas.getAllByRole('button', { name: /edit/i })[0];
-    expect(document.activeElement).toBe(firstEditButton);
+    void expect(document.activeElement).toBe(firstEditButton);
   },
 };
 
@@ -380,13 +380,13 @@ export const FocusIndicators: Story = {
     
     await waitFor(() => {
       const searchInput = canvas.getByLabelText(/search/i);
-      expect(searchInput).toBeInTheDocument();
+      void expect(searchInput).toBeInTheDocument();
     });
     
     // Check focus styles on various elements
     const searchInput = canvas.getByLabelText(/search/i);
     await userEvent.click(searchInput);
-    expect(searchInput).toHaveStyle('outline: 3px solid rgb(147, 51, 234)');
+    void expect(searchInput).toHaveStyle('outline: 3px solid rgb(147, 51, 234)');
   },
 };
 
@@ -542,14 +542,14 @@ export const SortableColumns: Story = {
     
     await waitFor(() => {
       const codeHeader = canvas.getByText('Code');
-      expect(codeHeader).toBeInTheDocument();
+      void expect(codeHeader).toBeInTheDocument();
     });
     
     // Check headers are clickable
     const headers = canvas.getAllByRole('columnheader');
     headers.forEach(header => {
-      expect(header).toHaveAttribute('tabindex', '0');
-      expect(header).toHaveAttribute('aria-sort');
+      void expect(header).toHaveAttribute('tabindex', '0');
+      void expect(header).toHaveAttribute('aria-sort');
     });
   },
 };
@@ -803,18 +803,18 @@ export const DescriptiveActions: Story = {
     
     await waitFor(() => {
       const editButtons = canvas.getAllByRole('button', { name: /edit/i });
-      expect(editButtons.length).toBeGreaterThan(0);
+      void expect(editButtons.length).toBeGreaterThan(0);
     });
     
     // Check all action buttons have descriptive labels
     const editButtons = canvas.getAllByRole('button', { name: /edit/i });
     editButtons.forEach((button) => {
-      expect(button).toHaveAttribute('aria-label', expect.stringContaining('Edit'));
+      void void expect(button).toHaveAttribute('aria-label', expect.stringContaining('Edit'));
     });
     
     const deleteButtons = canvas.getAllByRole('button', { name: /delete/i });
     deleteButtons.forEach((button) => {
-      expect(button).toHaveAttribute('aria-label', expect.stringContaining('Delete'));
+      void void expect(button).toHaveAttribute('aria-label', expect.stringContaining('Delete'));
     });
   },
 };

@@ -148,8 +148,8 @@ export const FullLoginFlow: Story = {
     // Initial state - form should be empty
     const emailInput = canvas.getByLabelText(/email/i);
     const passwordInput = canvas.getByLabelText(/password/i);
-    expect((emailInput as HTMLInputElement).value).toBe('');
-    expect((passwordInput as HTMLInputElement).value).toBe('');
+    void expect((emailInput as HTMLInputElement).value).toBe('');
+    void expect((passwordInput as HTMLInputElement).value).toBe('');
     
     // Try to submit empty form
     const submitButton = canvas.getByRole('button', { name: /sign in/i });
@@ -157,8 +157,8 @@ export const FullLoginFlow: Story = {
     
     // Should show validation errors
     await waitFor(() => {
-      expect(canvas.getByText(/invalid email address/i)).toBeInTheDocument();
-      expect(canvas.getByText(/password must be at least 6 characters/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/invalid email address/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/password must be at least 6 characters/i)).toBeInTheDocument();
     });
     
     // Fix email but not password
@@ -167,8 +167,8 @@ export const FullLoginFlow: Story = {
     
     // Email error should be gone
     await waitFor(() => {
-      expect(canvas.queryByText(/invalid email address/i)).not.toBeInTheDocument();
-      expect(canvas.getByText(/password must be at least 6 characters/i)).toBeInTheDocument();
+      void expect(canvas.queryByText(/invalid email address/i)).not.toBeInTheDocument();
+      void expect(canvas.getByText(/password must be at least 6 characters/i)).toBeInTheDocument();
     });
     
     // Add password
@@ -176,8 +176,8 @@ export const FullLoginFlow: Story = {
     
     // All errors should be gone
     await waitFor(() => {
-      expect(canvas.queryByText(/invalid email address/i)).not.toBeInTheDocument();
-      expect(canvas.queryByText(/password must be at least 6 characters/i)).not.toBeInTheDocument();
+      void expect(canvas.queryByText(/invalid email address/i)).not.toBeInTheDocument();
+      void expect(canvas.queryByText(/password must be at least 6 characters/i)).not.toBeInTheDocument();
     });
     
     // Submit valid form
@@ -185,7 +185,7 @@ export const FullLoginFlow: Story = {
     
     // Check button shows loading state
     await waitFor(() => {
-      expect(submitButton).toBeDisabled();
+      void expect(submitButton).toBeDisabled();
     });
   },
 };
@@ -197,24 +197,24 @@ export const KeyboardNavigation: Story = {
     // Focus should start on email field
     const emailInput = canvas.getByLabelText(/email/i);
     await userEvent.click(emailInput);
-    expect(document.activeElement).toBe(emailInput);
+    void expect(document.activeElement).toBe(emailInput);
     
     // Tab to password field
     await userEvent.tab();
     const passwordInput = canvas.getByLabelText(/password/i);
-    expect(document.activeElement).toBe(passwordInput);
+    void expect(document.activeElement).toBe(passwordInput);
     
     // Tab to submit button
     await userEvent.tab();
     const submitButton = canvas.getByRole('button', { name: /sign in/i });
-    expect(document.activeElement).toBe(submitButton);
+    void expect(document.activeElement).toBe(submitButton);
     
     // Enter key should submit when button is focused
     await userEvent.keyboard('{Enter}');
     
     // Should trigger validation since form is empty
     await waitFor(() => {
-      expect(canvas.getByText(/invalid email address/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/invalid email address/i)).toBeInTheDocument();
     });
   },
 };
@@ -239,7 +239,7 @@ export const EmailValidationFlow: Story = {
       await userEvent.tab();
       
       await waitFor(() => {
-        expect(canvas.getByText(/invalid email address/i)).toBeInTheDocument();
+        void expect(canvas.getByText(/invalid email address/i)).toBeInTheDocument();
       });
     }
     
@@ -249,7 +249,7 @@ export const EmailValidationFlow: Story = {
     await userEvent.tab();
     
     await waitFor(() => {
-      expect(canvas.queryByText(/invalid email address/i)).not.toBeInTheDocument();
+      void expect(canvas.queryByText(/invalid email address/i)).not.toBeInTheDocument();
     });
   },
 };
@@ -264,7 +264,7 @@ export const PasswordValidationFlow: Story = {
     await userEvent.tab();
     
     await waitFor(() => {
-      expect(canvas.getByText(/password must be at least 6 characters/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/password must be at least 6 characters/i)).toBeInTheDocument();
     });
     
     // Test exactly 6 characters
@@ -273,7 +273,7 @@ export const PasswordValidationFlow: Story = {
     await userEvent.tab();
     
     await waitFor(() => {
-      expect(canvas.queryByText(/password must be at least 6 characters/i)).not.toBeInTheDocument();
+      void expect(canvas.queryByText(/password must be at least 6 characters/i)).not.toBeInTheDocument();
     });
   },
 };
@@ -388,8 +388,8 @@ export const ScreenReaderAnnouncements: Story = {
       const passwordError = canvas.getByText(/password must be at least 6 characters/i);
       
       // Errors should have role="alert" for screen reader announcement
-      expect(emailError.closest('[role="alert"]')).toBeInTheDocument();
-      expect(passwordError.closest('[role="alert"]')).toBeInTheDocument();
+      void expect(emailError.closest('[role="alert"]')).toBeInTheDocument();
+      void expect(passwordError.closest('[role="alert"]')).toBeInTheDocument();
     });
     
     // Fill form correctly
@@ -401,8 +401,8 @@ export const ScreenReaderAnnouncements: Story = {
     
     // Errors should be removed from DOM
     await waitFor(() => {
-      expect(canvas.queryByText(/invalid email address/i)).not.toBeInTheDocument();
-      expect(canvas.queryByText(/password must be at least 6 characters/i)).not.toBeInTheDocument();
+      void expect(canvas.queryByText(/invalid email address/i)).not.toBeInTheDocument();
+      void expect(canvas.queryByText(/password must be at least 6 characters/i)).not.toBeInTheDocument();
     });
   },
 };
@@ -416,7 +416,7 @@ export const FocusManagement: Story = {
     await userEvent.click(submitButton);
     
     // Focus should remain on submit button after validation
-    expect(document.activeElement).toBe(submitButton);
+    void expect(document.activeElement).toBe(submitButton);
     
     // Type in email field
     const emailInput = canvas.getByLabelText(/email/i);
@@ -425,7 +425,7 @@ export const FocusManagement: Story = {
     
     // Clear and check focus retention
     await userEvent.clear(emailInput);
-    expect(document.activeElement).toBe(emailInput);
+    void expect(document.activeElement).toBe(emailInput);
   },
 };
 
@@ -447,7 +447,7 @@ export const HighContrastMode: Story = {
 // Enhanced Error State Stories
 export const InvalidCredentialsError: Story = {
   decorators: [
-    (_Story) => {
+    () => {
       const [loginError, setLoginError] = useState<string | null>(null);
       
       return (
@@ -485,7 +485,7 @@ export const InvalidCredentialsError: Story = {
 
 export const AccountLockedError: Story = {
   decorators: [
-    (_Story) => {
+    () => {
       const [lockError, setLockError] = useState(true);
       
       return (
@@ -525,7 +525,7 @@ export const AccountLockedError: Story = {
 
 export const NetworkError: Story = {
   decorators: [
-    (_Story) => {
+    () => {
       const [isOffline, setIsOffline] = useState(true);
       
       return (
@@ -571,9 +571,9 @@ export const NetworkError: Story = {
 
 export const RateLimitError: Story = {
   decorators: [
-    (_Story) => {
+    () => {
       const [rateLimitError, setRateLimitError] = useState(true);
-      const [countdown, _setCountdown] = useState(30);
+      const [countdown] = useState(30);
       
       return (
         <div className="space-y-4">
@@ -611,7 +611,7 @@ export const RateLimitError: Story = {
 
 export const SessionExpiredError: Story = {
   decorators: [
-    (_Story) => {
+    () => {
       const [sessionError, setSessionError] = useState(true);
       
       return (
@@ -647,7 +647,7 @@ export const SessionExpiredError: Story = {
 
 export const ServerError: Story = {
   decorators: [
-    (_Story) => {
+    () => {
       const [serverError, setServerError] = useState<string | null>(
         'Unable to connect to authentication server. Please try again later.',
       );
@@ -686,8 +686,8 @@ export const ServerError: Story = {
 
 export const EmailNotVerifiedError: Story = {
   decorators: [
-    (_Story) => {
-      const [verificationError, _setVerificationError] = useState(true);
+    () => {
+      const [verificationError] = useState(true);
       const [resendLoading, setResendLoading] = useState(false);
       
       const resendVerification = async () => {
@@ -711,7 +711,7 @@ export const EmailNotVerifiedError: Story = {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={resendVerification}
+                    onClick={() => { void resendVerification(); }}
                     disabled={resendLoading}
                   >
                     {resendLoading ? 'Sending...' : 'Resend Verification Email'}
@@ -731,7 +731,7 @@ export const EmailNotVerifiedError: Story = {
 
 export const ErrorRecovery: Story = {
   decorators: [
-    (_Story) => {
+    () => {
       const [error, setError] = useState<string | null>('Connection lost. Please try again.');
       const [isRetrying, setIsRetrying] = useState(false);
       const [retryCount, setRetryCount] = useState(0);
@@ -763,7 +763,7 @@ export const ErrorRecovery: Story = {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={retry}
+                    onClick={() => { void retry(); }}
                     disabled={isRetrying}
                   >
                     {isRetrying ? (

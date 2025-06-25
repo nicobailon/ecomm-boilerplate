@@ -97,8 +97,12 @@ export const useUpdateProduct = () => {
       void queryClient.invalidateQueries({ 
         queryKey: ['trpc.inventory.getProductInventory'],
         predicate: (query) => {
-          const queryKey = query.queryKey as { input?: { productId: string } }[];
-          return queryKey[3]?.input?.productId === variables.id;
+          // Safely check if this is a product inventory query for the specific product
+          if (Array.isArray(query.queryKey) && query.queryKey.length > 3) {
+            const inputParam = query.queryKey[3] as { input?: { productId?: string } } | undefined;
+            return inputParam?.input?.productId === variables.id;
+          }
+          return false;
         },
       });
       

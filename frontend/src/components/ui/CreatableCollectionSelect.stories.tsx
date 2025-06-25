@@ -176,7 +176,7 @@ export const SearchInteraction: Story = {
     
     const options = await canvas.findAllByRole('option');
     await expect(options).toHaveLength(1);
-    await expect(options[0]).toHaveTextContent('Summer Collection');
+    await void expect(options[0]).toHaveTextContent('Summer Collection');
   },
 };
 
@@ -198,7 +198,7 @@ export const KeyboardNavigation: Story = {
     await userEvent.keyboard('{ArrowDown}');
     
     const options = await canvas.findAllByRole('option');
-    await expect(options[1]).toHaveClass('bg-accent');
+    await void expect(options[1]).toHaveClass('bg-accent');
   },
 };
 

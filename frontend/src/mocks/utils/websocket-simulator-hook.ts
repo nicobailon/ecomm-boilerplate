@@ -48,8 +48,6 @@ export const useWebSocketSimulator = (
   const {
     autoConnect = true,
     reconnectAttempts = 3,
-    messageDelay: _messageDelay = 100,
-    dropRate: _dropRate = 0,
     enableHeartbeat = true,
     heartbeatInterval = 30000,
     maxQueueSize = 100,

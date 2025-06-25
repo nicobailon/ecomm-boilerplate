@@ -54,8 +54,8 @@ describe('Coupon tRPC Router', () => {
         const caller = couponRouter.createCaller(mockAdminContext);
         const result = await caller.listAll({ page: 1, limit: 20 });
 
-        expect(result).toEqual(mockResponse);
-        expect(couponService.listAllDiscounts).toHaveBeenCalledWith({
+        void expect(result).toEqual(mockResponse);
+        void expect(couponService.listAllDiscounts).toHaveBeenCalledWith({
           page: 1,
           limit: 20,
         });
@@ -93,8 +93,8 @@ describe('Coupon tRPC Router', () => {
         const caller = couponRouter.createCaller(mockAdminContext);
         const result = await caller.create(mockInput);
 
-        expect(result).toEqual(mockCreatedDiscount);
-        expect(couponService.createDiscount).toHaveBeenCalledWith(mockInput);
+        void expect(result).toEqual(mockCreatedDiscount);
+        void expect(couponService.createDiscount).toHaveBeenCalledWith(mockInput);
       });
 
       it('should handle duplicate code error', async () => {
@@ -137,8 +137,8 @@ describe('Coupon tRPC Router', () => {
         const caller = couponRouter.createCaller(mockAdminContext);
         const result = await caller.update(mockInput);
 
-        expect(result).toEqual(mockUpdatedDiscount);
-        expect(couponService.updateDiscount).toHaveBeenCalledWith(
+        void expect(result).toEqual(mockUpdatedDiscount);
+        void expect(couponService.updateDiscount).toHaveBeenCalledWith(
           mockInput.id,
           mockInput.data,
         );
@@ -172,8 +172,8 @@ describe('Coupon tRPC Router', () => {
         const caller = couponRouter.createCaller(mockAdminContext);
         const result = await caller.delete({ id: 'discount-id' });
 
-        expect(result).toEqual(mockResponse);
-        expect(couponService.deleteDiscount).toHaveBeenCalledWith('discount-id');
+        void expect(result).toEqual(mockResponse);
+        void expect(couponService.deleteDiscount).toHaveBeenCalledWith('discount-id');
       });
 
       it('should handle deactivation for discounts with uses', async () => {
@@ -187,7 +187,7 @@ describe('Coupon tRPC Router', () => {
         const caller = couponRouter.createCaller(mockAdminContext);
         const result = await caller.delete({ id: 'used-discount-id' });
 
-        expect(result).toEqual(mockResponse);
+        void expect(result).toEqual(mockResponse);
       });
     });
   });
@@ -206,8 +206,8 @@ describe('Coupon tRPC Router', () => {
         const caller = couponRouter.createCaller(mockContext);
         const result = await caller.validate({ code: 'SAVE20' });
 
-        expect(result).toEqual(mockValidResponse);
-        expect(couponService.validateCoupon).toHaveBeenCalledWith(
+        void expect(result).toEqual(mockValidResponse);
+        void expect(couponService.validateCoupon).toHaveBeenCalledWith(
           mockUserId,
           'SAVE20',
         );
@@ -228,7 +228,7 @@ describe('Coupon tRPC Router', () => {
         const caller = couponRouter.createCaller(mockContext);
         const result = await caller.applyCoupon({ code: 'SAVE20' });
 
-        expect(result).toEqual({
+        void expect(result).toEqual({
           success: true,
           message: 'Coupon applied successfully',
           cart: mockCart,

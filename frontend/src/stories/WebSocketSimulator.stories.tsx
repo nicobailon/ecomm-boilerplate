@@ -329,7 +329,7 @@ export const ConnectionQualityTest: Story = {
     simulator: createMockSimulator(),
   },
   render: () => {
-    const [_messages, setMessages] = useState<any[]>([]);
+    const [, setMessages] = useState<any[]>([]);
     const [testResults, setTestResults] = useState<{
       quality: string;
       successRate: number;

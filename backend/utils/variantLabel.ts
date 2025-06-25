@@ -26,5 +26,5 @@ export function generateVariantLabel(attributes: VariantAttributes): string {
     }
   }
   
-  return parts.join(' / ') || 'Default';
+  return parts.join(' / ') ?? 'Default';
 }

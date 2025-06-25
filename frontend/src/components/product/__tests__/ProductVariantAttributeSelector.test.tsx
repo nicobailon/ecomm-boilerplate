@@ -60,18 +60,18 @@ describe('ProductVariantAttributeSelector', () => {
     it('should render attribute selectors for each variant type', () => {
       render(<ProductVariantAttributeSelector {...defaultProps} />);
 
-      expect(screen.getByText('Size')).toBeInTheDocument();
-      expect(screen.getByText('Color')).toBeInTheDocument();
+      void expect(screen.getByText('Size')).toBeInTheDocument();
+      void expect(screen.getByText('Color')).toBeInTheDocument();
       
       // Check all size options are rendered
-      expect(screen.getByRole('radio', { name: /Size: Small/ })).toBeInTheDocument();
-      expect(screen.getByRole('radio', { name: /Size: Medium/ })).toBeInTheDocument();
-      expect(screen.getByRole('radio', { name: /Size: Large/ })).toBeInTheDocument();
+      void expect(screen.getByRole('radio', { name: /Size: Small/ })).toBeInTheDocument();
+      void expect(screen.getByRole('radio', { name: /Size: Medium/ })).toBeInTheDocument();
+      void expect(screen.getByRole('radio', { name: /Size: Large/ })).toBeInTheDocument();
       
       // Check all color options are rendered
-      expect(screen.getByRole('radio', { name: /Color: Red/ })).toBeInTheDocument();
-      expect(screen.getByRole('radio', { name: /Color: Blue/ })).toBeInTheDocument();
-      expect(screen.getByRole('radio', { name: /Color: Green/ })).toBeInTheDocument();
+      void expect(screen.getByRole('radio', { name: /Color: Red/ })).toBeInTheDocument();
+      void expect(screen.getByRole('radio', { name: /Color: Blue/ })).toBeInTheDocument();
+      void expect(screen.getByRole('radio', { name: /Color: Green/ })).toBeInTheDocument();
     });
 
     it('should auto-select first available variant on mount', async () => {
@@ -84,7 +84,7 @@ describe('ProductVariantAttributeSelector', () => {
       );
 
       await waitFor(() => {
-        expect(onVariantSelect).toHaveBeenCalledWith(mockVariants[0]);
+        void expect(onVariantSelect).toHaveBeenCalledWith(mockVariants[0]);
       });
     });
 
@@ -95,7 +95,7 @@ describe('ProductVariantAttributeSelector', () => {
       await user.click(screen.getByRole('radio', { name: /Size: Small/ }));
 
       await waitFor(() => {
-        expect(screen.getByText('(Small)')).toBeInTheDocument();
+        void expect(screen.getByText('(Small)')).toBeInTheDocument();
       });
     });
   });
@@ -116,7 +116,7 @@ describe('ProductVariantAttributeSelector', () => {
       await user.click(screen.getByRole('radio', { name: /Color: Blue/ }));
 
       await waitFor(() => {
-        expect(onVariantSelect).toHaveBeenLastCalledWith(mockVariants[1]); // Small / Blue
+        void expect(onVariantSelect).toHaveBeenLastCalledWith(mockVariants[1]); // Small / Blue
       });
     });
 
@@ -125,14 +125,14 @@ describe('ProductVariantAttributeSelector', () => {
 
       // Medium / Red has 0 inventory, should be disabled
       const mediumButton = screen.getByRole('radio', { name: /Size: Medium/ });
-      expect(mediumButton).not.toBeDisabled();
+      void expect(mediumButton).not.toBeDisabled();
 
       // But after selecting Medium, Red should be disabled
       void userEvent.click(mediumButton);
 
       void waitFor(() => {
         const redButton = screen.getByRole('radio', { name: /Color: Red.*Out of stock/ });
-        expect(redButton).toBeDisabled();
+        void expect(redButton).toBeDisabled();
       });
     });
 
@@ -146,7 +146,7 @@ describe('ProductVariantAttributeSelector', () => {
       // Blue variant has 5 inventory, should show badge
       const blueButton = screen.getByRole('radio', { name: /Color: Blue/ });
       const badge = blueButton.querySelector('.badge');
-      expect(badge).toHaveTextContent('5');
+      void expect(badge).toHaveTextContent('5');
     });
   });
 
@@ -159,9 +159,9 @@ describe('ProductVariantAttributeSelector', () => {
       await user.click(screen.getByRole('radio', { name: /Color: Blue/ }));
 
       await waitFor(() => {
-        expect(screen.getByText('Selected:')).toBeInTheDocument();
-        expect(screen.getByText('Medium / Blue')).toBeInTheDocument();
-        expect(screen.getByText('$105.00')).toBeInTheDocument(); // Price different from base
+        void expect(screen.getByText('Selected:')).toBeInTheDocument();
+        void expect(screen.getByText('Medium / Blue')).toBeInTheDocument();
+        void expect(screen.getByText('$105.00')).toBeInTheDocument(); // Price different from base
       });
     });
 
@@ -174,7 +174,7 @@ describe('ProductVariantAttributeSelector', () => {
       await user.click(screen.getByRole('radio', { name: /Color: Blue/ }));
 
       await waitFor(() => {
-        expect(screen.getByText('Only 5 left!')).toBeInTheDocument();
+        void expect(screen.getByText('Only 5 left!')).toBeInTheDocument();
       });
     });
 
@@ -186,8 +186,8 @@ describe('ProductVariantAttributeSelector', () => {
       
       // Try to select out of stock combination
       const redButton = screen.getByRole('radio', { name: /Color: Red/ });
-      expect(redButton).toBeDisabled();
-      expect(redButton).toHaveAttribute('title', 'Out of stock');
+      void expect(redButton).toBeDisabled();
+      void expect(redButton).toHaveAttribute('title', 'Out of stock');
     });
   });
 
@@ -205,8 +205,8 @@ describe('ProductVariantAttributeSelector', () => {
 
       // Large option should be disabled as it has no valid combinations
       const largeButton = screen.getByRole('radio', { name: /Size: Large/ });
-      expect(largeButton).toBeDisabled();
-      expect(largeButton).toHaveClass('line-through');
+      void expect(largeButton).toBeDisabled();
+      void expect(largeButton).toHaveClass('line-through');
     });
   });
 
@@ -214,10 +214,10 @@ describe('ProductVariantAttributeSelector', () => {
     it('should have proper ARIA labels', () => {
       render(<ProductVariantAttributeSelector {...defaultProps} />);
 
-      expect(screen.getByRole('group', { name: /select product options/i })).toBeInTheDocument();
+      void expect(screen.getByRole('group', { name: /select product options/i })).toBeInTheDocument();
       
       const sizeGroup = screen.getAllByRole('radiogroup')[0];
-      expect(sizeGroup).toBeInTheDocument();
+      void expect(sizeGroup).toBeInTheDocument();
     });
 
     it('should indicate selected state with aria-checked', async () => {
@@ -225,12 +225,12 @@ describe('ProductVariantAttributeSelector', () => {
       render(<ProductVariantAttributeSelector {...defaultProps} />);
 
       const smallButton = screen.getByRole('radio', { name: /Size: Small/ });
-      expect(smallButton).toHaveAttribute('aria-checked', 'false');
+      void expect(smallButton).toHaveAttribute('aria-checked', 'false');
 
       await user.click(smallButton);
 
       await waitFor(() => {
-        expect(smallButton).toHaveAttribute('aria-checked', 'true');
+        void expect(smallButton).toHaveAttribute('aria-checked', 'true');
       });
     });
 
@@ -261,7 +261,7 @@ describe('ProductVariantAttributeSelector', () => {
 
       void waitFor(() => {
         const redButton = screen.getByRole('radio', { name: /Color: Red.*Out of stock/ });
-        expect(redButton).toHaveAttribute('title', 'Out of stock');
+        void expect(redButton).toHaveAttribute('title', 'Out of stock');
       });
     });
   });
@@ -286,7 +286,7 @@ describe('ProductVariantAttributeSelector', () => {
       );
 
       // Should still render without crashing
-      expect(screen.getByText('Size')).toBeInTheDocument();
+      void expect(screen.getByText('Size')).toBeInTheDocument();
     });
 
     it('should handle empty variant types', () => {
@@ -298,7 +298,7 @@ describe('ProductVariantAttributeSelector', () => {
       );
 
       // Should render without variant selectors
-      expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+      void expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
     });
   });
 });

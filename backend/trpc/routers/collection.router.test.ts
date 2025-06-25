@@ -52,8 +52,8 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.create(input);
 
-      expect(collectionService.create).toHaveBeenCalledWith('user123', input);
-      expect(result).toEqual(mockCollection);
+      void expect(collectionService.create).toHaveBeenCalledWith('user123', input);
+      void expect(result).toEqual(mockCollection);
     });
 
     it('should throw UNAUTHORIZED error when not authenticated', async () => {
@@ -100,12 +100,12 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.update(input);
 
-      expect(collectionService.update).toHaveBeenCalledWith(
+      void expect(collectionService.update).toHaveBeenCalledWith(
         'collection123',
         'user123',
         input.data,
       );
-      expect(result).toEqual(mockUpdatedCollection);
+      void expect(result).toEqual(mockUpdatedCollection);
     });
 
     it('should throw NOT_FOUND error when collection not found', async () => {
@@ -131,8 +131,8 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.delete({ id: 'collection123' });
 
-      expect(collectionService.delete).toHaveBeenCalledWith('collection123', 'user123');
-      expect(result).toEqual({ success: true });
+      void expect(collectionService.delete).toHaveBeenCalledWith('collection123', 'user123');
+      void expect(result).toEqual({ success: true });
     });
   });
 
@@ -152,12 +152,12 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.addProducts(input);
 
-      expect(collectionService.addProducts).toHaveBeenCalledWith(
+      void expect(collectionService.addProducts).toHaveBeenCalledWith(
         'collection123',
         'user123',
         ['507f1f77bcf86cd799439001', '507f1f77bcf86cd799439002'],
       );
-      expect(result).toEqual(mockUpdatedCollection);
+      void expect(result).toEqual(mockUpdatedCollection);
     });
 
     it('should handle invalid product IDs', async () => {
@@ -193,12 +193,12 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.removeProducts(input);
 
-      expect(collectionService.removeProducts).toHaveBeenCalledWith(
+      void expect(collectionService.removeProducts).toHaveBeenCalledWith(
         'collection123',
         'user123',
         ['507f1f77bcf86cd799439001'],
       );
-      expect(result).toEqual(mockUpdatedCollection);
+      void expect(result).toEqual(mockUpdatedCollection);
     });
   });
 
@@ -214,8 +214,8 @@ describe('collectionRouter', () => {
 
       const result = await caller.collection.getById({ id: 'collection123' });
 
-      expect(collectionService.getById).toHaveBeenCalledWith('collection123', undefined);
-      expect(result).toEqual(mockCollection);
+      void expect(collectionService.getById).toHaveBeenCalledWith('collection123', undefined);
+      void expect(result).toEqual(mockCollection);
     });
 
     it('should get private collection when owner', async () => {
@@ -230,8 +230,8 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.getById({ id: 'collection123' });
 
-      expect(collectionService.getById).toHaveBeenCalledWith('collection123', 'user123');
-      expect(result).toEqual(mockCollection);
+      void expect(collectionService.getById).toHaveBeenCalledWith('collection123', 'user123');
+      void expect(result).toEqual(mockCollection);
     });
 
     it('should throw NOT_FOUND when collection not found', async () => {
@@ -267,8 +267,8 @@ describe('collectionRouter', () => {
 
       const result = await caller.collection.getBySlug({ slug: 'my-collection' });
 
-      expect(collectionService.getBySlug).toHaveBeenCalledWith('my-collection', undefined);
-      expect(result).toEqual(mockCollection);
+      void expect(collectionService.getBySlug).toHaveBeenCalledWith('my-collection', undefined);
+      void expect(result).toEqual(mockCollection);
     });
   });
 
@@ -286,10 +286,10 @@ describe('collectionRouter', () => {
 
       const result = await caller.collection.list({});
 
-      expect(collectionService.list).toHaveBeenCalledWith({
+      void expect(collectionService.list).toHaveBeenCalledWith({
         limit: 20,
       });
-      expect(result).toEqual(mockResult);
+      void expect(result).toEqual(mockResult);
     });
 
     it('should list collections with filters', async () => {
@@ -307,13 +307,13 @@ describe('collectionRouter', () => {
         cursor: 'prevId',
       });
 
-      expect(collectionService.list).toHaveBeenCalledWith({
+      void expect(collectionService.list).toHaveBeenCalledWith({
         userId: 'user123',
         isPublic: true,
         limit: 10,
         cursor: 'prevId',
       });
-      expect(result).toEqual(mockResult);
+      void expect(result).toEqual(mockResult);
     });
   });
 
@@ -331,10 +331,10 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.myCollections({ limit: 10 });
 
-      expect(collectionService.getUserCollections).toHaveBeenCalledWith('user123', {
+      void expect(collectionService.getUserCollections).toHaveBeenCalledWith('user123', {
         limit: 10,
       });
-      expect(result).toEqual(mockResult);
+      void expect(result).toEqual(mockResult);
     });
 
     it('should throw UNAUTHORIZED when not authenticated', async () => {
@@ -361,11 +361,11 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.quickCreate(input);
 
-      expect(collectionService.quickCreate).toHaveBeenCalledWith('user123', {
+      void expect(collectionService.quickCreate).toHaveBeenCalledWith('user123', {
         name: 'Flash Sale',
         isPublic: false,
       });
-      expect(result).toMatchObject({
+      void expect(result).toMatchObject({
         _id: 'collection123',
         name: 'Flash Sale',
         slug: 'flash-sale',
@@ -390,7 +390,7 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.quickCreate(input);
 
-      expect(result.isPublic).toBe(true);
+      void expect(result.isPublic).toBe(true);
     });
 
     it('should throw CONFLICT error on duplicate name', async () => {
@@ -422,8 +422,8 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.checkAvailability({ name: 'New Name' });
 
-      expect(collectionService.checkNameAvailability).toHaveBeenCalledWith('user123', 'New Name');
-      expect(result).toEqual({ available: true });
+      void expect(collectionService.checkNameAvailability).toHaveBeenCalledWith('user123', 'New Name');
+      void expect(result).toEqual({ available: true });
     });
 
     it('should return existingId when exact match found', async () => {
@@ -436,7 +436,7 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.checkAvailability({ name: 'Existing' });
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         available: false,
         existingId: 'collection123',
       });
@@ -452,7 +452,7 @@ describe('collectionRouter', () => {
 
       const result = await authedCaller.collection.checkAvailability({ name: 'Sale Collection' });
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         available: false,
         suggestedName: 'Sale Collection 2',
       });

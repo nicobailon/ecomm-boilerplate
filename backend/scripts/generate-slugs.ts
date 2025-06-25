@@ -110,7 +110,7 @@ Examples:
 const main = async (): Promise<void> => {
   const args = process.argv.slice(2);
   
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes('--help') ?? args.includes('-h')) {
     printUsage();
     process.exit(0);
   }

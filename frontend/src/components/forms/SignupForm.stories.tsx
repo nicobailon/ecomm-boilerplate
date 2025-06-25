@@ -186,7 +186,7 @@ export const SuccessFlow: Story = {
     // Verify form was submitted with correct data
     await waitFor(() => {
       const mockMutate = vi.mocked(useSignup).mock.results[0]?.value.mutate;
-      expect(mockMutate).toHaveBeenCalledWith({
+      void expect(mockMutate).toHaveBeenCalledWith({
         name: 'Jane Smith',
         email: 'jane@example.com',
         password: 'securePassword123',
@@ -337,7 +337,7 @@ export const PasswordStrengthIndicator: Story = {
     
     // Check weak indicator
     await waitFor(() => {
-      expect(canvas.getByText('Weak')).toBeInTheDocument();
+      void expect(canvas.getByText('Weak')).toBeInTheDocument();
     });
     
     // Type a strong password
@@ -346,7 +346,7 @@ export const PasswordStrengthIndicator: Story = {
     
     // Check strong indicator
     await waitFor(() => {
-      expect(canvas.getByText('Strong')).toBeInTheDocument();
+      void expect(canvas.getByText('Strong')).toBeInTheDocument();
     });
   },
 };
@@ -450,8 +450,8 @@ export const WithTermsAcceptance: Story = {
     await userEvent.click(marketingCheckbox);
     
     // Verify checkboxes are checked
-    expect(termsCheckbox).toBeChecked();
-    expect(marketingCheckbox).toBeChecked();
+    void expect(termsCheckbox).toBeChecked();
+    void expect(marketingCheckbox).toBeChecked();
   },
 };
 
@@ -604,6 +604,7 @@ export const ComprehensiveFormTest: Story = {
                   email: data.email,
                   role: 'customer' as const,
                   cartItems: [],
+                  emailVerified: false,
                 } as User,
               },
             }));
@@ -631,9 +632,9 @@ export const ComprehensiveFormTest: Story = {
     await userEvent.click(submitButton);
     
     // Clear form for second attempt
-    await waitFor(() => {
+    await waitFor(async () => {
       const emailInput = canvas.getByLabelText('Email');
-      userEvent.clear(emailInput);
+      await userEvent.clear(emailInput);
     });
     
     // Test 2: Successful registration
@@ -643,7 +644,7 @@ export const ComprehensiveFormTest: Story = {
     // Verify successful submission
     await waitFor(() => {
       const mockMutate = vi.mocked(useSignup).mock.results[0]?.value.mutate;
-      expect(mockMutate).toHaveBeenCalledWith(
+      void expect(mockMutate).toHaveBeenCalledWith(
         expect.objectContaining({
           email: 'newuser@example.com',
         }),

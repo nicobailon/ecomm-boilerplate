@@ -15,9 +15,9 @@ describe('LoginForm', () => {
   it('renders login form fields', () => {
     render(<LoginForm />);
     
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+    void expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    void expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    void expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('validates email field', async () => {
@@ -69,7 +69,7 @@ describe('LoginForm', () => {
     await user.click(submitButton);
     
     // Form should not show validation errors
-    expect(screen.queryByText(/invalid email address/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/password must be at least 6 characters/i)).not.toBeInTheDocument();
+    void expect(screen.queryByText(/invalid email address/i)).not.toBeInTheDocument();
+    void expect(screen.queryByText(/password must be at least 6 characters/i)).not.toBeInTheDocument();
   });
 });

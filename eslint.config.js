@@ -28,6 +28,7 @@ export default tseslint.config(
       '**/*.cjs', // Ignore CommonJS files
       'scripts/**',
       'frontend/scripts/**',
+      '**/*.ejs', // EJS templates are not JavaScript/TypeScript
     ],
   },
 
@@ -94,6 +95,11 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
+      }],
+      // Prevent 'as any' type assertions
+      '@typescript-eslint/consistent-type-assertions': ['error', {
+        assertionStyle: 'as',
+        objectLiteralTypeAssertions: 'never',
       }]
     },
   },
@@ -163,6 +169,11 @@ export default tseslint.config(
       'no-console': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
+      // Test assertions don't return promises even though ESLint thinks they do
+      '@typescript-eslint/no-floating-promises': ['error', {
+        ignoreVoid: true,
+        ignoreIIFE: true,
+      }],
     },
   },
 
@@ -173,6 +184,11 @@ export default tseslint.config(
     rules: {
       ...storybook.configs['flat/recommended'].rules,
       '@typescript-eslint/explicit-function-return-type': 'off',
+      // Storybook test assertions don't return promises
+      '@typescript-eslint/no-floating-promises': ['error', {
+        ignoreVoid: true,
+        ignoreIIFE: true,
+      }],
     },
   }] : []),
 );

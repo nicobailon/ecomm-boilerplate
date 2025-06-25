@@ -7,12 +7,15 @@ import path from 'path';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import { connectDB } from './lib/db.js';
 import { errorHandler } from './middleware/error.middleware.js';
-import { securityMiddleware, authRateLimit, trpcRateLimit } from './middleware/security.middleware.js';
+import { securityMiddleware, authRateLimit, trpcRateLimit, emailRateLimit } from './middleware/security.middleware.js';
 import { validateEnvVariables } from './utils/validateEnv.js';
 import { createContext } from './trpc/context.js';
 import { appRouter } from './trpc/routers/app.router.js';
 import { websocketService } from './lib/websocket.js';
 import { inventoryMonitor } from './services/inventory-monitor.service.js';
+import { getEmailQueueForShutdown } from './lib/email-queue.js';
+import { queueMonitoring, alertHandlers } from './lib/queue-monitoring.js';
+import { redisMonitoring, monitoringHandlers } from './lib/redis-monitoring.js';
 import authRoutes from './routes/auth.route.js';
 import productRoutes from './routes/product.route.js';
 import cartRoutes from './routes/cart.route.js';
@@ -21,12 +24,14 @@ import paymentRoutes from './routes/payment.route.js';
 import analyticsRoutes from './routes/analytics.route.js';
 import uploadRoutes from './routes/upload.route.js';
 import inventoryRoutes from './routes/inventory.route.js';
+import unsubscribeRoutes from './routes/unsubscribe.route.js';
+import healthRoutes from './routes/health.route.js';
 
 dotenv.config();
 validateEnvVariables();
 
 const app = express();
-const PORT = parseInt(process.env.PORT ?? '3001', 10);
+const PORT = parseInt(process.env.PORT || '3001', 10);
 
 const __dirname = path.resolve();
 
@@ -64,6 +69,8 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/uploadthing', uploadRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/unsubscribe', emailRateLimit, unsubscribeRoutes);
+app.use('/api', healthRoutes);
 
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '/frontend/dist')));
@@ -88,9 +95,84 @@ httpServer.listen(PORT, '0.0.0.0', () => {
       await websocketService.initialize(httpServer);
       await inventoryMonitor.startMonitoring();
       console.error('Real-time inventory monitoring started');
+      
+      // Initialize email queue if available
+      const emailQueue = await getEmailQueueForShutdown();
+      if (emailQueue) {
+        await emailQueue.isReady();
+        console.error('Email queue initialized');
+        
+        // Set up queue monitoring and alerts
+        queueMonitoring.onAlert(alertHandlers.console);
+        
+        // Add monitoring service alert if configured
+        if (process.env.SENTRY_DSN ?? process.env.DATADOG_API_KEY) {
+          queueMonitoring.onAlert(alertHandlers.monitoring);
+        }
+        
+        // Add Slack alerts if configured
+        if (process.env.SLACK_WEBHOOK_URL) {
+          queueMonitoring.onAlert((alert) => {
+            void alertHandlers.slack(alert);
+          });
+        }
+        
+        // Add email alerts if configured
+        if (process.env.ALERT_EMAIL) {
+          queueMonitoring.onAlert((alert) => {
+            void alertHandlers.email(alert);
+          });
+        }
+        
+        console.error('Queue monitoring and alerts configured');
+      } else {
+        console.warn('Email queue not available - emails will be sent synchronously');
+      }
+      
+      // Start Redis monitoring
+      redisMonitoring.startMonitoring(30000); // Check every 30 seconds
+      
+      // Set up Redis monitoring alerts
+      redisMonitoring.onAlert(monitoringHandlers.console);
+      redisMonitoring.onAlert(monitoringHandlers.healthEndpoint);
+      
+      if (process.env.MONITORING_ENABLED === 'true') {
+        redisMonitoring.onAlert(monitoringHandlers.metrics);
+      }
+      
+      console.error('Redis monitoring started');
     } catch (error) {
       console.error('Failed to initialize services:', error);
     }
+  })();
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  void (async () => {
+  console.error('SIGTERM received, shutting down gracefully...');
+  
+  try {
+    // Stop Redis monitoring
+    redisMonitoring.stopMonitoring();
+    console.error('Redis monitoring stopped');
+    
+    // Close email queue if available
+    const emailQueue = await getEmailQueueForShutdown();
+    if (emailQueue) {
+      await emailQueue.close();
+      console.error('Email queue closed');
+    }
+    
+    // Close HTTP server
+    httpServer.close(() => {
+      console.error('HTTP server closed');
+      process.exit(0);
+    });
+  } catch (error) {
+    console.error('Error during shutdown:', error);
+    process.exit(1);
+  }
   })();
 });
 

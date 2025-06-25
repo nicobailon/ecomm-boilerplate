@@ -10,7 +10,12 @@ import type { ReactElement } from 'react';
 import { toast } from 'sonner';
 
 vi.mock('@/lib/api-client');
-vi.mock('sonner');
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 // Import the actual hook
 import { useToggleFeatured } from './useProducts';
@@ -71,11 +76,7 @@ const createMockAxiosResponse = <T,>(data: T): AxiosResponse<T> => ({
 
 describe('useToggleFeatured Hook', () => {
   const mockApiClient = vi.mocked(apiClient);
-  const mockToast = vi.mocked(toast) as unknown as {
-    success: ReturnType<typeof vi.fn>;
-    error: ReturnType<typeof vi.fn>;
-    [key: string]: unknown;
-  };
+  const mockToast = vi.mocked(toast);
 
   const mockProduct: Product = {
     _id: 'test-id',
@@ -90,9 +91,6 @@ describe('useToggleFeatured Hook', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Setup toast mocks
-    mockToast.success = vi.fn();
-    mockToast.error = vi.fn();
   });
 
   afterEach(() => {
@@ -113,8 +111,8 @@ describe('useToggleFeatured Hook', () => {
     await waitFor(() => {
       // eslint-disable-next-line @typescript-eslint/unbound-method
       const patchFn = mockApiClient.patch;
-      expect(patchFn).toHaveBeenCalledWith('/products/toggle-featured/test-id');
-      expect(patchFn).toHaveBeenCalledTimes(1);
+      void expect(patchFn).toHaveBeenCalledWith('/products/toggle-featured/test-id');
+      void expect(patchFn).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -130,19 +128,19 @@ describe('useToggleFeatured Hook', () => {
     });
 
     await waitFor(() => {
-      expect(mockToast.success).toHaveBeenCalled();
+      void expect(mockToast.success).toHaveBeenCalled();
       // Verify the toast was called with JSX content containing the correct message
-      const toastCall = mockToast.success.mock.calls[0][0] as ReactElement<ToastElementProps>;
-      expect(toastCall).toBeTruthy();
+      const toastCall = (mockToast.success as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0] as ReactElement<ToastElementProps>;
+      void expect(toastCall).toBeTruthy();
       // The toast content is JSX, so we check its structure
-      expect(toastCall.props?.children).toBeDefined();
+      void expect(toastCall.props?.children).toBeDefined();
       const [messageSpan, linkElement] = toastCall.props.children;
-      expect(messageSpan.props.children).toContain('Test Product added to homepage carousel');
+      void expect(messageSpan.props.children).toContain('Test Product added to homepage carousel');
       // Verify the link element
-      expect(linkElement.type).toBe('a');
-      expect(linkElement.props.href).toBe('/');
-      expect(linkElement.props.target).toBe('_blank');
-      expect(linkElement.props.children).toContain('View on homepage →');
+      void expect(linkElement.type).toBe('a');
+      void expect(linkElement.props.href).toBe('/');
+      void expect(linkElement.props.target).toBe('_blank');
+      void expect(linkElement.props.children).toContain('View on homepage →');
     });
   });
 
@@ -159,16 +157,16 @@ describe('useToggleFeatured Hook', () => {
     });
 
     await waitFor(() => {
-      expect(mockToast.success).toHaveBeenCalled();
-      const toastCall = mockToast.success.mock.calls[0][0] as ReactElement<ToastElementProps>;
-      expect(toastCall).toBeTruthy();
+      void expect(mockToast.success).toHaveBeenCalled();
+      const toastCall = (mockToast.success as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0] as ReactElement<ToastElementProps>;
+      void expect(toastCall).toBeTruthy();
       // Verify the unfeatured message
-      expect(toastCall.props?.children).toBeDefined();
+      void expect(toastCall.props?.children).toBeDefined();
       const [messageSpan, linkElement] = toastCall.props.children;
-      expect(messageSpan.props.children).toContain('Test Product removed from homepage carousel');
+      void expect(messageSpan.props.children).toContain('Test Product removed from homepage carousel');
       // Verify the link is still present
-      expect(linkElement.type).toBe('a');
-      expect(linkElement.props.href).toBe('/');
+      void expect(linkElement.type).toBe('a');
+      void expect(linkElement.props.href).toBe('/');
     });
   });
 
@@ -183,7 +181,7 @@ describe('useToggleFeatured Hook', () => {
     });
 
     await waitFor(() => {
-      expect(mockToast.error).toHaveBeenCalledWith('Failed to update featured status');
+      void expect(mockToast.error).toHaveBeenCalledWith('Failed to update featured status');
     });
   });
 
@@ -210,7 +208,7 @@ describe('useToggleFeatured Hook', () => {
     await waitFor(() => {
       // eslint-disable-next-line @typescript-eslint/unbound-method
       const patchFn = mockApiClient.patch;
-      expect(patchFn).toHaveBeenCalled();
+      void expect(patchFn).toHaveBeenCalled();
     });
   });
 
@@ -233,14 +231,14 @@ describe('useToggleFeatured Hook', () => {
     });
 
     await waitFor(() => {
-      expect(mockToast.error).toHaveBeenCalled();
+      void expect(mockToast.error).toHaveBeenCalled();
       
       // Data should be rolled back to original state
       const productsData = queryClient.getQueryData<{ data: Product[]; totalPages: number; currentPage: number }>(['products', 1, 12]);
-      expect(productsData).toBeDefined();
-      expect(productsData?.data).toBeDefined();
+      void expect(productsData).toBeDefined();
+      void expect(productsData?.data).toBeDefined();
       if (!productsData?.data) throw new Error('No products data');
-      expect(productsData.data[0].isFeatured).toBe(false);
+      void expect(productsData.data[0].isFeatured).toBe(false);
     });
   });
 
@@ -266,7 +264,7 @@ describe('useToggleFeatured Hook', () => {
     await waitFor(() => {
       // eslint-disable-next-line @typescript-eslint/unbound-method
       const patchFn = mockApiClient.patch;
-      expect(patchFn).toHaveBeenCalledWith('/products/toggle-featured/test-id');
+      void expect(patchFn).toHaveBeenCalledWith('/products/toggle-featured/test-id');
     });
   });
 });

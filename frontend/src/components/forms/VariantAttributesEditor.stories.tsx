@@ -32,7 +32,7 @@ const FormWrapper = ({ children, initialValues = defaultValues }: { children: Re
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(fn())} className="space-y-6">
+      <form onSubmit={(e) => { void methods.handleSubmit(fn())(e); }} className="space-y-6">
         {children}
         <div className="mt-4 p-4 bg-muted rounded-lg">
           <pre className="text-xs">
@@ -162,10 +162,10 @@ export const AddVariantTypeInteraction: Story = {
     
     // Verify the type was added
     await waitFor(() => {
-      expect(canvas.getByText('size')).toBeInTheDocument();
-      expect(canvas.getByText('Small')).toBeInTheDocument();
-      expect(canvas.getByText('Medium')).toBeInTheDocument();
-      expect(canvas.getByText('Large')).toBeInTheDocument();
+      void expect(canvas.getByText('size')).toBeInTheDocument();
+      void expect(canvas.getByText('Small')).toBeInTheDocument();
+      void expect(canvas.getByText('Medium')).toBeInTheDocument();
+      void expect(canvas.getByText('Large')).toBeInTheDocument();
     });
   },
 };
@@ -199,10 +199,10 @@ export const GenerateVariantsInteraction: Story = {
     
     // Verify variants were generated (2 sizes × 2 colors = 4 variants)
     await waitFor(() => {
-      expect(canvas.getByDisplayValue('S / Black')).toBeInTheDocument();
-      expect(canvas.getByDisplayValue('S / White')).toBeInTheDocument();
-      expect(canvas.getByDisplayValue('M / Black')).toBeInTheDocument();
-      expect(canvas.getByDisplayValue('M / White')).toBeInTheDocument();
+      void expect(canvas.getByDisplayValue('S / Black')).toBeInTheDocument();
+      void expect(canvas.getByDisplayValue('S / White')).toBeInTheDocument();
+      void expect(canvas.getByDisplayValue('M / Black')).toBeInTheDocument();
+      void expect(canvas.getByDisplayValue('M / White')).toBeInTheDocument();
     });
   },
 };
@@ -217,7 +217,7 @@ export const ManualVariantAddition: Story = {
     
     // A new row should appear in the variants table
     await waitFor(() => {
-      expect(canvas.getAllByRole('row')).toHaveLength(2); // Header + 1 variant row
+      void expect(canvas.getAllByRole('row')).toHaveLength(2); // Header + 1 variant row
     });
   },
 };
@@ -254,8 +254,8 @@ export const DeleteVariantType: Story = {
     
     // Verify the type was removed
     await waitFor(() => {
-      expect(canvas.queryByText('size')).not.toBeInTheDocument();
-      expect(canvas.getByText('color')).toBeInTheDocument(); // Second type should still exist
+      void expect(canvas.queryByText('size')).not.toBeInTheDocument();
+      void expect(canvas.getByText('color')).toBeInTheDocument(); // Second type should still exist
     });
   },
 };
@@ -314,7 +314,7 @@ export const EditVariantDetails: Story = {
     
     // Verify final price calculation
     await waitFor(() => {
-      expect(canvas.getByText('$55.50')).toBeInTheDocument(); // Base price 50 + adjustment 5.50
+      void expect(canvas.getByText('$55.50')).toBeInTheDocument(); // Base price 50 + adjustment 5.50
     });
   },
 };
@@ -474,7 +474,7 @@ export const ValidationErrors: Story = {
     // Check for error messages
     await waitFor(() => {
       const errorMessages = canvas.getAllByText('Cannot be negative');
-      expect(errorMessages).toHaveLength(2);
+      void expect(errorMessages).toHaveLength(2);
     });
   },
 };
@@ -504,7 +504,7 @@ export const SaveError: Story = {
             <p className="text-sm text-muted-foreground mb-3">
               Click save to simulate a server error
             </p>
-            <Button onClick={simulateSaveError} disabled={isSaving}>
+            <Button onClick={() => { void simulateSaveError(); }} disabled={isSaving}>
               {isSaving ? (
                 <>
                   <Save className="w-4 h-4 mr-2 animate-pulse" />
@@ -787,7 +787,7 @@ export const BulkImportError: Story = {
                   Import variants from CSV file
                 </p>
               </div>
-              <Button onClick={simulateImport} disabled={isImporting}>
+              <Button onClick={() => { void simulateImport(); }} disabled={isImporting}>
                 {isImporting ? (
                   <>
                     <Package className="w-4 h-4 mr-2 animate-pulse" />
@@ -913,7 +913,7 @@ export const ErrorRecovery: Story = {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={retry}
+                    onClick={() => { void retry(); }}
                     disabled={isRetrying}
                   >
                     {isRetrying ? (

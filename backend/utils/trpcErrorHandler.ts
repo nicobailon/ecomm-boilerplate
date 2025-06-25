@@ -37,7 +37,7 @@ export function handleTRPCError(error: unknown): never {
   }
   
   if (error instanceof Error) {
-    if (error.message.includes('11000') || error.message.includes('duplicate key')) {
+    if (error.message.includes('11000') ?? error.message.includes('duplicate key')) {
       throw new TRPCError({
         code: 'CONFLICT',
         message: 'A resource with this name already exists',
@@ -46,7 +46,7 @@ export function handleTRPCError(error: unknown): never {
     
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
-      message: error.message || 'An unexpected error occurred',
+      message: error.message ?? 'An unexpected error occurred',
     });
   }
   

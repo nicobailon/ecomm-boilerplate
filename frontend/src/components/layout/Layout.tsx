@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Navbar from './Navbar';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import { EmailVerificationBanner } from '../ui/EmailVerificationBanner';
 import { useGuestCartSync } from '@/hooks/cart/useGuestCartSync';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
@@ -19,6 +20,7 @@ function RootLayout() {
 
       <div className='relative z-50 pt-20'>
         <Navbar />
+        <EmailVerificationBanner />
         <Suspense fallback={<LoadingSpinner />}>
           <Outlet />
         </Suspense>

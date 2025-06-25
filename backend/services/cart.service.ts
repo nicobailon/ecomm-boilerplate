@@ -196,7 +196,7 @@ export class CartService {
         
         if (availableStock === 0) {
           throw new AppError(
-            `${variant.label || 'This variant'} is currently out of stock`,
+            `${variant.label ?? 'This variant'} is currently out of stock`,
             400,
           );
         }

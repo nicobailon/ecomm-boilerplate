@@ -91,19 +91,19 @@ describe('Product Creation Integration Tests', () => {
       const caller = appRouter.createCaller(ctx);
       const result = await caller.product.create(productData);
 
-      expect(result.product).toBeDefined();
-      expect(result.product.name).toBe(productData.name);
-      expect(result.product.description).toBe(productData.description);
-      expect(result.product.price).toBe(productData.price);
-      expect(result.product.slug).toBe('test-product');
-      expect((result.product as IProductWithVariants).mediaGallery).toEqual([]);
-      expect(result.created.product).toBe(true);
-      expect(result.created.collection).toBe(false);
+      void expect(result.product).toBeDefined();
+      void expect(result.product.name).toBe(productData.name);
+      void expect(result.product.description).toBe(productData.description);
+      void expect(result.product.price).toBe(productData.price);
+      void expect(result.product.slug).toBe('test-product');
+      void expect((result.product as IProductWithVariants).mediaGallery).toEqual([]);
+      void expect(result.created.product).toBe(true);
+      void expect(result.created.collection).toBe(false);
 
       // Verify product was saved to database
       const savedProduct = await Product.findById(result.product._id);
-      expect(savedProduct).toBeDefined();
-      expect(savedProduct!.name).toBe(productData.name);
+      void expect(savedProduct).toBeDefined();
+      void expect(savedProduct!.name).toBe(productData.name);
     });
 
     it('should create a product with existing collection', async () => {
@@ -124,12 +124,12 @@ describe('Product Creation Integration Tests', () => {
       const caller = appRouter.createCaller(ctx);
       const result = await caller.product.create(productData);
 
-      expect(result.product.collectionId).toBe((testCollection._id as mongoose.Types.ObjectId).toString());
-      expect(result.created.collection).toBe(false);
+      void expect(result.product.collectionId).toBe((testCollection._id as mongoose.Types.ObjectId).toString());
+      void expect(result.created.collection).toBe(false);
 
       // Verify collection was updated with product
       const updatedCollection = await Collection.findById(testCollection._id as mongoose.Types.ObjectId);
-      expect(updatedCollection!.products).toContain(result.product._id);
+      void expect(updatedCollection!.products).toContain(result.product._id);
     });
 
     it('should create a product with new collection', async () => {
@@ -150,15 +150,15 @@ describe('Product Creation Integration Tests', () => {
       const caller = appRouter.createCaller(ctx);
       const result = await caller.product.create(productData);
 
-      expect(result.collection).toBeDefined();
-      expect(result.collection!.name).toBe('Brand New Collection');
-      expect(result.collection!.slug).toBe('brand-new-collection');
-      expect(result.created.collection).toBe(true);
+      void expect(result.collection).toBeDefined();
+      void expect(result.collection!.name).toBe('Brand New Collection');
+      void expect(result.collection!.slug).toBe('brand-new-collection');
+      void expect(result.created.collection).toBe(true);
 
       // Verify new collection was created
       const newCollection = await Collection.findById(result.collection!._id);
-      expect(newCollection).toBeDefined();
-      expect(newCollection!.products).toContain(result.product._id);
+      void expect(newCollection).toBeDefined();
+      void expect(newCollection!.products).toContain(result.product._id);
     });
 
     it('should generate unique slug for duplicate names', async () => {
@@ -193,9 +193,9 @@ describe('Product Creation Integration Tests', () => {
 
       const result2 = await caller.product.create(productData2);
 
-      expect(result1.product.slug).toBe('duplicate-name-product');
-      expect(result2.product.slug).toBe('duplicate-name-product-1');
-      expect(result1.product.slug).not.toBe(result2.product.slug);
+      void expect(result1.product.slug).toBe('duplicate-name-product');
+      void expect(result2.product.slug).toBe('duplicate-name-product-1');
+      void expect(result1.product.slug).not.toBe(result2.product.slug);
     });
   });
 
@@ -343,7 +343,7 @@ describe('Product Creation Integration Tests', () => {
       const caller = appRouter.createCaller(ctx);
       const result = await caller.product.create(productData);
 
-      expect((result.product as IProductWithVariants).mediaGallery).toHaveLength(6);
+      void expect((result.product as IProductWithVariants).mediaGallery).toHaveLength(6);
     });
 
     it('should reject mediaGallery exceeding maximum items', async () => {
@@ -392,7 +392,7 @@ describe('Product Creation Integration Tests', () => {
 
       // First creation should succeed
       const result1 = await caller.product.create(productData);
-      expect(result1.product).toBeDefined();
+      void expect(result1.product).toBeDefined();
 
       // Manually create a product with the same slug to force a constraint violation
       await Product.create({
@@ -415,7 +415,7 @@ describe('Product Creation Integration Tests', () => {
       } catch {
         // Even if it fails, verify no partial data was left
         const productCountAfter = await Product.countDocuments();
-        expect(productCountAfter).toBe(productCountBefore);
+        void expect(productCountAfter).toBe(productCountBefore);
       }
     });
 

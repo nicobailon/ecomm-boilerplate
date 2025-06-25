@@ -49,7 +49,7 @@ describe('rateLimiter middleware', () => {
 
   // Helper to call middleware
   const callMiddleware = async (middleware: any, ctx: Context, nextValue?: any) => {
-    const mockNext = vi.fn().mockResolvedValue(nextValue || { result: 'success' });
+    const mockNext = vi.fn().mockResolvedValue(nextValue ?? { result: 'success' });
     
     // Extract the middleware function from the _middlewares array
     const middlewareFunc = middleware._middlewares[0];
@@ -71,10 +71,10 @@ describe('rateLimiter middleware', () => {
 
       const { result, mockNext } = await callMiddleware(rateLimiter, mockCtx, { result: 'success' });
 
-      expect(result).toEqual({ result: 'success' });
-      expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:user123');
-      expect(mockRedis.expire).toHaveBeenCalledWith('rate_limit:user123', 60);
-      expect(mockNext).toHaveBeenCalled();
+      void expect(result).toEqual({ result: 'success' });
+      void expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:user123');
+      void expect(mockRedis.expire).toHaveBeenCalledWith('rate_limit:user123', 60);
+      void expect(mockNext).toHaveBeenCalled();
     });
 
     it('should block request when over limit', async () => {
@@ -107,7 +107,7 @@ describe('rateLimiter middleware', () => {
 
       await callMiddleware(rateLimiter, ctxWithoutUser);
 
-      expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:192.168.1.1');
+      void expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:192.168.1.1');
     });
   });
 
@@ -124,8 +124,8 @@ describe('rateLimiter middleware', () => {
 
       await callMiddleware(rateLimiter, mockCtx);
 
-      expect(mockRedis.incr).toHaveBeenCalledWith('auth:user123');
-      expect(mockRedis.expire).toHaveBeenCalledWith('auth:user123', 900); // 15 minutes
+      void expect(mockRedis.incr).toHaveBeenCalledWith('auth:user123');
+      void expect(mockRedis.expire).toHaveBeenCalledWith('auth:user123', 900); // 15 minutes
     });
 
     it('should block requests over auth limit', async () => {
@@ -152,7 +152,7 @@ describe('rateLimiter middleware', () => {
 
       await callMiddleware(rateLimiter, mockCtx);
 
-      expect(mockRedis.incr).toHaveBeenCalledWith('inventory:check:user123');
+      void expect(mockRedis.incr).toHaveBeenCalledWith('inventory:check:user123');
     });
 
     it('should apply query-specific limits', async () => {
@@ -166,7 +166,7 @@ describe('rateLimiter middleware', () => {
 
       await callMiddleware(rateLimiter, mockCtx);
 
-      expect(mockRedis.incr).toHaveBeenCalledWith('query:user123');
+      void expect(mockRedis.incr).toHaveBeenCalledWith('query:user123');
     });
   });
 
@@ -183,7 +183,7 @@ describe('rateLimiter middleware', () => {
 
       const { result } = await callMiddleware(rateLimiter, mockCtx, { result: 'success' });
 
-      expect(result).toEqual({ result: 'success' });
+      void expect(result).toEqual({ result: 'success' });
     });
 
     it('should respect custom limits', async () => {
@@ -212,7 +212,7 @@ describe('rateLimiter middleware', () => {
 
       const { result } = await callMiddleware(rateLimiter, mockCtx, { result: 'success' });
 
-      expect(result).toEqual({ result: 'success' });
+      void expect(result).toEqual({ result: 'success' });
     });
 
     it('should include retry-after in error message', async () => {
@@ -228,8 +228,8 @@ describe('rateLimiter middleware', () => {
       try {
         await callMiddleware(rateLimiter, mockCtx);
       } catch (error) {
-        expect(error).toBeInstanceOf(TRPCError);
-        expect((error as TRPCError).code).toBe('TOO_MANY_REQUESTS');
+        void expect(error).toBeInstanceOf(TRPCError);
+        void expect((error as TRPCError).code).toBe('TOO_MANY_REQUESTS');
       }
     });
   });
@@ -253,7 +253,7 @@ describe('rateLimiter middleware', () => {
 
       await callMiddleware(rateLimiter, ctxWithoutIp);
 
-      expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:unknown');
+      void expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:unknown');
     });
 
     it('should handle IPv6 addresses', async () => {
@@ -277,7 +277,7 @@ describe('rateLimiter middleware', () => {
 
       await callMiddleware(rateLimiter, ctxWithIpv6);
 
-      expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:2001:0db8:85a3:0000:0000:8a2e:0370:7334');
+      void expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:2001:0db8:85a3:0000:0000:8a2e:0370:7334');
     });
 
     it('should handle multiple IPs in x-forwarded-for', async () => {
@@ -302,7 +302,7 @@ describe('rateLimiter middleware', () => {
 
       await callMiddleware(rateLimiter, ctxWithMultipleIps);
 
-      expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:192.168.1.1');
+      void expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:192.168.1.1');
     });
   });
 
@@ -312,7 +312,7 @@ describe('rateLimiter middleware', () => {
 
       // This test just ensures we can call Redis del
       await redis.del('rate_limit:user123');
-      expect(mockRedis.del).toHaveBeenCalledWith('rate_limit:user123');
+      void expect(mockRedis.del).toHaveBeenCalledWith('rate_limit:user123');
     });
 
     it('should handle checking remaining limit', async () => {
@@ -327,7 +327,7 @@ describe('rateLimiter middleware', () => {
       await callMiddleware(rateLimiter, mockCtx);
 
       // User has made 75 requests, 25 remaining
-      expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:user123');
+      void expect(mockRedis.incr).toHaveBeenCalledWith('rate_limit:user123');
     });
   });
 });

@@ -77,7 +77,7 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
           onSuccess: () => {
             onClose();
           },
-          onError: (_error) => {
+          onError: () => {
             // Error is already handled by mutation hook
           },
         },
@@ -92,10 +92,10 @@ export const CollectionEditDrawer = ({ isOpen, collection, onClose }: Collection
           productIds: selectedProductIds,
         },
         {
-          onSuccess: (_data) => {
+          onSuccess: () => {
             onClose();
           },
-          onError: (_error) => {
+          onError: () => {
             // Error is already handled by mutation hook
           },
         },

@@ -225,20 +225,20 @@ export const InteractionTest: Story = {
     
     // Wait for dialog to appear and check content
     const dialog = await canvas.findByRole('alertdialog');
-    expect(dialog).toBeInTheDocument();
+    void expect(dialog).toBeInTheDocument();
     
     // Check dialog title and description
     const title = canvas.getByText('Confirm Action');
     const description = canvas.getByText('This is a test dialog for interaction testing.');
-    expect(title).toBeInTheDocument();
-    expect(description).toBeInTheDocument();
+    void expect(title).toBeInTheDocument();
+    void expect(description).toBeInTheDocument();
     
     // Test cancel button
     const cancelButton = canvas.getByRole('button', { name: 'Cancel' });
     await userEvent.click(cancelButton);
     
     // Dialog should be closed
-    expect(dialog).not.toBeInTheDocument();
+    void expect(dialog).not.toBeInTheDocument();
   },
 };
 

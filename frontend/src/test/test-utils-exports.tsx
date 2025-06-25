@@ -5,6 +5,7 @@ import { render, act, cleanup, fireEvent, screen, waitFor, waitForElementToBeRem
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from '@/providers/theme-provider';
+import type { User, Product, ApiResponse } from '@/types';
 
 // Create a new QueryClient for each test
 export const createTestQueryClient = () =>
@@ -36,29 +37,32 @@ export const resetSharedQueryClient = () => {
 };
 
 // Mock data factories
-export const createMockUser = (overrides = {}) => ({
+export const createMockUser = (overrides: Partial<User> = {}): User => ({
   _id: '1',
   name: 'Test User',
   email: 'test@example.com',
   role: 'customer' as const,
   cartItems: [],
+  emailVerified: false,
   ...overrides,
 });
 
-export const createMockProduct = (overrides = {}) => ({
+export const createMockProduct = (overrides: Partial<Product> = {}): Product => ({
   _id: '1',
   name: 'Test Product',
   description: 'Test product description',
   price: 99.99,
   image: 'https://example.com/image.jpg',
-  category: 'jeans' as const,
   isFeatured: false,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   ...overrides,
 });
 
-export function createMockApiResponse<T>(data: T, overrides = {}) {
+export function createMockApiResponse<T>(
+  data: T, 
+  overrides: Partial<ApiResponse<T>> = {}
+): ApiResponse<T> {
   return {
     success: true,
     data,

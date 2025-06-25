@@ -86,8 +86,8 @@ describe('Product Media Migration Integration', () => {
 
       const updatedProduct = await Product.findById(testProduct._id);
       
-      expect(updatedProduct?.mediaGallery).toHaveLength(1);
-      expect(updatedProduct?.mediaGallery?.[0]).toMatchObject({
+      void expect(updatedProduct?.mediaGallery).toHaveLength(1);
+      void expect(updatedProduct?.mediaGallery?.[0]).toMatchObject({
         id: 'test-id-6',
         type: 'image',
         url: 'https://example.com/main-image.jpg',
@@ -183,15 +183,15 @@ describe('Product Media Migration Integration', () => {
 
       const updatedProduct = await Product.findById(testProduct._id);
       
-      expect(updatedProduct?.mediaGallery).toHaveLength(4); // Main + 3 unique variant images
-      expect(updatedProduct?.mediaGallery?.[0].url).toBe('https://example.com/main-image.jpg');
-      expect(updatedProduct?.mediaGallery?.[1].url).toBe('https://example.com/variant-1-image-1.jpg');
-      expect(updatedProduct?.mediaGallery?.[2].url).toBe('https://example.com/variant-1-image-2.jpg');
-      expect(updatedProduct?.mediaGallery?.[3].url).toBe('https://example.com/variant-2-image-1.jpg');
+      void expect(updatedProduct?.mediaGallery).toHaveLength(4); // Main + 3 unique variant images
+      void expect(updatedProduct?.mediaGallery?.[0].url).toBe('https://example.com/main-image.jpg');
+      void expect(updatedProduct?.mediaGallery?.[1].url).toBe('https://example.com/variant-1-image-1.jpg');
+      void expect(updatedProduct?.mediaGallery?.[2].url).toBe('https://example.com/variant-1-image-2.jpg');
+      void expect(updatedProduct?.mediaGallery?.[3].url).toBe('https://example.com/variant-2-image-1.jpg');
       
       // Verify orders are sequential
       updatedProduct?.mediaGallery?.forEach((item, index) => {
-        expect(item.order).toBe(index);
+        void void expect(item.order).toBe(index);
       });
     });
 
@@ -222,12 +222,12 @@ describe('Product Media Migration Integration', () => {
 
       // Simulate migration check
       const shouldMigrate = product && !product.mediaGallery?.length;
-      expect(shouldMigrate).toBe(false);
+      void expect(shouldMigrate).toBe(false);
 
       // Verify gallery unchanged
       const unchangedProduct = await Product.findById(testProduct._id);
-      expect(unchangedProduct?.mediaGallery).toHaveLength(originalGalleryLength);
-      expect(unchangedProduct?.mediaGallery?.[0].id).toBe('existing-id');
+      void expect(unchangedProduct?.mediaGallery).toHaveLength(originalGalleryLength);
+      void expect(unchangedProduct?.mediaGallery?.[0].id).toBe('existing-id');
     });
 
     it('should handle products with no images gracefully', async () => {
@@ -254,7 +254,7 @@ describe('Product Media Migration Integration', () => {
       }
 
       const updatedProduct = await Product.findById(testProduct._id);
-      expect(updatedProduct?.mediaGallery).toHaveLength(0);
+      void expect(updatedProduct?.mediaGallery).toHaveLength(0);
     });
 
     it('should respect maximum media limit of 6 items', async () => {
@@ -334,9 +334,9 @@ describe('Product Media Migration Integration', () => {
       const updatedProduct = await Product.findById(testProduct._id);
       
       // Should have exactly 6 items (main + 5 variants), not more
-      expect(updatedProduct?.mediaGallery).toHaveLength(6);
-      expect(updatedProduct?.mediaGallery?.[0].url).toBe('https://example.com/main-image.jpg');
-      expect(updatedProduct?.mediaGallery?.[5].order).toBe(5);
+      void expect(updatedProduct?.mediaGallery).toHaveLength(6);
+      void expect(updatedProduct?.mediaGallery?.[0].url).toBe('https://example.com/main-image.jpg');
+      void expect(updatedProduct?.mediaGallery?.[5].order).toBe(5);
     });
   });
 
@@ -379,12 +379,12 @@ describe('Product Media Migration Integration', () => {
       saveSpy.mockRestore();
 
       // Verify error was caught
-      expect(migrationError).toBeInstanceOf(Error);
-      expect(migrationError?.message).toBe('Database error');
+      void expect(migrationError).toBeInstanceOf(Error);
+      void expect(migrationError?.message).toBe('Database error');
       
       // Verify product was not modified (because save failed)
       const unchangedProduct = await Product.findById(testProduct._id);
-      expect(unchangedProduct?.mediaGallery).toHaveLength(0);
+      void expect(unchangedProduct?.mediaGallery).toHaveLength(0);
     });
   });
 });

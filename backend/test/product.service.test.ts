@@ -77,12 +77,12 @@ describe('ProductService', () => {
 
       const result = await productService.createProductWithCollection(userId, productData);
 
-      expect(result.created.product).toBe(true);
-      expect(result.created.collection).toBe(true);
-      expect(result.product._id).toBe('product123');
-      expect((result.collection?._id as any).toString()).toBe('collection123');
-      expect(mockSession.commitTransaction).toHaveBeenCalled();
-      expect(mockSession.endSession).toHaveBeenCalled();
+      void expect(result.created.product).toBe(true);
+      void expect(result.created.collection).toBe(true);
+      void expect(result.product._id).toBe('product123');
+      void expect((result.collection?._id as any).toString()).toBe('collection123');
+      void expect(mockSession.commitTransaction).toHaveBeenCalled();
+      void expect(mockSession.endSession).toHaveBeenCalled();
     });
 
     it('should create product with existing collection', async () => {
@@ -109,10 +109,10 @@ describe('ProductService', () => {
 
       const result = await productService.createProductWithCollection(userId, productData);
 
-      expect(result.created.product).toBe(true);
-      expect(result.created.collection).toBe(false);
-      expect(result.collection).toBeUndefined();
-      expect(Collection.create).not.toHaveBeenCalled();
+      void expect(result.created.product).toBe(true);
+      void expect(result.created.collection).toBe(false);
+      void expect(result.collection).toBeUndefined();
+      void expect(Collection.create).not.toHaveBeenCalled();
     });
 
     it('should throw error if both collectionId and collectionName provided', async () => {
@@ -126,7 +126,7 @@ describe('ProductService', () => {
         productService.createProductWithCollection(userId, productData),
       ).rejects.toThrow('Provide either collectionId or collectionName, not both');
 
-      expect(mockSession.startTransaction).not.toHaveBeenCalled();
+      void expect(mockSession.startTransaction).not.toHaveBeenCalled();
     });
 
     it('should throw error if collection not found or access denied', async () => {
@@ -141,8 +141,8 @@ describe('ProductService', () => {
         productService.createProductWithCollection(userId, productData),
       ).rejects.toThrow('Collection not found or access denied');
 
-      expect(mockSession.abortTransaction).toHaveBeenCalled();
-      expect(mockSession.endSession).toHaveBeenCalled();
+      void expect(mockSession.abortTransaction).toHaveBeenCalled();
+      void expect(mockSession.endSession).toHaveBeenCalled();
     });
 
     it('should rollback both on collection creation failure', async () => {
@@ -157,9 +157,9 @@ describe('ProductService', () => {
         productService.createProductWithCollection(userId, productData),
       ).rejects.toThrow('Collection creation failed');
 
-      expect(mockSession.abortTransaction).toHaveBeenCalled();
-      expect(mockSession.endSession).toHaveBeenCalled();
-      expect(Product.create).not.toHaveBeenCalled();
+      void expect(mockSession.abortTransaction).toHaveBeenCalled();
+      void expect(mockSession.endSession).toHaveBeenCalled();
+      void expect(Product.create).not.toHaveBeenCalled();
     });
 
     it('should rollback both on product creation failure', async () => {
@@ -179,8 +179,8 @@ describe('ProductService', () => {
         productService.createProductWithCollection(userId, productData),
       ).rejects.toThrow('Product creation failed');
 
-      expect(mockSession.abortTransaction).toHaveBeenCalled();
-      expect(mockSession.endSession).toHaveBeenCalled();
+      void expect(mockSession.abortTransaction).toHaveBeenCalled();
+      void expect(mockSession.endSession).toHaveBeenCalled();
     });
 
     it('should update collection products array', async () => {
@@ -202,7 +202,7 @@ describe('ProductService', () => {
 
       await productService.createProductWithCollection(userId, productData);
 
-      expect(Collection.findByIdAndUpdate).toHaveBeenCalledWith(
+      void expect(Collection.findByIdAndUpdate).toHaveBeenCalledWith(
         'collection123',
         expect.objectContaining({
           $addToSet: expect.objectContaining({
@@ -237,7 +237,7 @@ describe('ProductService', () => {
 
       await productService.createProductWithCollection(userId, productData);
 
-      expect(Collection.create).toHaveBeenCalledWith(
+      void expect(Collection.create).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
             name: 'New Collection',

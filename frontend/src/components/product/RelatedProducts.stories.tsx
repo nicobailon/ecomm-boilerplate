@@ -247,8 +247,8 @@ export const CollectionLink: Story = {
     
     // Find the collection link
     const collectionLink = canvas.getByRole('link', { name: /view all summer collection/i });
-    expect(collectionLink).toBeInTheDocument();
-    expect(collectionLink).toHaveAttribute('href', '/collections/summer-collection');
+    void expect(collectionLink).toBeInTheDocument();
+    void expect(collectionLink).toHaveAttribute('href', '/collections/summer-collection');
   },
 };
 
@@ -262,8 +262,8 @@ export const EmptyStateLink: Story = {
     
     // Find the browse collection link
     const browseLink = canvas.getByRole('link', { name: /browse summer collection/i });
-    expect(browseLink).toBeInTheDocument();
-    expect(browseLink).toHaveAttribute('href', '/collections/summer-collection');
+    void expect(browseLink).toBeInTheDocument();
+    void expect(browseLink).toHaveAttribute('href', '/collections/summer-collection');
   },
 };
 
@@ -300,12 +300,12 @@ export const ProductInteraction: Story = {
     // Find first product card
     await waitFor(() => {
       const firstProduct = canvas.getByText('Product 1');
-      expect(firstProduct).toBeInTheDocument();
+      void expect(firstProduct).toBeInTheDocument();
     });
     
     // Click on product (should navigate in real app)
     const productLink = canvas.getAllByRole('link')[0];
-    expect(productLink).toHaveAttribute('href', expect.stringContaining('/products/'));
+    void expect(productLink).toHaveAttribute('href', expect.stringContaining('/products/'));
   },
 };
 
@@ -485,7 +485,7 @@ export const ProgressiveLoading: Story = {
       }
       };
       
-      loadProducts();
+      void loadProducts();
     }, [allProducts]);
     
     return (

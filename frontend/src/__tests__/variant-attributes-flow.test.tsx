@@ -15,7 +15,7 @@ describe('Variant Attributes Flow', () => {
       
       const { result } = renderHook(() => useFeatureFlag('USE_VARIANT_ATTRIBUTES'));
       
-      expect(result.current).toBe(false);
+      void expect(result.current).toBe(false);
     });
 
     it('should use new variant attributes system when feature flag is on', () => {
@@ -23,7 +23,7 @@ describe('Variant Attributes Flow', () => {
       
       const { result } = renderHook(() => useFeatureFlag('USE_VARIANT_ATTRIBUTES'));
       
-      expect(result.current).toBe(true);
+      void expect(result.current).toBe(true);
     });
   });
 
@@ -37,7 +37,7 @@ describe('Variant Attributes Flow', () => {
       ];
 
       const label = generateVariantLabel(attributes, variantTypes);
-      expect(label).toBe('Medium / Blue / Cotton');
+      void expect(label).toBe('Medium / Blue / Cotton');
     });
 
     it('should handle missing attributes gracefully', () => {
@@ -48,7 +48,7 @@ describe('Variant Attributes Flow', () => {
       ];
 
       const label = generateVariantLabel(attributes, variantTypes);
-      expect(label).toBe('Medium');
+      void expect(label).toBe('Medium');
     });
   });
 
@@ -60,8 +60,8 @@ describe('Variant Attributes Flow', () => {
       const key1 = getVariantKey(attributes1);
       const key2 = getVariantKey(attributes2);
 
-      expect(key1).toBe(key2);
-      expect(key1).toBe('color:Blue|size:M');
+      void expect(key1).toBe(key2);
+      void expect(key1).toBe('color:Blue|size:M');
     });
 
     it('should handle special characters in attribute values', () => {
@@ -69,7 +69,7 @@ describe('Variant Attributes Flow', () => {
       
       const key = getVariantKey(attributes);
       
-      expect(key).toBe('pattern:Polka_Dots|size:X-Large');
+      void expect(key).toBe('pattern:Polka_Dots|size:X-Large');
     });
   });
 
@@ -111,9 +111,9 @@ describe('Variant Attributes Flow', () => {
         })),
       };
 
-      expect(apiData.variants).toHaveLength(2);
-      expect(apiData.variants?.[0].attributes).toEqual({ size: 'S', color: 'Red' });
-      expect(apiData.variants?.[1].priceAdjustment).toBe(5);
+      void expect(apiData.variants).toHaveLength(2);
+      void expect(apiData.variants?.[0].attributes).toEqual({ size: 'S', color: 'Red' });
+      void expect(apiData.variants?.[1].priceAdjustment).toBe(5);
     });
   });
 
@@ -150,8 +150,8 @@ describe('Variant Attributes Flow', () => {
       });
 
       const selectedVariant = variantMap.get(key);
-      expect(selectedVariant?.variantId).toBe('2');
-      expect(selectedVariant?.inventory).toBe(5);
+      void expect(selectedVariant?.variantId).toBe('2');
+      void expect(selectedVariant?.inventory).toBe(5);
     });
 
     it('should handle inventory constraints', () => {
@@ -173,8 +173,8 @@ describe('Variant Attributes Flow', () => {
       // Filter available variants
       const availableVariants = variants.filter(v => v.inventory > 0);
       
-      expect(availableVariants).toHaveLength(1);
-      expect(availableVariants[0].attributes?.color).toBe('Blue');
+      void expect(availableVariants).toHaveLength(1);
+      void expect(availableVariants[0].attributes?.color).toBe('Blue');
     });
   });
 });

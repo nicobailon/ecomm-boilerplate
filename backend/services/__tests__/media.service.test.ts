@@ -40,8 +40,8 @@ describe('MediaService', () => {
 
       const result = mediaService.processMediaUpload(files, 0);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
+      void expect(result).toHaveLength(1);
+      void expect(result[0]).toMatchObject({
         id: expect.any(String) as string,
         type: 'image',
         url: 'https://utfs.io/f/test-image.jpg',
@@ -66,8 +66,8 @@ describe('MediaService', () => {
 
       const result = mediaService.processMediaUpload(files, 0);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
+      void expect(result).toHaveLength(1);
+      void expect(result[0]).toMatchObject({
         id: expect.any(String) as string,
         type: 'video',
         url: 'https://utfs.io/f/test-video.mp4',
@@ -136,8 +136,8 @@ describe('MediaService', () => {
 
       const result = mediaService.processMediaUpload(files, 2);
 
-      expect(result[0].order).toBe(2);
-      expect(result[1].order).toBe(3);
+      void expect(result[0].order).toBe(2);
+      void expect(result[1].order).toBe(3);
     });
   });
 
@@ -145,36 +145,36 @@ describe('MediaService', () => {
     it('should validate standard YouTube watch URLs', () => {
       const result = mediaService.validateYouTubeUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
       
-      expect(result.isValid).toBe(true);
-      expect(result.videoId).toBe('dQw4w9WgXcQ');
+      void expect(result.isValid).toBe(true);
+      void expect(result.videoId).toBe('dQw4w9WgXcQ');
     });
 
     it('should validate shortened YouTube URLs', () => {
       const result = mediaService.validateYouTubeUrl('https://youtu.be/dQw4w9WgXcQ');
       
-      expect(result.isValid).toBe(true);
-      expect(result.videoId).toBe('dQw4w9WgXcQ');
+      void expect(result.isValid).toBe(true);
+      void expect(result.videoId).toBe('dQw4w9WgXcQ');
     });
 
     it('should validate YouTube embed URLs', () => {
       const result = mediaService.validateYouTubeUrl('https://www.youtube.com/embed/dQw4w9WgXcQ');
       
-      expect(result.isValid).toBe(true);
-      expect(result.videoId).toBe('dQw4w9WgXcQ');
+      void expect(result.isValid).toBe(true);
+      void expect(result.videoId).toBe('dQw4w9WgXcQ');
     });
 
     it('should reject invalid YouTube URLs', () => {
       const result = mediaService.validateYouTubeUrl('https://example.com/video');
       
-      expect(result.isValid).toBe(false);
-      expect(result.videoId).toBeUndefined();
+      void expect(result.isValid).toBe(false);
+      void expect(result.videoId).toBeUndefined();
     });
 
     it('should reject malformed URLs', () => {
       const result = mediaService.validateYouTubeUrl('not-a-url');
       
-      expect(result.isValid).toBe(false);
-      expect(result.videoId).toBeUndefined();
+      void expect(result.isValid).toBe(false);
+      void expect(result.videoId).toBeUndefined();
     });
   });
 
@@ -183,13 +183,13 @@ describe('MediaService', () => {
       const videoId = 'dQw4w9WgXcQ';
       const thumbnailUrl = mediaService.getYouTubeThumbnail(videoId);
       
-      expect(thumbnailUrl).toBe(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`);
+      void expect(thumbnailUrl).toBe(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`);
     });
 
     it('should handle empty video ID', () => {
       const thumbnailUrl = mediaService.getYouTubeThumbnail('');
       
-      expect(thumbnailUrl).toBe('https://img.youtube.com/vi//maxresdefault.jpg');
+      void expect(thumbnailUrl).toBe('https://img.youtube.com/vi//maxresdefault.jpg');
     });
   });
 
@@ -274,7 +274,7 @@ describe('MediaService', () => {
 
       mediaService.validateMediaGallery(mediaItems);
 
-      expect(mediaItems[0].thumbnail).toBe('https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg');
+      void expect(mediaItems[0].thumbnail).toBe('https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg');
     });
 
     it('should throw error for invalid YouTube URLs', async () => {
@@ -336,8 +336,8 @@ describe('MediaService', () => {
 
       const result = await mediaService.getMediaMetadata('media123');
 
-      expect(mockRedisGet).toHaveBeenCalledWith('media:metadata:media123');
-      expect(result).toEqual(cachedData);
+      void expect(mockRedisGet).toHaveBeenCalledWith('media:metadata:media123');
+      void expect(result).toEqual(cachedData);
     });
 
     it('should return default metadata and cache it when not cached', async () => {
@@ -346,12 +346,12 @@ describe('MediaService', () => {
 
       const result = await mediaService.getMediaMetadata('media123');
 
-      expect(mockRedisGet).toHaveBeenCalledWith('media:metadata:media123');
-      expect(result).toMatchObject({
+      void expect(mockRedisGet).toHaveBeenCalledWith('media:metadata:media123');
+      void expect(result).toMatchObject({
         views: 0,
         lastViewed: expect.any(Date) as Date,
       });
-      expect(mockRedisSetex).toHaveBeenCalledWith(
+      void expect(mockRedisSetex).toHaveBeenCalledWith(
         'media:metadata:media123',
         3600,
         expect.any(String) as string,
@@ -364,11 +364,11 @@ describe('MediaService', () => {
 
       const result = await mediaService.getMediaMetadata('media123');
 
-      expect(result).toMatchObject({
+      void expect(result).toMatchObject({
         views: 0,
         lastViewed: expect.any(Date) as Date,
       });
-      expect(consoleSpy).toHaveBeenCalledWith('Redis error:', expect.any(Error) as Error);
+      void expect(consoleSpy).toHaveBeenCalledWith('Redis error:', expect.any(Error) as Error);
 
       consoleSpy.mockRestore();
     });
@@ -381,25 +381,25 @@ describe('MediaService', () => {
         // Access private method for testing
         const getMediaType = (mediaService as unknown as { getMediaType: (type: string) => string }).getMediaType.bind(mediaService);
         
-        expect(getMediaType('image/jpeg')).toBe('image');
-        expect(getMediaType('image/png')).toBe('image');
-        expect(getMediaType('image/webp')).toBe('image');
+        void expect(getMediaType('image/jpeg')).toBe('image');
+        void expect(getMediaType('image/png')).toBe('image');
+        void expect(getMediaType('image/webp')).toBe('image');
       });
 
       it('should return "video" for video MIME types', () => {
         const mediaService = new MediaService();
         const getMediaType = (mediaService as unknown as { getMediaType: (type: string) => string }).getMediaType.bind(mediaService);
         
-        expect(getMediaType('video/mp4')).toBe('video');
-        expect(getMediaType('video/webm')).toBe('video');
+        void expect(getMediaType('video/mp4')).toBe('video');
+        void expect(getMediaType('video/webm')).toBe('video');
       });
 
       it('should throw error for unsupported MIME types', () => {
         const mediaService = new MediaService();
         const getMediaType = (mediaService as unknown as { getMediaType: (type: string) => string }).getMediaType.bind(mediaService);
         
-        expect(() => getMediaType('text/plain')).toThrow('Unsupported media type: text/plain');
-        expect(() => getMediaType('application/pdf')).toThrow('Unsupported media type: application/pdf');
+        void expect(() => getMediaType('text/plain')).toThrow('Unsupported media type: text/plain');
+        void expect(() => getMediaType('application/pdf')).toThrow('Unsupported media type: application/pdf');
       });
     });
 
@@ -408,26 +408,26 @@ describe('MediaService', () => {
         const mediaService = new MediaService();
         const isValidFileType = (mediaService as unknown as { isValidFileType: (type: string) => boolean }).isValidFileType.bind(mediaService);
         
-        expect(isValidFileType('image/jpeg')).toBe(true);
-        expect(isValidFileType('image/png')).toBe(true);
-        expect(isValidFileType('image/webp')).toBe(true);
+        void expect(isValidFileType('image/jpeg')).toBe(true);
+        void expect(isValidFileType('image/png')).toBe(true);
+        void expect(isValidFileType('image/webp')).toBe(true);
       });
 
       it('should validate supported video types', () => {
         const mediaService = new MediaService();
         const isValidFileType = (mediaService as unknown as { isValidFileType: (type: string) => boolean }).isValidFileType.bind(mediaService);
         
-        expect(isValidFileType('video/mp4')).toBe(true);
-        expect(isValidFileType('video/webm')).toBe(true);
+        void expect(isValidFileType('video/mp4')).toBe(true);
+        void expect(isValidFileType('video/webm')).toBe(true);
       });
 
       it('should reject unsupported file types', () => {
         const mediaService = new MediaService();
         const isValidFileType = (mediaService as unknown as { isValidFileType: (type: string) => boolean }).isValidFileType.bind(mediaService);
         
-        expect(isValidFileType('text/plain')).toBe(false);
-        expect(isValidFileType('application/pdf')).toBe(false);
-        expect(isValidFileType('audio/mp3')).toBe(false);
+        void expect(isValidFileType('text/plain')).toBe(false);
+        void expect(isValidFileType('application/pdf')).toBe(false);
+        void expect(isValidFileType('audio/mp3')).toBe(false);
       });
     });
 
@@ -436,33 +436,33 @@ describe('MediaService', () => {
         const mediaService = new MediaService();
         const isSecureUrl = (mediaService as unknown as { isSecureUrl: (url: string) => boolean }).isSecureUrl.bind(mediaService);
         
-        expect(isSecureUrl('https://utfs.io/f/image.jpg')).toBe(true);
-        expect(isSecureUrl('https://youtube.com/watch?v=abc')).toBe(true);
-        expect(isSecureUrl('https://youtu.be/abc')).toBe(true);
-        expect(isSecureUrl('https://img.youtube.com/vi/abc/default.jpg')).toBe(true);
+        void expect(isSecureUrl('https://utfs.io/f/image.jpg')).toBe(true);
+        void expect(isSecureUrl('https://youtube.com/watch?v=abc')).toBe(true);
+        void expect(isSecureUrl('https://youtu.be/abc')).toBe(true);
+        void expect(isSecureUrl('https://img.youtube.com/vi/abc/default.jpg')).toBe(true);
       });
 
       it('should reject HTTP URLs', () => {
         const mediaService = new MediaService();
         const isSecureUrl = (mediaService as unknown as { isSecureUrl: (url: string) => boolean }).isSecureUrl.bind(mediaService);
         
-        expect(isSecureUrl('http://utfs.io/f/image.jpg')).toBe(false);
+        void expect(isSecureUrl('http://utfs.io/f/image.jpg')).toBe(false);
       });
 
       it('should reject URLs from disallowed domains', () => {
         const mediaService = new MediaService();
         const isSecureUrl = (mediaService as unknown as { isSecureUrl: (url: string) => boolean }).isSecureUrl.bind(mediaService);
         
-        expect(isSecureUrl('https://malicious.com/image.jpg')).toBe(false);
-        expect(isSecureUrl('https://example.com/video.mp4')).toBe(false);
+        void expect(isSecureUrl('https://malicious.com/image.jpg')).toBe(false);
+        void expect(isSecureUrl('https://example.com/video.mp4')).toBe(false);
       });
 
       it('should reject malformed URLs', () => {
         const mediaService = new MediaService();
         const isSecureUrl = (mediaService as unknown as { isSecureUrl: (url: string) => boolean }).isSecureUrl.bind(mediaService);
         
-        expect(isSecureUrl('not-a-url')).toBe(false);
-        expect(isSecureUrl('')).toBe(false);
+        void expect(isSecureUrl('not-a-url')).toBe(false);
+        void expect(isSecureUrl('')).toBe(false);
       });
     });
   });

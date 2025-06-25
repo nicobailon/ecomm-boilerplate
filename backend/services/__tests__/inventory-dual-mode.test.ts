@@ -68,13 +68,13 @@ describe('InventoryService - Dual Mode Behavior', () => {
           'Small - Blue',
         );
 
-        expect(result).toBe(true);
+        void expect(result).toBe(true);
         
         const mockAggregate2 = vi.spyOn(Product, 'aggregate');
         const aggregateCall = mockAggregate2.mock.calls[0];
         const pipeline = aggregateCall[0] as unknown;
         
-        expect(pipeline).toContainEqual({ $match: { 'variants.label': 'Small - Blue' } });
+        void expect(pipeline).toContainEqual({ $match: { 'variants.label': 'Small - Blue' } });
       });
 
       it('should fallback to variantId if label not provided', async () => {
@@ -88,13 +88,13 @@ describe('InventoryService - Dual Mode Behavior', () => {
           5,
         );
 
-        expect(result).toBe(true);
+        void expect(result).toBe(true);
         
         const mockAggregate4 = vi.spyOn(Product, 'aggregate');
         const aggregateCall = mockAggregate4.mock.calls[0];
         const pipeline = aggregateCall[0] as unknown;
         
-        expect(pipeline).toContainEqual({ $match: { 'variants.variantId': 'var-medium' } });
+        void expect(pipeline).toContainEqual({ $match: { 'variants.variantId': 'var-medium' } });
       });
     });
 
@@ -115,14 +115,14 @@ describe('InventoryService - Dual Mode Behavior', () => {
           'Medium - Blue',
         );
 
-        expect(result).toBe(true);
+        void expect(result).toBe(true);
         
         const mockAggregate6 = vi.spyOn(Product, 'aggregate');
         const aggregateCall = mockAggregate6.mock.calls[0];
         const pipeline = aggregateCall[0] as unknown;
         
-        expect(pipeline).toContainEqual({ $match: { 'variants.variantId': 'var-small' } });
-        expect(pipeline).not.toContainEqual({ $match: { 'variants.label': 'Medium - Blue' } });
+        void expect(pipeline).toContainEqual({ $match: { 'variants.variantId': 'var-small' } });
+        void expect(pipeline).not.toContainEqual({ $match: { 'variants.label': 'Medium - Blue' } });
       });
     });
   });
@@ -151,7 +151,7 @@ describe('InventoryService - Dual Mode Behavior', () => {
         const hasLabelKey = getCalls.some((call: unknown[]) => 
           typeof call[0] === 'string' && call[0].includes(':label:Medium - Blue'),
         );
-        expect(hasLabelKey).toBe(true);
+        void expect(hasLabelKey).toBe(true);
       });
 
       it('should set cache with label-based key', async () => {
@@ -170,7 +170,7 @@ describe('InventoryService - Dual Mode Behavior', () => {
         const hasLabelKey = setCalls.some((call: unknown[]) => 
           typeof call[0] === 'string' && call[0].includes(':label:Small - Blue'),
         );
-        expect(hasLabelKey).toBe(true);
+        void expect(hasLabelKey).toBe(true);
       });
     });
 
@@ -194,7 +194,7 @@ describe('InventoryService - Dual Mode Behavior', () => {
         const hasLegacyKey = getCalls.some((call: unknown[]) => 
           typeof call[0] === 'string' && call[0].includes(':var-small') && !call[0].includes(':label:'),
         );
-        expect(hasLegacyKey).toBe(true);
+        void expect(hasLegacyKey).toBe(true);
       });
     });
   });

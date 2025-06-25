@@ -21,7 +21,7 @@ describe('ThemeProvider', () => {
       </ThemeProvider>,
     );
 
-    expect(screen.getByText('system')).toBeInTheDocument();
+    void expect(screen.getByText('system')).toBeInTheDocument();
   });
 
   it('should persist theme to localStorage', async () => {
@@ -39,7 +39,7 @@ describe('ThemeProvider', () => {
 
     await user.click(screen.getByText('Set Dark'));
 
-    expect(localStorage.getItem('app-theme')).toBe('dark');
+    void expect(localStorage.getItem('app-theme')).toBe('dark');
   });
 
   it('should update DOM classes when theme changes', async () => {
@@ -62,8 +62,8 @@ describe('ThemeProvider', () => {
 
     await user.click(screen.getByText('Dark'));
 
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
-    expect(document.documentElement.classList.contains('light')).toBe(false);
+    void expect(document.documentElement.classList.contains('dark')).toBe(true);
+    void expect(document.documentElement.classList.contains('light')).toBe(false);
   });
 
   it('should respond to system theme changes', () => {
@@ -83,7 +83,7 @@ describe('ThemeProvider', () => {
       </ThemeProvider>,
     );
 
-    expect(window.matchMedia).toHaveBeenCalledWith('(prefers-color-scheme: dark)');
+    void expect(window.matchMedia).toHaveBeenCalledWith('(prefers-color-scheme: dark)');
   });
 
   it('should use custom storage key when provided', async () => {
@@ -101,7 +101,7 @@ describe('ThemeProvider', () => {
 
     await user.click(screen.getByText('Set Dark'));
 
-    expect(localStorage.getItem('custom-theme-key')).toBe('dark');
+    void expect(localStorage.getItem('custom-theme-key')).toBe('dark');
   });
 
   it('should resolve theme correctly when system is selected', () => {
@@ -129,7 +129,7 @@ describe('ThemeProvider', () => {
       </ThemeProvider>,
     );
 
-    expect(screen.getByText('Theme: system')).toBeInTheDocument();
-    expect(screen.getByText('Resolved: dark')).toBeInTheDocument();
+    void expect(screen.getByText('Theme: system')).toBeInTheDocument();
+    void expect(screen.getByText('Resolved: dark')).toBeInTheDocument();
   });
 });

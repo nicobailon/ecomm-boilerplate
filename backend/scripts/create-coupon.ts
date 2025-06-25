@@ -64,7 +64,7 @@ async function createCoupon(): Promise<void> {
       console.warn(`Deactivated existing coupon: ${existingCoupon.code}`);
     }
 
-    const code = customCode || `GIFT${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const code = customCode ?? `GIFT${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const expirationDate = new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000);
 
     const newCoupon = new Coupon({

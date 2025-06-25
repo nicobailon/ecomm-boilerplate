@@ -403,7 +403,7 @@ const ErrorFeaturedProducts = () => {
             We&apos;re having trouble loading featured products. This might be a temporary issue.
           </p>
           <Button 
-            onClick={handleRetry} 
+            onClick={() => { void handleRetry(); }} 
             disabled={retrying}
             data-testid="retry-button"
           >

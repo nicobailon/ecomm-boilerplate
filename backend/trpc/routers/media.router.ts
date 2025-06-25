@@ -22,7 +22,7 @@ export const mediaRouter = router({
         const result = await productService.updateMediaGallery(
           input.productId,
           input.mediaItems,
-          String(ctx.user.id ?? ctx.userId),
+          ctx.userId,
         );
         return result;
       } catch (error) {
@@ -46,7 +46,7 @@ export const mediaRouter = router({
         const result = await productService.reorderMediaItems(
           input.productId,
           input.mediaOrder as { id: string; order: number }[],
-          String(ctx.user.id ?? ctx.userId),
+          ctx.userId,
         );
         return result;
       } catch (error) {
@@ -67,7 +67,7 @@ export const mediaRouter = router({
         const result = await productService.deleteMediaItem(
           input.productId,
           input.mediaId,
-          String(ctx.user.id ?? ctx.userId),
+          ctx.userId,
         );
         return result;
       } catch (error) {
@@ -131,7 +131,7 @@ export const mediaRouter = router({
         const result = await productService.addMediaItem(
           input.productId,
           mediaItem,
-          String(ctx.user.id ?? ctx.userId),
+          ctx.userId,
         );
         return result;
       } catch (error) {
@@ -159,7 +159,7 @@ export const mediaRouter = router({
           throw new AppError('Product not found', 404);
         }
         
-        const existingCount = product.mediaGallery?.length || 0;
+        const existingCount = product.mediaGallery?.length ?? 0;
         
         let service: {
           processMediaUpload: (files: { url: string; type: string; size: number; name: string }[], count: number) => Promise<IMediaItem[]>;
@@ -192,12 +192,12 @@ export const mediaRouter = router({
           existingCount,
         );
         
-        const allMediaItems = [...(product.mediaGallery || []), ...newMediaItems];
+        const allMediaItems = [...(product.mediaGallery ?? []), ...newMediaItems];
         
         const result = await productService.updateMediaGallery(
           input.productId,
           allMediaItems,
-          String(ctx.user.id ?? ctx.userId),
+          ctx.userId,
         );
         
         return result;

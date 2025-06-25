@@ -16,7 +16,7 @@ export const AuthFormSkeleton: React.FC<AuthFormSkeletonProps> = ({
       transition: {
         staggerChildren: 0.1,
       },
-    }
+    },
   };
 
   const item = {

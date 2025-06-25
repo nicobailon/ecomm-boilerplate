@@ -23,9 +23,9 @@ export const redis = new Redis({
   password: parsedUrl.password,
   username: parsedUrl.username ?? 'default',
   tls: parsedUrl.protocol === 'rediss:' ? {} : undefined,
-  maxRetriesPerRequest: 3,
-  connectTimeout: 10000, // 10 second connection timeout
-  commandTimeout: 5000, // 5 second command timeout
+  maxRetriesPerRequest: 1, // Reduce retries for faster failover
+  connectTimeout: 5000, // 5 second connection timeout
+  commandTimeout: 3000, // 3 second command timeout
   retryStrategy: (times: number) => {
     // Stop retrying after 10 attempts
     if (times > 10) {
@@ -45,7 +45,7 @@ export const redis = new Redis({
     }
     return shouldReconnect;
   },
-  enableOfflineQueue: false, // Don't queue commands when offline
+  enableOfflineQueue: true, // Allow queuing commands when offline for graceful degradation
   // Connection pooling optimizations
   enableReadyCheck: true, // Wait for Redis to be ready before sending commands
   lazyConnect: false, // Connect immediately

@@ -47,7 +47,7 @@ const EmailVerificationSentPage: React.FC = () => {
             type: 'spring',
             stiffness: 200,
             damping: 15,
-            delay: 0.2 
+            delay: 0.2,
           }}
         >
           <motion.div
@@ -57,7 +57,7 @@ const EmailVerificationSentPage: React.FC = () => {
             transition={{ 
               duration: 2,
               repeat: Infinity,
-              ease: 'easeInOut'
+              ease: 'easeInOut',
             }}
           >
             <Mail className='h-10 w-10 text-primary' />
@@ -66,12 +66,12 @@ const EmailVerificationSentPage: React.FC = () => {
             className='absolute inset-0 rounded-full bg-primary/20'
             animate={{ 
               scale: [1, 1.2, 1],
-              opacity: [0.5, 0, 0.5]
+              opacity: [0.5, 0, 0.5],
             }}
             transition={{ 
               duration: 2,
               repeat: Infinity,
-              ease: 'easeInOut'
+              ease: 'easeInOut',
             }}
           />
         </motion.div>

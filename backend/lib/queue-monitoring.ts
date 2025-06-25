@@ -11,7 +11,7 @@ interface QueueAlert {
 }
 
 export class QueueMonitoring {
-  private alertHandlers: ((alert: QueueAlert) => void)[] = [];
+  private alertHandlers: ((alert: QueueAlert) => void | Promise<void>)[] = [];
   private failureThreshold = 5; // Alert if more than 5 failures in 5 minutes
   private recentFailures: Date[] = [];
   private lastAlerts = new Map<string, Date>();
@@ -21,7 +21,7 @@ export class QueueMonitoring {
   
   constructor() {
     // Delay queue listener setup
-    this.initializeAsync();
+    void this.initializeAsync();
   }
   
   private async initializeAsync(): Promise<void> {
@@ -38,7 +38,7 @@ export class QueueMonitoring {
   /**
    * Register an alert handler
    */
-  onAlert(handler: (alert: QueueAlert) => void): void {
+  onAlert(handler: (alert: QueueAlert) => void | Promise<void>): void {
     this.alertHandlers.push(handler);
   }
   
@@ -80,7 +80,12 @@ export class QueueMonitoring {
     // Send to all registered handlers (e.g., Slack, email, monitoring service)
     this.alertHandlers.forEach(handler => {
       try {
-        handler(alert);
+        const result = handler(alert);
+        if (result instanceof Promise) {
+          void result.catch((error) => {
+            console.error('[QueueMonitoring] Alert handler error:', error);
+          });
+        }
       } catch (error) {
         console.error('[QueueMonitoring] Alert handler error:', error);
       }
@@ -192,7 +197,7 @@ export class QueueMonitoring {
   }> {
     if (!this.emailQueue) {
       // Try to get the queue if not already initialized
-      this.emailQueue = await getEmailQueueForShutdown();
+      this.emailQueue ??= getEmailQueueForShutdown();
     }
     
     if (!this.emailQueue) {

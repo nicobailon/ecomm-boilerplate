@@ -83,7 +83,7 @@ const VerifyEmailPage: React.FC = () => {
             type: 'spring',
             stiffness: 200,
             damping: 15,
-            duration: 0.6
+            duration: 0.6,
           }}
         >
           <XCircle className='mx-auto h-16 w-16 text-red-500' />

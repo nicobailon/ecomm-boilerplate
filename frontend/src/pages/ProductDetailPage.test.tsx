@@ -5,7 +5,6 @@ import ProductDetailPage from './ProductDetailPage';
 import type { Product } from '@/types';
 import { createMockQueryResult } from '@/test/mocks/query-mocks';
 
-
 // Mocks must be hoisted
 vi.mock('@/hooks/queries/useProduct');
 vi.mock('@/hooks/useProductAnalytics');
@@ -57,7 +56,7 @@ describe('ProductDetailPage', () => {
             },
             isFeatured: false,
             createdAt: '2025-01-01T00:00:00.000Z',
-            updatedAt: '2025-01-01T00:00:00.000Z'
+            updatedAt: '2025-01-01T00:00:00.000Z',
           },
         },
         isLoading: false,
@@ -120,25 +119,25 @@ describe('ProductDetailPage', () => {
 
     // Product name appears in multiple places (breadcrumb and heading)
     const productNames = screen.getAllByText('Test Product');
-    void expect(productNames.length).toBeGreaterThan(0);
+    expect(productNames.length).toBeGreaterThan(0);
     
-    void expect(screen.getByText('Test description')).toBeInTheDocument();
-    void expect(screen.getByText('$29.99')).toBeInTheDocument();
+    expect(screen.getByText('Test description')).toBeInTheDocument();
+    expect(screen.getByText('$29.99')).toBeInTheDocument();
   });
 
   it('displays breadcrumb navigation', () => {
     renderProductDetailPage();
 
-    void expect(screen.getByText('Home')).toBeInTheDocument();
-    void expect(screen.getByText('Test Collection')).toBeInTheDocument();
-    void expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toBeInTheDocument();
+    expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(screen.getByText('Test Collection')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toBeInTheDocument();
   });
 
   it('shows variant selector when variants exist', () => {
     renderProductDetailPage();
 
-    void expect(screen.getByText('Size')).toBeInTheDocument();
-    void expect(screen.getByRole('button', { name: /Size M/ })).toBeInTheDocument();
+    expect(screen.getByText('Size')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Size M/ })).toBeInTheDocument();
   });
 
   it('displays loading state', () => {
@@ -164,7 +163,7 @@ describe('ProductDetailPage', () => {
 
     // Check for skeleton elements
     const skeletons = document.querySelectorAll('.animate-pulse');
-    void expect(skeletons.length).toBeGreaterThan(0);
+    expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('displays error state', () => {
@@ -190,6 +189,6 @@ describe('ProductDetailPage', () => {
 
     renderProductDetailPage();
 
-    void expect(screen.getByText('Product Not Found')).toBeInTheDocument();
+    expect(screen.getByText('Product Not Found')).toBeInTheDocument();
   });
 });

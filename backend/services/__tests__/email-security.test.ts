@@ -17,7 +17,7 @@ vi.mock('../../lib/resend.js', () => ({
 
 describe('Email Service - Security Integration Tests', () => {
   let emailService: EmailService;
-  let consoleSpy: any;
+  let consoleSpy: ReturnType<typeof vi.spyOn>;
   
   beforeEach(() => {
     emailService = new EmailService();
@@ -35,13 +35,14 @@ describe('Email Service - Security Integration Tests', () => {
       };
 
       // Override baseUrl to test URL sanitization
-      (emailService as any).baseUrl = 'javascript:alert("XSS")';
+      const serviceWithBaseUrl = emailService as unknown as { baseUrl: string };
+      serviceWithBaseUrl.baseUrl = 'javascript:alert("XSS")';
       
       await emailService.sendWelcomeEmail(user as IUserDocument);
       
       // Check that the console.log was called (since email is disabled)
       void expect(consoleSpy).toHaveBeenCalled();
-      const logCall = consoleSpy.mock.calls[0][1];
+      const logCall = consoleSpy.mock.calls[0][1] as { preview: string };
       
       // The template should have the dangerous name escaped
       void expect(logCall.preview).toContain('&lt;script&gt;alert');
@@ -61,11 +62,12 @@ describe('Email Service - Security Integration Tests', () => {
       };
 
       // Override baseUrl to create dangerous reset URL
-      (emailService as any).baseUrl = 'data:text/html,<script>alert("XSS")</script>';
+      const serviceWithBaseUrl = emailService as unknown as { baseUrl: string };
+      serviceWithBaseUrl.baseUrl = 'data:text/html,<script>alert("XSS")</script>';
       
       await emailService.sendPasswordResetEmail(user as IUserDocument, 'reset-token');
       
-      const logCall = consoleSpy.mock.calls[0][1];
+      const logCall = consoleSpy.mock.calls[0][1] as { preview: string };
       
       // The dangerous data: URL should be sanitized to #
       void expect(logCall.preview).toContain('href="#"');
@@ -82,11 +84,12 @@ describe('Email Service - Security Integration Tests', () => {
       };
 
       // Use safe URLs
-      (emailService as any).baseUrl = 'https://example.com';
+      const serviceWithBaseUrl = emailService as unknown as { baseUrl: string };
+      serviceWithBaseUrl.baseUrl = 'https://example.com';
       
       await emailService.sendWelcomeEmail(user as IUserDocument);
       
-      const logCall = consoleSpy.mock.calls[0][1];
+      const logCall = consoleSpy.mock.calls[0][1] as { preview: string };
       
       // Safe URLs should be preserved
       void expect(logCall.preview).toContain('https://example.com');
@@ -109,7 +112,7 @@ describe('Email Service - Security Integration Tests', () => {
         data,
       });
 
-      const logCall = consoleSpy.mock.calls[0][1];
+      const logCall = consoleSpy.mock.calls[0][1] as { preview: string };
       
       // Dangerous URLs should be sanitized
       void expect(logCall.preview).not.toContain('javascript:');
@@ -140,7 +143,7 @@ describe('Email Service - Security Integration Tests', () => {
         'unsubscribe-token',
       );
 
-      const logCall = consoleSpy.mock.calls[0][1];
+      const logCall = consoleSpy.mock.calls[0][1] as { preview: string };
       
       // HTML should be escaped
       void expect(logCall.preview).toContain('&lt;img src=x');

@@ -61,7 +61,7 @@ export const createMockProduct = (overrides: Partial<Product> = {}): Product => 
 
 export function createMockApiResponse<T>(
   data: T, 
-  overrides: Partial<ApiResponse<T>> = {}
+  overrides: Partial<ApiResponse<T>> = {},
 ): ApiResponse<T> {
   return {
     success: true,

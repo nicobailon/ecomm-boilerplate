@@ -4,7 +4,7 @@ import { User } from '../models/user.model.js';
 
 dotenv.config();
 
-async function migrateEmailVerification() {
+async function migrateEmailVerification(): Promise<void> {
   try {
     console.error('Starting email verification migration...');
     

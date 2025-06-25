@@ -2,6 +2,7 @@ import { redis, isRedisHealthy } from './redis.js';
 import { RedisHealthService } from './redis-health.js';
 import { getEmailQueueForShutdown } from './email-queue.js';
 import { defaultLogger as logger } from '../utils/logger.js';
+import type Bull from 'bull';
 
 interface RedisMetrics {
   connected: boolean;
@@ -100,10 +101,21 @@ export class RedisMonitoring {
       },
     };
     
-    // Check email queue status
-    const emailQueue = await getEmailQueueForShutdown();
+    // Check email queue status with enhanced monitoring
+    const emailQueue = getEmailQueueForShutdown();
     if (emailQueue && 'client' in emailQueue) {
-      metrics.clients.emailQueue = (emailQueue as any).client?.status === 'ready' || false;
+      const queueWithClient = emailQueue as Bull.Queue & { client?: { status?: string; options?: { commandTimeout?: number } } };
+      const clientStatus = queueWithClient.client?.status || 'unknown';
+      metrics.clients.emailQueue = clientStatus === 'ready';
+
+      // Log queue client details for debugging
+      if (clientStatus !== 'ready') {
+        logger.warn('[RedisMonitoring] Email queue client not ready', {
+          status: clientStatus,
+          commandTimeout: queueWithClient.client?.options?.commandTimeout,
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
     
     // Get Redis server info if connected
@@ -247,7 +259,7 @@ export class RedisMonitoring {
     
     // Get queue health if available
     let queueHealth;
-    const emailQueue = await getEmailQueueForShutdown();
+    const emailQueue = getEmailQueueForShutdown();
     if (emailQueue) {
       try {
         const { queueMonitoring } = await import('./queue-monitoring.js');

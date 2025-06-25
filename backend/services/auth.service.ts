@@ -2,10 +2,11 @@ import { User, IUserDocument } from '../models/user.model.js';
 import { AppError } from '../utils/AppError.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { redis } from '../lib/redis.js';
+import { redis, isRedisHealthy } from '../lib/redis.js';
 import { emailService } from './email.service.js';
 import { queueEmail } from '../lib/email-queue.js';
 import { logEmailVerification } from '../lib/logger.js';
+import { withRedisHealth } from '../lib/redis-health.js';
 
 interface LoginInput {
   email: string;
@@ -32,6 +33,21 @@ interface UserResponse {
   role: string;
   emailVerified?: boolean;
 }
+
+// In-memory fallback for refresh tokens when Redis is unavailable
+const memoryTokenStore = new Map<string, { token: string; expires: number }>();
+
+// Cleanup expired tokens periodically
+setInterval(() => {
+  const now = Date.now();
+  const expiredKeys: string[] = [];
+  memoryTokenStore.forEach((tokenData, userId) => {
+    if (tokenData.expires <= now) {
+      expiredKeys.push(userId);
+    }
+  });
+  expiredKeys.forEach(key => memoryTokenStore.delete(key));
+}, 60000); // Clean up every minute
 
 export class AuthService {
   async signup(input: SignupInput): Promise<{ user: UserResponse; tokens: TokenPair }> {
@@ -119,16 +135,34 @@ export class AuthService {
     if (!refreshSecret || !accessSecret) {
       throw new AppError('JWT secrets not configured', 500);
     }
-    
+
     const decoded = jwt.verify(refreshToken, refreshSecret) as TokenPayload;
-    const storedToken = await redis.get(`refresh_token:${decoded.userId}`);
+
+    // Try Redis first, fallback to memory store
+    let storedToken: string | null = null;
+
+    if (isRedisHealthy()) {
+      try {
+        storedToken = await redis.get(`refresh_token:${decoded.userId}`);
+      } catch (error) {
+        console.warn('[Auth] Redis get failed, checking memory store:', error);
+      }
+    }
+
+    // Fallback to memory store if Redis failed
+    if (!storedToken) {
+      const memoryData = memoryTokenStore.get(decoded.userId);
+      if (memoryData && memoryData.expires > Date.now()) {
+        storedToken = memoryData.token;
+      }
+    }
 
     if (storedToken !== refreshToken) {
       throw new AppError('Invalid refresh token', 401);
     }
 
-    const accessToken = jwt.sign({ userId: decoded.userId }, accessSecret, { 
-      expiresIn: '15m', 
+    const accessToken = jwt.sign({ userId: decoded.userId }, accessSecret, {
+      expiresIn: '15m',
     });
 
     return accessToken;
@@ -140,7 +174,18 @@ export class AuthService {
         const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
         if (!refreshSecret) throw new AppError('REFRESH_TOKEN_SECRET not configured', 500);
         const decoded = jwt.verify(refreshToken, refreshSecret) as TokenPayload;
-        await redis.del(`refresh_token:${decoded.userId}`);
+
+        // Clean up from both Redis and memory store
+        await withRedisHealth(
+          async () => {
+            await redis.del(`refresh_token:${decoded.userId}`);
+          },
+          undefined,
+          'Delete refresh token'
+        );
+
+        // Always clean up memory store
+        memoryTokenStore.delete(decoded.userId);
       } catch {
         // Silent fail - token might be invalid or expired
       }
@@ -175,7 +220,27 @@ export class AuthService {
   }
 
   private async storeRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    await redis.set(`refresh_token:${userId}`, refreshToken, 'EX', 7 * 24 * 60 * 60);
+    const ttl = 7 * 24 * 60 * 60; // 7 days in seconds
+
+    // Try Redis first
+    const redisResult = await withRedisHealth(
+      async () => {
+        await redis.set(`refresh_token:${userId}`, refreshToken, 'EX', ttl);
+        return true;
+      },
+      undefined,
+      'Store refresh token'
+    );
+
+    // Always store in memory as backup
+    memoryTokenStore.set(userId, {
+      token: refreshToken,
+      expires: Date.now() + (ttl * 1000)
+    });
+
+    if (!redisResult) {
+      console.warn('[Auth] Using memory fallback for refresh token storage');
+    }
   }
 
   async forgotPassword(email: string): Promise<void> {

@@ -13,7 +13,7 @@ import { createContext } from './trpc/context.js';
 import { appRouter } from './trpc/routers/app.router.js';
 import { websocketService } from './lib/websocket.js';
 import { inventoryMonitor } from './services/inventory-monitor.service.js';
-import { getEmailQueueForShutdown } from './lib/email-queue.js';
+import { getEmailQueueForShutdown, shutdownEmailQueue } from './lib/email-queue.js';
 import { queueMonitoring, alertHandlers } from './lib/queue-monitoring.js';
 import { redisMonitoring, monitoringHandlers } from './lib/redis-monitoring.js';
 import authRoutes from './routes/auth.route.js';
@@ -31,7 +31,7 @@ dotenv.config();
 validateEnvVariables();
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '3001', 10);
+const PORT = parseInt(process.env.PORT ?? '3001', 10);
 
 const __dirname = path.resolve();
 
@@ -157,12 +157,8 @@ process.on('SIGTERM', () => {
     redisMonitoring.stopMonitoring();
     console.error('Redis monitoring stopped');
     
-    // Close email queue if available
-    const emailQueue = await getEmailQueueForShutdown();
-    if (emailQueue) {
-      await emailQueue.close();
-      console.error('Email queue closed');
-    }
+    // Shutdown email queue with proper cleanup
+    await shutdownEmailQueue();
     
     // Close HTTP server
     httpServer.close(() => {

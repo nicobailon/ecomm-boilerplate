@@ -1,6 +1,3 @@
-// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-import storybook from "eslint-plugin-storybook";
-
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import react from 'eslint-plugin-react';
@@ -19,7 +16,6 @@ export default tseslint.config(// Ignore patterns
     '*.config.js',
     '*.config.ts',
     'scripts/**',
-    'storybook-static/**',
   ],
 }, // Base configuration for TypeScript files
 {
@@ -109,36 +105,4 @@ js.configs.recommended, ...tseslint.configs.recommendedTypeChecked, ...tseslint.
     '@typescript-eslint/no-non-null-assertion': 'off',
     'react-refresh/only-export-components': 'off', // Test utilities need to export both components and functions
   },
-}, // Storybook files configuration
-{
-  files: ['**/*.stories.{ts,tsx}', 'src/stories/**/*.{ts,tsx}'],
-  languageOptions: {
-    ecmaVersion: 2022,
-    globals: {
-      ...globals.browser,
-      ...globals.es2022,
-    },
-    parser: tseslint.parser,
-    parserOptions: {
-      project: './tsconfig.json',
-      tsconfigRootDir: import.meta.dirname,
-      ecmaFeatures: {
-        jsx: true,
-      },
-    },
-  },
-  rules: {
-    '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/no-floating-promises': 'off',
-    '@typescript-eslint/require-await': 'off',
-    '@typescript-eslint/no-misused-promises': 'off',
-    '@typescript-eslint/no-unsafe-assignment': 'off',
-    '@typescript-eslint/no-unsafe-member-access': 'off',
-    '@typescript-eslint/no-unsafe-call': 'off',
-    '@typescript-eslint/no-unsafe-return': 'off',
-    '@typescript-eslint/prefer-nullish-coalescing': 'off',
-    'no-console': 'off',
-    '@typescript-eslint/no-non-null-assertion': 'off',
-    'react-refresh/only-export-components': 'off',
-  },
-}, storybook.configs["flat/recommended"]);
+});

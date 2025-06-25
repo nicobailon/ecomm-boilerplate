@@ -23,7 +23,7 @@ A feature-rich, scalable, and modern e-commerce solution built with the MERN sta
 | Category         | Technology                                                                                              |
 | :--------------- | :------------------------------------------------------------------------------------------------------ |
 | **Backend**      | Node.js, Express.js, TypeScript, tRPC, Mongoose (MongoDB), Redis, JWT                                   |
-| **Frontend**     | React 19, Vite, TypeScript, TanStack Query, React Router, Zustand, Tailwind CSS                         |
+| **Frontend**     | React 19, Vite, TypeScript, TanStack Query, React Router, Zustand, Tailwind CSS                        |
 | **Payments**     | Stripe                                                                                                  |
 | **Database**     | MongoDB, Redis (Upstash)                                                                                |
 | **File Uploads** | UploadThing                                                                                             |
@@ -170,6 +170,16 @@ For detailed documentation, see `/backend/docs/email-system.md`.
 -   `npm run lint`: Lints both backend and frontend code.
 -   `npm run lint --prefix frontend`: Lints frontend code only.
 -   `npx eslint backend`: Lints backend code only.
+
+### Development Tools
+-   **Component Development**: Access the dev UI at `http://localhost:5173/dev` (development only).
+-   The dev UI provides:
+    - Component showcase with 84 UI components
+    - Live prop editing and preview
+    - Mock data generation
+    - WebSocket simulation tools
+    - Feature flag management
+-   Dev code is automatically stripped from production builds.
 
 ### Admin Management
 -   `npm run list-users`: Lists all users and their roles.

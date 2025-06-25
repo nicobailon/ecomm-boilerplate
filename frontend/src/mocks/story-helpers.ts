@@ -1,31 +1,38 @@
-import type { StoryObj } from '@storybook/react-vite';
 import type { HttpHandler } from 'msw';
 import { scenarioPresets } from './scenarios';
+
+interface StoryParams {
+  parameters?: {
+    msw?: {
+      handlers: HttpHandler[];
+    };
+  };
+}
 
 /**
  * Helper to add MSW handlers to a story
  */
-export function withMSW<T = unknown>(handlers: HttpHandler[]): Partial<StoryObj<T>> {
+export function withMSW(handlers: HttpHandler[]): StoryParams {
   return {
     parameters: {
       msw: {
         handlers,
       },
     },
-  } as Partial<StoryObj<T>>;
+  };
 }
 
 /**
  * Helper to use a predefined scenario
  */
-export function withScenario<T>(scenario: keyof typeof scenarioPresets): Partial<StoryObj<T>> {
+export function withScenario(scenario: keyof typeof scenarioPresets): StoryParams {
   return withMSW(scenarioPresets[scenario]);
 }
 
 /**
  * Helper to combine multiple scenarios
  */
-export function withScenarios<T>(...scenarios: (keyof typeof scenarioPresets)[]): Partial<StoryObj<T>> {
+export function withScenarios(...scenarios: (keyof typeof scenarioPresets)[]): StoryParams {
   const handlers = scenarios.flatMap(scenario => scenarioPresets[scenario]);
   return withMSW(handlers);
 }
@@ -33,23 +40,23 @@ export function withScenarios<T>(...scenarios: (keyof typeof scenarioPresets)[])
 /**
  * Helper to override specific endpoints
  */
-export function withEndpointOverrides<T = unknown>(overrides: HttpHandler[]): Partial<StoryObj<T>> {
+export function withEndpointOverrides(overrides: HttpHandler[]): StoryParams {
   return {
     parameters: {
       msw: {
         handlers: [...scenarioPresets.default, ...overrides],
       },
     },
-  } as Partial<StoryObj<T>>;
+  };
 }
 
 /**
  * Helper to simulate network conditions
  */
-export function withNetworkCondition<T>(
+export function withNetworkCondition(
   condition: 'offline' | 'slow' | 'fast' = 'fast',
   handlers: HttpHandler[] = scenarioPresets.default,
-): Partial<StoryObj<T>> {
+): StoryParams {
   if (condition === 'offline') {
     return withScenario('networkErrors');
   }
@@ -64,9 +71,9 @@ export function withNetworkCondition<T>(
 /**
  * Helper to simulate authentication states
  */
-export function withAuthState<T>(
+export function withAuthState(
   state: 'authenticated' | 'unauthenticated' | 'admin' = 'authenticated',
-): Partial<StoryObj<T>> {
+): StoryParams {
   if (state === 'unauthenticated') {
     return withScenario('authFailure');
   }
@@ -79,27 +86,27 @@ export function withAuthState<T>(
 /**
  * Helper for real-time stories
  */
-export function withRealtimeUpdates<T>(): Partial<StoryObj<T>> {
+export function withRealtimeUpdates(): StoryParams {
   return withScenario('realtime');
 }
 
 /**
  * Helper for error testing
  */
-export function withErrorState<T>(): Partial<StoryObj<T>> {
+export function withErrorState(): StoryParams {
   return withScenario('errors');
 }
 
 /**
  * Helper for empty states
  */
-export function withEmptyState<T>(): Partial<StoryObj<T>> {
+export function withEmptyState(): StoryParams {
   return withScenario('empty');
 }
 
 /**
  * Helper for performance testing
  */
-export function withLargeDataset<T>(): Partial<StoryObj<T>> {
+export function withLargeDataset(): StoryParams {
   return withScenario('performance');
 }

@@ -1,3 +1,4 @@
+import React, { lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import RootLayout from '@/components/layout/Layout';
 import { AuthGuard } from '@/components/auth/AuthGuard';
@@ -16,6 +17,7 @@ import {
   PurchaseSuccessPage,
   PurchaseCancelPage,
 } from '@/pages';
+import NotFoundPage from '@/pages/NotFoundPage';
 
 export const router = createBrowserRouter([
   {
@@ -109,6 +111,29 @@ export const router = createBrowserRouter([
           </AuthGuard>
         ),
       },
+      {
+        path: '*',
+        element: <NotFoundPage />,
+      },
     ],
   },
 ]);
+
+// Conditionally add dev route in development
+if (import.meta.env.DEV) {
+  const DevUIPage = lazy(() => import('@/dev/DevUIPage'));
+  const devRoute = {
+    path: 'dev',
+    element: (
+      <React.Suspense fallback={<div>Loading Dev UI...</div>}>
+        <DevUIPage />
+      </React.Suspense>
+    ),
+  };
+  
+  // Add dev route to the router children
+  const rootRoute = router.routes[0];
+  if (rootRoute && rootRoute.children) {
+    rootRoute.children.push(devRoute);
+  }
+}

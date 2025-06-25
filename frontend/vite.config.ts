@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import checker from 'vite-plugin-checker';
+import { stripDevPlugin } from './src/dev/vite-plugin-strip-dev';
 import path from 'path';
 
 export default defineConfig({
@@ -11,6 +12,7 @@ export default defineConfig({
       // ESLint integration disabled due to flat config compatibility issues
       // Run `npm run lint` manually for ESLint checks
     }),
+    stripDevPlugin(),
   ],
   resolve: {
     alias: {

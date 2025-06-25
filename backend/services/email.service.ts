@@ -188,7 +188,7 @@ export class EmailService {
       const text = this.generateTextVersion(fullHtml);
 
       if (!resend || !isEmailEnabled()) {
-        console.error('Email service not configured. Would send email:', {
+        console.warn('Email service not configured. Would send email:', {
           to,
           subject,
           template,
@@ -197,13 +197,24 @@ export class EmailService {
         return;
       }
 
-      await resend.emails.send({
+      console.info(`[EmailService] Attempting to send ${template} email to ${to}`);
+      
+      const result = await resend.emails.send({
         from: `${getFromName()} <${getFromEmail()}>`,
         to,
         subject,
         html: fullHtml,
         text,
         attachments,
+      });
+      
+      console.info(`[EmailService] Email sent successfully:`, {
+        id: result.data?.id,
+        to,
+        subject,
+        template,
+        from: `${getFromName()} <${getFromEmail()}>`,
+        response: result,
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

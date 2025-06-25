@@ -8,7 +8,7 @@ export const connectDB = async (): Promise<void> => {
   
   try {
     const conn = await mongoose.connect(mongoUri);
-    console.error(`MongoDB connected: ${conn.connection.host}`);
+    console.info(`MongoDB connected: ${conn.connection.host}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error connecting to MONGODB', message);

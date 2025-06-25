@@ -25,6 +25,11 @@ export const createRateLimiter = (options: RateLimitOptions): ReturnType<typeof 
   }, 60000); // Clean up every minute
 
   return middleware(async ({ ctx, next }) => {
+    // Skip rate limiting in development
+    if (process.env.NODE_ENV === 'development') {
+      return next();
+    }
+    
     const userId = 'userId' in ctx ? (ctx.userId as string) : ctx.user?._id?.toString();
     const key = `${options.prefix}${userId ?? ctx.req?.ip ?? 'unknown'}`;
     const windowInSeconds = Math.floor(options.windowMs / 1000);

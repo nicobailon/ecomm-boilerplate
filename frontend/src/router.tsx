@@ -21,24 +21,29 @@ import NotFoundPage from '@/pages/NotFoundPage';
 
 export const router = createBrowserRouter([
   {
+    id: 'root',
     path: '/',
     element: <RootLayout />,
     children: [
       // Public routes
       {
+        id: 'home',
         index: true,
         element: <HomePage />,
       },
       {
+        id: 'collection-detail',
         path: 'collections/:slug',
         element: <CollectionPage />,
       },
       {
+        id: 'product-detail',
         path: 'products/:slug',
         element: <ProductDetailPage />,
       },
       // Auth routes (redirect to home if already logged in)
       {
+        id: 'signup',
         path: 'signup',
         element: (
           <AuthGuard requireAuth={false} redirectTo="/">
@@ -47,6 +52,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        id: 'login',
         path: 'login',
         element: (
           <AuthGuard requireAuth={false} redirectTo="/">
@@ -55,6 +61,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        id: 'forgot-password',
         path: 'forgot-password',
         element: (
           <AuthGuard requireAuth={false} redirectTo="/">
@@ -63,6 +70,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        id: 'reset-password',
         path: 'reset-password',
         element: (
           <AuthGuard requireAuth={false} redirectTo="/">
@@ -71,10 +79,12 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        id: 'verify-email',
         path: 'verify-email/:token',
         element: <VerifyEmailPage />,
       },
       {
+        id: 'email-verification-sent',
         path: 'email-verification-sent',
         element: (
           <AuthGuard requireAuth={true} redirectTo="/login">
@@ -84,10 +94,12 @@ export const router = createBrowserRouter([
       },
       // Cart route (accessible to both guests and authenticated users)
       {
+        id: 'cart',
         path: 'cart',
         element: <CartPage />,
       },
       {
+        id: 'purchase-success',
         path: 'purchase-success',
         element: (
           <AuthGuard requireAuth={true} redirectTo="/login">
@@ -96,6 +108,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        id: 'purchase-cancel',
         path: 'purchase-cancel',
         element: (
           <AuthGuard requireAuth={true} redirectTo="/login">
@@ -104,6 +117,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        id: 'admin-dashboard',
         path: 'secret-dashboard',
         element: (
           <AuthGuard requireAuth={true} requireAdmin={true} redirectTo="/login">
@@ -112,6 +126,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        id: 'not-found',
         path: '*',
         element: <NotFoundPage />,
       },
@@ -123,10 +138,13 @@ export const router = createBrowserRouter([
 if (import.meta.env.DEV) {
   const DevUIPage = lazy(() => import('@/dev/DevUIPage'));
   const devRoute = {
+    id: 'dev-ui',
     path: 'dev',
     element: (
       <React.Suspense fallback={<div>Loading Dev UI...</div>}>
-        <DevUIPage />
+        <AuthGuard requireAuth={true} requireAdmin={true} redirectTo="/login">
+          <DevUIPage />
+        </AuthGuard>
       </React.Suspense>
     ),
   };

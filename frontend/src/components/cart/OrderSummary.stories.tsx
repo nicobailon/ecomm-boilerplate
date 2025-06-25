@@ -11,8 +11,9 @@ import { Toaster } from 'sonner';
 
 // Mock Stripe
 const mockStripe = {
-  redirectToCheckout: async ({ sessionId }: { sessionId: string }) => {
-    console.log('Mock Stripe redirectToCheckout called with:', sessionId);
+  redirectToCheckout: async (params: { sessionId: string }) => {
+    // Mock Stripe redirectToCheckout called using params.sessionId
+    console.log('Redirecting to checkout with session:', params.sessionId);
     return { error: null };
   },
 };

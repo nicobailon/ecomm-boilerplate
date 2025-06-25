@@ -64,8 +64,8 @@ describe('coupon.create tRPC endpoint', () => {
     const caller = couponRouter.createCaller(mockAdminContext);
     const result = await caller.create(validInput);
 
-    expect(couponService.createDiscount).toHaveBeenCalledWith(validInput);
-    expect(result).toEqual(mockCreatedDiscount);
+    void expect(couponService.createDiscount).toHaveBeenCalledWith(validInput);
+    void expect(result).toEqual(mockCreatedDiscount);
   });
 
   it('should reject when called by non-admin user', async () => {
@@ -106,7 +106,7 @@ describe('coupon.create tRPC endpoint', () => {
     const caller = couponRouter.createCaller(mockAdminContext);
     const result = await caller.create(inputWithISODate);
 
-    expect(result).toEqual(mockCreatedDiscount);
+    void expect(result).toEqual(mockCreatedDiscount);
   });
 
   it('should handle conflict error when discount code already exists', async () => {
@@ -166,7 +166,7 @@ describe('coupon.create tRPC endpoint', () => {
     const caller = couponRouter.createCaller(mockAdminContext);
     const result = await caller.create(minimalInput);
 
-    expect(couponService.createDiscount).toHaveBeenCalledWith(minimalInput);
-    expect(result).toEqual(mockCreatedDiscount);
+    void expect(couponService.createDiscount).toHaveBeenCalledWith(minimalInput);
+    void expect(result).toEqual(mockCreatedDiscount);
   });
 });

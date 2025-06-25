@@ -123,26 +123,26 @@ export const InteractionTest: Story = {
     
     // Check navigation element exists
     const nav = canvas.getByRole('navigation', { name: 'Breadcrumb' });
-    expect(nav).toBeInTheDocument();
+    void expect(nav).toBeInTheDocument();
     
     // Check all links are present
     const homeLink = canvas.getByRole('link', { name: 'Home' });
     const productsLink = canvas.getByRole('link', { name: 'Products' });
-    expect(homeLink).toBeInTheDocument();
-    expect(productsLink).toBeInTheDocument();
+    void expect(homeLink).toBeInTheDocument();
+    void expect(productsLink).toBeInTheDocument();
     
     // Check current page is not a link
     const currentPage = canvas.getByText('Current Page');
-    expect(currentPage).toBeInTheDocument();
-    expect(currentPage.tagName).not.toBe('A');
+    void expect(currentPage).toBeInTheDocument();
+    void expect(currentPage.tagName).not.toBe('A');
     
     // Check aria-current on last item
     const links = canvas.getAllByRole('link');
-    expect(links[links.length - 1]).not.toHaveAttribute('aria-current');
+    void expect(links[links.length - 1]).not.toHaveAttribute('aria-current');
     
     // Test hover state
     await userEvent.hover(homeLink);
-    expect(homeLink).toHaveClass('hover:text-foreground');
+    void expect(homeLink).toHaveClass('hover:text-foreground');
   },
 };
 

@@ -92,9 +92,9 @@ describe('CollectionService', () => {
       const result = await collectionService.create(userId, input);
 
       const generateUniqueSlugMock = vi.mocked(generateUniqueSlug);
-      expect(generateUniqueSlugMock).toHaveBeenCalledWith('My Collection', expect.any(Function));
+      void expect(generateUniqueSlugMock).toHaveBeenCalledWith('My Collection', expect.any(Function));
       const collectionCreateMock = vi.mocked(Collection.create);
-      expect(collectionCreateMock).toHaveBeenCalledWith({
+      void expect(collectionCreateMock).toHaveBeenCalledWith({
         name: input.name,
         description: input.description,
         slug: 'my-collection',
@@ -103,7 +103,7 @@ describe('CollectionService', () => {
         isPublic: input.isPublic,
         productCount: input.products.length,
       });
-      expect(result).toEqual(mockCollection);
+      void expect(result).toEqual(mockCollection);
     });
 
     it('should throw error if invalid product IDs are provided', async () => {
@@ -150,8 +150,8 @@ describe('CollectionService', () => {
       const result = await collectionService.create(userId, input);
 
       const productFindMock = vi.mocked(Product.find);
-      expect(productFindMock).not.toHaveBeenCalled();
-      expect(result).toEqual(mockCollection);
+      void expect(productFindMock).not.toHaveBeenCalled();
+      void expect(result).toEqual(mockCollection);
     });
   });
 
@@ -177,8 +177,8 @@ describe('CollectionService', () => {
 
       await collectionService.update(collectionId, userId, input);
 
-      expect(mockCollection.name).toBe('Updated Name');
-      expect(mockCollection.save).toHaveBeenCalled();
+      void expect(mockCollection.name).toBe('Updated Name');
+      void expect(mockCollection.save).toHaveBeenCalled();
     });
 
     it('should not regenerate slug if name is not changed', async () => {
@@ -201,8 +201,8 @@ describe('CollectionService', () => {
 
       await collectionService.update(collectionId, userId, input);
 
-      expect(generateUniqueSlug).not.toHaveBeenCalled();
-      expect(mockCollection.slug).toBe('my-collection');
+      void expect(generateUniqueSlug).not.toHaveBeenCalled();
+      void expect(mockCollection.slug).toBe('my-collection');
     });
 
     it('should throw error if collection not found or unauthorized', async () => {
@@ -234,16 +234,16 @@ describe('CollectionService', () => {
 
       await collectionService.delete(collectionId, userId);
 
-      expect(Collection.findOne).toHaveBeenCalledWith({
+      void expect(Collection.findOne).toHaveBeenCalledWith({
         _id: collectionId,
         owner: userId,
       });
-      expect(Product.updateMany).toHaveBeenCalledWith(
+      void expect(Product.updateMany).toHaveBeenCalledWith(
         { _id: { $in: mockCollection.products } },
         { $unset: { collectionId: 1 } },
         { session: mockSession },
       );
-      expect(mockCollection.deleteOne).toHaveBeenCalledWith({ session: mockSession });
+      void expect(mockCollection.deleteOne).toHaveBeenCalledWith({ session: mockSession });
     });
 
     it('should throw error if collection not found', async () => {
@@ -278,9 +278,9 @@ describe('CollectionService', () => {
 
       await collectionService.addProducts(collectionId, userId, productIds);
 
-      expect(mockCollection.products).toEqual(['product1', 'product2', 'product3', 'product4']);
-      expect(mockCollection.productCount).toBe(4);
-      expect(mockCollection.save).toHaveBeenCalled();
+      void expect(mockCollection.products).toEqual(['product1', 'product2', 'product3', 'product4']);
+      void expect(mockCollection.productCount).toBe(4);
+      void expect(mockCollection.save).toHaveBeenCalled();
     });
 
     it('should not add duplicate products', async () => {
@@ -305,8 +305,8 @@ describe('CollectionService', () => {
 
       await collectionService.addProducts(collectionId, userId, productIds);
 
-      expect(mockCollection.products).toEqual(['product1', 'product2', 'product3']);
-      expect(mockCollection.productCount).toBe(3);
+      void expect(mockCollection.products).toEqual(['product1', 'product2', 'product3']);
+      void expect(mockCollection.productCount).toBe(3);
     });
 
     it('should throw error if collection not found', async () => {
@@ -353,9 +353,9 @@ describe('CollectionService', () => {
 
       await collectionService.removeProducts(collectionId, userId, productIds);
 
-      expect(mockCollection.products).toEqual(['product1', 'product3']);
-      expect(mockCollection.productCount).toBe(2);
-      expect(mockCollection.save).toHaveBeenCalled();
+      void expect(mockCollection.products).toEqual(['product1', 'product3']);
+      void expect(mockCollection.productCount).toBe(2);
+      void expect(mockCollection.save).toHaveBeenCalled();
     });
   });
 
@@ -374,7 +374,7 @@ describe('CollectionService', () => {
 
       const result = await collectionService.getById(collectionId);
 
-      expect(result).toEqual(mockCollection);
+      void expect(result).toEqual(mockCollection);
     });
 
     it('should return private collection for owner', async () => {
@@ -393,7 +393,7 @@ describe('CollectionService', () => {
 
       const result = await collectionService.getById(collectionId, userId);
 
-      expect(result).toEqual(mockCollection);
+      void expect(result).toEqual(mockCollection);
     });
 
     it('should throw error for private collection accessed by non-owner', async () => {
@@ -424,7 +424,7 @@ describe('CollectionService', () => {
 
       const result = await collectionService.getById('nonexistent');
 
-      expect(result).toBeNull();
+      void expect(result).toBeNull();
     });
   });
 
@@ -440,8 +440,8 @@ describe('CollectionService', () => {
 
       const result = await collectionService.list({ limit: 10 });
 
-      expect(result.collections).toEqual(mockCollections);
-      expect(result.nextCursor).toBe(null);
+      void expect(result.collections).toEqual(mockCollections);
+      void expect(result.nextCursor).toBe(null);
     });
 
     it('should filter by userId and isPublic', async () => {
@@ -453,7 +453,7 @@ describe('CollectionService', () => {
 
       await collectionService.list({ userId, isPublic: false, limit: 10 });
 
-      expect(Collection.find).toHaveBeenCalledWith({
+      void expect(Collection.find).toHaveBeenCalledWith({
         owner: userId,
         isPublic: false,
       });
@@ -468,7 +468,7 @@ describe('CollectionService', () => {
 
       await collectionService.list({ cursor, limit: 10 });
 
-      expect(Collection.find).toHaveBeenCalledWith({
+      void expect(Collection.find).toHaveBeenCalledWith({
         _id: { $lt: cursor },
       });
     });
@@ -492,7 +492,7 @@ describe('CollectionService', () => {
 
       const result = await collectionService.quickCreate(userId, input);
 
-      expect(result).toEqual(mockCollection);
+      void expect(result).toEqual(mockCollection);
     });
 
     it('should handle duplicate names with unique slugs', async () => {
@@ -512,7 +512,7 @@ describe('CollectionService', () => {
 
       const result = await collectionService.quickCreate(userId, input);
 
-      expect(result.slug).toBe('duplicate-name-2');
+      void expect(result.slug).toBe('duplicate-name-2');
     });
 
     it('should rollback on error', async () => {
@@ -525,7 +525,7 @@ describe('CollectionService', () => {
         collectionService.quickCreate(userId, input),
       ).rejects.toThrow('Slug generation failed');
 
-      expect(mockSession.abortTransaction).toHaveBeenCalled();
+      void expect(mockSession.abortTransaction).toHaveBeenCalled();
     });
 
     it('should create public collection when specified', async () => {
@@ -546,10 +546,10 @@ describe('CollectionService', () => {
 
       const result = await collectionService.quickCreate(userId, input);
 
-      expect(Collection.create).toHaveBeenCalledWith(expect.objectContaining({
+      void expect(Collection.create).toHaveBeenCalledWith(expect.objectContaining({
         isPublic: true,
       }));
-      expect(result.isPublic).toBe(true);
+      void expect(result.isPublic).toBe(true);
     });
   });
 
@@ -563,7 +563,7 @@ describe('CollectionService', () => {
 
       const result = await collectionService.checkNameAvailability(userId, name);
 
-      expect(result.available).toBe(true);
+      void expect(result.available).toBe(true);
     });
 
     it('should return existingId for exact match', async () => {
@@ -584,7 +584,7 @@ describe('CollectionService', () => {
 
       const result = await collectionService.checkNameAvailability(userId, name);
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         available: false,
         existingId: 'collection123',
       });
@@ -605,7 +605,7 @@ describe('CollectionService', () => {
 
       const result = await collectionService.checkNameAvailability(userId, name);
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         available: false,
         suggestedName: 'My Collection 3',
       });
@@ -620,7 +620,7 @@ describe('CollectionService', () => {
 
       await collectionService.checkNameAvailability(name, userId);
 
-      expect(Collection.findOne).toHaveBeenCalledWith({
+      void expect(Collection.findOne).toHaveBeenCalledWith({
         name: { $regex: new RegExp(`^${name}$`, 'i') },
         owner: userId,
       });
@@ -650,9 +650,9 @@ describe('CollectionService', () => {
 
       await collectionService.setProductsForCollection(collectionId, userId, productIds);
 
-      expect(mockCollection.products).toEqual(productIds);
-      expect(mockCollection.productCount).toBe(2);
-      expect(mockCollection.save).toHaveBeenCalled();
+      void expect(mockCollection.products).toEqual(productIds);
+      void expect(mockCollection.productCount).toBe(2);
+      void expect(mockCollection.save).toHaveBeenCalled();
     });
 
     it('should handle empty product list', async () => {
@@ -672,8 +672,8 @@ describe('CollectionService', () => {
 
       await collectionService.setProductsForCollection(collectionId, userId, []);
 
-      expect(mockCollection.products).toEqual([]);
-      expect(mockCollection.productCount).toBe(0);
+      void expect(mockCollection.products).toEqual([]);
+      void expect(mockCollection.productCount).toBe(0);
     });
 
     it('should throw error if collection not found', async () => {

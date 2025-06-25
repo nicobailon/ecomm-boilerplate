@@ -281,7 +281,7 @@ export const ControlsInteraction: Story = {
     
     // Status should update
     await waitFor(() => {
-      expect(canvas.getByText('Status: Playing')).toBeInTheDocument();
+      void expect(canvas.getByText('Status: Playing')).toBeInTheDocument();
     });
     
     // Wait a bit
@@ -293,7 +293,7 @@ export const ControlsInteraction: Story = {
     
     // Status should update
     await waitFor(() => {
-      expect(canvas.getByText('Status: Paused')).toBeInTheDocument();
+      void expect(canvas.getByText('Status: Paused')).toBeInTheDocument();
     });
   },
 };

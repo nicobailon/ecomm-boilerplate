@@ -141,7 +141,7 @@ export const CreateWithValidation: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('Name')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('Name')).toBeInTheDocument();
     });
     
     // Try to submit without filling required fields
@@ -150,7 +150,7 @@ export const CreateWithValidation: Story = {
     
     // Check for validation error
     await waitFor(() => {
-      expect(canvas.getByText('Name is required')).toBeInTheDocument();
+      void expect(canvas.getByText('Name is required')).toBeInTheDocument();
     });
   },
 };
@@ -164,7 +164,7 @@ export const CreateFlow: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('Name')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('Name')).toBeInTheDocument();
     });
     
     // Fill in collection details
@@ -182,7 +182,7 @@ export const CreateFlow: Story = {
     
     // Should show product selection step
     await waitFor(() => {
-      expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
     });
   },
 };
@@ -196,12 +196,12 @@ export const EditFlow: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('Name')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('Name')).toBeInTheDocument();
     });
     
     // Check that form is pre-filled
     const nameInput = canvas.getByLabelText('Name');
-    expect((nameInput as HTMLInputElement).value).toBe('Summer Collection');
+    void expect((nameInput as HTMLInputElement).value).toBe('Summer Collection');
     
     // Click manage products button
     const manageButton = canvas.getByRole('button', { name: /Manage Products/ });
@@ -209,7 +209,7 @@ export const EditFlow: Story = {
     
     // Should show product selection step
     await waitFor(() => {
-      expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
     });
   },
 };
@@ -223,7 +223,7 @@ export const NavigationFlow: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('Name')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('Name')).toBeInTheDocument();
     });
     
     // Fill form and continue
@@ -235,7 +235,7 @@ export const NavigationFlow: Story = {
     
     // Wait for product selection
     await waitFor(() => {
-      expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
     });
     
     // Go back to details
@@ -244,7 +244,7 @@ export const NavigationFlow: Story = {
     
     // Should be back at details
     await waitFor(() => {
-      expect(canvas.getByLabelText('Name')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('Name')).toBeInTheDocument();
     });
   },
 };
@@ -284,7 +284,7 @@ export const LoadingState: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('Name')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('Name')).toBeInTheDocument();
     });
     
     // Fill form
@@ -296,7 +296,7 @@ export const LoadingState: Story = {
     
     // Move to products and try to save
     await waitFor(() => {
-      expect(canvas.getByText('Create Collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Create Collection')).toBeInTheDocument();
     });
     
     const createButton = canvas.getByRole('button', { name: 'Create Collection' });
@@ -304,7 +304,7 @@ export const LoadingState: Story = {
     
     // Should show loading state
     await waitFor(() => {
-      expect(canvas.getByText('Saving...')).toBeInTheDocument();
+      void expect(canvas.getByText('Saving...')).toBeInTheDocument();
     });
   },
 };
@@ -381,7 +381,7 @@ export const PublicToggle: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('Make this collection public')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('Make this collection public')).toBeInTheDocument();
     });
     
     // Toggle public checkbox
@@ -389,13 +389,13 @@ export const PublicToggle: Story = {
     await userEvent.click(publicCheckbox);
     
     // Verify it's unchecked
-    expect(publicCheckbox).not.toBeChecked();
+    void expect(publicCheckbox).not.toBeChecked();
     
     // Toggle back
     await userEvent.click(publicCheckbox);
     
     // Verify it's checked again
-    expect(publicCheckbox).toBeChecked();
+    void expect(publicCheckbox).toBeChecked();
   },
 };
 
@@ -409,7 +409,7 @@ export const CompleteCreateWorkflow: Story = {
     
     // Step 1: Fill in collection details
     await waitFor(() => {
-      expect(canvas.getByLabelText('Name')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('Name')).toBeInTheDocument();
     });
     
     const nameInput = canvas.getByLabelText('Name');
@@ -421,7 +421,7 @@ export const CompleteCreateWorkflow: Story = {
     // Make it public
     const publicCheckbox = canvas.getByLabelText('Make this collection public');
     await userEvent.click(publicCheckbox);
-    expect(publicCheckbox).toBeChecked();
+    void expect(publicCheckbox).toBeChecked();
     
     // Continue to product selection
     const continueButton = canvas.getByRole('button', { name: 'Continue to Product Selection' });
@@ -429,7 +429,7 @@ export const CompleteCreateWorkflow: Story = {
     
     // Step 2: Select products
     await waitFor(() => {
-      expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
     });
     
     // Search for products
@@ -439,7 +439,7 @@ export const CompleteCreateWorkflow: Story = {
     // Select some products (simulate)
     await waitFor(() => {
       const checkboxes = canvas.getAllByRole('checkbox');
-      expect(checkboxes.length).toBeGreaterThan(0);
+      void expect(checkboxes.length).toBeGreaterThan(0);
     });
     
     // Step 3: Save collection
@@ -448,7 +448,7 @@ export const CompleteCreateWorkflow: Story = {
     
     // Should show saving state
     await waitFor(() => {
-      expect(canvas.getByText('Saving...')).toBeInTheDocument();
+      void expect(canvas.getByText('Saving...')).toBeInTheDocument();
     });
   },
 };
@@ -464,7 +464,7 @@ export const CompleteEditWorkflow: Story = {
     // Step 1: Edit collection details
     await waitFor(() => {
       const nameInput = canvas.getByLabelText('Name');
-      expect((nameInput as HTMLInputElement).value).toBe('Summer Collection');
+      void expect((nameInput as HTMLInputElement).value).toBe('Summer Collection');
     });
     
     // Update name
@@ -482,7 +482,7 @@ export const CompleteEditWorkflow: Story = {
     await userEvent.click(manageButton);
     
     await waitFor(() => {
-      expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
     });
     
     // Remove a product
@@ -497,7 +497,7 @@ export const CompleteEditWorkflow: Story = {
     
     // Should show saving state
     await waitFor(() => {
-      expect(canvas.getByText('Saving...')).toBeInTheDocument();
+      void expect(canvas.getByText('Saving...')).toBeInTheDocument();
     });
   },
 };
@@ -511,32 +511,32 @@ export const KeyboardNavigation: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('Name')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('Name')).toBeInTheDocument();
     });
     
     // Focus should be on first input
     const nameInput = canvas.getByLabelText('Name');
     await userEvent.click(nameInput);
-    expect(document.activeElement).toBe(nameInput);
+    void expect(document.activeElement).toBe(nameInput);
     
     // Tab to description
     await userEvent.tab();
     const descInput = canvas.getByLabelText('Description');
-    expect(document.activeElement).toBe(descInput);
+    void expect(document.activeElement).toBe(descInput);
     
     // Tab to public checkbox
     await userEvent.tab();
     const publicCheckbox = canvas.getByLabelText('Make this collection public');
-    expect(document.activeElement).toBe(publicCheckbox);
+    void expect(document.activeElement).toBe(publicCheckbox);
     
     // Space to toggle
     await userEvent.keyboard(' ');
-    expect(publicCheckbox).toBeChecked();
+    void expect(publicCheckbox).toBeChecked();
     
     // Tab to continue button
     await userEvent.tab();
     const continueButton = canvas.getByRole('button', { name: 'Continue to Product Selection' });
-    expect(document.activeElement).toBe(continueButton);
+    void expect(document.activeElement).toBe(continueButton);
     
     // Escape to close drawer
     await userEvent.keyboard('{Escape}');
@@ -553,22 +553,22 @@ export const FocusManagement: Story = {
     
     // Wait for drawer to open
     await waitFor(() => {
-      expect(canvas.getByRole('dialog')).toBeInTheDocument();
+      void expect(canvas.getByRole('dialog')).toBeInTheDocument();
     });
     
     // Focus should be trapped within drawer
     const drawer = canvas.getByRole('dialog');
-    expect(drawer).toBeInTheDocument();
+    void expect(drawer).toBeInTheDocument();
     
     // Close button should be focusable
     const closeButton = canvas.getByRole('button', { name: /close/i });
-    expect(closeButton).toBeInTheDocument();
+    void expect(closeButton).toBeInTheDocument();
     
     // Tab through all focusable elements
     const focusableElements = drawer.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
-    expect(focusableElements.length).toBeGreaterThan(0);
+    void expect(focusableElements.length).toBeGreaterThan(0);
   },
 };
 
@@ -582,7 +582,7 @@ export const AccessibilityAnnouncements: Story = {
     
     // Submit empty form
     await waitFor(() => {
-      expect(canvas.getByRole('button', { name: 'Continue to Product Selection' })).toBeInTheDocument();
+      void expect(canvas.getByRole('button', { name: 'Continue to Product Selection' })).toBeInTheDocument();
     });
     
     const continueButton = canvas.getByRole('button', { name: 'Continue to Product Selection' });
@@ -591,10 +591,10 @@ export const AccessibilityAnnouncements: Story = {
     // Error should be announced
     await waitFor(() => {
       const errorMessage = canvas.getByText('Name is required');
-      expect(errorMessage).toBeInTheDocument();
+      void expect(errorMessage).toBeInTheDocument();
       // Check if error has proper ARIA attributes
       const errorContainer = errorMessage.closest('[role="alert"]');
-      expect(errorContainer).toBeInTheDocument();
+      void expect(errorContainer).toBeInTheDocument();
     });
     
     // Fill name and continue
@@ -604,7 +604,7 @@ export const AccessibilityAnnouncements: Story = {
     
     // Step change should be announced
     await waitFor(() => {
-      expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
+      void expect(canvas.getByText('Select products to include in this collection')).toBeInTheDocument();
     });
   },
 };
@@ -816,7 +816,7 @@ export const ProductsLoadingState: Story = {
           ...mockCollection,
           products: loadingProducts ? [] : products,
         } as Collection}
-        onClose={() => { console.log('Close drawer'); }}
+        onClose={() => {}}
       />
     );
   },
@@ -1024,7 +1024,7 @@ export const SavingState: Story = {
         <CollectionEditDrawer
           isOpen={true}
           collection={mockCollection}
-          onClose={() => { console.log('Close drawer'); }}
+          onClose={() => {}}
         />
       </div>
     );
@@ -1107,7 +1107,7 @@ export const RefreshableData: Story = {
           <CollectionEditDrawer
             isOpen={true}
             collection={data}
-            onClose={() => { console.log('Close drawer'); }}
+            onClose={() => {}}
           />
         </div>
       </div>

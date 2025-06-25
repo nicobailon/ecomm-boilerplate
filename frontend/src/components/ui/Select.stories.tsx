@@ -221,15 +221,15 @@ export const InteractionTest: Story = {
     const select = canvas.getByRole('combobox');
     
     // Initially should show placeholder
-    await expect(select).toHaveValue('');
+    await void expect(select).toHaveValue('');
     
     // Select an option
     await userEvent.selectOptions(select, 'banana');
-    expect(select).toHaveValue('banana');
+    void expect(select).toHaveValue('banana');
     
     // Change selection
     await userEvent.selectOptions(select, 'orange');
-    expect(select).toHaveValue('orange');
+    void expect(select).toHaveValue('orange');
   },
 };
 

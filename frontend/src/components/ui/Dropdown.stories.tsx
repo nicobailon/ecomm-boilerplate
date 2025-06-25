@@ -379,23 +379,23 @@ export const InteractionTest: Story = {
     const trigger = canvas.getByRole('button', { name: 'Test Dropdown' });
     
     // Initially closed
-    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    void expect(trigger).toHaveAttribute('aria-expanded', 'false');
     
     // Click to open
     await userEvent.click(trigger);
-    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    void expect(trigger).toHaveAttribute('aria-expanded', 'true');
     
     // Find dropdown items
     const item1 = await canvas.findByText('Item 1');
-    expect(item1).toBeVisible();
+    void expect(item1).toBeVisible();
     
     // Click an item
     await userEvent.click(item1);
     
     // Dropdown should close and selection should be shown
-    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    void expect(trigger).toHaveAttribute('aria-expanded', 'false');
     const selectedText = canvas.getByText('Selected: Item 1');
-    expect(selectedText).toBeInTheDocument();
+    void expect(selectedText).toBeInTheDocument();
   },
 };
 

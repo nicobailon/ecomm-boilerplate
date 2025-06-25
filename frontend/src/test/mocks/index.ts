@@ -72,6 +72,7 @@ export const mockUser: User = {
   email: 'john@example.com',
   role: 'customer',
   cartItems: [mockCartItem],
+  emailVerified: true,
 };
 
 export const mockOrder = {

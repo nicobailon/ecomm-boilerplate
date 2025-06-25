@@ -56,9 +56,9 @@ describe('ProductVariantSelector', () => {
       />,
     );
 
-    expect(screen.getByText('Variants')).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Small Black/ })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Medium Black.*Out of stock/ })).toBeInTheDocument();
+    void expect(screen.getByText('Variants')).toBeInTheDocument();
+    void expect(screen.getByRole('radio', { name: /Small Black/ })).toBeInTheDocument();
+    void expect(screen.getByRole('radio', { name: /Medium Black.*Out of stock/ })).toBeInTheDocument();
   });
 
   it('shows color swatches for variants with colors', () => {
@@ -73,7 +73,7 @@ describe('ProductVariantSelector', () => {
 
     // Color swatches should be rendered for variants with color property
     const colorSwatches = screen.getAllByTitle(/Color:/);
-    expect(colorSwatches).toHaveLength(3); // Only 3 variants have colors
+    void expect(colorSwatches).toHaveLength(3); // Only 3 variants have colors
   });
 
   it('disables out of stock variants', () => {
@@ -87,7 +87,7 @@ describe('ProductVariantSelector', () => {
     );
 
     const outOfStockButton = screen.getByRole('radio', { name: /Medium Black.*Out of stock/ });
-    expect(outOfStockButton).toBeDisabled();
+    void expect(outOfStockButton).toBeDisabled();
   });
 
   it('calls onVariantSelect when variant is clicked', async () => {
@@ -105,7 +105,7 @@ describe('ProductVariantSelector', () => {
 
     // Wait for the simulated loading to complete
     await waitFor(() => {
-      expect(mockOnSelect).toHaveBeenCalledWith(mockVariants[0]);
+      void expect(mockOnSelect).toHaveBeenCalledWith(mockVariants[0]);
     });
   });
 
@@ -119,8 +119,8 @@ describe('ProductVariantSelector', () => {
       />,
     );
 
-    expect(screen.getByText('Only 5 left!')).toBeInTheDocument();
-    expect(screen.getByText('SKU: TEST-S-WHITE')).toBeInTheDocument();
+    void expect(screen.getByText('Only 5 left!')).toBeInTheDocument();
+    void expect(screen.getByText('SKU: TEST-S-WHITE')).toBeInTheDocument();
   });
 
   it('shows price difference when variant price differs from base', () => {
@@ -133,7 +133,7 @@ describe('ProductVariantSelector', () => {
       />,
     );
 
-    expect(screen.getByText('$34.99')).toBeInTheDocument();
+    void expect(screen.getByText('$34.99')).toBeInTheDocument();
   });
 
   it('marks selected variant as checked', () => {
@@ -147,7 +147,7 @@ describe('ProductVariantSelector', () => {
     );
 
     const selectedVariant = screen.getByRole('radio', { name: /Small Black/ });
-    expect(selectedVariant).toHaveAttribute('aria-checked', 'true');
+    void expect(selectedVariant).toHaveAttribute('aria-checked', 'true');
   });
 
   it('shows screen reader information about available variants', () => {
@@ -161,7 +161,7 @@ describe('ProductVariantSelector', () => {
     );
 
     // Check for screen reader only text
-    expect(screen.getByText(/4 options available.*3 in stock/)).toBeInTheDocument();
+    void expect(screen.getByText(/4 options available.*3 in stock/)).toBeInTheDocument();
   });
 
   it('handles focus and shows tooltips', () => {
@@ -178,7 +178,7 @@ describe('ProductVariantSelector', () => {
     fireEvent.focus(variantButton);
 
     // Should show tooltip with inventory info
-    expect(screen.getByRole('tooltip')).toHaveTextContent('10 in stock');
+    void expect(screen.getByRole('tooltip')).toHaveTextContent('10 in stock');
   });
 
   it('auto-selects first available variant on mount', () => {
@@ -192,7 +192,7 @@ describe('ProductVariantSelector', () => {
     );
 
     // Should auto-select the first in-stock variant (v1)
-    expect(mockOnSelect).toHaveBeenCalledWith(mockVariants[0]);
+    void expect(mockOnSelect).toHaveBeenCalledWith(mockVariants[0]);
   });
 
   describe('Keyboard Navigation', () => {
@@ -214,17 +214,17 @@ describe('ProductVariantSelector', () => {
 
       // Focus first variant
       firstVariant.focus();
-      expect(document.activeElement).toBe(firstVariant);
+      void expect(document.activeElement).toBe(firstVariant);
 
       // Tab to next variant
       await user.tab();
       // Skip out of stock variant
       await user.tab();
-      expect(document.activeElement).toBe(thirdVariant);
+      void expect(document.activeElement).toBe(thirdVariant);
 
       // Tab to last variant
       await user.tab();
-      expect(document.activeElement).toBe(lastVariant);
+      void expect(document.activeElement).toBe(lastVariant);
     });
 
     it('allows selection via Enter key', async () => {
@@ -246,7 +246,7 @@ describe('ProductVariantSelector', () => {
       await user.keyboard('{Enter}');
 
       await waitFor(() => {
-        expect(mockOnSelect).toHaveBeenCalledWith(mockVariants[2]);
+        void expect(mockOnSelect).toHaveBeenCalledWith(mockVariants[2]);
       });
     });
 
@@ -269,7 +269,7 @@ describe('ProductVariantSelector', () => {
       await user.keyboard(' ');
 
       await waitFor(() => {
-        expect(mockOnSelect).toHaveBeenCalledWith(mockVariants[3]);
+        void expect(mockOnSelect).toHaveBeenCalledWith(mockVariants[3]);
       });
     });
 
@@ -292,7 +292,7 @@ describe('ProductVariantSelector', () => {
       await user.keyboard('{Enter}');
 
       // Should not call onSelect for disabled variant
-      expect(mockOnSelect).not.toHaveBeenCalledWith(mockVariants[1]);
+      void expect(mockOnSelect).not.toHaveBeenCalledWith(mockVariants[1]);
     });
 
     it('maintains focus ring visibility', () => {
@@ -311,7 +311,7 @@ describe('ProductVariantSelector', () => {
       fireEvent.focus(firstVariant);
       
       // Check for focus ring classes
-      expect(firstVariant).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-primary');
+      void expect(firstVariant).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-primary');
     });
   });
 
@@ -327,15 +327,15 @@ describe('ProductVariantSelector', () => {
       );
 
       // Check radiogroup
-      expect(screen.getByRole('radiogroup')).toBeInTheDocument();
+      void expect(screen.getByRole('radiogroup')).toBeInTheDocument();
       
       // Check individual radio buttons
       const radios = screen.getAllByRole('radio');
-      expect(radios).toHaveLength(4);
+      void expect(radios).toHaveLength(4);
       
       // Check aria-checked state
-      expect(radios[0]).toHaveAttribute('aria-checked', 'true');
-      expect(radios[2]).toHaveAttribute('aria-checked', 'false');
+      void expect(radios[0]).toHaveAttribute('aria-checked', 'true');
+      void expect(radios[2]).toHaveAttribute('aria-checked', 'false');
     });
 
     it('provides accessible color information', () => {
@@ -350,7 +350,7 @@ describe('ProductVariantSelector', () => {
 
       // Check aria-label includes color information
       const blackVariant = screen.getByRole('radio', { name: /Small Black, color #000000/ });
-      expect(blackVariant).toBeInTheDocument();
+      void expect(blackVariant).toBeInTheDocument();
     });
 
     it('announces inventory status changes', () => {
@@ -375,7 +375,7 @@ describe('ProductVariantSelector', () => {
 
       // Check for alert role on low stock message
       const lowStockAlert = screen.getByRole('alert');
-      expect(lowStockAlert).toHaveTextContent('Only 5 left!');
+      void expect(lowStockAlert).toHaveTextContent('Only 5 left!');
     });
 
     it('provides tooltip descriptions for focused elements', () => {
@@ -393,12 +393,12 @@ describe('ProductVariantSelector', () => {
 
       // Check aria-describedby is set
       const tooltipId = variantButton.getAttribute('aria-describedby');
-      expect(tooltipId).toBeTruthy();
+      void expect(tooltipId).toBeTruthy();
       
       // Check tooltip exists with proper role
       const tooltip = screen.getByRole('tooltip');
-      expect(tooltip).toHaveAttribute('id', tooltipId);
-      expect(tooltip).toHaveAttribute('aria-live', 'polite');
+      void expect(tooltip).toHaveAttribute('id', tooltipId);
+      void expect(tooltip).toHaveAttribute('aria-live', 'polite');
     });
 
     it('has minimum touch target size', () => {
@@ -413,7 +413,7 @@ describe('ProductVariantSelector', () => {
 
       const variantButtons = screen.getAllByRole('radio');
       variantButtons.forEach(button => {
-        expect(button).toHaveClass('min-w-[44px]', 'min-h-[44px]');
+        void expect(button).toHaveClass('min-w-[44px]', 'min-h-[44px]');
       });
     });
   });

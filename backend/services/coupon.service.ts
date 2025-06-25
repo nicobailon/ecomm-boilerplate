@@ -179,7 +179,7 @@ export class CouponService {
     // Check if we need to deactivate after increment
     if (result) {
       // Deactivate if it's a user-specific coupon or if max uses reached
-      if (result.userId || (result.maxUses && result.currentUses >= result.maxUses)) {
+      if (result.userId ?? (result.maxUses && result.currentUses >= result.maxUses)) {
         result.isActive = false;
         await result.save();
       }

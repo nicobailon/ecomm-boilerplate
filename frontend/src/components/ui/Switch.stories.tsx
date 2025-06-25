@@ -176,23 +176,23 @@ export const InteractionTest: Story = {
     const switchElement = canvas.getByRole('switch');
     
     // Initially unchecked
-    expect(switchElement).toHaveAttribute('data-state', 'unchecked');
-    expect(switchElement).toHaveAttribute('aria-checked', 'false');
+    void expect(switchElement).toHaveAttribute('data-state', 'unchecked');
+    void expect(switchElement).toHaveAttribute('aria-checked', 'false');
     
     // Click to check
     await userEvent.click(switchElement);
-    expect(switchElement).toHaveAttribute('data-state', 'checked');
-    expect(switchElement).toHaveAttribute('aria-checked', 'true');
+    void expect(switchElement).toHaveAttribute('data-state', 'checked');
+    void expect(switchElement).toHaveAttribute('aria-checked', 'true');
     
     // Click to uncheck
     await userEvent.click(switchElement);
-    expect(switchElement).toHaveAttribute('data-state', 'unchecked');
-    expect(switchElement).toHaveAttribute('aria-checked', 'false');
+    void expect(switchElement).toHaveAttribute('data-state', 'unchecked');
+    void expect(switchElement).toHaveAttribute('aria-checked', 'false');
     
     // Test keyboard interaction
     switchElement.focus();
     await userEvent.keyboard(' '); // Space key
-    expect(switchElement).toHaveAttribute('data-state', 'checked');
+    void expect(switchElement).toHaveAttribute('data-state', 'checked');
   },
 };
 

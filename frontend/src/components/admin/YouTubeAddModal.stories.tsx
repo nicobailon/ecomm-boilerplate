@@ -23,7 +23,7 @@ const meta = {
   args: {
     isOpen: false,
     onClose: fn(),
-    onAdd: fn(async (_url: string, _title: string) => {
+    onAdd: fn(async () => {
       // Simulate async operation
       await new Promise(resolve => setTimeout(resolve, 1000));
     }) as any,
@@ -76,7 +76,7 @@ export const WithValidURL: Story = {
     
     // Wait for modal to render
     await waitFor(() => {
-      expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
     });
     
     // Fill in YouTube URL
@@ -91,7 +91,7 @@ export const WithValidURL: Story = {
     
     // Verify submit button is enabled
     const submitButton = canvas.getByRole('button', { name: 'Add Video' });
-    expect(submitButton).toBeEnabled();
+    void expect(submitButton).toBeEnabled();
   },
 };
 
@@ -104,7 +104,7 @@ export const WithShortURL: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
     });
     
     const urlInput = canvas.getByLabelText('YouTube URL');
@@ -126,7 +126,7 @@ export const WithEmbedURL: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
     });
     
     const urlInput = canvas.getByLabelText('YouTube URL');
@@ -148,7 +148,7 @@ export const InvalidURL: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
     });
     
     const urlInput = canvas.getByLabelText('YouTube URL');
@@ -160,7 +160,7 @@ export const InvalidURL: Story = {
     
     // Wait for error message
     await waitFor(() => {
-      expect(canvas.getByText('Please enter a valid YouTube URL')).toBeInTheDocument();
+      void expect(canvas.getByText('Please enter a valid YouTube URL')).toBeInTheDocument();
     });
   },
 };
@@ -174,7 +174,7 @@ export const EmptyFields: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText('Add Video')).toBeInTheDocument();
+      void expect(canvas.getByText('Add Video')).toBeInTheDocument();
     });
     
     // Try to submit without filling fields
@@ -183,8 +183,8 @@ export const EmptyFields: Story = {
     
     // Wait for error messages
     await waitFor(() => {
-      expect(canvas.getByText('Please enter a valid URL')).toBeInTheDocument();
-      expect(canvas.getByText('Title is required')).toBeInTheDocument();
+      void expect(canvas.getByText('Please enter a valid URL')).toBeInTheDocument();
+      void expect(canvas.getByText('Title is required')).toBeInTheDocument();
     });
   },
 };
@@ -193,7 +193,7 @@ export const LoadingState: Story = {
   args: {
     isOpen: true,
     onClose: fn(),
-    onAdd: fn(async (_url: string, _title: string) => {
+    onAdd: fn(async () => {
       // Simulate long operation
       await new Promise(resolve => setTimeout(resolve, 3000));
     }) as any,
@@ -202,7 +202,7 @@ export const LoadingState: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
     });
     
     // Fill in valid data
@@ -220,13 +220,13 @@ export const LoadingState: Story = {
     
     // Check for loading state
     await waitFor(() => {
-      expect(canvas.getByText('Adding...')).toBeInTheDocument();
+      void expect(canvas.getByText('Adding...')).toBeInTheDocument();
     });
     
     // Verify buttons are disabled during loading
-    expect(submitButton).toBeDisabled();
+    void expect(submitButton).toBeDisabled();
     const cancelButton = canvas.getByRole('button', { name: 'Cancel' });
-    expect(cancelButton).toBeDisabled();
+    void expect(cancelButton).toBeDisabled();
   },
 };
 
@@ -283,7 +283,7 @@ export const PreviewDisplay: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
     });
     
     // Type URL slowly to see preview update
@@ -295,7 +295,7 @@ export const PreviewDisplay: Story = {
     
     // Wait for preview to appear
     await waitFor(() => {
-      expect(canvas.getByAltText('Video preview')).toBeInTheDocument();
+      void expect(canvas.getByAltText('Video preview')).toBeInTheDocument();
     });
   },
 };
@@ -309,7 +309,7 @@ export const LongTitle: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
     });
     
     const urlInput = canvas.getByLabelText('YouTube URL');
@@ -350,7 +350,7 @@ export const ErrorState: Story = {
   args: {
     isOpen: true,
     onClose: fn(),
-    onAdd: fn(async (_url: string, _title: string) => {
+    onAdd: fn(async () => {
       throw new Error('Failed to add video');
     }) as any,
   },
@@ -358,7 +358,7 @@ export const ErrorState: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
     });
     
     // Fill in valid data
@@ -387,7 +387,7 @@ export const CompleteWorkflow: Story = {
     
     // Wait for modal to open
     await waitFor(() => {
-      expect(canvas.getByRole('dialog')).toBeInTheDocument();
+      void expect(canvas.getByRole('dialog')).toBeInTheDocument();
     });
     
     // Check initial state
@@ -395,9 +395,9 @@ export const CompleteWorkflow: Story = {
     const titleInput = canvas.getByLabelText('Video Title');
     const submitButton = canvas.getByRole('button', { name: 'Add Video' });
     
-    expect(urlInput).toHaveValue('');
-    expect(titleInput).toHaveValue('');
-    expect(submitButton).toBeDisabled();
+    void expect(urlInput).toHaveValue('');
+    void expect(titleInput).toHaveValue('');
+    void expect(submitButton).toBeDisabled();
     
     // Enter YouTube URL
     await userEvent.type(urlInput, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
@@ -405,22 +405,22 @@ export const CompleteWorkflow: Story = {
     // Verify preview appears
     await waitFor(() => {
       const preview = canvas.getByAltText('Video preview');
-      expect(preview).toBeInTheDocument();
-      expect(preview).toHaveAttribute('src', expect.stringContaining('dQw4w9WgXcQ'));
+      void expect(preview).toBeInTheDocument();
+      void expect(preview).toHaveAttribute('src', expect.stringContaining('dQw4w9WgXcQ'));
     });
     
     // Enter title
     await userEvent.type(titleInput, 'Rick Astley - Never Gonna Give You Up');
     
     // Button should now be enabled
-    expect(submitButton).toBeEnabled();
+    void expect(submitButton).toBeEnabled();
     
     // Submit
     await userEvent.click(submitButton);
     
     // Verify onAdd was called with correct params
     await waitFor(() => {
-      expect(args.onAdd).toHaveBeenCalledWith(
+      void expect(args.onAdd).toHaveBeenCalledWith(
         'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
         'Rick Astley - Never Gonna Give You Up',
       );
@@ -437,32 +437,32 @@ export const KeyboardNavigation: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByRole('dialog')).toBeInTheDocument();
+      void expect(canvas.getByRole('dialog')).toBeInTheDocument();
     });
     
     // Focus should be on first input
     const urlInput = canvas.getByLabelText('YouTube URL');
-    expect(document.activeElement).toBe(urlInput);
+    void expect(document.activeElement).toBe(urlInput);
     
     // Tab to title input
     await userEvent.tab();
     const titleInput = canvas.getByLabelText('Video Title');
-    expect(document.activeElement).toBe(titleInput);
+    void expect(document.activeElement).toBe(titleInput);
     
     // Tab to cancel button
     await userEvent.tab();
     const cancelButton = canvas.getByRole('button', { name: 'Cancel' });
-    expect(document.activeElement).toBe(cancelButton);
+    void expect(document.activeElement).toBe(cancelButton);
     
     // Tab to add button
     await userEvent.tab();
     const addButton = canvas.getByRole('button', { name: 'Add Video' });
-    expect(document.activeElement).toBe(addButton);
+    void expect(document.activeElement).toBe(addButton);
     
     // Escape to close
     await userEvent.keyboard('{Escape}');
     await waitFor(() => {
-      expect(args.onClose).toHaveBeenCalled();
+      void expect(args.onClose).toHaveBeenCalled();
     });
   },
 };
@@ -476,7 +476,7 @@ export const URLValidation: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
     });
     
     const urlInput = canvas.getByLabelText('YouTube URL');
@@ -522,10 +522,10 @@ export const URLValidation: Story = {
       
       if (!testCase.valid) {
         await waitFor(() => {
-          expect(canvas.getByText('Please enter a valid YouTube URL')).toBeInTheDocument();
+          void expect(canvas.getByText('Please enter a valid YouTube URL')).toBeInTheDocument();
         });
       } else {
-        expect(canvas.queryByText('Please enter a valid YouTube URL')).not.toBeInTheDocument();
+        void expect(canvas.queryByText('Please enter a valid YouTube URL')).not.toBeInTheDocument();
       }
     }
   },
@@ -540,20 +540,20 @@ export const AccessibilityFeatures: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByRole('dialog')).toBeInTheDocument();
+      void expect(canvas.getByRole('dialog')).toBeInTheDocument();
     });
     
     // Check dialog has proper attributes
     const dialog = canvas.getByRole('dialog');
-    expect(dialog).toHaveAttribute('aria-modal', 'true');
-    expect(dialog).toHaveAttribute('aria-labelledby');
+    void expect(dialog).toHaveAttribute('aria-modal', 'true');
+    void expect(dialog).toHaveAttribute('aria-labelledby');
     
     // Check form inputs have labels
     const urlInput = canvas.getByLabelText('YouTube URL');
     const titleInput = canvas.getByLabelText('Video Title');
     
-    expect(urlInput).toHaveAttribute('aria-required', 'true');
-    expect(titleInput).toHaveAttribute('aria-required', 'true');
+    void expect(urlInput).toHaveAttribute('aria-required', 'true');
+    void expect(titleInput).toHaveAttribute('aria-required', 'true');
     
     // Check error announcements
     const submitButton = canvas.getByRole('button', { name: 'Add Video' });
@@ -561,7 +561,7 @@ export const AccessibilityFeatures: Story = {
     
     await waitFor(() => {
       const errors = canvas.getAllByRole('alert');
-      expect(errors.length).toBeGreaterThan(0);
+      void expect(errors.length).toBeGreaterThan(0);
     });
   },
 };
@@ -575,7 +575,7 @@ export const FocusManagement: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByRole('dialog')).toBeInTheDocument();
+      void expect(canvas.getByRole('dialog')).toBeInTheDocument();
     });
     
     // Focus should be trapped within modal
@@ -583,20 +583,20 @@ export const FocusManagement: Story = {
     const buttons = canvas.getAllByRole('button');
     const allFocusable = [...focusableElements, ...buttons];
     
-    expect(allFocusable.length).toBeGreaterThan(0);
+    void expect(allFocusable.length).toBeGreaterThan(0);
     
     // Check initial focus
     const firstInput = canvas.getByLabelText('YouTube URL');
-    expect(document.activeElement).toBe(firstInput);
+    void expect(document.activeElement).toBe(firstInput);
     
     // Tab through all elements
-    for (const _element of allFocusable) {
+    for (let i = 0; i < allFocusable.length; i++) {
       await userEvent.tab();
     }
     
     // Should cycle back to first element
     await userEvent.tab();
-    expect(document.activeElement).toBe(firstInput);
+    void expect(document.activeElement).toBe(firstInput);
   },
 };
 
@@ -609,7 +609,7 @@ export const ClipboardPaste: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
+      void expect(canvas.getByLabelText('YouTube URL')).toBeInTheDocument();
     });
     
     const urlInput = canvas.getByLabelText('YouTube URL');
@@ -620,11 +620,11 @@ export const ClipboardPaste: Story = {
     await userEvent.paste(pasteText);
     
     // Verify URL was pasted
-    expect(urlInput).toHaveValue(pasteText);
+    void expect(urlInput).toHaveValue(pasteText);
     
     // Verify preview appears after paste
     await waitFor(() => {
-      expect(canvas.getByAltText('Video preview')).toBeInTheDocument();
+      void expect(canvas.getByAltText('Video preview')).toBeInTheDocument();
     });
   },
 };
@@ -645,7 +645,7 @@ export const HighContrastMode: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByRole('dialog')).toBeInTheDocument();
+      void expect(canvas.getByRole('dialog')).toBeInTheDocument();
     });
     
     // Check all interactive elements are visible
@@ -653,10 +653,10 @@ export const HighContrastMode: Story = {
     const titleInput = canvas.getByLabelText('Video Title');
     const buttons = canvas.getAllByRole('button');
     
-    expect(urlInput).toBeVisible();
-    expect(titleInput).toBeVisible();
+    void expect(urlInput).toBeVisible();
+    void expect(titleInput).toBeVisible();
     buttons.forEach(button => {
-      expect(button).toBeVisible();
+      void expect(button).toBeVisible();
     });
   },
 };
@@ -677,16 +677,16 @@ export const RTLSupport: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByRole('dialog')).toBeInTheDocument();
+      void expect(canvas.getByRole('dialog')).toBeInTheDocument();
     });
     
     // Check layout still works in RTL
     const dialog = canvas.getByRole('dialog');
-    expect(dialog).toHaveAttribute('dir', 'rtl');
+    void expect(dialog).toHaveAttribute('dir', 'rtl');
     
     // Verify inputs still function
     const urlInput = canvas.getByLabelText('YouTube URL');
     await userEvent.type(urlInput, 'https://www.youtube.com/watch?v=test');
-    expect(urlInput).toHaveValue('https://www.youtube.com/watch?v=test');
+    void expect(urlInput).toHaveValue('https://www.youtube.com/watch?v=test');
   },
 };

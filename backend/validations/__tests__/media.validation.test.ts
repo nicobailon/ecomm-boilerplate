@@ -28,10 +28,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaItemSchema.safeParse(validMediaItem);
-      expect(result.success).toBe(true);
+      void expect(result.success).toBe(true);
       
       if (result.success) {
-        expect(result.data).toMatchObject(validMediaItem);
+        void expect(result.data).toMatchObject(validMediaItem);
       }
     });
 
@@ -45,7 +45,7 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaItemSchema.safeParse(minimalMediaItem);
-      expect(result.success).toBe(true);
+      void expect(result.success).toBe(true);
     });
 
     it('should validate video media item with duration', () => {
@@ -67,7 +67,7 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaItemSchema.safeParse(videoMediaItem);
-      expect(result.success).toBe(true);
+      void expect(result.success).toBe(true);
     });
 
     it('should reject invalid media type', () => {
@@ -80,10 +80,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaItemSchema.safeParse(invalidMediaItem);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Invalid enum value');
+        void expect(result.error.issues[0].message).toContain('Invalid enum value');
       }
     });
 
@@ -95,12 +95,12 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaItemSchema.safeParse(incompleteMediaItem);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
         const missingFields = result.error.issues.map(issue => issue.path[0]);
-        expect(missingFields).toContain('url');
-        expect(missingFields).toContain('order');
+        void expect(missingFields).toContain('url');
+        void expect(missingFields).toContain('order');
         // createdAt has a default, so it's not required
       }
     });
@@ -115,10 +115,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaItemSchema.safeParse(invalidOrderItem);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Number must be greater than or equal to 0');
+        void expect(result.error.issues[0].message).toContain('Number must be greater than or equal to 0');
       }
     });
 
@@ -134,10 +134,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaItemSchema.safeParse(variantMediaItem);
-      expect(result.success).toBe(true);
+      void expect(result.success).toBe(true);
       
       if (result.success) {
-        expect(result.data.variantId).toBe('variant-red-m');
+        void expect(result.data.variantId).toBe('variant-red-m');
       }
     });
   });
@@ -145,7 +145,7 @@ describe('Media Validation Schemas', () => {
   describe('mediaGallerySchema', () => {
     it('should validate empty gallery', () => {
       const result = mediaGallerySchema.safeParse([]);
-      expect(result.success).toBe(true);
+      void expect(result.success).toBe(true);
     });
 
     it('should validate gallery with multiple items', () => {
@@ -168,7 +168,7 @@ describe('Media Validation Schemas', () => {
       ];
 
       const result = mediaGallerySchema.safeParse(gallery);
-      expect(result.success).toBe(true);
+      void expect(result.success).toBe(true);
     });
 
     it('should reject gallery exceeding maximum items', () => {
@@ -181,10 +181,10 @@ describe('Media Validation Schemas', () => {
       }));
 
       const result = mediaGallerySchema.safeParse(oversizedGallery);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain(`Array must contain at most ${MEDIA_LIMITS.MAX_ITEMS} element(s)`);
+        void expect(result.error.issues[0].message).toContain(`Array must contain at most ${MEDIA_LIMITS.MAX_ITEMS} element(s)`);
       }
     });
 
@@ -207,10 +207,10 @@ describe('Media Validation Schemas', () => {
       ];
 
       const result = mediaGallerySchema.safeParse(duplicateGallery);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Duplicate media item IDs found');
+        void expect(result.error.issues[0].message).toContain('Duplicate media item IDs found');
       }
     });
 
@@ -233,10 +233,10 @@ describe('Media Validation Schemas', () => {
       ];
 
       const result = mediaGallerySchema.safeParse(nonSequentialGallery);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Media items must have sequential order starting from 0');
+        void expect(result.error.issues[0].message).toContain('Media items must have sequential order starting from 0');
       }
     });
 
@@ -252,10 +252,10 @@ describe('Media Validation Schemas', () => {
       ];
 
       const result = mediaGallerySchema.safeParse(invalidStartGallery);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Media items must have sequential order starting from 0');
+        void expect(result.error.issues[0].message).toContain('Media items must have sequential order starting from 0');
       }
     });
   });
@@ -270,7 +270,7 @@ describe('Media Validation Schemas', () => {
 
       validUrls.forEach(url => {
         const result = youtubeUrlSchema.safeParse(url);
-        expect(result.success).toBe(true);
+        void expect(result.success).toBe(true);
       });
     });
 
@@ -282,7 +282,7 @@ describe('Media Validation Schemas', () => {
 
       validUrls.forEach(url => {
         const result = youtubeUrlSchema.safeParse(url);
-        expect(result.success).toBe(true);
+        void expect(result.success).toBe(true);
       });
     });
 
@@ -294,7 +294,7 @@ describe('Media Validation Schemas', () => {
 
       validUrls.forEach(url => {
         const result = youtubeUrlSchema.safeParse(url);
-        expect(result.success).toBe(true);
+        void expect(result.success).toBe(true);
       });
     });
 
@@ -308,10 +308,10 @@ describe('Media Validation Schemas', () => {
 
       invalidUrls.forEach(url => {
         const result = youtubeUrlSchema.safeParse(url);
-        expect(result.success).toBe(false);
+        void expect(result.success).toBe(false);
         
         if (!result.success) {
-          expect(result.error.issues[0].message).toContain('Invalid YouTube URL format');
+          void expect(result.error.issues[0].message).toContain('Invalid YouTube URL format');
         }
       });
     });
@@ -326,7 +326,7 @@ describe('Media Validation Schemas', () => {
 
       malformedUrls.forEach(url => {
         const result = youtubeUrlSchema.safeParse(url);
-        expect(result.success).toBe(false);
+        void expect(result.success).toBe(false);
       });
     });
   });
@@ -346,7 +346,7 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaUploadSchema.safeParse(uploadData);
-      expect(result.success).toBe(true);
+      void expect(result.success).toBe(true);
     });
 
     it('should validate multiple file upload', () => {
@@ -369,7 +369,7 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaUploadSchema.safeParse(uploadData);
-      expect(result.success).toBe(true);
+      void expect(result.success).toBe(true);
     });
 
     it('should validate upload with default existingMediaCount', () => {
@@ -386,10 +386,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaUploadSchema.safeParse(uploadData);
-      expect(result.success).toBe(true);
+      void expect(result.success).toBe(true);
       
       if (result.success) {
-        expect(result.data.existingMediaCount).toBe(0);
+        void expect(result.data.existingMediaCount).toBe(0);
       }
     });
 
@@ -405,10 +405,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaUploadSchema.safeParse(uploadData);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain(`Total media items cannot exceed ${MEDIA_LIMITS.MAX_ITEMS}`);
+        void expect(result.error.issues[0].message).toContain(`Total media items cannot exceed ${MEDIA_LIMITS.MAX_ITEMS}`);
       }
     });
 
@@ -419,10 +419,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaUploadSchema.safeParse(uploadData);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Array must contain at least 1 element(s)');
+        void expect(result.error.issues[0].message).toContain('Array must contain at least 1 element(s)');
       }
     });
 
@@ -438,15 +438,15 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaUploadSchema.safeParse(uploadData);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
         const missingFields = result.error.issues.map(issue => 
           issue.path[issue.path.length - 1],
         );
-        expect(missingFields).toContain('type');
-        expect(missingFields).toContain('size');
-        expect(missingFields).toContain('name');
+        void expect(missingFields).toContain('type');
+        void expect(missingFields).toContain('size');
+        void expect(missingFields).toContain('name');
       }
     });
   });
@@ -462,7 +462,7 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaReorderSchema.safeParse(reorderData);
-      expect(result.success).toBe(true);
+      void expect(result.success).toBe(true);
     });
 
     it('should validate single item reorder', () => {
@@ -473,7 +473,7 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaReorderSchema.safeParse(reorderData);
-      expect(result.success).toBe(true);
+      void expect(result.success).toBe(true);
     });
 
     it('should reject empty reorder array', () => {
@@ -482,10 +482,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaReorderSchema.safeParse(reorderData);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Array must contain at least 1 element(s)');
+        void expect(result.error.issues[0].message).toContain('Array must contain at least 1 element(s)');
       }
     });
 
@@ -498,10 +498,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaReorderSchema.safeParse(reorderData);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Duplicate media item IDs found in reorder');
+        void expect(result.error.issues[0].message).toContain('Duplicate media item IDs found in reorder');
       }
     });
 
@@ -514,10 +514,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaReorderSchema.safeParse(reorderData);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Media items must have sequential order starting from 0');
+        void expect(result.error.issues[0].message).toContain('Media items must have sequential order starting from 0');
       }
     });
 
@@ -529,10 +529,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaReorderSchema.safeParse(reorderData);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Media items must have sequential order starting from 0');
+        void expect(result.error.issues[0].message).toContain('Media items must have sequential order starting from 0');
       }
     });
 
@@ -544,10 +544,10 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaReorderSchema.safeParse(reorderData);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain('Number must be greater than or equal to 0');
+        void expect(result.error.issues[0].message).toContain('Number must be greater than or equal to 0');
       }
     });
 
@@ -560,14 +560,14 @@ describe('Media Validation Schemas', () => {
       };
 
       const result = mediaReorderSchema.safeParse(reorderData);
-      expect(result.success).toBe(false);
+      void expect(result.success).toBe(false);
       
       if (!result.success) {
         const missingFields = result.error.issues.map(issue => 
           issue.path[issue.path.length - 1],
         );
-        expect(missingFields).toContain('order');
-        expect(missingFields).toContain('id');
+        void expect(missingFields).toContain('order');
+        void expect(missingFields).toContain('id');
       }
     });
   });

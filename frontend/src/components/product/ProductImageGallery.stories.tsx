@@ -56,7 +56,7 @@ const VideoPlayerComponent = ({ src, poster }: { src: string; poster: string }) 
         videoRef.current.pause();
       } else {
         // eslint-disable-next-line storybook/context-in-play-function
-        videoRef.current.play();
+        void videoRef.current.play();
       }
       setIsPlaying(!isPlaying);
     }
@@ -139,7 +139,7 @@ const VideoPlayerComponent = ({ src, poster }: { src: string; poster: string }) 
               size="sm"
               variant="ghost"
               className="text-white hover:bg-white/20"
-              onClick={() => videoRef.current?.requestFullscreen()}
+              onClick={() => { void videoRef.current?.requestFullscreen(); }}
             >
               <Maximize2 className="w-4 h-4" />
             </Button>

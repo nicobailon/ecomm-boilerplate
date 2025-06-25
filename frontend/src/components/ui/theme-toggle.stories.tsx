@@ -157,16 +157,16 @@ export const InteractionTest: Story = {
     const button = canvas.getByRole('button');
     
     // Check initial aria-label
-    expect(button).toHaveAttribute('aria-label');
+    void expect(button).toHaveAttribute('aria-label');
     
     // Click to change theme
     await userEvent.click(button);
     
     // Button should still be present and functional
-    expect(button).toBeInTheDocument();
+    void expect(button).toBeInTheDocument();
     
     // Test keyboard shortcut tooltip
-    expect(button).toHaveAttribute('title', 'Toggle theme (Ctrl+Shift+L)');
+    void expect(button).toHaveAttribute('title', 'Toggle theme (Ctrl+Shift+L)');
   },
 };
 

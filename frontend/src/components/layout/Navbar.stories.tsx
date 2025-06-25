@@ -17,6 +17,7 @@ const mockCustomerUser: User = {
   email: 'john@example.com',
   role: 'customer',
   cartItems: [],
+  emailVerified: true,
 };
 
 const mockAdminUser: User = {
@@ -25,6 +26,7 @@ const mockAdminUser: User = {
   email: 'admin@example.com',
   role: 'admin',
   cartItems: [],
+  emailVerified: true,
 };
 
 const mockCartItems = [
@@ -188,8 +190,8 @@ export const LogoutInteraction: Story = {
     await userEvent.click(logoutButton);
     
     // Button should show loading state
-    await expect(logoutButton).toHaveTextContent(/logging out/i);
-    await expect(logoutButton).toBeDisabled();
+    await void expect(logoutButton).toHaveTextContent(/logging out/i);
+    await void expect(logoutButton).toBeDisabled();
   },
 };
 
@@ -220,7 +222,7 @@ export const ThemeToggle: Story = {
     await userEvent.click(themeToggle);
     
     // The button should still be there and clickable
-    await expect(themeToggle).toBeInTheDocument();
+    await void expect(themeToggle).toBeInTheDocument();
   },
 };
 
@@ -509,7 +511,7 @@ export const MobileMenuInteraction: Story = {
     
     // Menu should be open
     await waitFor(() => {
-      expect(canvas.getByText('Orders')).toBeInTheDocument();
+      void expect(canvas.getByText('Orders')).toBeInTheDocument();
     });
     
     // Click again to close
@@ -517,7 +519,7 @@ export const MobileMenuInteraction: Story = {
     
     // Menu should be closed
     await waitFor(() => {
-      expect(canvas.queryByText('Orders')).not.toBeInTheDocument();
+      void expect(canvas.queryByText('Orders')).not.toBeInTheDocument();
     });
   },
 };
@@ -534,7 +536,7 @@ export const SearchFunctionality: Story = {
     // Search input should appear
     await waitFor(() => {
       const searchInput = canvas.getByTestId('search-input');
-      expect(searchInput).toBeInTheDocument();
+      void expect(searchInput).toBeInTheDocument();
     });
     
     // Type in search
@@ -542,7 +544,7 @@ export const SearchFunctionality: Story = {
     await userEvent.type(searchInput, 'laptop');
     
     // Verify search value
-    expect(searchInput).toHaveValue('laptop');
+    void expect(searchInput).toHaveValue('laptop');
   },
 };
 
@@ -590,7 +592,7 @@ export const CartBadgeUpdates: Story = {
     
     // Initial badge should show 3
     const badge = canvas.getByTestId('cart-badge');
-    expect(badge).toHaveTextContent('3');
+    void expect(badge).toHaveTextContent('3');
     
     // Add item
     const addButton = canvas.getByText('Add Item to Cart');
@@ -598,7 +600,7 @@ export const CartBadgeUpdates: Story = {
     
     // Badge should update to 4
     await waitFor(() => {
-      expect(badge).toHaveTextContent('4');
+      void expect(badge).toHaveTextContent('4');
     });
     
     // Remove item
@@ -607,7 +609,7 @@ export const CartBadgeUpdates: Story = {
     
     // Badge should update back to 3
     await waitFor(() => {
-      expect(badge).toHaveTextContent('3');
+      void expect(badge).toHaveTextContent('3');
     });
   },
 };
@@ -623,8 +625,8 @@ export const UserMenuInteraction: Story = {
     
     // Menu should open with user info
     await waitFor(() => {
-      expect(canvas.getByText(mockAdminUser.email)).toBeInTheDocument();
-      expect(canvas.getByText('Dashboard')).toBeInTheDocument(); // Admin only
+      void expect(canvas.getByText(mockAdminUser.email)).toBeInTheDocument();
+      void expect(canvas.getByText('Dashboard')).toBeInTheDocument(); // Admin only
     });
     
     // Click outside to close (simulate by clicking toggle again)
@@ -632,7 +634,7 @@ export const UserMenuInteraction: Story = {
     
     // Menu should close
     await waitFor(() => {
-      expect(canvas.queryByText(mockAdminUser.email)).not.toBeInTheDocument();
+      void expect(canvas.queryByText(mockAdminUser.email)).not.toBeInTheDocument();
     });
   },
 };
@@ -654,7 +656,7 @@ export const MobileSearchInteraction: Story = {
     // Find mobile search input
     await waitFor(() => {
       const mobileSearch = canvas.getByTestId('mobile-search-input');
-      expect(mobileSearch).toBeInTheDocument();
+      void expect(mobileSearch).toBeInTheDocument();
     });
     
     // Type in mobile search
@@ -662,7 +664,7 @@ export const MobileSearchInteraction: Story = {
     await userEvent.type(mobileSearch, 'phone case');
     
     // Verify search value
-    expect(mobileSearch).toHaveValue('phone case');
+    void expect(mobileSearch).toHaveValue('phone case');
   },
 };
 
@@ -684,8 +686,8 @@ export const CompleteNavbarFlow: Story = {
     
     // Verify menu items
     await waitFor(() => {
-      expect(canvas.getByText('Profile')).toBeInTheDocument();
-      expect(canvas.getByText('Orders')).toBeInTheDocument();
+      void expect(canvas.getByText('Profile')).toBeInTheDocument();
+      void expect(canvas.getByText('Orders')).toBeInTheDocument();
     });
     
     // Close user menu

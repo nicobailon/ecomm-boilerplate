@@ -624,7 +624,7 @@ export const WithVariants: Story = {
     
     // Should show info toast
     await waitFor(() => {
-      expect(canvas.getByText(/select options on the product page/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/select options on the product page/i)).toBeInTheDocument();
     });
   },
 };
@@ -710,7 +710,7 @@ export const HoverInteractions: Story = {
     // Wishlist button should appear
     await waitFor(() => {
       const wishlistButton = canvas.getByRole('button', { name: /add to wishlist/i });
-      expect(wishlistButton).toBeVisible();
+      void expect(wishlistButton).toBeVisible();
     });
     
     // Click wishlist
@@ -719,7 +719,7 @@ export const HoverInteractions: Story = {
     
     // Should show coming soon toast
     await waitFor(() => {
-      expect(canvas.getByText(/wishlist feature coming soon/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/wishlist feature coming soon/i)).toBeInTheDocument();
     });
   },
 };
@@ -761,7 +761,7 @@ export const QuickAddToCart: Story = {
     
     // Button should show loading state
     await waitFor(() => {
-      expect(canvas.getByText(/adding/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/adding/i)).toBeInTheDocument();
     });
   },
 };

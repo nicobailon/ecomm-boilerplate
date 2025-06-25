@@ -946,7 +946,7 @@ export const ServerValidationErrors: Story = {
     });
     
     (useApplyCoupon as any).mockReturnValue({
-      mutate: (_code: string) => {
+      mutate: () => {
         setIsPending(true);
         setError(null);
         

@@ -30,17 +30,17 @@ describe('useFeatureFlags', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockResponse),
-    });
+    } as Response);
 
     const { result } = renderHook(() => useFeatureFlags());
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('/api/status');
+      void expect(mockFetch).toHaveBeenCalledWith('/api/status');
     });
 
     await waitFor(() => {
-      expect(result.current.flags.USE_VARIANT_ATTRIBUTES).toBe(true);
-      expect(result.current.isLoading).toBe(false);
+      void expect(result.current.flags.USE_VARIANT_ATTRIBUTES).toBe(true);
+      void expect(result.current.isLoading).toBe(false);
     });
   });
 
@@ -50,8 +50,8 @@ describe('useFeatureFlags', () => {
     const { result } = renderHook(() => useFeatureFlags());
 
     await waitFor(() => {
-      expect(result.current.error).toBe('Network error');
-      expect(result.current.isLoading).toBe(false);
+      void expect(result.current.error).toBe('Network error');
+      void expect(result.current.isLoading).toBe(false);
     });
   });
 
@@ -59,13 +59,13 @@ describe('useFeatureFlags', () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 500,
-    });
+    } as Response);
 
     const { result } = renderHook(() => useFeatureFlags());
 
     await waitFor(() => {
-      expect(result.current.error).toBe('Failed to fetch feature flags');
-      expect(result.current.isLoading).toBe(false);
+      void expect(result.current.error).toBe('Failed to fetch feature flags');
+      void expect(result.current.isLoading).toBe(false);
     });
   });
 
@@ -77,15 +77,15 @@ describe('useFeatureFlags', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockResponse),
-    });
+    } as Response);
 
     const { result } = renderHook(() => useFeatureFlags());
 
     await waitFor(() => {
       // Should have all env flags plus runtime flags
-      expect(result.current.flags).toHaveProperty('USE_TRPC_PRODUCTS');
-      expect(result.current.flags).toHaveProperty('USE_TRPC_CART');
-      expect(result.current.flags).toHaveProperty('USE_VARIANT_ATTRIBUTES');
+      void expect(result.current.flags).toHaveProperty('USE_TRPC_PRODUCTS');
+      void expect(result.current.flags).toHaveProperty('USE_TRPC_CART');
+      void expect(result.current.flags).toHaveProperty('USE_VARIANT_ATTRIBUTES');
     });
   });
 
@@ -97,18 +97,18 @@ describe('useFeatureFlags', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockResponse),
-    });
+    } as Response);
 
     const { result } = renderHook(() => useFeatureFlags());
 
     await waitFor(() => {
-      expect(result.current.refetch).toBeTypeOf('function');
+      void expect(result.current.refetch).toBeTypeOf('function');
     });
 
     // Call refetch
     await result.current.refetch();
 
-    expect(global.fetch).toHaveBeenCalledTimes(2);
+    void expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -125,12 +125,12 @@ describe('useFeatureFlag', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ useVariantAttributes: true }),
-    });
+    } as Response);
 
     const { result } = renderHook(() => useFeatureFlag('USE_VARIANT_ATTRIBUTES'));
 
     await waitFor(() => {
-      expect(result.current).toBe(true);
+      void expect(result.current).toBe(true);
     });
   });
 
@@ -138,12 +138,12 @@ describe('useFeatureFlag', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ useVariantAttributes: true }),
-    });
+    } as Response);
 
     const { result } = renderHook(() => useFeatureFlag('USE_TRPC_PRODUCTS' as const));
 
     await waitFor(() => {
-      expect(result.current).toBe(false);
+      void expect(result.current).toBe(false);
     });
   });
 
@@ -151,12 +151,12 @@ describe('useFeatureFlag', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ useVariantAttributes: false }),
-    });
+    } as Response);
 
     const { result, rerender } = renderHook(() => useFeatureFlag('USE_VARIANT_ATTRIBUTES'));
 
     await waitFor(() => {
-      expect(result.current).toBe(false);
+      void expect(result.current).toBe(false);
     });
 
     // Update store state
@@ -167,7 +167,7 @@ describe('useFeatureFlag', () => {
     rerender();
 
     await waitFor(() => {
-      expect(result.current).toBe(true);
+      void expect(result.current).toBe(true);
     });
   });
 });

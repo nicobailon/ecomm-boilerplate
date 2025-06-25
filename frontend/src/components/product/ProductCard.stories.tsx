@@ -327,7 +327,7 @@ const ProductCardWithNetworkError = ({ product }: { product: Product }) => {
             </p>
           </div>
           <Button
-            onClick={retry}
+            onClick={() => { void retry(); }}
             disabled={isRetrying}
             size="sm"
           >
@@ -615,24 +615,24 @@ export const KeyboardNavigation: Story = {
     // Focus on the card
     const card = canvas.getByRole('article');
     card.focus();
-    expect(document.activeElement).toBe(card);
+    void expect(document.activeElement).toBe(card);
     
     // Tab to product link
     await userEvent.tab();
     const productLink = canvas.getByRole('link', { name: mockProducts[0].name });
-    expect(document.activeElement).toBe(productLink);
+    void expect(document.activeElement).toBe(productLink);
     
     // Tab to add to cart button
     await userEvent.tab();
     const addToCartButton = canvas.getByRole('button', { name: /add to cart/i });
-    expect(document.activeElement).toBe(addToCartButton);
+    void expect(document.activeElement).toBe(addToCartButton);
     
     // Enter to activate button
     await userEvent.keyboard('{Enter}');
     
     // Should trigger add to cart action
     await waitFor(() => {
-      expect(canvas.getByText(/added to cart/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/added to cart/i)).toBeInTheDocument();
     });
   },
 };
@@ -669,7 +669,7 @@ export const QuickActionShortcuts: Story = {
     
     // Should trigger add to cart
     await waitFor(() => {
-      expect(canvas.getByText(/added to cart/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/added to cart/i)).toBeInTheDocument();
     });
     
     // Press 'V' for view details
@@ -691,19 +691,19 @@ export const ScreenReaderOptimized: Story = {
     
     // Check ARIA labels
     const card = canvas.getByRole('article');
-    expect(card).toHaveAttribute('aria-label', expect.stringContaining(mockProducts[0].name));
+    void expect(card).toHaveAttribute('aria-label', expect.stringContaining(mockProducts[0].name));
     
     // Check price announcement
     const priceElement = canvas.getByText(`$${mockProducts[0].price}`);
-    expect(priceElement).toHaveAttribute('aria-label', expect.stringContaining('price'));
+    void expect(priceElement).toHaveAttribute('aria-label', expect.stringContaining('price'));
     
     // Check stock status announcement
     const stockBadge = canvas.getByText(/low stock/i);
-    expect(stockBadge).toHaveAttribute('role', 'status');
+    void expect(stockBadge).toHaveAttribute('role', 'status');
     
     // Check featured badge
     const featuredBadge = canvas.getByText(/featured/i);
-    expect(featuredBadge).toHaveAttribute('aria-label', 'Featured product');
+    void expect(featuredBadge).toHaveAttribute('aria-label', 'Featured product');
   },
 };
 
@@ -731,16 +731,16 @@ export const FocusIndicators: Story = {
     card.focus();
     
     // Check focus styles are visible
-    expect(card).toHaveClass('focus-visible:ring-2');
+    void expect(card).toHaveClass('focus-visible:ring-2');
     
     await userEvent.tab();
     const link = canvas.getByRole('link');
-    expect(document.activeElement).toBe(link);
-    expect(link).toHaveClass('focus-visible:outline-none');
+    void expect(document.activeElement).toBe(link);
+    void expect(link).toHaveClass('focus-visible:outline-none');
     
     await userEvent.tab();
     const button = canvas.getByRole('button');
-    expect(document.activeElement).toBe(button);
-    expect(button).toHaveClass('focus-visible:ring-2');
+    void expect(document.activeElement).toBe(button);
+    void expect(button).toHaveClass('focus-visible:ring-2');
   },
 };

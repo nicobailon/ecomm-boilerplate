@@ -69,9 +69,9 @@ describe('productRouter - enhanced create', () => {
 
       const result = await adminCaller.product.create(input);
 
-      expect(productService.createProductWithCollection).toHaveBeenCalledWith('admin123', input);
-      expect(result).toEqual(mockResult);
-      expect(result.created.collection).toBe(true);
+      void expect(productService.createProductWithCollection).toHaveBeenCalledWith('admin123', input);
+      void expect(result).toEqual(mockResult);
+      void expect(result.created.collection).toBe(true);
     });
 
     it('should create product with existing collection', async () => {
@@ -98,8 +98,8 @@ describe('productRouter - enhanced create', () => {
 
       const result = await adminCaller.product.create(input);
 
-      expect(result.created.collection).toBe(false);
-      expect(result.collection).toBeUndefined();
+      void expect(result.created.collection).toBe(false);
+      void expect(result.collection).toBeUndefined();
     });
 
     it('should reject when both collectionId and collectionName provided', async () => {
@@ -134,7 +134,7 @@ describe('productRouter - enhanced create', () => {
 
       await adminCaller.product.create(input);
 
-      expect(productService.createProductWithCollection).toHaveBeenCalledWith(
+      void expect(productService.createProductWithCollection).toHaveBeenCalledWith(
         'admin123',
         expect.objectContaining({
           collectionName: '  Trimmed Collection  ',

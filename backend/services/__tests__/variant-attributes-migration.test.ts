@@ -39,7 +39,7 @@ describe('Variant Attributes Migration', () => {
   describe('generateVariantLabel', () => {
     it('should generate label from size and color', () => {
       const label = generateVariantLabel({ size: 'M', color: '#000000' });
-      expect(label).toBe('M / #000000');
+      void expect(label).toBe('M / #000000');
     });
 
     it('should generate label with all priority attributes', () => {
@@ -48,7 +48,7 @@ describe('Variant Attributes Migration', () => {
         color: '#FF0000', 
         material: 'Cotton', 
       });
-      expect(label).toBe('L / #FF0000 / Cotton');
+      void expect(label).toBe('L / #FF0000 / Cotton');
     });
 
     it('should include non-priority attributes after priority ones', () => {
@@ -58,12 +58,12 @@ describe('Variant Attributes Migration', () => {
         color: '#0000FF',
         finish: 'Matte',
       });
-      expect(label).toBe('S / #0000FF / Classic / Matte');
+      void expect(label).toBe('S / #0000FF / Classic / Matte');
     });
 
     it('should return Default for empty attributes', () => {
       const label = generateVariantLabel({});
-      expect(label).toBe('Default');
+      void expect(label).toBe('Default');
     });
 
     it('should handle undefined values', () => {
@@ -72,7 +72,7 @@ describe('Variant Attributes Migration', () => {
         color: undefined,
         material: 'Wool', 
       });
-      expect(label).toBe('M / Wool');
+      void expect(label).toBe('M / Wool');
     });
   });
 
@@ -149,12 +149,12 @@ describe('Variant Attributes Migration', () => {
 
       const migrated = simulateMigration(product);
       
-      expect(migrated.variants[0].attributes).toEqual({
+      void expect(migrated.variants[0].attributes).toEqual({
         size: 'M',
         color: '#000000',
       });
-      expect(migrated.variantTypes).toEqual(['size', 'color']);
-      expect(migrated.variants[0].label).toBe('M / #000000');
+      void expect(migrated.variantTypes).toEqual(['size', 'color']);
+      void expect(migrated.variants[0].label).toBe('M / #000000');
     });
 
     it('should parse label when attributes are empty', () => {
@@ -175,12 +175,12 @@ describe('Variant Attributes Migration', () => {
 
       const migrated = simulateMigration(product);
       
-      expect(migrated.variants[0].attributes).toEqual({
+      void expect(migrated.variants[0].attributes).toEqual({
         size: 'L',
         color: 'Blue',
         material: 'Cotton',
       });
-      expect(migrated.variantTypes).toEqual(['size', 'color', 'material']);
+      void expect(migrated.variantTypes).toEqual(['size', 'color', 'material']);
     });
 
     it('should preserve existing attributes', () => {
@@ -202,12 +202,12 @@ describe('Variant Attributes Migration', () => {
 
       const migrated = simulateMigration(product);
       
-      expect(migrated.variants[0].attributes).toEqual({
+      void expect(migrated.variants[0].attributes).toEqual({
         size: 'XL',
         style: 'Premium',
       });
-      expect(migrated.variantTypes).toEqual(['size', 'style']);
-      expect(migrated.variants[0].label).toBe('XL / Premium');
+      void expect(migrated.variantTypes).toEqual(['size', 'style']);
+      void expect(migrated.variants[0].label).toBe('XL / Premium');
     });
 
     it('should handle products without variants', () => {
@@ -219,8 +219,8 @@ describe('Variant Attributes Migration', () => {
 
       const migrated = simulateMigration(product);
       
-      expect(migrated.variants).toEqual([]);
-      expect(migrated.variantTypes).toEqual([]);
+      void expect(migrated.variants).toEqual([]);
+      void expect(migrated.variantTypes).toEqual([]);
     });
 
     it('should combine legacy fields with parsed label data', () => {
@@ -242,11 +242,11 @@ describe('Variant Attributes Migration', () => {
 
       const migrated = simulateMigration(product);
       
-      expect(migrated.variants[0].attributes).toEqual({
+      void expect(migrated.variants[0].attributes).toEqual({
         size: 'S',
       });
-      expect(migrated.variantTypes).toEqual(['size']);
-      expect(migrated.variants[0].label).toBe('S');
+      void expect(migrated.variantTypes).toEqual(['size']);
+      void expect(migrated.variants[0].label).toBe('S');
     });
   });
 });

@@ -65,17 +65,17 @@ export const UploadStage: Story = {
     const canvas = within(canvasElement);
     
     // Check upload area is present
-    expect(canvas.getByText(/bulk inventory update/i)).toBeInTheDocument();
-    expect(canvas.getByText(/upload a csv file/i)).toBeInTheDocument();
+    void expect(canvas.getByText(/bulk inventory update/i)).toBeInTheDocument();
+    void expect(canvas.getByText(/upload a csv file/i)).toBeInTheDocument();
     
     // Verify CSV format instructions
     const formatExample = canvas.getByText(/csv format example/i);
-    expect(formatExample).toBeInTheDocument();
+    void expect(formatExample).toBeInTheDocument();
     
     // Look for file input
     const fileInput = canvas.getByLabelText(/choose.*file|select.*file|upload.*csv/i);
-    expect(fileInput).toBeInTheDocument();
-    expect(fileInput).toHaveAttribute('accept', '.csv');
+    void expect(fileInput).toBeInTheDocument();
+    void expect(fileInput).toHaveAttribute('accept', '.csv');
   },
 };
 
@@ -464,7 +464,7 @@ export const FileUploadInteraction: Story = {
     
     // Wait for component to render
     await waitFor(() => {
-      expect(canvas.getByText(/bulk inventory update/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/bulk inventory update/i)).toBeInTheDocument();
     });
     
     // Find file input
@@ -481,8 +481,8 @@ JEANS-001,15,32W`;
     await userEvent.upload(fileInput, file);
     
     // Verify file was selected
-    expect((fileInput as HTMLInputElement).files?.[0]).toBe(file);
-    expect((fileInput as HTMLInputElement).files?.[0].name).toBe('inventory-update.csv');
+    void expect((fileInput as HTMLInputElement).files?.[0]).toBe(file);
+    void expect((fileInput as HTMLInputElement).files?.[0].name).toBe('inventory-update.csv');
   },
 };
 
@@ -494,7 +494,7 @@ export const KeyboardNavigation: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText(/bulk inventory update/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/bulk inventory update/i)).toBeInTheDocument();
     });
     
     // Focus on file input area
@@ -514,12 +514,12 @@ export const KeyboardNavigation: Story = {
       tabCount++;
     }
     
-    expect(document.activeElement).toBe(closeButton);
+    void expect(document.activeElement).toBe(closeButton);
     
     // ESC to close
     await userEvent.keyboard('{Escape}');
     await waitFor(() => {
-      expect(args.onClose).toHaveBeenCalled();
+      void expect(args.onClose).toHaveBeenCalled();
     });
   },
 };
@@ -614,24 +614,24 @@ export const PreviewStageInteraction: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText(/review the changes/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/review the changes/i)).toBeInTheDocument();
     });
     
     // Check table content
-    expect(canvas.getByText('TSHIRT-001')).toBeInTheDocument();
-    expect(canvas.getByText('Classic T-Shirt')).toBeInTheDocument();
-    expect(canvas.getByText('Small')).toBeInTheDocument();
+    void expect(canvas.getByText('TSHIRT-001')).toBeInTheDocument();
+    void expect(canvas.getByText('Classic T-Shirt')).toBeInTheDocument();
+    void expect(canvas.getByText('Small')).toBeInTheDocument();
     
     // Verify inventory changes are shown
-    expect(canvas.getByText('+15')).toBeInTheDocument();
-    expect(canvas.getByText('+15')).toHaveClass('text-green-600');
+    void expect(canvas.getByText('+15')).toBeInTheDocument();
+    void expect(canvas.getByText('+15')).toHaveClass('text-green-600');
     
     // Test navigation
     const applyButton = canvas.getByRole('button', { name: /apply changes/i });
     const backButton = canvas.getByRole('button', { name: /back/i });
     
-    expect(applyButton).toBeInTheDocument();
-    expect(backButton).toBeInTheDocument();
+    void expect(applyButton).toBeInTheDocument();
+    void expect(backButton).toBeInTheDocument();
     
     // Click back button
     await userEvent.click(backButton);
@@ -693,18 +693,18 @@ export const ValidationErrorsInteraction: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText(/validation errors found/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/validation errors found/i)).toBeInTheDocument();
     });
     
     // Check error messages
-    expect(canvas.getByText(/invalid inventory value/i)).toBeInTheDocument();
-    expect(canvas.getByText(/product matching.*not found/i)).toBeInTheDocument();
-    expect(canvas.getByText(/missing sku/i)).toBeInTheDocument();
+    void expect(canvas.getByText(/invalid inventory value/i)).toBeInTheDocument();
+    void expect(canvas.getByText(/product matching.*not found/i)).toBeInTheDocument();
+    void expect(canvas.getByText(/missing sku/i)).toBeInTheDocument();
     
     // Verify error alert role
     const errorAlert = canvas.getByRole('alert');
-    expect(errorAlert).toBeInTheDocument();
-    expect(errorAlert).toHaveAttribute('aria-live', 'assertive');
+    void expect(errorAlert).toBeInTheDocument();
+    void expect(errorAlert).toHaveAttribute('aria-live', 'assertive');
     
     // Click choose new file
     const newFileButton = canvas.getByRole('button', { name: /choose new file/i });
@@ -773,29 +773,29 @@ TSHIRT-002,20,Medium`}
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText(/bulk inventory update/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/bulk inventory update/i)).toBeInTheDocument();
     });
     
     // Check dialog accessibility
     const title = canvas.getByText(/bulk inventory update/i);
-    expect(title).toHaveAttribute('id', 'dialog-title');
+    void expect(title).toHaveAttribute('id', 'dialog-title');
     
     // Check file input has label
     const fileInput = canvas.getByLabelText(/choose csv file/i);
-    expect(fileInput).toBeInTheDocument();
-    expect(fileInput).toHaveAttribute('accept', '.csv');
+    void expect(fileInput).toBeInTheDocument();
+    void expect(fileInput).toHaveAttribute('accept', '.csv');
     
     // Check upload area is labeled
     const uploadRegion = canvas.getByRole('region', { name: /file upload area/i });
-    expect(uploadRegion).toBeInTheDocument();
+    void expect(uploadRegion).toBeInTheDocument();
     
     // Check close button has label
     const closeButton = canvas.getByRole('button', { name: /close dialog/i });
-    expect(closeButton).toBeInTheDocument();
+    void expect(closeButton).toBeInTheDocument();
     
     // Check CSV example is accessible
     const csvExample = canvas.getByLabelText(/csv format example/i);
-    expect(csvExample).toBeInTheDocument();
+    void expect(csvExample).toBeInTheDocument();
   },
 };
 
@@ -871,12 +871,12 @@ export const DragAndDropInteraction: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText(/upload csv file/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/upload csv file/i)).toBeInTheDocument();
     });
     
     // Check drag and drop area
     const dropArea = canvas.getByRole('region', { name: /drag and drop area/i });
-    expect(dropArea).toBeInTheDocument();
+    void expect(dropArea).toBeInTheDocument();
     
     // Simulate drag enter
     const dragEnterEvent = new DragEvent('dragenter', {
@@ -887,7 +887,7 @@ export const DragAndDropInteraction: Story = {
     
     // Check visual feedback
     await waitFor(() => {
-      expect(canvas.getByText(/drop file here/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/drop file here/i)).toBeInTheDocument();
     });
     
     // Simulate drag leave
@@ -898,7 +898,7 @@ export const DragAndDropInteraction: Story = {
     dropArea.dispatchEvent(dragLeaveEvent);
     
     await waitFor(() => {
-      expect(canvas.getByText(/click to choose file or drag and drop/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/click to choose file or drag and drop/i)).toBeInTheDocument();
     });
   },
 };
@@ -989,30 +989,30 @@ export const ProgressTracking: Story = {
     
     // Check initial state
     await waitFor(() => {
-      expect(canvas.getByText(/preparing update/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/preparing update/i)).toBeInTheDocument();
     });
     
     // Check progress indicators
     const progressBars = canvas.getAllByRole('progressbar');
-    expect(progressBars.length).toBeGreaterThan(0);
+    void expect(progressBars.length).toBeGreaterThan(0);
     
     // Wait for status changes
     await waitFor(() => {
-      expect(canvas.getByText(/validating data/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/validating data/i)).toBeInTheDocument();
     }, { timeout: 2000 });
     
     await waitFor(() => {
-      expect(canvas.getByText(/updating inventory/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/updating inventory/i)).toBeInTheDocument();
     }, { timeout: 4000 });
     
     // Wait for completion
     await waitFor(() => {
-      expect(canvas.getByText(/update complete/i)).toBeInTheDocument();
-      expect(canvas.getByText('100% complete')).toBeInTheDocument();
+      void expect(canvas.getByText(/update complete/i)).toBeInTheDocument();
+      void expect(canvas.getByText('100% complete')).toBeInTheDocument();
     }, { timeout: 6000 });
     
     // Check done button appears
     const doneButton = canvas.getByRole('button', { name: /done/i });
-    expect(doneButton).toBeInTheDocument();
+    void expect(doneButton).toBeInTheDocument();
   },
 };

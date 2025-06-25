@@ -24,7 +24,7 @@ const isAuthed = t.middleware(({ ctx, next }) => {
   return next({
     ctx: {
       user: ctx.user,
-      userId: (ctx.user._id).toString(),
+      userId: ctx.user._id.toString(),
     },
   });
 });
@@ -36,7 +36,7 @@ const isAdmin = t.middleware(({ ctx, next }) => {
   return next({
     ctx: {
       user: ctx.user,
-      userId: (ctx.user._id).toString(),
+      userId: ctx.user._id.toString(),
     },
   });
 });

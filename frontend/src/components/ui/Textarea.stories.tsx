@@ -203,16 +203,16 @@ export const InteractiveTest: Story = {
     const textarea = canvas.getByPlaceholderText('Type something to test...');
     
     await userEvent.click(textarea);
-    expect(textarea).toHaveFocus();
+    void expect(textarea).toHaveFocus();
     
     await userEvent.type(textarea, 'Hello, this is a test message!');
-    expect(textarea).toHaveValue('Hello, this is a test message!');
+    void expect(textarea).toHaveValue('Hello, this is a test message!');
     
     await userEvent.clear(textarea);
-    expect(textarea).toHaveValue('');
+    void expect(textarea).toHaveValue('');
     
     await userEvent.type(textarea, 'New content');
-    expect(textarea).toHaveValue('New content');
+    void expect(textarea).toHaveValue('New content');
   },
 };
 

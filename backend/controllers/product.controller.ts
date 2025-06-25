@@ -7,8 +7,8 @@ import { ProductVariant } from '../validations/product.validation.js';
 export const getAllProducts = asyncHandler(async (req: Request, res: Response) => {
   const { search, page = '1', limit = '12' } = req.query;
   
-  const pageNum = parseInt(page as string, 10) || 1;
-  const limitNum = parseInt(limit as string, 10) || 12;
+  const pageNum = parseInt(page as string, 10) ?? 1;
+  const limitNum = parseInt(limit as string, 10) ?? 12;
   
   const result = await productService.getAllProducts(
     pageNum, 

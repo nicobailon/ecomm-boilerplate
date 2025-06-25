@@ -157,23 +157,23 @@ export const InteractionTest: Story = {
     const checkbox = canvas.getByRole('checkbox');
     
     // Initially unchecked
-    expect(checkbox).not.toBeChecked();
+    void expect(checkbox).not.toBeChecked();
     
     // Click to check
     await userEvent.click(checkbox);
-    expect(checkbox).toBeChecked();
+    void expect(checkbox).toBeChecked();
     
     // Click to uncheck
     await userEvent.click(checkbox);
-    expect(checkbox).not.toBeChecked();
+    void expect(checkbox).not.toBeChecked();
     
     // Test clicking the label
     const label = canvas.getByText('Click me');
     await userEvent.click(label);
-    expect(checkbox).toBeChecked();
+    void expect(checkbox).toBeChecked();
     
     // Verify checkbox has focus after label click (proper htmlFor/id wiring)
-    expect(checkbox).toHaveFocus();
+    void expect(checkbox).toHaveFocus();
   },
 };
 

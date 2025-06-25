@@ -37,10 +37,10 @@ describe('VariantAttributesEditor', () => {
         </TestWrapper>,
       );
 
-      expect(screen.getByText('Variant Types')).toBeInTheDocument();
-      expect(screen.getByText('Define attributes like Size, Color, Material')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Type name (e.g., Size)')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Values (comma-separated, e.g., S, M, L, XL)')).toBeInTheDocument();
+      void expect(screen.getByText('Variant Types')).toBeInTheDocument();
+      void expect(screen.getByText('Define attributes like Size, Color, Material')).toBeInTheDocument();
+      void expect(screen.getByPlaceholderText('Type name (e.g., Size)')).toBeInTheDocument();
+      void expect(screen.getByPlaceholderText('Values (comma-separated, e.g., S, M, L, XL)')).toBeInTheDocument();
     });
 
     it('should render empty state when no variants exist', () => {
@@ -50,8 +50,8 @@ describe('VariantAttributesEditor', () => {
         </TestWrapper>,
       );
 
-      expect(screen.getByText('No variants created yet')).toBeInTheDocument();
-      expect(screen.getByText('Define variant types above or add variants manually')).toBeInTheDocument();
+      void expect(screen.getByText('No variants created yet')).toBeInTheDocument();
+      void expect(screen.getByText('Define variant types above or add variants manually')).toBeInTheDocument();
     });
   });
 
@@ -74,10 +74,10 @@ describe('VariantAttributesEditor', () => {
       await user.click(addButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Size')).toBeInTheDocument();
-        expect(screen.getByText('Small')).toBeInTheDocument();
-        expect(screen.getByText('Medium')).toBeInTheDocument();
-        expect(screen.getByText('Large')).toBeInTheDocument();
+        void expect(screen.getByText('Size')).toBeInTheDocument();
+        void expect(screen.getByText('Small')).toBeInTheDocument();
+        void expect(screen.getByText('Medium')).toBeInTheDocument();
+        void expect(screen.getByText('Large')).toBeInTheDocument();
       });
     });
 
@@ -89,7 +89,7 @@ describe('VariantAttributesEditor', () => {
       );
 
       const addButton = screen.getByRole('button', { name: /add type/i });
-      expect(addButton).toBeDisabled();
+      void expect(addButton).toBeDisabled();
     });
 
     it('should clear inputs after adding a type', async () => {
@@ -110,8 +110,8 @@ describe('VariantAttributesEditor', () => {
       await user.click(addButton);
 
       await waitFor(() => {
-        expect(typeNameInput).toHaveValue('');
-        expect(typeValuesInput).toHaveValue('');
+        void expect(typeNameInput).toHaveValue('');
+        void expect(typeValuesInput).toHaveValue('');
       });
     });
   });
@@ -135,7 +135,7 @@ describe('VariantAttributesEditor', () => {
       await user.click(addButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /generate variants/i })).toBeInTheDocument();
+        void expect(screen.getByRole('button', { name: /generate variants/i })).toBeInTheDocument();
       });
     });
 
@@ -166,7 +166,7 @@ describe('VariantAttributesEditor', () => {
         // Should create 2x2 = 4 variants
         const variantRows = screen.getAllByRole('row');
         // +1 for header row
-        expect(variantRows).toHaveLength(5);
+        void expect(variantRows).toHaveLength(5);
       });
     });
   });
@@ -197,15 +197,15 @@ describe('VariantAttributesEditor', () => {
       );
 
       // Check table headers - use getAllByText for duplicate texts
-      expect(screen.getByText('Variant')).toBeInTheDocument();
+      void expect(screen.getByText('Variant')).toBeInTheDocument();
       const sizeElements = screen.getAllByText('Size');
-      expect(sizeElements.length).toBeGreaterThan(0); // At least one Size header
+      void expect(sizeElements.length).toBeGreaterThan(0); // At least one Size header
       const colorElements = screen.getAllByText('Color');
-      expect(colorElements.length).toBeGreaterThan(0); // At least one Color header
-      expect(screen.getByText('Price Adj.')).toBeInTheDocument();
-      expect(screen.getByText('Final Price')).toBeInTheDocument();
-      expect(screen.getByText('Inventory')).toBeInTheDocument();
-      expect(screen.getByText('SKU')).toBeInTheDocument();
+      void expect(colorElements.length).toBeGreaterThan(0); // At least one Color header
+      void expect(screen.getByText('Price Adj.')).toBeInTheDocument();
+      void expect(screen.getByText('Final Price')).toBeInTheDocument();
+      void expect(screen.getByText('Inventory')).toBeInTheDocument();
+      void expect(screen.getByText('SKU')).toBeInTheDocument();
     });
 
     it('should auto-generate variant labels from attributes', () => {
@@ -235,11 +235,11 @@ describe('VariantAttributesEditor', () => {
 
       // Check auto-generated label
       const labelInput = screen.getByDisplayValue('Small / Red');
-      expect(labelInput).toBeInTheDocument();
-      expect(labelInput).toHaveAttribute('readonly');
+      void expect(labelInput).toBeInTheDocument();
+      void expect(labelInput).toHaveAttribute('readonly');
 
       // Check final price calculation
-      expect(screen.getByText('$105.00')).toBeInTheDocument();
+      void expect(screen.getByText('$105.00')).toBeInTheDocument();
     });
 
     it('should highlight duplicate attribute combinations', () => {
@@ -274,7 +274,7 @@ describe('VariantAttributesEditor', () => {
       );
 
       // Should show duplicate badge
-      expect(screen.getAllByText('Duplicate')).toHaveLength(1);
+      void expect(screen.getAllByText('Duplicate')).toHaveLength(1);
     });
   });
 
@@ -286,7 +286,7 @@ describe('VariantAttributesEditor', () => {
         </TestWrapper>,
       );
 
-      expect(screen.getByRole('button', { name: /add variant manually/i })).toBeInTheDocument();
+      void expect(screen.getByRole('button', { name: /add variant manually/i })).toBeInTheDocument();
     });
 
     it('should not show manual add button when types are defined', async () => {
@@ -303,7 +303,7 @@ describe('VariantAttributesEditor', () => {
       await user.click(screen.getByRole('button', { name: /add type/i }));
 
       await waitFor(() => {
-        expect(screen.queryByRole('button', { name: /add variant manually/i })).not.toBeInTheDocument();
+        void expect(screen.queryByRole('button', { name: /add variant manually/i })).not.toBeInTheDocument();
       });
     });
   });
@@ -318,7 +318,7 @@ describe('VariantAttributesEditor', () => {
 
       // Check for skeleton elements by their class
       const skeletonElements = document.querySelectorAll('.animate-pulse');
-      expect(skeletonElements.length).toBeGreaterThan(0);
+      void expect(skeletonElements.length).toBeGreaterThan(0);
     });
   });
 
@@ -342,9 +342,9 @@ describe('VariantAttributesEditor', () => {
         </TestWrapper>,
       );
 
-      expect(screen.getByText('Tips:')).toBeInTheDocument();
-      expect(screen.getByText(/Define variant types/)).toBeInTheDocument();
-      expect(screen.getByText(/Click "Generate Variants"/)).toBeInTheDocument();
+      void expect(screen.getByText('Tips:')).toBeInTheDocument();
+      void expect(screen.getByText(/Define variant types/)).toBeInTheDocument();
+      void expect(screen.getByText(/Click "Generate Variants"/)).toBeInTheDocument();
     });
   });
 });

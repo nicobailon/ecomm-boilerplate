@@ -88,7 +88,7 @@ export const Required: Story = {
     const input = canvas.getByPlaceholderText('Enter username');
     
     // Assert that the input has aria-required attribute
-    expect(input).toHaveAttribute('aria-required', 'true');
+    void expect(input).toHaveAttribute('aria-required', 'true');
   },
 };
 

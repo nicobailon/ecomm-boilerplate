@@ -5,6 +5,7 @@ import { renderWithProviders, createMockProduct } from '@/test/test-utils';
 import ProductsList from './ProductsList';
 import type { UseQueryResult, UseMutationResult } from '@tanstack/react-query';
 import type { Product, PaginatedResponse } from '@/types';
+import { createMockQueryResult, createMockMutationResult } from '@/test/mocks/query-mocks';
 
 // Mock the hooks module to avoid importing JSX
 vi.mock('@/hooks/product/useProducts', () => ({
@@ -47,99 +48,46 @@ describe('ProductsList - Featured Products', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    mockUseProducts.mockReturnValue({
-      data: { data: mockProducts, totalPages: 1, currentPage: 1 } as ProductsApiResponse,
+    const mockProductsData = createMockQueryResult<PaginatedResponse<Product>>({
+      data: { 
+        data: mockProducts, 
+        pagination: {
+          page: 1,
+          limit: 12,
+          total: mockProducts.length,
+          pages: 1,
+        },
+        success: true,
+      },
       isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-      isPending: false,
-      isError: false,
       isSuccess: true,
-      isLoadingError: false,
-      isRefetchError: false,
-      isFetching: false,
       isFetched: true,
-      isRefetching: false,
-      isStale: false,
-      isPlaceholderData: false,
-      status: 'success',
-      fetchStatus: 'idle',
-      errorUpdateCount: 0,
-      dataUpdatedAt: Date.now(),
-      errorUpdatedAt: 0,
-      failureCount: 0,
-      failureReason: null,
       isFetchedAfterMount: true,
-      isInitialLoading: false,
-      isPaused: false,
-      promise: Promise.resolve({ data: mockProducts, totalPages: 1, currentPage: 1 }),
-    } as unknown as UseQueryResult<PaginatedResponse<Product>, Error>);
+      dataUpdatedAt: Date.now(),
+    });
+    
+    mockUseProducts.mockReturnValue(mockProductsData);
 
-    mockUseDeleteProduct.mockReturnValue({
-      mutate: vi.fn(),
-      mutateAsync: vi.fn(),
+    mockUseDeleteProduct.mockReturnValue(createMockMutationResult<void, Error, string>({
       isPending: false,
-      isError: false,
-      isSuccess: false,
       isIdle: true,
-      data: undefined,
-      error: null,
-      variables: undefined,
-      status: 'idle',
-      reset: vi.fn(),
-      context: undefined,
-      failureCount: 0,
-      failureReason: null,
-      isPaused: false,
-      submittedAt: 0,
-    } as UseMutationResult<void, Error, string, unknown>);
+    }));
 
-    mockUseToggleFeatured.mockReturnValue({
-      mutate: vi.fn(),
-      mutateAsync: vi.fn(),
+    mockUseToggleFeatured.mockReturnValue(createMockMutationResult<Product, Error, string, { previousQueries: [readonly unknown[], PaginatedResponse<Product> | undefined][]; previousFeatured: Product[] | undefined }>({
       isPending: false,
-      isError: false,
-      isSuccess: false,
       isIdle: true,
-      data: undefined,
-      error: null,
-      variables: undefined,
-      status: 'idle',
-      reset: vi.fn(),
-      context: undefined,
-      failureCount: 0,
-      failureReason: null,
-      isPaused: false,
-      submittedAt: 0,
-    } as UseMutationResult<Product, Error, string, { previousQueries: [readonly unknown[], PaginatedResponse<Product> | undefined][]; previousFeatured: Product[] | undefined }>);
+    }));
 
-    mockUseFeaturedProducts.mockReturnValue({
+    const mockFeaturedProductsData = createMockQueryResult<Product[]>({
       data: mockProducts.filter(p => p.isFeatured),
       isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-      isPending: false,
-      isError: false,
       isSuccess: true,
-      isLoadingError: false,
-      isRefetchError: false,
-      isFetching: false,
       isFetched: true,
-      isRefetching: false,
-      isStale: false,
-      isPlaceholderData: false,
-      status: 'success',
-      fetchStatus: 'idle',
-      errorUpdateCount: 0,
-      dataUpdatedAt: Date.now(),
-      errorUpdatedAt: 0,
-      failureCount: 0,
-      failureReason: null,
       isFetchedAfterMount: true,
-      isInitialLoading: false,
-      isPaused: false,
-      promise: Promise.resolve(mockProducts.filter(p => p.isFeatured)),
-    } as UseQueryResult<Product[], Error>);
+      dataUpdatedAt: Date.now(),
+    });
+    
+    mockUseFeaturedProducts.mockReturnValue(mockFeaturedProductsData);
   });
 
   describe('Star Button Dynamic Title', () => {
@@ -148,7 +96,7 @@ describe('ProductsList - Featured Products', () => {
 
       await waitFor(() => {
         const nonFeaturedStarButtons = screen.getAllByTitle('Add to homepage carousel');
-        expect(nonFeaturedStarButtons).toHaveLength(1);
+        void expect(nonFeaturedStarButtons).toHaveLength(1);
       });
     });
 
@@ -157,7 +105,7 @@ describe('ProductsList - Featured Products', () => {
 
       await waitFor(() => {
         const featuredStarButtons = screen.getAllByTitle('Remove from homepage carousel');
-        expect(featuredStarButtons).toHaveLength(2);
+        void expect(featuredStarButtons).toHaveLength(2);
       });
     });
 
@@ -174,10 +122,10 @@ describe('ProductsList - Featured Products', () => {
           btn.getAttribute('title') === 'Add to homepage carousel',
         );
 
-        expect(featuredButton?.className).toContain('bg-warning');
-        expect(featuredButton?.className).toContain('ring-2');
-        expect(nonFeaturedButton?.className).toContain('bg-muted');
-        expect(nonFeaturedButton?.className).not.toContain('ring-2');
+        void expect(featuredButton?.className).toContain('bg-warning');
+        void expect(featuredButton?.className).toContain('ring-2');
+        void expect(nonFeaturedButton?.className).toContain('bg-muted');
+        void expect(nonFeaturedButton?.className).not.toContain('ring-2');
       });
     });
   });
@@ -188,13 +136,13 @@ describe('ProductsList - Featured Products', () => {
 
       await waitFor(() => {
         const featuredHeader = screen.getByText('Featured');
-        expect(featuredHeader).toBeInTheDocument();
+        void expect(featuredHeader).toBeInTheDocument();
         
         const infoIcon = featuredHeader.parentElement?.querySelector('[title="Featured products appear in the homepage carousel"]');
-        expect(infoIcon).toBeInTheDocument();
+        void expect(infoIcon).toBeInTheDocument();
         // The icon is wrapped in a span, so check for the svg inside
         const svgIcon = infoIcon?.querySelector('svg');
-        expect(svgIcon).toBeInTheDocument();
+        void expect(svgIcon).toBeInTheDocument();
       });
     });
   });
@@ -205,7 +153,7 @@ describe('ProductsList - Featured Products', () => {
 
       await waitFor(() => {
         const featuredCount = screen.getByTestId('featured-count');
-        expect(featuredCount).toHaveTextContent('2 featured products in homepage carousel');
+        void expect(featuredCount).toHaveTextContent('2 featured products in homepage carousel');
       });
     });
 
@@ -242,7 +190,7 @@ describe('ProductsList - Featured Products', () => {
 
       await waitFor(() => {
         const featuredCount = screen.getByTestId('featured-count');
-        expect(featuredCount).toHaveTextContent('1 featured product in homepage carousel');
+        void expect(featuredCount).toHaveTextContent('1 featured product in homepage carousel');
       });
     });
 
@@ -280,7 +228,7 @@ describe('ProductsList - Featured Products', () => {
       await waitFor(() => {
         // Banner should not be rendered when count is 0
         const banner = container.querySelector('[data-testid="featured-count"]');
-        expect(banner).not.toBeInTheDocument();
+        void expect(banner).not.toBeInTheDocument();
       });
     });
 
@@ -316,7 +264,7 @@ describe('ProductsList - Featured Products', () => {
       const { container } = renderWithProviders(<ProductsList />);
       
       const banner = container.querySelector('.bg-muted\\/50');
-      expect(banner).not.toBeInTheDocument();
+      void expect(banner).not.toBeInTheDocument();
     });
 
     it('should contain preview homepage link', async () => {
@@ -324,10 +272,10 @@ describe('ProductsList - Featured Products', () => {
 
       await waitFor(() => {
         const previewLink = screen.getByRole('link', { name: /preview homepage/i });
-        expect(previewLink).toBeInTheDocument();
-        expect(previewLink).toHaveAttribute('href', '/');
-        expect(previewLink).toHaveAttribute('target', '_blank');
-        expect(previewLink).toHaveAttribute('rel', 'noopener noreferrer');
+        void expect(previewLink).toBeInTheDocument();
+        void expect(previewLink).toHaveAttribute('href', '/');
+        void expect(previewLink).toHaveAttribute('target', '_blank');
+        void expect(previewLink).toHaveAttribute('rel', 'noopener noreferrer');
       });
     });
   });
@@ -358,7 +306,7 @@ describe('ProductsList - Featured Products', () => {
       renderWithProviders(<ProductsList />);
 
       await waitFor(() => {
-        expect(screen.getByText('Product 2')).toBeInTheDocument();
+        void expect(screen.getByText('Product 2')).toBeInTheDocument();
       });
 
       // Find all toggle buttons
@@ -366,14 +314,14 @@ describe('ProductsList - Featured Products', () => {
       
       // Find the non-featured product's button (Product 2)
       const nonFeaturedButton = toggleButtons[1]; // Product 2 is at index 1
-      expect(nonFeaturedButton).toHaveAttribute('title', 'Add to homepage carousel');
+      void expect(nonFeaturedButton).toHaveAttribute('title', 'Add to homepage carousel');
 
       // Click the star
       await user.click(nonFeaturedButton);
 
       // Verify the mutation was called with the correct product ID
-      expect(toggleMutate).toHaveBeenCalledWith('2');
-      expect(toggleMutate).toHaveBeenCalledTimes(1);
+      void expect(toggleMutate).toHaveBeenCalledWith('2');
+      void expect(toggleMutate).toHaveBeenCalledTimes(1);
     });
 
     it('should show loading state when toggling', async () => {
@@ -404,19 +352,19 @@ describe('ProductsList - Featured Products', () => {
       renderWithProviders(<ProductsList />);
 
       await waitFor(() => {
-        expect(screen.getByText('Product 1')).toBeInTheDocument();
+        void expect(screen.getByText('Product 1')).toBeInTheDocument();
       });
 
       // Find a featured product's toggle button and click it
       const toggleButtons = screen.getAllByTestId('toggle-feature');
       const featuredButton = toggleButtons[0]; // Product 1 is featured
-      expect(featuredButton).toHaveAttribute('title', 'Remove from homepage carousel');
+      void expect(featuredButton).toHaveAttribute('title', 'Remove from homepage carousel');
       
       // Click starts the async operation
       await user.click(featuredButton);
       
       // Verify the mutation was called
-      expect(toggleMutate).toHaveBeenCalledWith('1');
+      void expect(toggleMutate).toHaveBeenCalledWith('1');
       
       // The component manages its own loading state internally via useState
       // We can't directly test the disabled state without implementation details
@@ -514,7 +462,7 @@ describe('ProductsList - Featured Products', () => {
 
       await waitFor(() => {
         const featuredCount = screen.getByTestId('featured-count');
-        expect(featuredCount).toHaveTextContent('2 featured products in homepage carousel');
+        void expect(featuredCount).toHaveTextContent('2 featured products in homepage carousel');
       });
 
       // Click non-featured product star
@@ -528,7 +476,7 @@ describe('ProductsList - Featured Products', () => {
       await waitFor(() => {
         // Banner should show 3 featured products now
         const featuredCount = screen.getByTestId('featured-count');
-        expect(featuredCount).toHaveTextContent('3 featured products in homepage carousel');
+        void expect(featuredCount).toHaveTextContent('3 featured products in homepage carousel');
       });
     });
   });

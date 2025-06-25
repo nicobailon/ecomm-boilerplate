@@ -62,7 +62,7 @@ const InfiniteScrollWrapper = ({ initialCount = 100 }: { initialCount?: number }
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     if (scrollHeight - scrollTop <= clientHeight * 1.5 && hasMore && !isLoading) {
-      loadMore();
+      void loadMore();
     }
   };
 

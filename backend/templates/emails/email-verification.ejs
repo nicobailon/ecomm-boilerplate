@@ -1,0 +1,46 @@
+<h2 style="color: #333333; margin-bottom: 20px;">Verify Your Email Address</h2>
+
+<p>Hi <%= userName %>,</p>
+
+<p>Welcome to <%= fromName %>! We're excited to have you on board. To get started, please verify your email address by clicking the button below.</p>
+
+<div style="background-color: #f8f8f8; padding: 25px; border-radius: 4px; margin: 30px 0; text-align: center;">
+  <p style="margin-bottom: 20px;">Please click the button below to verify your email:</p>
+  <a href="<%= verificationUrl %>" class="button">Verify Email</a>
+  <p style="margin-top: 20px; font-size: 14px; color: #666666;">
+    This link will expire in <%= expirationTime %>
+  </p>
+</div>
+
+<div style="margin: 30px 0;">
+  <p style="color: #666666; font-size: 14px;">Or copy and paste this link into your browser:</p>
+  <p style="word-break: break-all; background-color: #f3f4f6; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px;">
+    <%= verificationUrl %>
+  </p>
+</div>
+
+<div style="background-color: #e0f2fe; border: 1px solid #7dd3fc; padding: 15px; border-radius: 4px; margin: 30px 0;">
+  <h4 style="margin: 0 0 10px 0; color: #0369a1;">✨ What happens next?</h4>
+  <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #0369a1;">
+    <li style="margin-bottom: 5px;">Your email will be verified</li>
+    <li style="margin-bottom: 5px;">You'll receive a welcome email with helpful tips</li>
+    <li style="margin-bottom: 5px;">You can start shopping and enjoying our services</li>
+  </ul>
+</div>
+
+<p style="margin-top: 30px; color: #666666;">
+  If you didn't create an account with <%= fromName %>, please ignore this email. 
+  No account will be created without verifying this email address.
+</p>
+
+<p style="margin-top: 20px; color: #666666;">
+  For security reasons, this verification link will expire in <%= expirationTime %>. 
+  If it expires, you can request a new verification link from your account settings.
+</p>
+
+<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+  <p style="color: #666666; font-size: 14px;">
+    Need help? Contact our support team at 
+    <a href="mailto:<%= supportEmail %>" style="color: #3b82f6;"><%= supportEmail %></a>
+  </p>
+</div>

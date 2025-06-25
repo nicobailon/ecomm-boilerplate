@@ -31,7 +31,7 @@ const FormWrapper = ({ children, initialValues = defaultValues }: { children: Re
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(fn())} className="space-y-6">
+      <form onSubmit={(e) => { void methods.handleSubmit(fn())(e); }} className="space-y-6">
         {children}
         <div className="mt-4 p-4 bg-muted rounded-lg">
           <h3 className="text-sm font-medium mb-2">Form State</h3>
@@ -194,7 +194,7 @@ export const AddVariantInteraction: Story = {
     
     // A new row should appear
     await waitFor(() => {
-      expect(canvas.getByRole('textbox', { name: 'Variant 1 label' })).toBeInTheDocument();
+      void expect(canvas.getByRole('textbox', { name: 'Variant 1 label' })).toBeInTheDocument();
     });
     
     // Type in the label field
@@ -219,7 +219,7 @@ export const AddVariantInteraction: Story = {
     
     // Verify final price calculation
     await waitFor(() => {
-      expect(canvas.getByText('$94.99')).toBeInTheDocument(); // Base price 99.99 - 5
+      void expect(canvas.getByText('$94.99')).toBeInTheDocument(); // Base price 99.99 - 5
     });
   },
 };
@@ -266,16 +266,16 @@ export const DeleteVariantInteraction: Story = {
     
     // Find all delete buttons
     const deleteButtons = canvas.getAllByRole('button', { name: /Remove variant/ });
-    expect(deleteButtons).toHaveLength(3);
+    void expect(deleteButtons).toHaveLength(3);
     
     // Click the middle one (Medium variant)
     await userEvent.click(deleteButtons[1]);
     
     // Verify the variant was removed
     await waitFor(() => {
-      expect(canvas.queryByDisplayValue('Medium')).not.toBeInTheDocument();
-      expect(canvas.getByDisplayValue('Small')).toBeInTheDocument();
-      expect(canvas.getByDisplayValue('Large')).toBeInTheDocument();
+      void expect(canvas.queryByDisplayValue('Medium')).not.toBeInTheDocument();
+      void expect(canvas.getByDisplayValue('Small')).toBeInTheDocument();
+      void expect(canvas.getByDisplayValue('Large')).toBeInTheDocument();
     });
   },
 };
@@ -364,10 +364,10 @@ export const ValidationErrors: Story = {
     // Check for validation errors
     await waitFor(() => {
       const labelErrors = canvas.getAllByText('Label is required');
-      expect(labelErrors).toHaveLength(2);
+      void expect(labelErrors).toHaveLength(2);
       
       const inventoryErrors = canvas.getAllByText('Inventory cannot be negative');
-      expect(inventoryErrors).toHaveLength(2);
+      void expect(inventoryErrors).toHaveLength(2);
     });
   },
 };
@@ -592,7 +592,7 @@ export const LivePriceCalculation: Story = {
     await waitFor(() => {
       const prices = canvas.getAllByText(/^\$\d+\.\d{2}$/);
       const standardPrice = prices.find(el => el.textContent === '$65.25');
-      expect(standardPrice).toBeInTheDocument(); // 50 + 15.25
+      void expect(standardPrice).toBeInTheDocument(); // 50 + 15.25
     });
   },
 };
@@ -703,7 +703,7 @@ export const SaveError: Story = {
             <p className="text-sm text-muted-foreground mb-3">
               Click save to simulate a server error
             </p>
-            <Button onClick={simulateSaveError} disabled={isSaving}>
+            <Button onClick={() => { void simulateSaveError(); }} disabled={isSaving}>
               {isSaving ? (
                 <>
                   <Save className="w-4 h-4 mr-2 animate-pulse" />
@@ -971,7 +971,7 @@ export const BulkImportError: Story = {
                   Import variants from CSV file
                 </p>
               </div>
-              <Button onClick={simulateImport} disabled={isImporting}>
+              <Button onClick={() => { void simulateImport(); }} disabled={isImporting}>
                 {isImporting ? (
                   <>
                     <Package className="w-4 h-4 mr-2 animate-pulse" />
@@ -1037,8 +1037,8 @@ export const FormSubmissionError: Story = {
       
       const [showErrors, setShowErrors] = useState(false);
       
-      const handleSubmit = async (data: ProductFormInput) => {
-        console.log('Form submitted:', data);
+      const handleSubmit = (_data: ProductFormInput) => {
+        // Form submitted
       };
       
       const triggerValidation = async () => {
@@ -1051,13 +1051,13 @@ export const FormSubmissionError: Story = {
       
       return (
         <FormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit(handleSubmit)} className="max-w-4xl mx-auto p-6 bg-background space-y-6">
+          <form onSubmit={(e) => { void methods.handleSubmit(handleSubmit)(e); }} className="max-w-4xl mx-auto p-6 bg-background space-y-6">
             <Card className="p-4">
               <h4 className="font-medium mb-2">Form Validation Demo</h4>
               <p className="text-sm text-muted-foreground mb-3">
                 This form has multiple validation errors
               </p>
-              <Button type="button" onClick={triggerValidation}>
+              <Button type="button" onClick={() => { void triggerValidation(); }}>
                 Validate Form
               </Button>
             </Card>
@@ -1126,7 +1126,7 @@ export const ErrorRecovery: Story = {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={retry}
+                    onClick={() => { void retry(); }}
                     disabled={isRetrying}
                   >
                     {isRetrying ? (

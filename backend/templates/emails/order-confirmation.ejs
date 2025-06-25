@@ -1,0 +1,80 @@
+<h2 style="color: #333333; margin-bottom: 20px;">Thank you for your order, <%= customerName %>!</h2>
+
+<p>We're excited to confirm that we've received your order and it's being processed.</p>
+
+<div style="background-color: #f8f8f8; padding: 20px; border-radius: 4px; margin: 20px 0;">
+  <p style="margin: 0;"><strong>Order Number:</strong> <%= orderId %></p>
+  <p style="margin: 5px 0 0 0;"><strong>Order Date:</strong> <%= orderDate %></p>
+</div>
+
+<h3 style="color: #333333; margin-top: 30px; margin-bottom: 20px;">Order Details</h3>
+
+<table style="width: 100%; border-collapse: collapse;">
+  <thead>
+    <tr style="border-bottom: 2px solid #eeeeee;">
+      <th style="text-align: left; padding: 10px 0;">Item</th>
+      <th style="text-align: center; padding: 10px 0;">Qty</th>
+      <th style="text-align: right; padding: 10px 0;">Price</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% items.forEach(function(item) { %>
+    <tr style="border-bottom: 1px solid #eeeeee;">
+      <td style="padding: 15px 0;">
+        <div style="display: flex; align-items: center;">
+          <% if (item.image) { %>
+          <img src="<%= item.image %>" alt="<%= item.name %>" style="width: 60px; height: 60px; object-fit: cover; margin-right: 15px; border-radius: 4px;">
+          <% } %>
+          <div>
+            <strong><%= item.name %></strong>
+            <% if (item.variantDetails) { %>
+            <br><span style="color: #666666; font-size: 14px;"><%= item.variantDetails %></span>
+            <% } %>
+          </div>
+        </div>
+      </td>
+      <td style="text-align: center; padding: 15px 0;"><%= item.quantity %></td>
+      <td style="text-align: right; padding: 15px 0;">$<%= item.price.toFixed(2) %></td>
+    </tr>
+    <% }); %>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="2" style="text-align: right; padding: 10px 0;"><strong>Subtotal:</strong></td>
+      <td style="text-align: right; padding: 10px 0;">$<%= subtotal.toFixed(2) %></td>
+    </tr>
+    <% if (discount && discount > 0) { %>
+    <tr>
+      <td colspan="2" style="text-align: right; padding: 10px 0; color: #22c55e;"><strong>Discount:</strong></td>
+      <td style="text-align: right; padding: 10px 0; color: #22c55e;">-$<%= discount.toFixed(2) %></td>
+    </tr>
+    <% } %>
+    <tr style="border-top: 2px solid #333333;">
+      <td colspan="2" style="text-align: right; padding: 15px 0;"><strong style="font-size: 18px;">Total:</strong></td>
+      <td style="text-align: right; padding: 15px 0;"><strong style="font-size: 18px;">$<%= total.toFixed(2) %></strong></td>
+    </tr>
+  </tfoot>
+</table>
+
+<h3 style="color: #333333; margin-top: 30px; margin-bottom: 20px;">Shipping Information</h3>
+
+<div style="background-color: #f8f8f8; padding: 20px; border-radius: 4px;">
+  <p style="margin: 0;"><%= shippingAddress.line1 %></p>
+  <% if (shippingAddress.line2) { %>
+  <p style="margin: 5px 0 0 0;"><%= shippingAddress.line2 %></p>
+  <% } %>
+  <p style="margin: 5px 0 0 0;"><%= shippingAddress.city %>, <%= shippingAddress.state %> <%= shippingAddress.postalCode %></p>
+  <p style="margin: 5px 0 0 0;"><%= shippingAddress.country %></p>
+</div>
+
+<p style="margin-top: 20px;"><strong>Payment Method:</strong> <%= paymentMethod %></p>
+
+<% if (estimatedDelivery) { %>
+<p><strong>Estimated Delivery:</strong> <%= estimatedDelivery %></p>
+<% } %>
+
+<div style="text-align: center; margin-top: 40px;">
+  <a href="<%= orderUrl %>" class="button">View Order Status</a>
+</div>
+
+<p style="margin-top: 30px; color: #666666;">If you have any questions about your order, please don't hesitate to contact our customer support team.</p>

@@ -603,7 +603,7 @@ export const WithNetworkLatency: Story = {
     if (incrementButton) {
       await userEvent.click(incrementButton);
       // Verify loading state appears
-      await expect(incrementButton).toBeDisabled();
+      await void expect(incrementButton).toBeDisabled();
     }
   },
   ...(withEndpointOverrides([

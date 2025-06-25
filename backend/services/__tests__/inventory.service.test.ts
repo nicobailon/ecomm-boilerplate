@@ -39,7 +39,7 @@ describe('InventoryService', () => {
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
       const result = await inventoryService.checkAvailability('507f1f77bcf86cd799439011', 'v1', 5);
-      expect(result).toBe(true);
+      void expect(result).toBe(true);
     });
 
     it('should return false when insufficient inventory', async () => {
@@ -53,14 +53,14 @@ describe('InventoryService', () => {
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
       const result = await inventoryService.checkAvailability('507f1f77bcf86cd799439011', 'v1', 5);
-      expect(result).toBe(false);
+      void expect(result).toBe(false);
     });
 
     it('should return false when product not found', async () => {
       vi.spyOn(Product, 'findById').mockResolvedValue(null);
 
       const result = await inventoryService.checkAvailability('507f1f77bcf86cd799439011', 'v1', 3);
-      expect(result).toBe(false);
+      void expect(result).toBe(false);
     });
 
     it('should sum all variant inventories when no variantId specified', async () => {
@@ -74,10 +74,10 @@ describe('InventoryService', () => {
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
       const result = await inventoryService.checkAvailability('507f1f77bcf86cd799439011', undefined, 12);
-      expect(result).toBe(true);
+      void expect(result).toBe(true);
 
       const result2 = await inventoryService.checkAvailability('507f1f77bcf86cd799439011', undefined, 20);
-      expect(result2).toBe(false);
+      void expect(result2).toBe(false);
     });
   });
 
@@ -93,7 +93,7 @@ describe('InventoryService', () => {
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
       const result = await inventoryService.getAvailableInventory('507f1f77bcf86cd799439011', 'v1');
-      expect(result).toBe(10);
+      void expect(result).toBe(10);
     });
 
     it('should return total inventory when no variant specified', async () => {
@@ -107,7 +107,7 @@ describe('InventoryService', () => {
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
       const result = await inventoryService.getAvailableInventory('507f1f77bcf86cd799439011');
-      expect(result).toBe(15);
+      void expect(result).toBe(15);
     });
 
     it('should throw error when product not found', async () => {
@@ -124,7 +124,7 @@ describe('InventoryService', () => {
       vi.spyOn(Product, 'findById').mockResolvedValue(mockProduct);
 
       const result = await inventoryService.getAvailableInventory('507f1f77bcf86cd799439011');
-      expect(result).toBe(0);
+      void expect(result).toBe(0);
     });
   });
 
@@ -155,10 +155,10 @@ describe('InventoryService', () => {
         { supplier: 'Test Supplier' },
       );
 
-      expect(result.success).toBe(true);
-      expect(result.previousQuantity).toBe(10);
-      expect(result.newQuantity).toBe(20);
-      expect(result.availableStock).toBe(20);
+      void expect(result.success).toBe(true);
+      void expect(result.previousQuantity).toBe(10);
+      void expect(result.newQuantity).toBe(20);
+      void expect(result.availableStock).toBe(20);
     });
 
     it('should prevent negative inventory', async () => {
@@ -220,7 +220,7 @@ describe('InventoryService', () => {
 
       const result = await inventoryService.getProductInventoryInfo('507f1f77bcf86cd799439011', 'v1');
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         productId: '507f1f77bcf86cd799439011',
         variantId: 'v1',
         currentStock: 10,
@@ -244,7 +244,7 @@ describe('InventoryService', () => {
 
       const result = await inventoryService.getProductInventoryInfo('507f1f77bcf86cd799439011', 'v1');
 
-      expect(result.stockStatus).toBe(StockStatus.LOW_STOCK);
+      void expect(result.stockStatus).toBe(StockStatus.LOW_STOCK);
     });
 
     it('should return out of stock status when inventory is 0', async () => {
@@ -259,7 +259,7 @@ describe('InventoryService', () => {
 
       const result = await inventoryService.getProductInventoryInfo('507f1f77bcf86cd799439011', 'v1');
 
-      expect(result.stockStatus).toBe(StockStatus.OUT_OF_STOCK);
+      void expect(result.stockStatus).toBe(StockStatus.OUT_OF_STOCK);
     });
 
     it('should return backordered status when allowBackorder is true', async () => {
@@ -274,7 +274,7 @@ describe('InventoryService', () => {
 
       const result = await inventoryService.getProductInventoryInfo('507f1f77bcf86cd799439011', 'v1');
 
-      expect(result.stockStatus).toBe(StockStatus.BACKORDERED);
+      void expect(result.stockStatus).toBe(StockStatus.BACKORDERED);
     });
   });
 
@@ -290,16 +290,18 @@ describe('InventoryService', () => {
       vi.spyOn(Product, 'aggregate').mockResolvedValue([mockMetrics]);
       const mockCacheGet = vi.fn().mockResolvedValue(null);
       const mockCacheSet = vi.fn().mockResolvedValue(undefined);
-      vi.mocked(CacheService).mockImplementation(() => ({
-        get: mockCacheGet,
-        set: mockCacheSet,
-        del: vi.fn(),
-        flush: vi.fn(),
-      }));
+      vi.mocked(CacheService).mockImplementation(() => {
+        const cacheInstance = new CacheService();
+        cacheInstance.get = mockCacheGet;
+        cacheInstance.set = mockCacheSet;
+        cacheInstance.del = vi.fn();
+        cacheInstance.flush = vi.fn();
+        return cacheInstance;
+      });
 
       const result = await inventoryService.getInventoryMetrics();
 
-      expect(result).toEqual(mockMetrics);
+      void expect(result).toEqual(mockMetrics);
     });
   });
 });

@@ -129,7 +129,7 @@ async function revertVariantLabels(options: RevertOptions = {}): Promise<RevertR
           productId: String(product._id),
           error: errorMessage,
         });
-        
+
         console.error(`❌ Error processing product "${product.name}": ${errorMessage}`);
       }
     }
@@ -168,9 +168,9 @@ async function revertVariantLabels(options: RevertOptions = {}): Promise<RevertR
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
-  const verbose = args.includes('--verbose') || args.includes('-v');
+  const verbose = args.includes('--verbose') ?? args.includes('-v');
 
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes('--help') ?? args.includes('-h')) {
     console.warn(`
 📝 Product Variant Label Revert Script
 

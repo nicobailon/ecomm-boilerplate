@@ -71,8 +71,8 @@ describe('ProductService - Variant Label Feature', () => {
           'Small - Blue',
         );
 
-        expect(result.inventory).toBe(15);
-        expect(mockProduct.save).toHaveBeenCalledTimes(1);
+        void expect(result.inventory).toBe(15);
+        void expect(mockProduct.save).toHaveBeenCalledTimes(1);
       });
 
       it('should map size to label when only variantId provided', async () => {
@@ -87,8 +87,8 @@ describe('ProductService - Variant Label Feature', () => {
           undefined,
         );
 
-        expect(result.inventory).toBe(15);
-        expect(mockProduct.save).toHaveBeenCalledTimes(1);
+        void expect(result.inventory).toBe(15);
+        void expect(mockProduct.save).toHaveBeenCalledTimes(1);
       });
 
       it('should prefer label over variantId when both provided', async () => {
@@ -103,8 +103,8 @@ describe('ProductService - Variant Label Feature', () => {
           'Medium - Blue',
         );
 
-        expect(result.inventory).toBe(20);
-        expect(mockProduct.save).toHaveBeenCalledTimes(1);
+        void expect(result.inventory).toBe(20);
+        void expect(mockProduct.save).toHaveBeenCalledTimes(1);
       });
 
       it('should handle variant not found error', async () => {
@@ -140,8 +140,8 @@ describe('ProductService - Variant Label Feature', () => {
           undefined,
         );
 
-        expect(result.inventory).toBe(15);
-        expect(mockProduct.save).toHaveBeenCalledTimes(1);
+        void expect(result.inventory).toBe(15);
+        void expect(mockProduct.save).toHaveBeenCalledTimes(1);
       });
 
       it('should ignore label in legacy mode', async () => {
@@ -156,9 +156,9 @@ describe('ProductService - Variant Label Feature', () => {
           'Small - Blue',
         );
 
-        expect(result.inventory).toBe(20);
-        expect(result.variantId).toBe('variant-2');
-        expect(mockProduct.save).toHaveBeenCalledTimes(1);
+        void expect(result.inventory).toBe(20);
+        void expect(result.variantId).toBe('variant-2');
+        void expect(mockProduct.save).toHaveBeenCalledTimes(1);
       });
 
       it('should handle size lookup in legacy mode', async () => {
@@ -173,8 +173,8 @@ describe('ProductService - Variant Label Feature', () => {
           undefined,
         );
 
-        expect(result.inventory).toBe(10);
-        expect(mockProduct.save).toHaveBeenCalledTimes(1);
+        void expect(result.inventory).toBe(10);
+        void expect(mockProduct.save).toHaveBeenCalledTimes(1);
       });
     });
 
@@ -196,8 +196,8 @@ describe('ProductService - Variant Label Feature', () => {
           3,
         );
 
-        expect(result.inventory).toBe(15);
-        expect(mockProduct.save).toHaveBeenCalledTimes(2);
+        void expect(result.inventory).toBe(15);
+        void expect(mockProduct.save).toHaveBeenCalledTimes(2);
       });
 
       it('should throw after max retries', async () => {
@@ -257,10 +257,10 @@ describe('ProductService - Variant Label Feature', () => {
 
         const result = await productService.createProduct(productData);
 
-        expect(result).toBeDefined();
+        void expect(result).toBeDefined();
         // Since the mock returns the product data directly, we can verify the call was made
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(Product.prototype.save).toHaveBeenCalledTimes(1);
+        void expect(Product.prototype.save).toHaveBeenCalledTimes(1);
       });
     });
   });

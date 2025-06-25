@@ -36,3 +36,12 @@ export const collectionCreationLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+export const emailRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 email requests per windowMs
+  message: 'Too many email requests, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+});

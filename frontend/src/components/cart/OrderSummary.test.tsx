@@ -4,7 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { render } from '@/test/test-utils';
 import OrderSummary from './OrderSummary';
 import { toast } from 'sonner';
-import type { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
+import { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
+import type { Product } from '@/types';
 
 vi.mock('sonner', () => ({
   toast: {
@@ -29,66 +30,97 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-const mockUseUnifiedCart = vi.fn();
-vi.mock('@/hooks/cart/useUnifiedCart', () => ({
-  useUnifiedCart: () => mockUseUnifiedCart() as ReturnType<typeof useUnifiedCart>,
-}));
+vi.mock('@/hooks/cart/useUnifiedCart');
+const mockUseUnifiedCart = vi.mocked(useUnifiedCart);
+
+const createMockProduct = (overrides?: Partial<Product>): Product => ({
+  _id: '1',
+  name: 'Test Product',
+  description: 'Test description',
+  price: 100,
+  image: 'test.jpg',
+  isFeatured: false,
+  inventory: 10,
+  sku: 'TEST-SKU',
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  ...overrides,
+});
+
+const createMockCartData = (overrides?: Partial<ReturnType<typeof useUnifiedCart>>): ReturnType<typeof useUnifiedCart> => ({
+  data: {
+    appliedCoupon: null,
+    cartItems: [],
+    subtotal: 0,
+    totalAmount: 0,
+  },
+  source: 'user' as const,
+  totalQuantity: 0,
+  isLoading: false,
+  isError: false,
+  error: null,
+  ...overrides,
+});
 
 describe('OrderSummary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseUnifiedCart.mockReturnValue({
+    const mockCartData = createMockCartData({
       data: {
         subtotal: 100,
         totalAmount: 100,
         appliedCoupon: null,
         cartItems: [
-          { product: { _id: '1', price: 100 }, quantity: 1 },
+          { 
+            product: createMockProduct(), 
+            quantity: 1 
+          },
         ],
       },
-      source: 'user',
+      totalQuantity: 1,
     });
+    
+    mockUseUnifiedCart.mockReturnValue(mockCartData);
   });
 
   describe('Basic Display', () => {
     it('should render order summary with correct totals', () => {
       render(<OrderSummary />);
       
-      expect(screen.getByText('Order summary')).toBeInTheDocument();
-      expect(screen.getByText('Original price')).toBeInTheDocument();
-      expect(screen.getAllByText('$100.00')).toHaveLength(2); // Original price and Total
-      expect(screen.getByText('Total')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Proceed to Checkout' })).toBeInTheDocument();
+      void expect(screen.getByText('Order summary')).toBeInTheDocument();
+      void expect(screen.getByText('Original price')).toBeInTheDocument();
+      void expect(screen.getAllByText('$100.00')).toHaveLength(2); // Original price and Total
+      void expect(screen.getByText('Total')).toBeInTheDocument();
+      void expect(screen.getByRole('button', { name: 'Proceed to Checkout' })).toBeInTheDocument();
     });
 
     it('should show continue shopping link', () => {
       render(<OrderSummary />);
       
       const continueLink = screen.getByRole('link', { name: /Continue Shopping/i });
-      expect(continueLink).toHaveAttribute('href', '/');
+      void expect(continueLink).toHaveAttribute('href', '/');
     });
 
     it('should handle empty cart', () => {
-      mockUseUnifiedCart.mockReturnValue({
+      mockUseUnifiedCart.mockReturnValue(createMockCartData({
         data: {
           subtotal: 0,
           totalAmount: 0,
           appliedCoupon: null,
           cartItems: [],
         },
-        source: 'user',
-      });
+      }));
       
       render(<OrderSummary />);
       
       const checkoutButton = screen.getByRole('button', { name: 'Proceed to Checkout' });
-      expect(checkoutButton).toBeDisabled();
+      void expect(checkoutButton).toBeDisabled();
     });
   });
 
   describe('Discount Display', () => {
     it('should display savings when coupon is applied', () => {
-      mockUseUnifiedCart.mockReturnValue({
+      mockUseUnifiedCart.mockReturnValue(createMockCartData({
         data: {
           subtotal: 100,
           totalAmount: 80,
@@ -97,26 +129,26 @@ describe('OrderSummary', () => {
             discountPercentage: 20,
           },
           cartItems: [
-            { product: { _id: '1', price: 100 }, quantity: 1 },
+            { product: createMockProduct({ price: 100 }), quantity: 1 },
           ],
         },
-        source: 'user',
-      });
+        totalQuantity: 1,
+      }));
       
       render(<OrderSummary />);
       
-      expect(screen.getByText('Savings')).toBeInTheDocument();
-      expect(screen.getByText('-$20.00')).toBeInTheDocument();
-      expect(screen.getByText('Coupon (SAVE20)')).toBeInTheDocument();
-      expect(screen.getByText('-20%')).toBeInTheDocument();
-      expect(screen.getByText('$80.00')).toBeInTheDocument();
+      void expect(screen.getByText('Savings')).toBeInTheDocument();
+      void expect(screen.getByText('-$20.00')).toBeInTheDocument();
+      void expect(screen.getByText('Coupon (SAVE20)')).toBeInTheDocument();
+      void expect(screen.getByText('-20%')).toBeInTheDocument();
+      void expect(screen.getByText('$80.00')).toBeInTheDocument();
     });
 
     it('should not show savings section when no discount', () => {
       render(<OrderSummary />);
       
-      expect(screen.queryByText('Savings')).not.toBeInTheDocument();
-      expect(screen.queryByText(/Coupon/)).not.toBeInTheDocument();
+      void expect(screen.queryByText('Savings')).not.toBeInTheDocument();
+      void expect(screen.queryByText(/Coupon/)).not.toBeInTheDocument();
     });
 
     it('should calculate correct savings for different percentages', () => {
@@ -128,7 +160,7 @@ describe('OrderSummary', () => {
       ];
 
       testCases.forEach(({ percentage, subtotal, total, savings }) => {
-        mockUseUnifiedCart.mockReturnValue({
+        mockUseUnifiedCart.mockReturnValue(createMockCartData({
           data: {
             subtotal,
             totalAmount: total,
@@ -136,22 +168,22 @@ describe('OrderSummary', () => {
               code: `SAVE${percentage}`,
               discountPercentage: percentage,
             },
-            cartItems: [{ product: { _id: '1', price: subtotal }, quantity: 1 }],
+            cartItems: [{ product: createMockProduct({ _id: '1', price: subtotal }), quantity: 1 }],
           },
-          source: 'user',
-        });
+          totalQuantity: 1,
+        }));
 
         const { unmount } = render(<OrderSummary />);
         
-        expect(screen.getByText(`-$${savings.toFixed(2)}`)).toBeInTheDocument();
-        expect(screen.getByText(`-${percentage}%`)).toBeInTheDocument();
+        void expect(screen.getByText(`-$${savings.toFixed(2)}`)).toBeInTheDocument();
+        void expect(screen.getByText(`-${percentage}%`)).toBeInTheDocument();
         
         unmount();
       });
     });
 
     it('should handle decimal discount percentages', () => {
-      mockUseUnifiedCart.mockReturnValue({
+      mockUseUnifiedCart.mockReturnValue(createMockCartData({
         data: {
           subtotal: 99.99,
           totalAmount: 87.49,
@@ -159,33 +191,34 @@ describe('OrderSummary', () => {
             code: 'PRECISE',
             discountPercentage: 12.5,
           },
-          cartItems: [{ product: { _id: '1', price: 99.99 }, quantity: 1 }],
+          cartItems: [{ product: createMockProduct({ price: 99.99 }), quantity: 1 }],
         },
-        source: 'user',
-      });
+        totalQuantity: 1,
+      }));
       
       render(<OrderSummary />);
       
-      expect(screen.getByText('Coupon (PRECISE)')).toBeInTheDocument();
-      expect(screen.getByText('-12.5%')).toBeInTheDocument();
-      expect(screen.getByText('-$12.50')).toBeInTheDocument();
-      expect(screen.getByText('$87.49')).toBeInTheDocument();
+      void expect(screen.getByText('Coupon (PRECISE)')).toBeInTheDocument();
+      void expect(screen.getByText('-12.5%')).toBeInTheDocument();
+      void expect(screen.getByText('-$12.50')).toBeInTheDocument();
+      void expect(screen.getByText('$87.49')).toBeInTheDocument();
     });
   });
 
   describe('Guest User Experience', () => {
     beforeEach(() => {
-      mockUseUnifiedCart.mockReturnValue({
+      mockUseUnifiedCart.mockReturnValue(createMockCartData({
         data: {
           subtotal: 100,
           totalAmount: 100,
           appliedCoupon: null,
           cartItems: [
-            { product: { _id: '1', price: 100 }, quantity: 1 },
+            { product: createMockProduct({ price: 100 }), quantity: 1 },
           ],
         },
         source: 'guest',
-      });
+        totalQuantity: 1,
+      }));
     });
 
     it('should redirect guest users to login on checkout', async () => {
@@ -195,22 +228,22 @@ describe('OrderSummary', () => {
       const checkoutButton = screen.getByRole('button', { name: 'Proceed to Checkout' });
       await user.click(checkoutButton);
       
-      expect(toast.error).toHaveBeenCalledWith('Please login to proceed with checkout');
-      expect(mockNavigate).toHaveBeenCalledWith('/login');
+      void expect(toast.error).toHaveBeenCalledWith('Please login to proceed with checkout');
+      void expect(mockNavigate).toHaveBeenCalledWith('/login');
     });
 
     it('should display order summary for guests', () => {
       render(<OrderSummary />);
       
-      expect(screen.getByText('Order summary')).toBeInTheDocument();
-      expect(screen.getAllByText('$100.00')).toHaveLength(2);
-      expect(screen.getByRole('button', { name: 'Proceed to Checkout' })).toBeInTheDocument();
+      void expect(screen.getByText('Order summary')).toBeInTheDocument();
+      void expect(screen.getAllByText('$100.00')).toHaveLength(2);
+      void expect(screen.getByRole('button', { name: 'Proceed to Checkout' })).toBeInTheDocument();
     });
   });
 
   describe('Edge Cases', () => {
     it('should handle very large numbers', () => {
-      mockUseUnifiedCart.mockReturnValue({
+      mockUseUnifiedCart.mockReturnValue(createMockCartData({
         data: {
           subtotal: 999999.99,
           totalAmount: 499999.99,
@@ -218,20 +251,20 @@ describe('OrderSummary', () => {
             code: 'MEGA50',
             discountPercentage: 50,
           },
-          cartItems: [{ product: { _id: '1', price: 999999.99 }, quantity: 1 }],
+          cartItems: [{ product: createMockProduct({ price: 999999.99 }), quantity: 1 }],
         },
-        source: 'user',
-      });
+        totalQuantity: 1,
+      }));
       
       render(<OrderSummary />);
       
-      expect(screen.getByText('$999999.99')).toBeInTheDocument();
-      expect(screen.getByText('-$500000.00')).toBeInTheDocument();
-      expect(screen.getByText('$499999.99')).toBeInTheDocument();
+      void expect(screen.getByText('$999999.99')).toBeInTheDocument();
+      void expect(screen.getByText('-$500000.00')).toBeInTheDocument();
+      void expect(screen.getByText('$499999.99')).toBeInTheDocument();
     });
 
     it('should handle zero total with 100% discount', () => {
-      mockUseUnifiedCart.mockReturnValue({
+      mockUseUnifiedCart.mockReturnValue(createMockCartData({
         data: {
           subtotal: 50,
           totalAmount: 0,
@@ -239,17 +272,17 @@ describe('OrderSummary', () => {
             code: 'FREE100',
             discountPercentage: 100,
           },
-          cartItems: [{ product: { _id: '1', price: 50 }, quantity: 1 }],
+          cartItems: [{ product: createMockProduct({ price: 50 }), quantity: 1 }],
         },
-        source: 'user',
-      });
+        totalQuantity: 1,
+      }));
       
       render(<OrderSummary />);
       
-      expect(screen.getByText('$50.00')).toBeInTheDocument();
-      expect(screen.getByText('-$50.00')).toBeInTheDocument();
-      expect(screen.getByText('$0.00')).toBeInTheDocument();
-      expect(screen.getByText('-100%')).toBeInTheDocument();
+      void expect(screen.getByText('$50.00')).toBeInTheDocument();
+      void expect(screen.getByText('-$50.00')).toBeInTheDocument();
+      void expect(screen.getByText('$0.00')).toBeInTheDocument();
+      void expect(screen.getByText('-100%')).toBeInTheDocument();
     });
   });
 });

@@ -168,7 +168,7 @@ async function migrateVariantLabels(options: MigrationOptions = {}): Promise<Mig
           productId: String(product._id),
           error: errorMessage,
         });
-        
+
         console.error(`❌ Error processing product "${product.name}": ${errorMessage}`);
       }
     }
@@ -207,9 +207,9 @@ async function migrateVariantLabels(options: MigrationOptions = {}): Promise<Mig
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
-  const verbose = args.includes('--verbose') || args.includes('-v');
+  const verbose = args.includes('--verbose') ?? args.includes('-v');
 
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes('--help') ?? args.includes('-h')) {
     console.error(`
 📝 Product Variant Label Migration Script
 

@@ -379,7 +379,7 @@ export const LoadingStates: Story = {
           <ProductVariantSelector 
             variants={sizeVariants}
             selectedVariant={selectedVariant} 
-            onVariantSelect={handleSelect}
+            onVariantSelect={(variant) => { void handleSelect(variant); }}
             basePrice={29.99}
           />
           {isLoading && (

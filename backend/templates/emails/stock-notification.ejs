@@ -1,0 +1,42 @@
+<h2 style="color: #333333; margin-bottom: 20px;">Great news! <%= productName %> is back in stock!</h2>
+
+<p>You asked us to notify you when this item became available, and we're happy to let you know it's now back in stock.</p>
+
+<div style="border: 1px solid #eeeeee; border-radius: 4px; padding: 20px; margin: 30px 0;">
+  <div style="display: flex; align-items: center;">
+    <% if (productImage) { %>
+    <img src="<%= productImage %>" alt="<%= productName %>" style="width: 150px; height: 150px; object-fit: cover; margin-right: 20px; border-radius: 4px;">
+    <% } %>
+    <div>
+      <h3 style="margin: 0 0 10px 0;"><%= productName %></h3>
+      <% if (variantDetails) { %>
+      <p style="color: #666666; margin: 0 0 10px 0;"><%= variantDetails %></p>
+      <% } %>
+      <p style="font-size: 24px; font-weight: bold; margin: 10px 0;">
+        $<%= price.toFixed(2) %>
+        <% if (previousPrice && previousPrice > price) { %>
+        <span style="text-decoration: line-through; color: #999999; font-size: 18px; font-weight: normal; margin-left: 10px;">
+          $<%= previousPrice.toFixed(2) %>
+        </span>
+        <span style="color: #22c55e; font-size: 16px; font-weight: normal; margin-left: 10px;">
+          <%= Math.round((1 - price / previousPrice) * 100) %>% OFF
+        </span>
+        <% } %>
+      </p>
+    </div>
+  </div>
+</div>
+
+<div style="text-align: center; margin: 40px 0;">
+  <a href="<%= productUrl %>" class="button">Shop Now</a>
+</div>
+
+<div style="background-color: #fee2e2; border: 1px solid #fecaca; padding: 15px; border-radius: 4px; margin: 30px 0;">
+  <p style="margin: 0; color: #dc2626;"><strong>⚡ Limited Availability</strong><br>
+  This item is in high demand. Don't miss out - order soon!</p>
+</div>
+
+<p style="margin-top: 30px; color: #666666; font-size: 14px;">
+  You received this email because you requested to be notified when this product became available. 
+  If you no longer wish to receive these notifications, you can <a href="<%= unsubscribeUrl %>" style="color: #666666; text-decoration: underline;">unsubscribe here</a>.
+</p>

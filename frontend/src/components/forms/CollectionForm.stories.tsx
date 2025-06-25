@@ -83,6 +83,7 @@ const ExtendedCollectionForm = ({
     setIsSubmitting(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
     
+    // Prepare collection data with selected products and SEO info
     const fullData = {
       ...data,
       products: selectedProducts,
@@ -91,7 +92,8 @@ const ExtendedCollectionForm = ({
       slug: slug || data.name.toLowerCase().replace(/\s+/g, '-'),
     };
     
-    console.log('Submitting collection:', fullData);
+    // Submit collection data
+    console.log('Full collection data:', fullData);
     toast.success(mode === 'create' ? 'Collection created!' : 'Collection updated!');
     setIsSubmitting(false);
   };
@@ -236,7 +238,7 @@ export const WithValidation: Story = {
     
     // Should show validation error
     await waitFor(() => {
-      expect(canvas.getByText('Collection name is required')).toBeInTheDocument();
+      void expect(canvas.getByText('Collection name is required')).toBeInTheDocument();
     });
     
     // Fill in name
@@ -245,7 +247,7 @@ export const WithValidation: Story = {
     
     // Error should disappear
     await waitFor(() => {
-      expect(canvas.queryByText('Collection name is required')).not.toBeInTheDocument();
+      void expect(canvas.queryByText('Collection name is required')).not.toBeInTheDocument();
     });
   },
 };
@@ -264,7 +266,7 @@ export const LongDescription: Story = {
     
     // Should show validation error for exceeding max length
     await waitFor(() => {
-      expect(canvas.getByText(/cannot exceed 500 characters/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/cannot exceed 500 characters/i)).toBeInTheDocument();
     });
   },
 };
@@ -281,13 +283,13 @@ export const PublicToggle: Story = {
     await userEvent.click(publicSwitch);
     
     // Should be checked
-    expect(publicSwitch).toHaveAttribute('aria-checked', 'true');
+    void expect(publicSwitch).toHaveAttribute('aria-checked', 'true');
     
     // Toggle again
     await userEvent.click(publicSwitch);
     
     // Should be unchecked
-    expect(publicSwitch).toHaveAttribute('aria-checked', 'false');
+    void expect(publicSwitch).toHaveAttribute('aria-checked', 'false');
   },
 };
 
@@ -347,7 +349,7 @@ export const SEOFields: Story = {
     
     // Check slug was generated
     const slugInput = canvas.getByLabelText(/url slug/i);
-    expect((slugInput as HTMLInputElement).value).toBe('amazing-summer-collection-best-deals-2024');
+    void expect((slugInput as HTMLInputElement).value).toBe('amazing-summer-collection-best-deals-2024');
   },
 };
 
@@ -374,7 +376,7 @@ export const ProductSelectionWorkflow: Story = {
     
     // Wait for products to load
     await waitFor(() => {
-      expect(canvas.getByText('Premium Headphones')).toBeInTheDocument();
+      void expect(canvas.getByText('Premium Headphones')).toBeInTheDocument();
     });
     
     // Select products by clicking checkboxes
@@ -384,7 +386,7 @@ export const ProductSelectionWorkflow: Story = {
     
     // Verify selection count updated
     await waitFor(() => {
-      expect(canvas.getByText('2 products selected')).toBeInTheDocument();
+      void expect(canvas.getByText('2 products selected')).toBeInTheDocument();
     });
     
     // Go back to details tab
@@ -394,7 +396,7 @@ export const ProductSelectionWorkflow: Story = {
     // Toggle public switch
     const publicSwitch = canvas.getByRole('switch');
     await userEvent.click(publicSwitch);
-    expect(publicSwitch).toHaveAttribute('aria-checked', 'true');
+    void expect(publicSwitch).toHaveAttribute('aria-checked', 'true');
   },
 };
 
@@ -426,7 +428,7 @@ export const CompleteCollectionCreation: Story = {
     // Select all products
     await waitFor(() => {
       const selectAllCheckbox = canvas.getByRole('checkbox', { name: /select all/i });
-      expect(selectAllCheckbox).toBeInTheDocument();
+      void expect(selectAllCheckbox).toBeInTheDocument();
     });
     
     const selectAllCheckbox = canvas.getByRole('checkbox', { name: /select all/i });
@@ -469,20 +471,20 @@ export const KeyboardNavigation: Story = {
     
     // Tab through form fields
     await userEvent.tab(); // To description
-    expect(document.activeElement).toBe(canvas.getByPlaceholderText(/enter collection description/i));
+    void expect(document.activeElement).toBe(canvas.getByPlaceholderText(/enter collection description/i));
     
     await userEvent.tab(); // To public switch
     const publicSwitch = canvas.getByRole('switch');
-    expect(document.activeElement).toBe(publicSwitch);
+    void expect(document.activeElement).toBe(publicSwitch);
     
     // Space to toggle switch
     await userEvent.keyboard(' ');
-    expect(publicSwitch).toHaveAttribute('aria-checked', 'true');
+    void expect(publicSwitch).toHaveAttribute('aria-checked', 'true');
     
     // Tab to submit button
     await userEvent.tab();
     const submitButton = canvas.getByRole('button', { name: /create collection/i });
-    expect(document.activeElement).toBe(submitButton);
+    void expect(document.activeElement).toBe(submitButton);
     
     // Use arrow keys to navigate tabs
     const detailsTab = canvas.getByRole('tab', { name: /details/i });
@@ -491,7 +493,7 @@ export const KeyboardNavigation: Story = {
     await userEvent.keyboard('{ArrowRight}'); // Move to products tab
     await waitFor(() => {
       const productsTab = canvas.getByRole('tab', { name: /products/i });
-      expect(productsTab).toHaveAttribute('aria-selected', 'true');
+      void expect(productsTab).toHaveAttribute('aria-selected', 'true');
     });
   },
 };
@@ -525,8 +527,8 @@ export const FormInModal: Story = {
                 </div>
                 <CollectionForm
                   mode="create"
-                  onSubmit={(data) => {
-                    console.log('Submitted:', data);
+                  onSubmit={() => {
+                    // Form submitted
                     toast.success('Collection created!');
                     setIsOpen(false);
                   }}
@@ -594,8 +596,8 @@ export const SuccessState: Story = {
       return (
         <CollectionForm
           mode="create"
-          onSubmit={(data) => {
-            console.log('Submitted:', data);
+          onSubmit={() => {
+            // Form submitted
             setSubmitted(true);
           }}
         />
@@ -651,7 +653,7 @@ export const ErrorState: Story = {
     
     // Wait for error
     await waitFor(() => {
-      expect(canvas.getByText('A collection with this name already exists')).toBeInTheDocument();
+      void expect(canvas.getByText('A collection with this name already exists')).toBeInTheDocument();
     }, { timeout: 2000 });
   },
 };
@@ -703,14 +705,14 @@ export const AccessibilityEnhanced: Story = {
     
     // Check all form fields have labels
     const nameInput = canvas.getByLabelText(/collection name/i);
-    expect(nameInput).toBeInTheDocument();
+    void expect(nameInput).toBeInTheDocument();
     
     const descriptionTextarea = canvas.getByLabelText(/description/i);
-    expect(descriptionTextarea).toBeInTheDocument();
+    void expect(descriptionTextarea).toBeInTheDocument();
     
     // Check switch has accessible label
     const publicSwitch = canvas.getByRole('switch');
-    expect(publicSwitch).toHaveAccessibleName();
+    void expect(publicSwitch).toHaveAccessibleName();
     
     // Submit empty form to trigger errors
     const submitButton = canvas.getByRole('button', { name: /create collection/i });
@@ -719,7 +721,7 @@ export const AccessibilityEnhanced: Story = {
     // Check error messages are announced
     await waitFor(() => {
       const errorMessage = canvas.getByText('Collection name is required');
-      expect(errorMessage.closest('[role="alert"]')).toBeInTheDocument();
+      void expect(errorMessage.closest('[role="alert"]')).toBeInTheDocument();
     });
   },
 };
@@ -762,13 +764,13 @@ export const ScreenReaderSupport: Story = {
     await waitFor(() => {
       const productCheckboxes = canvas.getAllByRole('checkbox');
       productCheckboxes.forEach(checkbox => {
-        expect(checkbox).toHaveAccessibleName();
+        void expect(checkbox).toHaveAccessibleName();
       });
     });
     
     // Check tab panel associations
     const tabPanel = canvas.getByRole('tabpanel');
-    expect(tabPanel).toHaveAttribute('aria-labelledby');
+    void expect(tabPanel).toHaveAttribute('aria-labelledby');
   },
 };
 
@@ -836,7 +838,7 @@ export const DuplicateSlugError: Story = {
   },
   decorators: [
     () => {
-      const [_slugError, _setSlugError] = useState<string | null>(null);
+      // Slug error state removed - not used in this story
       
       return (
         <div className="space-y-4">

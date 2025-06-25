@@ -77,15 +77,15 @@ describe('PaymentService - Coupon Integration', () => {
         'USER20',
       );
 
-      expect(sessionId).toBe('test-session-id');
-      expect(Coupon.findOne).toHaveBeenCalledWith({
+      void expect(sessionId).toBe('test-session-id');
+      void expect(Coupon.findOne).toHaveBeenCalledWith({
         code: 'USER20',
         userId: mockUser._id,
         isActive: true,
       });
 
       // Verify Stripe session was created with discount
-      expect(stripe.checkout.sessions.create).toHaveBeenCalledWith(
+      void expect(stripe.checkout.sessions.create).toHaveBeenCalledWith(
         expect.objectContaining({
           discounts: [{ coupon: 'stripe-coupon-id' }],
           metadata: expect.objectContaining({
@@ -119,8 +119,8 @@ describe('PaymentService - Coupon Integration', () => {
         'summer20',
       );
 
-      expect(sessionId).toBe('test-session-id');
-      expect(Coupon.findOne).toHaveBeenCalledTimes(2);
+      void expect(sessionId).toBe('test-session-id');
+      void expect(Coupon.findOne).toHaveBeenCalledTimes(2);
     });
 
     it('should validate minimum purchase amount', async () => {
@@ -193,8 +193,8 @@ describe('PaymentService - Coupon Integration', () => {
     it('should increment coupon usage on successful payment', async () => {
       const result = await paymentService.processCheckoutSuccess(mockSessionId);
 
-      expect(couponService.incrementUsage).toHaveBeenCalledWith('SAVE20');
-      expect(result.totalAmount).toBe(160);
+      void expect(couponService.incrementUsage).toHaveBeenCalledWith('SAVE20');
+      void expect(result.totalAmount).toBe(160);
     });
 
     it('should use transaction for atomicity', async () => {
@@ -206,9 +206,9 @@ describe('PaymentService - Coupon Integration', () => {
 
       await paymentService.processCheckoutSuccess(mockSessionId);
 
-      expect(mongoose.startSession).toHaveBeenCalled();
-      expect(mockSession.withTransaction).toHaveBeenCalled();
-      expect(mockSession.endSession).toHaveBeenCalled();
+      void expect(mongoose.startSession).toHaveBeenCalled();
+      void expect(mockSession.withTransaction).toHaveBeenCalled();
+      void expect(mockSession.endSession).toHaveBeenCalled();
     });
 
     it('should rollback on coupon increment failure', async () => {
@@ -232,8 +232,8 @@ describe('PaymentService - Coupon Integration', () => {
         paymentService.processCheckoutSuccess(mockSessionId),
       ).rejects.toThrow();
 
-      expect(Order.prototype.save).not.toHaveBeenCalled();
-      expect(mockSession.endSession).toHaveBeenCalled();
+      void expect(Order.prototype.save).not.toHaveBeenCalled();
+      void expect(mockSession.endSession).toHaveBeenCalled();
     });
 
     it('should handle payment without coupon', async () => {
@@ -248,8 +248,8 @@ describe('PaymentService - Coupon Integration', () => {
 
       const result = await paymentService.processCheckoutSuccess(mockSessionId);
 
-      expect(couponService.incrementUsage).not.toHaveBeenCalled();
-      expect(result.totalAmount).toBe(160);
+      void expect(couponService.incrementUsage).not.toHaveBeenCalled();
+      void expect(result.totalAmount).toBe(160);
     });
   });
 
@@ -292,7 +292,7 @@ describe('PaymentService - Coupon Integration', () => {
         mockProducts,
         'LIMITED1',
       );
-      expect(session1).toBe('session1');
+      void expect(session1).toBe('session1');
 
       // Process the first checkout
       vi.mocked(stripe.checkout.sessions.retrieve).mockResolvedValue({
@@ -314,7 +314,7 @@ describe('PaymentService - Coupon Integration', () => {
       vi.mocked(Order).mockImplementation(() => mockOrder as any);
 
       const result1 = await paymentService.processCheckoutSuccess('session1');
-      expect(result1.totalAmount).toBe(50);
+      void expect(result1.totalAmount).toBe(50);
 
       // Second checkout should fail during processing
       await expect(

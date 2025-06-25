@@ -486,8 +486,8 @@ export const SyncError: Story = {
     
     // Should show sync error UI
     await waitFor(() => {
-      expect(canvas.getByText('Inventory Sync Failed')).toBeInTheDocument();
-      expect(canvas.getByText(/data may be out of date/i)).toBeInTheDocument();
+      void expect(canvas.getByText('Inventory Sync Failed')).toBeInTheDocument();
+      void expect(canvas.getByText(/data may be out of date/i)).toBeInTheDocument();
     });
   },
 };
@@ -508,18 +508,18 @@ export const WebSocketDisconnect: Story = {
     
     // Should show disconnected status
     await waitFor(() => {
-      expect(canvas.getByText('disconnected')).toBeInTheDocument();
+      void expect(canvas.getByText('disconnected')).toBeInTheDocument();
     });
     
     // Should show reconnecting
     await waitFor(() => {
-      expect(canvas.getByText('reconnecting')).toBeInTheDocument();
-      expect(canvas.getByText(/reconnection attempt/i)).toBeInTheDocument();
+      void expect(canvas.getByText('reconnecting')).toBeInTheDocument();
+      void expect(canvas.getByText(/reconnection attempt/i)).toBeInTheDocument();
     }, { timeout: 3000 });
     
     // Should eventually reconnect
     await waitFor(() => {
-      expect(canvas.getByText('connected')).toBeInTheDocument();
+      void expect(canvas.getByText('connected')).toBeInTheDocument();
     }, { timeout: 8000 });
   },
 };
@@ -540,8 +540,8 @@ export const DatabaseError: Story = {
     
     // Should show database error UI
     await waitFor(() => {
-      expect(canvas.getByText('Database Connection Error')).toBeInTheDocument();
-      expect(canvas.getByText(/unable to access inventory database/i)).toBeInTheDocument();
+      void expect(canvas.getByText('Database Connection Error')).toBeInTheDocument();
+      void expect(canvas.getByText(/unable to access inventory database/i)).toBeInTheDocument();
     });
   },
 };
@@ -562,8 +562,8 @@ export const CalculationError: Story = {
     
     // Should show calculation error UI
     await waitFor(() => {
-      expect(canvas.getByText('Inventory Calculation Error')).toBeInTheDocument();
-      expect(canvas.getByText(/detected an inconsistency/i)).toBeInTheDocument();
+      void expect(canvas.getByText('Inventory Calculation Error')).toBeInTheDocument();
+      void expect(canvas.getByText(/detected an inconsistency/i)).toBeInTheDocument();
     });
   },
 };
@@ -584,7 +584,7 @@ export const WithRetry: Story = {
     
     // Wait for error UI
     await waitFor(() => {
-      expect(canvas.getByText('Inventory Sync Failed')).toBeInTheDocument();
+      void expect(canvas.getByText('Inventory Sync Failed')).toBeInTheDocument();
     });
     
     // Click retry
@@ -593,7 +593,7 @@ export const WithRetry: Story = {
     
     // Should restore normal view
     await waitFor(() => {
-      expect(canvas.getByText('Inventory Status')).toBeInTheDocument();
+      void expect(canvas.getByText('Inventory Status')).toBeInTheDocument();
     });
   },
 };
@@ -614,7 +614,7 @@ export const ContinueOffline: Story = {
     
     // Wait for error UI
     await waitFor(() => {
-      expect(canvas.getByText('Real-time Connection Lost')).toBeInTheDocument();
+      void expect(canvas.getByText('Real-time Connection Lost')).toBeInTheDocument();
     });
     
     // Click continue offline
@@ -623,7 +623,7 @@ export const ContinueOffline: Story = {
     
     // Should show toast
     await waitFor(() => {
-      expect(canvas.getByText(/working offline/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/working offline/i)).toBeInTheDocument();
     });
   },
 };
@@ -644,8 +644,8 @@ export const DefaultFallback: Story = {
     
     // Should show default fallback
     await waitFor(() => {
-      expect(canvas.getByText('Inventory Data Error')).toBeInTheDocument();
-      expect(canvas.getByText(/encountered an error while loading/i)).toBeInTheDocument();
+      void expect(canvas.getByText('Inventory Data Error')).toBeInTheDocument();
+      void expect(canvas.getByText(/encountered an error while loading/i)).toBeInTheDocument();
     });
   },
 };
@@ -690,7 +690,7 @@ export const ErrorDetails: Story = {
     
     // Wait for error UI
     await waitFor(() => {
-      expect(canvas.getByText('Database Connection Error')).toBeInTheDocument();
+      void expect(canvas.getByText('Database Connection Error')).toBeInTheDocument();
     });
     
     // Click technical details
@@ -699,8 +699,8 @@ export const ErrorDetails: Story = {
     
     // Should show error details
     await waitFor(() => {
-      expect(canvas.getByText(/Error:/)).toBeInTheDocument();
-      expect(canvas.getByText(/Message:/)).toBeInTheDocument();
+      void expect(canvas.getByText(/Error:/)).toBeInTheDocument();
+      void expect(canvas.getByText(/Message:/)).toBeInTheDocument();
     });
   },
 };

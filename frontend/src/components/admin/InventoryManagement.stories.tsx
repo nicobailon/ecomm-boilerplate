@@ -637,7 +637,7 @@ export const MultiUserInventorySync: Story = {
         color: string;
       }
       
-      const [_users, _setUsers] = useState<User[]>([
+      const [_users] = useState<User[]>([
         { id: 'user1', name: 'Alice (You)', active: true, color: 'bg-blue-500' },
         { id: 'user2', name: 'Bob', active: true, color: 'bg-green-500' },
         { id: 'user3', name: 'Carol', active: false, color: 'bg-purple-500' },

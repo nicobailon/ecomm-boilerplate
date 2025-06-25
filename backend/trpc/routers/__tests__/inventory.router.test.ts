@@ -33,7 +33,7 @@ describe('inventoryRouter', () => {
         quantity: 5,
       });
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         isAvailable: true,
         availableStock: 40,
         requestedQuantity: 5,
@@ -53,7 +53,7 @@ describe('inventoryRouter', () => {
         quantity: 10,
       });
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         isAvailable: false,
         availableStock: 3,
         requestedQuantity: 10,
@@ -104,7 +104,7 @@ describe('inventoryRouter', () => {
         variantId: 'v1',
       });
 
-      expect(result).toEqual(mockInventoryInfo);
+      void expect(result).toEqual(mockInventoryInfo);
     });
 
     it('should handle product not found error', async () => {
@@ -155,9 +155,9 @@ describe('inventoryRouter', () => {
         metadata: { supplier: 'Supplier A' },
       });
 
-      expect(result).toEqual(mockResult);
+      void expect(result).toEqual(mockResult);
       const updateInventoryMock = vi.mocked(inventoryService.updateInventory);
-      expect(updateInventoryMock).toHaveBeenCalledWith(
+      void expect(updateInventoryMock).toHaveBeenCalledWith(
         '507f1f77bcf86cd799439011',
         'v1',
         10,
@@ -242,7 +242,7 @@ describe('inventoryRouter', () => {
         ],
       });
 
-      expect(result).toEqual(mockResults);
+      void expect(result).toEqual(mockResults);
     });
   });
 
@@ -266,7 +266,7 @@ describe('inventoryRouter', () => {
 
       const result = await caller.getInventoryMetrics();
 
-      expect(result).toEqual(mockMetrics);
+      void expect(result).toEqual(mockMetrics);
     });
   });
 
@@ -289,7 +289,7 @@ describe('inventoryRouter', () => {
 
       const result = await caller.getOutOfStockProducts();
 
-      expect(result).toEqual(mockProducts);
+      void expect(result).toEqual(mockProducts);
     });
   });
 
@@ -322,7 +322,7 @@ describe('inventoryRouter', () => {
         endDate: new Date('2024-12-31'),
       });
 
-      expect(result).toEqual(mockTurnoverData);
+      void expect(result).toEqual(mockTurnoverData);
     });
   });
 });

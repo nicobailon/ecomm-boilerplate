@@ -40,43 +40,43 @@ describe('Inventory Feature Integration', () => {
     it('should support both legacy size-based and new label-based variant selection', () => {
       // Test legacy size-based selection
       const sizeResult = getVariantOrDefault(mockVariants, undefined, 'M');
-      expect(sizeResult.variant?.size).toBe('M');
-      expect(sizeResult.variant?.variantId).toBe('v2');
+      void expect(sizeResult.variant?.size).toBe('M');
+      void expect(sizeResult.variant?.variantId).toBe('v2');
 
       // Test label-based selection (when USE_VARIANT_LABEL is false, it falls back to first variant)
       const labelResult = getVariantOrDefault(mockVariants, 'Large Green', undefined);
-      expect(labelResult.variant?.variantId).toBe('v1'); // Falls back to first variant
-      expect(labelResult.isVirtualDefault).toBe(true);
+      void expect(labelResult.variant?.variantId).toBe('v1'); // Falls back to first variant
+      void expect(labelResult.isVirtualDefault).toBe(true);
 
       // Test default fallback
       const defaultResult = getVariantOrDefault(mockVariants);
-      expect(defaultResult.variant?.variantId).toBe('v1');
-      expect(defaultResult.isVirtualDefault).toBe(true);
+      void expect(defaultResult.variant?.variantId).toBe('v1');
+      void expect(defaultResult.isVirtualDefault).toBe(true);
     });
 
     it('should maintain backward compatibility with size-based access', () => {
       // Even when labels are available, size-based access should still work
       const result = getVariantOrDefault(mockVariants, undefined, 'L');
-      expect(result.variant?.size).toBe('L');
-      expect(result.variant?.label).toBe('Large Green');
-      expect(result.isVirtualDefault).toBe(false);
+      void expect(result.variant?.size).toBe('L');
+      void expect(result.variant?.label).toBe('Large Green');
+      void expect(result.isVirtualDefault).toBe(false);
     });
 
     it('should handle edge cases properly', () => {
       // Empty variants array
       const emptyResult = getVariantOrDefault([]);
-      expect(emptyResult.variant).toBeNull();
-      expect(emptyResult.isVirtualDefault).toBe(false);
+      void expect(emptyResult.variant).toBeNull();
+      void expect(emptyResult.isVirtualDefault).toBe(false);
 
       // Non-existent size
       const nonExistentResult = getVariantOrDefault(mockVariants, undefined, 'XXL');
-      expect(nonExistentResult.variant?.variantId).toBe('v1');
-      expect(nonExistentResult.isVirtualDefault).toBe(true);
+      void expect(nonExistentResult.variant?.variantId).toBe('v1');
+      void expect(nonExistentResult.isVirtualDefault).toBe(true);
 
       // Non-existent label
       const nonExistentLabelResult = getVariantOrDefault(mockVariants, 'Non-existent Label', undefined);
-      expect(nonExistentLabelResult.variant?.variantId).toBe('v1');
-      expect(nonExistentLabelResult.isVirtualDefault).toBe(true);
+      void expect(nonExistentLabelResult.variant?.variantId).toBe('v1');
+      void expect(nonExistentLabelResult.isVirtualDefault).toBe(true);
     });
   });
 
@@ -84,15 +84,15 @@ describe('Inventory Feature Integration', () => {
     it('should correctly calculate inventory for specific variants', () => {
       // When USE_VARIANT_LABEL is false, label lookup falls back to first variant
       const mediumRedVariant = getVariantOrDefault(mockVariants, 'Medium Red');
-      expect(mediumRedVariant.variant?.inventory).toBe(10); // First variant (Small Blue)
+      void expect(mediumRedVariant.variant?.inventory).toBe(10); // First variant (Small Blue)
       
       const largeGreenVariant = getVariantOrDefault(mockVariants, undefined, 'L');
-      expect(largeGreenVariant.variant?.inventory).toBe(8); // Correctly finds Large Green by size
+      void expect(largeGreenVariant.variant?.inventory).toBe(8); // Correctly finds Large Green by size
     });
 
     it('should handle total inventory calculations', () => {
       const totalInventory = mockVariants.reduce((total, variant) => total + variant.inventory, 0);
-      expect(totalInventory).toBe(23); // 10 + 5 + 8
+      void expect(totalInventory).toBe(23); // 10 + 5 + 8
     });
   });
 
@@ -105,15 +105,15 @@ describe('Inventory Feature Integration', () => {
 
       // Legacy cache key pattern
       const legacyKey = `inventory:product:${productId}:${variantId}`;
-      expect(legacyKey).toBe('inventory:product:test-product-123:v2');
+      void expect(legacyKey).toBe('inventory:product:test-product-123:v2');
 
       // New cache key pattern with label
       const labelKey = `inventory:product:${productId}:${variantId}:label:${variantLabel}`;
-      expect(labelKey).toBe('inventory:product:test-product-123:v2:label:Medium Red');
+      void expect(labelKey).toBe('inventory:product:test-product-123:v2:label:Medium Red');
 
       // Product-only cache key
       const productKey = `inventory:product:${productId}`;
-      expect(productKey).toBe('inventory:product:test-product-123');
+      void expect(productKey).toBe('inventory:product:test-product-123');
     });
   });
 
@@ -130,9 +130,9 @@ describe('Inventory Feature Integration', () => {
         sku: undefined,
       };
 
-      expect(defaultVariant.label).toBe('Default');
-      expect(defaultVariant.variantId).toBe('default');
-      expect(defaultVariant.inventory).toBe(0);
+      void expect(defaultVariant.label).toBe('Default');
+      void expect(defaultVariant.variantId).toBe('default');
+      void expect(defaultVariant.inventory).toBe(0);
     });
   });
 
@@ -146,16 +146,16 @@ describe('Inventory Feature Integration', () => {
       };
 
       // Test by label (falls back to first variant when USE_VARIANT_LABEL is false)
-      expect(checkAvailability(mockVariants, 'Medium Red', undefined, 3)).toBe(true); // First variant has 10 inventory
-      expect(checkAvailability(mockVariants, 'Medium Red', undefined, 12)).toBe(false); // More than 10
+      void expect(checkAvailability(mockVariants, 'Medium Red', undefined, 3)).toBe(true); // First variant has 10 inventory
+      void expect(checkAvailability(mockVariants, 'Medium Red', undefined, 12)).toBe(false); // More than 10
 
       // Test by size
-      expect(checkAvailability(mockVariants, undefined, 'L', 5)).toBe(true);
-      expect(checkAvailability(mockVariants, undefined, 'L', 10)).toBe(false);
+      void expect(checkAvailability(mockVariants, undefined, 'L', 5)).toBe(true);
+      void expect(checkAvailability(mockVariants, undefined, 'L', 10)).toBe(false);
 
       // Test default
-      expect(checkAvailability(mockVariants, undefined, undefined, 8)).toBe(true);
-      expect(checkAvailability(mockVariants, undefined, undefined, 12)).toBe(false);
+      void expect(checkAvailability(mockVariants, undefined, undefined, 8)).toBe(true);
+      void expect(checkAvailability(mockVariants, undefined, undefined, 12)).toBe(false);
     });
   });
 });

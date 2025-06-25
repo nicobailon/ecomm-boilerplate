@@ -1,7 +1,11 @@
 import { User, IUserDocument } from '../models/user.model.js';
 import { AppError } from '../utils/AppError.js';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { redis } from '../lib/redis.js';
+import { emailService } from './email.service.js';
+import { queueEmail } from '../lib/email-queue.js';
+import { logEmailVerification } from '../lib/logger.js';
 
 interface LoginInput {
   email: string;
@@ -26,6 +30,7 @@ interface UserResponse {
   name: string;
   email: string;
   role: string;
+  emailVerified?: boolean;
 }
 
 export class AuthService {
@@ -37,9 +42,37 @@ export class AuthService {
       throw new AppError('User already exists', 400);
     }
     
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ 
+      name, 
+      email, 
+      password,
+      emailVerified: false, 
+    });
+    
+    // Generate email verification token
+    const verificationToken = user.generateEmailVerificationToken();
+    await user.save();
+    
+    // Log token generation
+    logEmailVerification.tokenGenerated({
+      userId: user._id.toString(),
+      email: user.email,
+      tokenExpiry: user.emailVerificationExpires || new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+    
     const tokens = this.generateTokens(user._id.toString());
     await this.storeRefreshToken(user._id.toString(), tokens.refreshToken);
+
+    // Queue verification email instead of welcome email
+    try {
+      await queueEmail('emailVerification', { 
+        user, 
+        verificationToken, 
+      });
+    } catch (emailError) {
+      // Log error but don't fail the signup process
+      console.error('Failed to queue verification email:', emailError);
+    }
 
     return {
       user: {
@@ -47,6 +80,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        emailVerified: user.emailVerified,
       },
       tokens,
     };
@@ -69,6 +103,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        emailVerified: user.emailVerified,
       },
       tokens,
     };
@@ -141,6 +176,155 @@ export class AuthService {
 
   private async storeRefreshToken(userId: string, refreshToken: string): Promise<void> {
     await redis.set(`refresh_token:${userId}`, refreshToken, 'EX', 7 * 24 * 60 * 60);
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      // Don't reveal whether user exists
+      return;
+    }
+
+    const resetToken = user.generatePasswordResetToken();
+    await user.save();
+
+    // Send password reset email
+    try {
+      await emailService.sendPasswordResetEmail(user, resetToken);
+    } catch (error) {
+      console.error('Failed to send password reset email:', error);
+      throw new AppError('Failed to send password reset email', 500);
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      throw new AppError('Invalid or expired reset token', 400);
+    }
+
+    // Update password and clear reset token fields
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+  }
+
+  async verifyEmail(token: string): Promise<UserResponse> {
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      logEmailVerification.verificationFailed({
+        token,
+        reason: 'Invalid or expired token',
+      });
+      throw new AppError('Invalid or expired verification token', 400);
+    }
+
+    // Update user to verified and clear verification fields
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+    
+    // Log successful verification
+    logEmailVerification.verificationSuccess({
+      userId: user._id.toString(),
+      email: user.email,
+    });
+
+    // Queue welcome email after successful verification
+    try {
+      await queueEmail('welcomeEmail', { user });
+    } catch (emailError) {
+      console.error('Failed to queue welcome email:', emailError);
+    }
+
+    return {
+      _id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      emailVerified: user.emailVerified,
+    };
+  }
+
+  async resendVerificationEmail(userId: string): Promise<void> {
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    if (user.emailVerified) {
+      throw new AppError('Email is already verified', 400);
+    }
+
+    // Check rate limiting - max 3 per hour
+    const rateLimitKey = `email-verification-resend:${userId}`;
+    const resendCount = await redis.incr(rateLimitKey);
+    
+    if (resendCount === 1) {
+      // Set expiry for 1 hour
+      await redis.expire(rateLimitKey, 3600);
+    }
+    
+    if (resendCount > 3) {
+      logEmailVerification.rateLimitExceeded({
+        userId,
+        email: user.email,
+        attemptNumber: resendCount,
+      });
+      throw new AppError('Too many verification email requests. Please try again later.', 429);
+    }
+    
+    // Log resend attempt
+    logEmailVerification.resendAttempt({
+      userId,
+      email: user.email,
+      attemptNumber: resendCount,
+      maxAttempts: 3,
+    });
+
+    // Generate new verification token
+    const verificationToken = user.generateEmailVerificationToken();
+    await user.save();
+    
+    // Log new token generation
+    logEmailVerification.tokenGenerated({
+      userId: user._id.toString(),
+      email: user.email,
+      tokenExpiry: user.emailVerificationExpires || new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+
+    // Queue new verification email
+    try {
+      await queueEmail('emailVerification', { 
+        user, 
+        verificationToken, 
+      });
+    } catch (emailError) {
+      console.error('Failed to queue verification email:', emailError);
+      throw new AppError('Failed to send verification email', 500);
+    }
   }
 }
 

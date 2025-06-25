@@ -13,10 +13,25 @@ export interface IOrderDocument extends Document {
       color?: string;
       sku?: string;
     };
+    variantLabel?: string;
   }[];
   totalAmount: number;
   stripeSessionId: string;
   status: 'pending' | 'completed' | 'cancelled' | 'refunded';
+  shippingAddress?: {
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  paymentMethod?: string;
+  paymentIntentId?: string;
+  couponCode?: string;
+  originalAmount?: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const orderSchema = new Schema<IOrderDocument>(
@@ -64,6 +79,10 @@ const orderSchema = new Schema<IOrderDocument>(
           },
           required: false,
         },
+        variantLabel: {
+          type: String,
+          required: false,
+        },
       },
     ],
     totalAmount: {
@@ -80,6 +99,34 @@ const orderSchema = new Schema<IOrderDocument>(
       enum: ['pending', 'completed', 'cancelled', 'refunded'],
       default: 'completed',
       required: true,
+    },
+    shippingAddress: {
+      type: {
+        line1: { type: String, required: true },
+        line2: { type: String },
+        city: { type: String, required: true },
+        state: { type: String, required: true },
+        postalCode: { type: String, required: true },
+        country: { type: String, required: true },
+      },
+      required: false,
+    },
+    paymentMethod: {
+      type: String,
+      required: false,
+    },
+    paymentIntentId: {
+      type: String,
+      required: false,
+    },
+    couponCode: {
+      type: String,
+      required: false,
+    },
+    originalAmount: {
+      type: Number,
+      required: false,
+      min: 0,
     },
   },
   { timestamps: true },

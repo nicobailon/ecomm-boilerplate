@@ -8,6 +8,13 @@ import {
   applyThemeTransition,
 } from './theme-utils';
 
+// Create a minimal mock for CSSStyleDeclaration that only includes what we use
+function createMockCSSStyleDeclaration(getPropertyValueImpl: (prop: string) => string): CSSStyleDeclaration {
+  return {
+    getPropertyValue: getPropertyValueImpl,
+  } as CSSStyleDeclaration;
+}
+
 describe('Theme Utilities', () => {
   beforeEach(() => {
     // Reset DOM
@@ -45,7 +52,7 @@ describe('Theme Utilities', () => {
         },
       };
       
-      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as unknown as CSSStyleDeclaration);
+      vi.spyOn(window, 'getComputedStyle').mockReturnValue(createMockCSSStyleDeclaration(mockStyle.getPropertyValue));
       
       expect(validateTheme()).toBe(true);
     });
@@ -55,8 +62,8 @@ describe('Theme Utilities', () => {
         getPropertyValue: () => '',
       };
       
-      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as unknown as CSSStyleDeclaration);
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { console.log('Theme validation error'); });
+      vi.spyOn(window, 'getComputedStyle').mockReturnValue(createMockCSSStyleDeclaration(mockStyle.getPropertyValue));
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       
       expect(validateTheme()).toBe(false);
       expect(consoleSpy).toHaveBeenCalled();
@@ -155,14 +162,11 @@ describe('Theme Utilities', () => {
         },
       };
       
-      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as unknown as CSSStyleDeclaration);
+      vi.spyOn(window, 'getComputedStyle').mockReturnValue(createMockCSSStyleDeclaration(mockStyle.getPropertyValue));
       
       const result = validateThemeContrast();
       
-      // Log issues for debugging
-      if (!result.valid) {
-        console.log('Contrast issues found:', result.issues);
-      }
+      // Issues are already tracked in result.issues
       
       // Secondary colors might have lower contrast, that's acceptable
       const criticalIssues = result.issues.filter(issue => 
@@ -187,7 +191,7 @@ describe('Theme Utilities', () => {
         },
       };
       
-      vi.spyOn(window, 'getComputedStyle').mockReturnValue(mockStyle as unknown as CSSStyleDeclaration);
+      vi.spyOn(window, 'getComputedStyle').mockReturnValue(createMockCSSStyleDeclaration(mockStyle.getPropertyValue));
       
       const result = validateThemeContrast();
       expect(result.valid).toBe(false);

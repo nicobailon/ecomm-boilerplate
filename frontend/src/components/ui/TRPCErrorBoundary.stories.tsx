@@ -355,8 +355,8 @@ export const NetworkError: Story = {
     
     // Should show network error UI
     await waitFor(() => {
-      expect(canvas.getByText('Network Connection Error')).toBeInTheDocument();
-      expect(canvas.getByText(/check your internet connection/i)).toBeInTheDocument();
+      void expect(canvas.getByText('Network Connection Error')).toBeInTheDocument();
+      void expect(canvas.getByText(/check your internet connection/i)).toBeInTheDocument();
     });
   },
 };
@@ -377,8 +377,8 @@ export const ServerError: Story = {
     
     // Should show server error UI
     await waitFor(() => {
-      expect(canvas.getByText('Server Error')).toBeInTheDocument();
-      expect(canvas.getByText(/server encountered an error/i)).toBeInTheDocument();
+      void expect(canvas.getByText('Server Error')).toBeInTheDocument();
+      void expect(canvas.getByText(/server encountered an error/i)).toBeInTheDocument();
     });
   },
 };
@@ -399,8 +399,8 @@ export const TimeoutError: Story = {
     
     // Should show timeout error UI
     await waitFor(() => {
-      expect(canvas.getByText('Request Timeout')).toBeInTheDocument();
-      expect(canvas.getByText(/request took too long/i)).toBeInTheDocument();
+      void expect(canvas.getByText('Request Timeout')).toBeInTheDocument();
+      void expect(canvas.getByText(/request took too long/i)).toBeInTheDocument();
     });
   },
 };
@@ -421,8 +421,8 @@ export const AuthError: Story = {
     
     // Should show auth error UI
     await waitFor(() => {
-      expect(canvas.getByText('Authentication Error')).toBeInTheDocument();
-      expect(canvas.getByText(/session has expired/i)).toBeInTheDocument();
+      void expect(canvas.getByText('Authentication Error')).toBeInTheDocument();
+      void expect(canvas.getByText(/session has expired/i)).toBeInTheDocument();
     });
   },
 };
@@ -443,7 +443,7 @@ export const WithRetry: Story = {
     
     // Wait for error UI
     await waitFor(() => {
-      expect(canvas.getByText('Network Connection Error')).toBeInTheDocument();
+      void expect(canvas.getByText('Network Connection Error')).toBeInTheDocument();
     });
     
     // Click retry
@@ -452,7 +452,7 @@ export const WithRetry: Story = {
     
     // Should reset
     await waitFor(() => {
-      expect(canvas.getByText('Component Working Normally')).toBeInTheDocument();
+      void expect(canvas.getByText('Component Working Normally')).toBeInTheDocument();
     });
   },
 };
@@ -580,7 +580,7 @@ export const LoadingWithError: Story = {
       };
       
       useEffect(() => {
-        simulateLoad();
+        void simulateLoad();
       }, []);
       
       return (

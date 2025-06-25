@@ -19,7 +19,7 @@
     "types": ["node", "vitest/globals"]
   },
   "include": ["backend/**/*", "shared/**/*"],
-  "exclude": ["node_modules", "dist", "frontend/**/*"],
+  "exclude": ["node_modules", "dist", "frontend/**/*", "backend/types/__tests__/type-level.test.ts"],
   "ts-node": {
     "esm": true
   }

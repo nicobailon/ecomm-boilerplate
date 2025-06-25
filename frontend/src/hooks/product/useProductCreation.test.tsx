@@ -133,13 +133,13 @@ describe('useProductCreation', () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.isCreating).toBe(false);
-      expect(result.current.isNavigating).toBe(false);
-      expect(result.current.newProductId).toBeNull();
-      expect(result.current.sessionCount).toBe(0);
-      expect(result.current.bulkMode).toBe(false);
-      expect(result.current.targetTab).toBeNull();
-      expect(result.current.draftData).toBeNull();
+      void expect(result.current.isCreating).toBe(false);
+      void expect(result.current.isNavigating).toBe(false);
+      void expect(result.current.newProductId).toBeNull();
+      void expect(result.current.sessionCount).toBe(0);
+      void expect(result.current.bulkMode).toBe(false);
+      void expect(result.current.targetTab).toBeNull();
+      void expect(result.current.draftData).toBeNull();
     });
 
     it('should load draft data from localStorage if available', () => {
@@ -157,7 +157,7 @@ describe('useProductCreation', () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.draftData).toEqual(mockDraft);
+      void expect(result.current.draftData).toEqual(mockDraft);
     });
 
     it('should load bulk mode preference from localStorage', () => {
@@ -170,7 +170,7 @@ describe('useProductCreation', () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.bulkMode).toBe(true);
+      void expect(result.current.bulkMode).toBe(true);
     });
   });
 
@@ -197,7 +197,7 @@ describe('useProductCreation', () => {
     it('should create product successfully', async () => {
       mockCreateProduct.mutate.mockImplementation((_data: ProductInput, options?: MutateOptions) => {
         // Simulate async success
-        setTimeout(() => options?.onSuccess?.(mockProductResponse), 0);
+        void setTimeout(() => options?.onSuccess?.(mockProductResponse), 0);
       });
 
       const { result } = renderHook(() => useProductCreation(), {
@@ -209,13 +209,13 @@ describe('useProductCreation', () => {
         productId = await result.current.createProduct(mockProductInput);
       });
 
-      expect(productId!).toBe('product-123');
-      expect(mockCreateProduct.mutate).toHaveBeenCalledWith(
+      void expect(productId!).toBe('product-123');
+      void expect(mockCreateProduct.mutate).toHaveBeenCalledWith(
         mockProductInput,
         expect.any(Object),
       );
-      expect(result.current.sessionCount).toBe(1);
-      expect(toast.success).toHaveBeenCalledWith('Product created successfully!');
+      void expect(result.current.sessionCount).toBe(1);
+      void expect(toast.success).toHaveBeenCalledWith('Product created successfully!');
     });
 
     it('should handle product creation error', async () => {
@@ -234,7 +234,7 @@ describe('useProductCreation', () => {
         }),
       ).rejects.toThrow('Creation failed');
 
-      expect(toast.error).toHaveBeenCalledWith('Failed to create product');
+      void expect(toast.error).toHaveBeenCalledWith('Failed to create product');
     });
 
     it('should navigate to products tab after creation when bulk mode is off', async () => {
@@ -252,20 +252,20 @@ describe('useProductCreation', () => {
         await result.current.createProduct(mockProductInput);
       });
 
-      expect(result.current.isNavigating).toBe(true);
-      expect(result.current.newProductId).toBe('product-123');
-      expect(mockEmit).toHaveBeenCalledWith('product:created', {
+      void expect(result.current.isNavigating).toBe(true);
+      void expect(result.current.newProductId).toBe('product-123');
+      void expect(mockEmit).toHaveBeenCalledWith('product:created', {
         productId: 'product-123',
         timestamp: expect.any(Number) as unknown,
       });
 
       // Wait for navigation delay
       await waitFor(() => {
-        expect(onNavigate).toHaveBeenCalledWith('products');
+        void expect(onNavigate).toHaveBeenCalledWith('products');
       }, { timeout: 2000 });
       
       await waitFor(() => {
-        expect(result.current.isNavigating).toBe(false);
+        void expect(result.current.isNavigating).toBe(false);
       });
     });
 
@@ -289,9 +289,9 @@ describe('useProductCreation', () => {
         await result.current.createProduct(mockProductInput);
       });
 
-      expect(onNavigate).not.toHaveBeenCalled();
-      expect(result.current.isNavigating).toBe(false);
-      expect(toast.success).toHaveBeenCalledWith(
+      void expect(onNavigate).not.toHaveBeenCalled();
+      void expect(result.current.isNavigating).toBe(false);
+      void expect(toast.success).toHaveBeenCalledWith(
         'Product created! Form ready for next product.',
       );
     });
@@ -312,11 +312,11 @@ describe('useProductCreation', () => {
         result.current.saveDraft(mockDraft);
       });
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      void expect(localStorageMock.setItem).toHaveBeenCalledWith(
         'product-creation-draft',
         JSON.stringify(mockDraft),
       );
-      expect(toast.success).toHaveBeenCalledWith('Draft saved 💾');
+      void expect(toast.success).toHaveBeenCalledWith('Draft saved 💾');
     });
 
     it('should load draft from localStorage', () => {
@@ -331,10 +331,10 @@ describe('useProductCreation', () => {
 
       act(() => {
         const loadedDraft = result.current.loadDraft();
-        expect(loadedDraft).toEqual(mockDraft);
+        void expect(loadedDraft).toEqual(mockDraft);
       });
 
-      expect(toast.success).toHaveBeenCalledWith('Draft loaded');
+      void expect(toast.success).toHaveBeenCalledWith('Draft loaded');
     });
 
     it('should clear draft from localStorage', () => {
@@ -347,13 +347,13 @@ describe('useProductCreation', () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.draftData).toEqual(mockDraft);
+      void expect(result.current.draftData).toEqual(mockDraft);
 
       act(() => {
         result.current.clearDraft();
       });
 
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith(
+      void expect(localStorageMock.removeItem).toHaveBeenCalledWith(
         'product-creation-draft',
       );
     });
@@ -368,8 +368,8 @@ describe('useProductCreation', () => {
         result.current.saveDraft(mockDraft);
       });
 
-      expect(localStorageMock.setItem).not.toHaveBeenCalled();
-      expect(toast.success).not.toHaveBeenCalled();
+      void expect(localStorageMock.setItem).not.toHaveBeenCalled();
+      void expect(toast.success).not.toHaveBeenCalled();
     });
   });
 
@@ -379,13 +379,13 @@ describe('useProductCreation', () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.bulkMode).toBe(false);
+      void expect(result.current.bulkMode).toBe(false);
 
       act(() => {
         result.current.toggleBulkMode();
       });
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      void expect(localStorageMock.setItem).toHaveBeenCalledWith(
         'product-bulk-mode',
         JSON.stringify(true),
       );
@@ -394,7 +394,7 @@ describe('useProductCreation', () => {
         result.current.toggleBulkMode(false);
       });
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      void expect(localStorageMock.setItem).toHaveBeenCalledWith(
         'product-bulk-mode',
         JSON.stringify(false),
       );
@@ -412,9 +412,9 @@ describe('useProductCreation', () => {
         result.current.toggleBulkMode();
       });
 
-      expect(result.current.bulkMode).toBe(false);
+      void expect(result.current.bulkMode).toBe(false);
       // Should not have called setItem for bulk mode
-      expect(localStorageMock.setItem.mock.calls.length).toBe(initialSetItemCalls);
+      void expect(localStorageMock.setItem.mock.calls.length).toBe(initialSetItemCalls);
     });
   });
 
@@ -442,13 +442,13 @@ describe('useProductCreation', () => {
         await result.current.createProduct({} as ProductInput);
       });
 
-      expect(result.current.newProductId).toBe('product-123');
+      void expect(result.current.newProductId).toBe('product-123');
 
       act(() => {
         result.current.clearHighlight();
       });
 
-      expect(result.current.newProductId).toBeNull();
+      void expect(result.current.newProductId).toBeNull();
     });
 
     it('should reset creation state', () => {
@@ -457,9 +457,9 @@ describe('useProductCreation', () => {
       });
 
       // Verify initial state
-      expect(result.current.newProductId).toBeNull();
-      expect(result.current.isNavigating).toBe(false);
-      expect(result.current.targetTab).toBeNull();
+      void expect(result.current.newProductId).toBeNull();
+      void expect(result.current.isNavigating).toBe(false);
+      void expect(result.current.targetTab).toBeNull();
     });
   });
 
@@ -470,7 +470,7 @@ describe('useProductCreation', () => {
       });
 
       // Event handling is set up during hook initialization
-      expect(mockOn).toHaveBeenCalled();
+      void expect(mockOn).toHaveBeenCalled();
     });
   });
 
@@ -480,8 +480,8 @@ describe('useProductCreation', () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current).toBeDefined();
-      expect(result.current.canNavigate).toBe(true);
+      void expect(result.current).toBeDefined();
+      void expect(result.current.canNavigate).toBe(true);
     });
 
     it('should provide shouldHighlight property', async () => {
@@ -503,14 +503,14 @@ describe('useProductCreation', () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current).toBeDefined();
-      expect(result.current.shouldHighlight).toBe(false);
+      void expect(result.current).toBeDefined();
+      void expect(result.current.shouldHighlight).toBe(false);
 
       await act(async () => {
         await result.current.createProduct({} as ProductInput);
       });
 
-      expect(result.current.shouldHighlight).toBe(true);
+      void expect(result.current.shouldHighlight).toBe(true);
     });
   });
 });

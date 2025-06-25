@@ -303,7 +303,7 @@ const MetaTagsEditor = () => {
               variant="outline"
               onClick={() => {
                 const code = `useMetaTags(${JSON.stringify(tags, null, 2)})`;
-                navigator.clipboard.writeText(code);
+                void navigator.clipboard.writeText(code);
               }}
             >
               Copy Code

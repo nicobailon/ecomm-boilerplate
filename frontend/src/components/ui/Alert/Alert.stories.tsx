@@ -502,14 +502,14 @@ export const KeyboardNavigation: Story = {
     
     await userEvent.keyboard('{ArrowRight}');
     const secondButton = await canvas.findByText('Second');
-    await expect(document.activeElement).toBe(secondButton);
+    await void expect(document.activeElement).toBe(secondButton);
     
     await userEvent.keyboard('{ArrowRight}');
     const thirdButton = await canvas.findByText('Third');
-    await expect(document.activeElement).toBe(thirdButton);
+    await void expect(document.activeElement).toBe(thirdButton);
     
     await userEvent.keyboard('{ArrowRight}');
-    await expect(document.activeElement).toBe(firstButton);
+    await void expect(document.activeElement).toBe(firstButton);
   },
 };
 

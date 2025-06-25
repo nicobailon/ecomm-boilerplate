@@ -1,11 +1,12 @@
 import { router, adminProcedure } from '../index.js';
 import { analyticsService } from '../../services/analytics.service.js';
-import { dateRangeSchema } from '../../validations/index.js';
+import { dateRangeSchema, analyticsDataSchema, dailySalesDataSchema } from '../../validations/index.js';
 import { TRPCError } from '@trpc/server';
 import { isAppError } from '../../utils/error-types.js';
 
 export const analyticsRouter = router({
   overview: adminProcedure
+    .output(analyticsDataSchema)
     .query(async () => {
       try {
         return await analyticsService.getAnalyticsData();
@@ -20,6 +21,7 @@ export const analyticsRouter = router({
     
   dailySales: adminProcedure
     .input(dateRangeSchema.optional())
+    .output(dailySalesDataSchema)
     .query(async ({ input }) => {
       try {
         if (!input?.startDate || !input?.endDate) {

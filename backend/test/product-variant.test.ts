@@ -48,11 +48,11 @@ describe('Product Variant Schema', () => {
       const product = new ProductConstructor(productData);
       const saved = await product.save();
 
-      expect(saved.variants).toHaveLength(2);
-      expect(saved.variants[0].variantId).toBe('v1');
-      expect(saved.variants[0].size).toBe('M');
-      expect(saved.variants[0].color).toBe('#000000');
-      expect(saved.variants[0].inventory).toBe(50);
+      void expect(saved.variants).toHaveLength(2);
+      void expect(saved.variants[0].variantId).toBe('v1');
+      void expect(saved.variants[0].size).toBe('M');
+      void expect(saved.variants[0].color).toBe('#000000');
+      void expect(saved.variants[0].inventory).toBe(50);
     });
 
     it('should validate variant size enum', async () => {
@@ -138,9 +138,9 @@ describe('Product Variant Schema', () => {
       const product = new ProductConstructor(productData);
       const saved = await product.save();
 
-      expect(saved.variants[0].size).toBeUndefined();
-      expect(saved.variants[0].color).toBeUndefined();
-      expect(saved.variants[0].price).toBe(29.99);
+      void expect(saved.variants[0].size).toBeUndefined();
+      void expect(saved.variants[0].color).toBeUndefined();
+      void expect(saved.variants[0].price).toBe(29.99);
     });
 
     it('should validate price minimum value', async () => {
@@ -253,7 +253,7 @@ describe('Product Variant Schema', () => {
       const product = new ProductConstructor(productData);
       const saved = await product.save();
 
-      expect(saved.variants).toHaveLength(0);
+      void expect(saved.variants).toHaveLength(0);
     });
   });
 
@@ -355,8 +355,8 @@ describe('Product Variant Schema', () => {
       const main = new (Product as any)(mainProduct);
       const savedMain = await main.save();
       
-      expect(savedMain.relatedProducts).toHaveLength(1);
-      expect(savedMain.relatedProducts[0].toString()).toBe(relatedProductId.toString());
+      void expect(savedMain.relatedProducts).toHaveLength(1);
+      void expect(savedMain.relatedProducts[0].toString()).toBe(relatedProductId.toString());
     });
 
     it('should default to empty array for related products', async () => {
@@ -382,7 +382,7 @@ describe('Product Variant Schema', () => {
       const product = new Product(productData);
       const saved = await product.save();
 
-      expect(saved.relatedProducts).toEqual([]);
+      void expect(saved.relatedProducts).toEqual([]);
     });
   });
 
@@ -405,7 +405,7 @@ describe('Product Variant Schema', () => {
       const product = new (Product as any)(mockProduct);
       const saved = await product.save();
 
-      expect(saved.isDeleted).toBe(false);
+      void expect(saved.isDeleted).toBe(false);
     });
 
     it('should allow setting isDeleted', async () => {
@@ -426,7 +426,7 @@ describe('Product Variant Schema', () => {
       const product = new (Product as any)(mockProduct);
       const saved = await product.save();
 
-      expect(saved.isDeleted).toBe(true);
+      void expect(saved.isDeleted).toBe(true);
     });
   });
 
@@ -445,9 +445,9 @@ describe('Product Variant Schema', () => {
       
       const indexKeys = Object.values(indexes as any).map((index: any) => index.key);
       
-      expect(indexKeys.some(key => key.slug === 1 && key.isDeleted === 1)).toBe(true);
-      expect(indexKeys.some(key => key['variants.sku'] === 1)).toBe(true);
-      expect(indexKeys.some(key => key.relatedProducts === 1)).toBe(true);
+      void expect(indexKeys.some(key => key.slug === 1 && key.isDeleted === 1)).toBe(true);
+      void expect(indexKeys.some(key => key['variants.sku'] === 1)).toBe(true);
+      void expect(indexKeys.some(key => key.relatedProducts === 1)).toBe(true);
     });
   });
 });

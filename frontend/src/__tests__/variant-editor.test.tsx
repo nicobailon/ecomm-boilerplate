@@ -36,9 +36,9 @@ describe('VariantEditor', () => {
         </TestWrapper>,
       );
 
-      expect(screen.getByText('Product Variants')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /add variant/i })).toBeInTheDocument();
-      expect(screen.getByText('No variants created yet')).toBeInTheDocument();
+      void expect(screen.getByText('Product Variants')).toBeInTheDocument();
+      void expect(screen.getByRole('button', { name: /add variant/i })).toBeInTheDocument();
+      void expect(screen.getByText('No variants created yet')).toBeInTheDocument();
     });
 
     it('should show variant table when variants exist', () => {
@@ -60,11 +60,11 @@ describe('VariantEditor', () => {
         </TestWrapper>,
       );
 
-      expect(screen.getByText('Label')).toBeInTheDocument();
-      expect(screen.getByText('Price Adjustment')).toBeInTheDocument();
-      expect(screen.getByText('Inventory')).toBeInTheDocument();
-      expect(screen.getByText('SKU')).toBeInTheDocument();
-      expect(screen.getByText('Actions')).toBeInTheDocument();
+      void expect(screen.getByText('Label')).toBeInTheDocument();
+      void expect(screen.getByText('Price Adjustment')).toBeInTheDocument();
+      void expect(screen.getByText('Inventory')).toBeInTheDocument();
+      void expect(screen.getByText('SKU')).toBeInTheDocument();
+      void expect(screen.getByText('Actions')).toBeInTheDocument();
     });
 
     it('should NOT render color field anywhere in the component', () => {
@@ -87,16 +87,16 @@ describe('VariantEditor', () => {
       );
 
       // Check that no color-related text is in the document
-      expect(screen.queryByText('Color')).not.toBeInTheDocument();
-      expect(screen.queryByText('color')).not.toBeInTheDocument();
+      void expect(screen.queryByText('Color')).not.toBeInTheDocument();
+      void expect(screen.queryByText('color')).not.toBeInTheDocument();
       
       // Check that no color input field exists
-      expect(screen.queryByPlaceholderText(/color/i)).not.toBeInTheDocument();
+      void expect(screen.queryByPlaceholderText(/color/i)).not.toBeInTheDocument();
       
       // Check table headers don't include color
       const headers = screen.getAllByRole('columnheader');
       headers.forEach(header => {
-        expect(header.textContent?.toLowerCase()).not.toContain('color');
+        void expect(header.textContent?.toLowerCase()).not.toContain('color');
       });
     });
   });
@@ -114,8 +114,8 @@ describe('VariantEditor', () => {
       await user.click(screen.getByRole('button', { name: /add variant/i }));
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText('e.g., Small, Medium, Large')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('0.00')).toBeInTheDocument(); // Price adjustment field
+        void expect(screen.getByPlaceholderText('e.g., Small, Medium, Large')).toBeInTheDocument();
+        void expect(screen.getByPlaceholderText('0.00')).toBeInTheDocument(); // Price adjustment field
       });
     });
 
@@ -133,8 +133,8 @@ describe('VariantEditor', () => {
       // Initially, variantId should be empty
       // eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
       const hiddenInput = document.querySelector('input[name="variants.0.variantId"]') as HTMLInputElement;
-      expect(hiddenInput).toBeInTheDocument();
-      expect(hiddenInput.value).toBe('');
+      void expect(hiddenInput).toBeInTheDocument();
+      void expect(hiddenInput.value).toBe('');
 
       // Type a label and blur to trigger ID generation
       const labelInput = screen.getByPlaceholderText('e.g., Small, Medium, Large');
@@ -143,7 +143,7 @@ describe('VariantEditor', () => {
 
       await waitFor(() => {
         // Now variantId should be generated based on the label
-        expect(hiddenInput.value).toMatch(/^small-[a-zA-Z0-9_-]{6}$/);
+        void expect(hiddenInput.value).toMatch(/^small-[a-zA-Z0-9_-]{6}$/);
       });
     });
 
@@ -162,7 +162,7 @@ describe('VariantEditor', () => {
 
       await waitFor(() => {
         const labelInputs = screen.getAllByPlaceholderText('e.g., Small, Medium, Large');
-        expect(labelInputs).toHaveLength(2);
+        void expect(labelInputs).toHaveLength(2);
       });
     });
 
@@ -189,8 +189,8 @@ describe('VariantEditor', () => {
       // Check that the hidden input contains the existing variant ID
       // eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
       const hiddenInput = document.querySelector('input[name="variants.0.variantId"]') as HTMLInputElement;
-      expect(hiddenInput).toBeInTheDocument();
-      expect(hiddenInput.value).toBe('existing-variant-123');
+      void expect(hiddenInput).toBeInTheDocument();
+      void expect(hiddenInput.value).toBe('existing-variant-123');
 
       // Edit the label
       const labelInput = screen.getByDisplayValue('Small');
@@ -198,7 +198,7 @@ describe('VariantEditor', () => {
       await user.type(labelInput, 'Extra Small');
 
       // The variant ID should still be preserved in the hidden input
-      expect(hiddenInput.value).toBe('existing-variant-123');
+      void expect(hiddenInput.value).toBe('existing-variant-123');
     });
   });
 
@@ -227,7 +227,7 @@ describe('VariantEditor', () => {
       await user.click(deleteButton);
 
       await waitFor(() => {
-        expect(screen.getByText('No variants created yet')).toBeInTheDocument();
+        void expect(screen.getByText('No variants created yet')).toBeInTheDocument();
       });
     });
   });
@@ -252,8 +252,8 @@ describe('VariantEditor', () => {
       await user.type(labelInputs[1], 'Small');
 
       await waitFor(() => {
-        expect(screen.getByText('Duplicate variant labels detected:')).toBeInTheDocument();
-        expect(screen.getByText('"small"')).toBeInTheDocument();
+        void expect(screen.getByText('Duplicate variant labels detected:')).toBeInTheDocument();
+        void expect(screen.getByText('"small"')).toBeInTheDocument();
       });
     });
 
@@ -275,7 +275,7 @@ describe('VariantEditor', () => {
       // Since the form validation happens through React Hook Form and Zod,
       // we need to trigger form submission to see validation errors
       // For now, let's test that the input accepts the value
-      expect(inventoryInput).toHaveValue(-5);
+      void expect(inventoryInput).toHaveValue(-5);
     });
   });
 
@@ -291,10 +291,10 @@ describe('VariantEditor', () => {
 
       await user.click(screen.getByRole('button', { name: /add variant/i }));
 
-      expect(screen.getByLabelText('Variant 1 label')).toBeInTheDocument();
-      expect(screen.getByLabelText('Variant 1 price adjustment')).toBeInTheDocument();
-      expect(screen.getByLabelText('Variant 1 inventory')).toBeInTheDocument();
-      expect(screen.getByLabelText('Variant 1 SKU')).toBeInTheDocument();
+      void expect(screen.getByLabelText('Variant 1 label')).toBeInTheDocument();
+      void expect(screen.getByLabelText('Variant 1 price adjustment')).toBeInTheDocument();
+      void expect(screen.getByLabelText('Variant 1 inventory')).toBeInTheDocument();
+      void expect(screen.getByLabelText('Variant 1 SKU')).toBeInTheDocument();
     });
   });
 });

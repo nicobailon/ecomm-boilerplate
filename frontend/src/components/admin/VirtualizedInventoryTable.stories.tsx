@@ -158,7 +158,7 @@ export const MixedInventoryLevels: Story = {
 export const WithSelection: Story = {
   render: (args) => {
     const handleProductSelect = (product: TRPCProduct) => {
-      console.log('Selected product:', product);
+      // Product selected
       args.onProductSelect?.(product);
     };
     
@@ -427,7 +427,7 @@ export const WithSorting: Story = {
     
     // Wait for table to render
     await waitFor(() => {
-      expect(canvas.getByTestId('sort-name')).toBeInTheDocument();
+      void expect(canvas.getByTestId('sort-name')).toBeInTheDocument();
     });
     
     // Click stock sort
@@ -436,7 +436,7 @@ export const WithSorting: Story = {
     
     // Verify sort info updated
     await waitFor(() => {
-      expect(canvas.getByText('stock')).toBeInTheDocument();
+      void expect(canvas.getByText('stock')).toBeInTheDocument();
     });
     
     // Click again to reverse sort
@@ -444,7 +444,7 @@ export const WithSorting: Story = {
     
     // Verify descending
     await waitFor(() => {
-      expect(canvas.getByText('descending')).toBeInTheDocument();
+      void expect(canvas.getByText('descending')).toBeInTheDocument();
     });
     
     // Sort by name
@@ -454,7 +454,7 @@ export const WithSorting: Story = {
     // Verify changed to name
     await waitFor(() => {
       const sortedByText = canvas.getByText(/Sorted by:/i).parentElement;
-      expect(sortedByText).toHaveTextContent('name');
+      void expect(sortedByText).toHaveTextContent('name');
     });
   },
 };
@@ -489,14 +489,14 @@ export const AllColumnsSorting: Story = {
       // Verify column is selected
       await waitFor(() => {
         const sortedByText = canvas.getByText(/Sorted by:/i).parentElement;
-        expect(sortedByText).toHaveTextContent(column.name);
+        void expect(sortedByText).toHaveTextContent(column.name);
       });
       
       // Test reverse sort
       await userEvent.click(sortButton);
       
       await waitFor(() => {
-        expect(canvas.getByText('descending')).toBeInTheDocument();
+        void expect(canvas.getByText('descending')).toBeInTheDocument();
       });
     }
   },
@@ -646,16 +646,16 @@ export const ScreenReaderAnnouncements: Story = {
     // Check for screen reader elements
     await waitFor(() => {
       const statusRegion = canvas.getByRole('status');
-      expect(statusRegion).toHaveAttribute('aria-live', 'polite');
+      void expect(statusRegion).toHaveAttribute('aria-live', 'polite');
     });
     
     // Check table structure
     const table = canvasElement.querySelector('[role="table"]');
-    expect(table).toBeInTheDocument();
+    void expect(table).toBeInTheDocument();
     
     // Check for row announcements
     const firstRow = canvasElement.querySelector('[role="row"]');
-    expect(firstRow).toHaveAttribute('aria-rowindex');
+    void expect(firstRow).toHaveAttribute('aria-rowindex');
   },
 };
 
@@ -691,16 +691,16 @@ export const KeyboardNavigation: Story = {
     // Focus on first interactive element
     await waitFor(() => {
       const firstButton = canvas.getAllByRole('button')[0];
-      expect(firstButton).toBeInTheDocument();
+      void expect(firstButton).toBeInTheDocument();
     });
     
     const firstButton = canvas.getAllByRole('button')[0];
     firstButton.focus();
-    expect(document.activeElement).toBe(firstButton);
+    void expect(document.activeElement).toBe(firstButton);
     
     // Tab through elements
     await userEvent.tab();
-    expect(document.activeElement).not.toBe(firstButton);
+    void expect(document.activeElement).not.toBe(firstButton);
     
     // Test arrow key navigation
     await userEvent.keyboard('{ArrowDown}');
@@ -751,14 +751,14 @@ export const FocusManagement: Story = {
     const firstButton = buttons[0];
     
     await userEvent.click(firstButton);
-    expect(firstButton).toHaveClass('focus:ring-2');
+    void expect(firstButton).toHaveClass('focus:ring-2');
     
     // Tab to next element
     await userEvent.tab();
     
     // Check focus visible styles
     const activeElement = document.activeElement;
-    expect(activeElement).toHaveClass('focus-visible:ring-2');
+    void expect(activeElement).toHaveClass('focus-visible:ring-2');
   },
 };
 
@@ -1048,7 +1048,7 @@ export const DescriptiveButtons: Story = {
       // Should have either text content or aria-label
       const hasText = button.textContent?.trim();
       const hasAriaLabel = button.getAttribute('aria-label');
-      expect(hasText || hasAriaLabel).toBeTruthy();
+      void void expect(hasText || hasAriaLabel).toBeTruthy();
     });
   },
 };

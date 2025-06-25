@@ -9,6 +9,7 @@ export interface User {
   email: string;
   role: 'customer' | 'admin';
   cartItems: CartItem[];
+  emailVerified: boolean;
 }
 
 export interface Product {

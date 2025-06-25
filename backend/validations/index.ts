@@ -10,7 +10,34 @@ export const signupSchema = loginSchema.extend({
   name: z.string().min(2, 'Name must be at least 2 characters'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1, 'Verification token is required'),
+});
+
 // Product validations are now in product.validation.ts
+
+// Analytics validations
+export const analyticsDataSchema = z.object({
+  users: z.number(),
+  products: z.number(),
+  totalSales: z.number(),
+  totalRevenue: z.number(),
+});
+
+export const dailySalesDataSchema = z.array(z.object({
+  date: z.string(),
+  sales: z.number(),
+  revenue: z.number(),
+}));
 
 // Cart validations
 export const addToCartSchema = z.object({

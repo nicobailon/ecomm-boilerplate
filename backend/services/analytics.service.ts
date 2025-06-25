@@ -43,7 +43,9 @@ export class AnalyticsService {
       },
     ]);
 
-    const { totalSales, totalRevenue } = salesData[0] ?? { totalSales: 0, totalRevenue: 0 };
+    const { totalSales, totalRevenue } = salesData.length > 0 && salesData[0] 
+      ? salesData[0] 
+      : { totalSales: 0, totalRevenue: 0 };
 
     return {
       users: totalUsers,

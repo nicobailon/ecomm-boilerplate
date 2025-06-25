@@ -436,7 +436,7 @@ export const ToggleFeaturedInteraction: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText('Product 1')).toBeInTheDocument();
+      void expect(canvas.getByText('Product 1')).toBeInTheDocument();
     });
     
     // Find the first toggle button
@@ -448,7 +448,7 @@ export const ToggleFeaturedInteraction: Story = {
     // The star should now be filled (featured)
     await waitFor(() => {
       const star = firstToggle.querySelector('svg');
-      expect(star).toHaveClass('fill-current');
+      void expect(star).toHaveClass('fill-current');
     });
   },
 };
@@ -504,7 +504,7 @@ export const EditProductInteraction: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText('Product 1')).toBeInTheDocument();
+      void expect(canvas.getByText('Product 1')).toBeInTheDocument();
     });
     
     // Click on the product row
@@ -515,7 +515,7 @@ export const EditProductInteraction: Story = {
     
     // Check that onEditProduct was called
     await waitFor(() => {
-      expect(args.onEditProduct).toHaveBeenCalledWith(
+      void expect(args.onEditProduct).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Product 1',
         }),
@@ -542,7 +542,7 @@ export const OfflineProductsLoad: Story = {
       });
       
       const [isOnline, setIsOnline] = useState(navigator.onLine);
-      const [cacheProducts, _setCacheProducts] = useState(mockProducts.slice(0, 3));
+      const [cacheProducts] = useState(mockProducts.slice(0, 3));
       const [syncQueue, setSyncQueue] = useState<string[]>([]);
       
       const simulateOffline = () => {
@@ -906,7 +906,7 @@ export const GridListViewToggle: Story = {
     
     // Wait for initial render
     await waitFor(() => {
-      expect(canvas.getByTestId('view-list')).toBeInTheDocument();
+      void expect(canvas.getByTestId('view-list')).toBeInTheDocument();
     });
     
     // Test view toggle
@@ -915,7 +915,7 @@ export const GridListViewToggle: Story = {
     
     // Should show grid placeholder
     await waitFor(() => {
-      expect(canvas.getByText(/Grid view would display products as cards here/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/Grid view would display products as cards here/i)).toBeInTheDocument();
     });
     
     // Switch back to list
@@ -924,7 +924,7 @@ export const GridListViewToggle: Story = {
     
     // Should show table
     await waitFor(() => {
-      expect(canvas.getByText('Product 1')).toBeInTheDocument();
+      void expect(canvas.getByText('Product 1')).toBeInTheDocument();
     });
   },
 };
@@ -990,7 +990,7 @@ export const SortingFunctionality: Story = {
     
     // Wait for products to load
     await waitFor(() => {
-      expect(canvas.getByText('Alpha Product')).toBeInTheDocument();
+      void expect(canvas.getByText('Alpha Product')).toBeInTheDocument();
     });
     
     // Change sort option
@@ -1002,7 +1002,7 @@ export const SortingFunctionality: Story = {
     await userEvent.click(sortOrderButton);
     
     // Verify sort order changed
-    expect(sortOrderButton).toHaveTextContent('↓');
+    void expect(sortOrderButton).toHaveTextContent('↓');
   },
 };
 
@@ -1062,12 +1062,12 @@ export const PaginationControls: Story = {
     
     // Wait for pagination controls
     await waitFor(() => {
-      expect(canvas.getByTestId('pagination-next')).toBeInTheDocument();
+      void expect(canvas.getByTestId('pagination-next')).toBeInTheDocument();
     });
     
     // Check initial state
-    expect(canvas.getByText('Page 1 of 3')).toBeInTheDocument();
-    expect(canvas.getByTestId('pagination-prev')).toBeDisabled();
+    void expect(canvas.getByText('Page 1 of 3')).toBeInTheDocument();
+    void expect(canvas.getByTestId('pagination-prev')).toBeDisabled();
     
     // Navigate to next page
     const nextButton = canvas.getByTestId('pagination-next');
@@ -1075,18 +1075,18 @@ export const PaginationControls: Story = {
     
     // Check page 2 state
     await waitFor(() => {
-      expect(canvas.getByText('Page 2 of 3')).toBeInTheDocument();
+      void expect(canvas.getByText('Page 2 of 3')).toBeInTheDocument();
     });
-    expect(canvas.getByTestId('pagination-prev')).not.toBeDisabled();
+    void expect(canvas.getByTestId('pagination-prev')).not.toBeDisabled();
     
     // Navigate to page 3
     await userEvent.click(nextButton);
     
     // Check page 3 state
     await waitFor(() => {
-      expect(canvas.getByText('Page 3 of 3')).toBeInTheDocument();
+      void expect(canvas.getByText('Page 3 of 3')).toBeInTheDocument();
     });
-    expect(canvas.getByTestId('pagination-next')).toBeDisabled();
+    void expect(canvas.getByTestId('pagination-next')).toBeDisabled();
   },
 };
 
@@ -1291,7 +1291,7 @@ export const DeleteProductInteraction: Story = {
     const canvas = within(canvasElement);
     
     await waitFor(() => {
-      expect(canvas.getByText('Product 1')).toBeInTheDocument();
+      void expect(canvas.getByText('Product 1')).toBeInTheDocument();
     });
     
     // Mock window.confirm

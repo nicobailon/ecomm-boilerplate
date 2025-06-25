@@ -39,12 +39,12 @@ describe('CouponService', () => {
 
       const result = await couponService.validateCoupon(mockUserId, 'SAVE20');
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         message: 'Coupon is valid',
         code: 'SAVE20',
         discountPercentage: 20,
       });
-      expect(mockCouponFindOne).toHaveBeenCalledWith({
+      void expect(mockCouponFindOne).toHaveBeenCalledWith({
         code: 'SAVE20',
         userId: mockUserId,
         isActive: true,
@@ -74,8 +74,8 @@ describe('CouponService', () => {
         couponService.validateCoupon(mockUserId, 'EXPIRED20'),
       ).rejects.toThrow(new AppError('Coupon expired', 404));
 
-      expect(mockExpiredCoupon.isActive).toBe(false);
-      expect(mockExpiredCoupon.save).toHaveBeenCalled();
+      void expect(mockExpiredCoupon.isActive).toBe(false);
+      void expect(mockExpiredCoupon.save).toHaveBeenCalled();
     });
 
     it('should handle edge case: coupon expires at exact current time', async () => {
@@ -104,7 +104,7 @@ describe('CouponService', () => {
         couponService.validateCoupon(mockUserId, 'save20'),
       ).rejects.toThrow(new AppError('Coupon not found', 404));
 
-      expect(mockCouponFindOne).toHaveBeenCalledWith({
+      void expect(mockCouponFindOne).toHaveBeenCalledWith({
         code: 'SAVE20', // Converted to uppercase
         userId: mockUserId,
         isActive: true,
@@ -128,7 +128,7 @@ describe('CouponService', () => {
 
       const result = await couponService.validateCoupon(mockUserId, 'general20');
 
-      expect(result).toEqual({
+      void expect(result).toEqual({
         message: 'Coupon is valid',
         code: 'GENERAL20',
         discountPercentage: 20,
@@ -190,11 +190,11 @@ describe('CouponService', () => {
 
       await couponService.applyCouponToUser(mockUser as any, 'SAVE30');
 
-      expect(mockUser.appliedCoupon).toEqual({
+      void expect(mockUser.appliedCoupon).toEqual({
         code: 'SAVE30',
         discountPercentage: 30,
       });
-      expect(mockUser.save).toHaveBeenCalled();
+      void expect(mockUser.save).toHaveBeenCalled();
     });
 
     it('should replace existing coupon when applying new one', async () => {
@@ -216,7 +216,7 @@ describe('CouponService', () => {
 
       await couponService.applyCouponToUser(mockUser as any, 'NEW20');
 
-      expect(mockUser.appliedCoupon).toEqual({
+      void expect(mockUser.appliedCoupon).toEqual({
         code: 'NEW20',
         discountPercentage: 20,
       });
@@ -240,7 +240,7 @@ describe('CouponService', () => {
       ).rejects.toThrow('Database error');
 
       // User object was modified but not saved
-      expect(mockUser.appliedCoupon).toEqual({
+      void expect(mockUser.appliedCoupon).toEqual({
         code: 'SAVE25',
         discountPercentage: 25,
       });
@@ -256,8 +256,8 @@ describe('CouponService', () => {
 
       await couponService.removeCouponFromUser(mockUser as any);
 
-      expect(mockUser.appliedCoupon).toBeNull();
-      expect(mockUser.save).toHaveBeenCalled();
+      void expect(mockUser.appliedCoupon).toBeNull();
+      void expect(mockUser.save).toHaveBeenCalled();
     });
 
     it('should handle removing when no coupon is applied', async () => {
@@ -265,8 +265,8 @@ describe('CouponService', () => {
 
       await couponService.removeCouponFromUser(mockUser as any);
 
-      expect(mockUser.appliedCoupon).toBeNull();
-      expect(mockUser.save).toHaveBeenCalled();
+      void expect(mockUser.appliedCoupon).toBeNull();
+      void expect(mockUser.save).toHaveBeenCalled();
     });
 
     it('should handle database save errors when removing', async () => {
@@ -281,7 +281,7 @@ describe('CouponService', () => {
       ).rejects.toThrow('Save failed');
 
       // Coupon was removed from object but not persisted
-      expect(mockUser.appliedCoupon).toBeNull();
+      void expect(mockUser.appliedCoupon).toBeNull();
     });
   });
 
@@ -310,7 +310,7 @@ describe('CouponService', () => {
           `DISCOUNT${testCase.percentage}`,
         );
 
-        expect(result.discountPercentage).toBe(testCase.percentage);
+        void expect(result.discountPercentage).toBe(testCase.percentage);
       }
     });
 
@@ -333,10 +333,10 @@ describe('CouponService', () => {
         couponService.validateCoupon(mockUserId, 'CONCURRENT20'),
       ]);
 
-      expect(validations).toHaveLength(3);
+      void expect(validations).toHaveLength(3);
       validations.forEach(result => {
-        expect(result.code).toBe('CONCURRENT20');
-        expect(result.discountPercentage).toBe(20);
+        void expect(result.code).toBe('CONCURRENT20');
+        void expect(result.discountPercentage).toBe(20);
       });
     });
   });
@@ -359,11 +359,11 @@ describe('CouponService', () => {
 
         const result = await couponService.listAllDiscounts({ page: 2, limit: 10 });
 
-        expect(result).toEqual({
+        void expect(result).toEqual({
           discounts: mockDiscounts,
           total: 50,
         });
-        expect(Coupon.find).toHaveBeenCalledWith({});
+        void expect(Coupon.find).toHaveBeenCalledWith({});
       });
 
       it('should filter by active status', async () => {
@@ -377,7 +377,7 @@ describe('CouponService', () => {
 
         await couponService.listAllDiscounts({ isActive: true });
 
-        expect(Coupon.find).toHaveBeenCalledWith({ isActive: true });
+        void expect(Coupon.find).toHaveBeenCalledWith({ isActive: true });
       });
     });
 
@@ -406,8 +406,8 @@ describe('CouponService', () => {
 
         const result = await couponService.createDiscount(mockInput);
 
-        expect(result).toBe(mockSavedCoupon);
-        expect(mockSavedCoupon.save).toHaveBeenCalled();
+        void expect(result).toBe(mockSavedCoupon);
+        void expect(mockSavedCoupon.save).toHaveBeenCalled();
       });
 
       it('should throw error for duplicate code', async () => {
@@ -441,9 +441,9 @@ describe('CouponService', () => {
           isActive: false,
         });
 
-        expect(mockCoupon.discountPercentage).toBe(25);
-        expect(mockCoupon.isActive).toBe(false);
-        expect(mockCoupon.save).toHaveBeenCalled();
+        void expect(mockCoupon.discountPercentage).toBe(25);
+        void expect(mockCoupon.isActive).toBe(false);
+        void expect(mockCoupon.save).toHaveBeenCalled();
       });
 
       it('should throw error for non-existent discount', async () => {
@@ -468,11 +468,11 @@ describe('CouponService', () => {
 
         const result = await couponService.deleteDiscount('delete-id');
 
-        expect(result).toEqual({
+        void expect(result).toEqual({
           success: true,
           message: 'Discount has been permanently deleted',
         });
-        expect(Coupon.findByIdAndDelete).toHaveBeenCalledWith('delete-id');
+        void expect(Coupon.findByIdAndDelete).toHaveBeenCalledWith('delete-id');
       });
 
       it('should deactivate discount with existing uses', async () => {
@@ -488,12 +488,12 @@ describe('CouponService', () => {
 
         const result = await couponService.deleteDiscount('deactivate-id');
 
-        expect(result).toEqual({
+        void expect(result).toEqual({
           success: true,
           message: 'Discount has been deactivated (has existing uses)',
         });
-        expect(mockCoupon.isActive).toBe(false);
-        expect(mockCoupon.save).toHaveBeenCalled();
+        void expect(mockCoupon.isActive).toBe(false);
+        void expect(mockCoupon.save).toHaveBeenCalled();
       });
     });
 
@@ -511,7 +511,7 @@ describe('CouponService', () => {
 
         await couponService.incrementUsage('increment20');
 
-        expect(Coupon.findOneAndUpdate).toHaveBeenCalledWith(
+        void expect(Coupon.findOneAndUpdate).toHaveBeenCalledWith(
           {
             code: 'INCREMENT20',
             isActive: true,
@@ -523,7 +523,7 @@ describe('CouponService', () => {
           { $inc: { currentUses: 1 } },
           { new: true, runValidators: true },
         );
-        expect(mockUpdatedCoupon.save).not.toHaveBeenCalled();
+        void expect(mockUpdatedCoupon.save).not.toHaveBeenCalled();
       });
 
       it('should deactivate coupon when max uses reached', async () => {
@@ -539,8 +539,8 @@ describe('CouponService', () => {
 
         await couponService.incrementUsage('MAXED20');
 
-        expect(mockUpdatedCoupon.isActive).toBe(false);
-        expect(mockUpdatedCoupon.save).toHaveBeenCalled();
+        void expect(mockUpdatedCoupon.isActive).toBe(false);
+        void expect(mockUpdatedCoupon.save).toHaveBeenCalled();
       });
 
       it('should deactivate user-specific coupons after first use', async () => {
@@ -556,8 +556,8 @@ describe('CouponService', () => {
 
         await couponService.incrementUsage('USER50');
 
-        expect(mockUserCoupon.isActive).toBe(false);
-        expect(mockUserCoupon.save).toHaveBeenCalled();
+        void expect(mockUserCoupon.isActive).toBe(false);
+        void expect(mockUserCoupon.save).toHaveBeenCalled();
       });
 
       it('should throw error when coupon not found', async () => {

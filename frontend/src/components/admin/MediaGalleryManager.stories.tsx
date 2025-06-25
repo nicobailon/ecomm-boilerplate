@@ -127,7 +127,7 @@ export const DragAndDrop: Story = {
     
     // Find drag handles
     const dragHandles = canvas.getAllByRole('button', { name: /drag handle/i });
-    expect(dragHandles).toHaveLength(3);
+    void expect(dragHandles).toHaveLength(3);
     
     // Simulate keyboard-based reordering (more reliable than drag simulation)
     const firstItem = dragHandles[0];
@@ -139,7 +139,7 @@ export const DragAndDrop: Story = {
     
     // Verify visual feedback during drag
     const mediaItems = canvas.getAllByRole('img');
-    expect(mediaItems[0]).toHaveAttribute('alt', 'Product Side View'); // Was second, now first
+    void expect(mediaItems[0]).toHaveAttribute('alt', 'Product Side View'); // Was second, now first
   },
 };
 
@@ -273,7 +273,7 @@ export const DeleteConfirmation: Story = {
     
     // Find first delete button
     const deleteButtons = canvas.getAllByRole('button', { name: /delete.*item/i });
-    expect(deleteButtons).toHaveLength(3);
+    void expect(deleteButtons).toHaveLength(3);
     
     // Click first delete button
     await userEvent.click(deleteButtons[0]);
@@ -285,7 +285,7 @@ export const DeleteConfirmation: Story = {
     // Verify item was removed
     await waitFor(() => {
       const remainingItems = canvas.getAllByRole('img');
-      expect(remainingItems).toHaveLength(2);
+      void expect(remainingItems).toHaveLength(2);
     });
   },
 };
@@ -306,7 +306,7 @@ export const AddYouTubeVideo: Story = {
     
     // Modal should appear
     const modal = await canvas.findByRole('dialog');
-    expect(modal).toBeInTheDocument();
+    void expect(modal).toBeInTheDocument();
     
     // Enter YouTube URL
     const urlInput = within(modal).getByPlaceholderText(/youtube.*url/i);
@@ -322,7 +322,7 @@ export const AddYouTubeVideo: Story = {
     
     // Verify video was added
     await waitFor(() => {
-      expect(canvas.getByText('Product Demo')).toBeInTheDocument();
+      void expect(canvas.getByText('Product Demo')).toBeInTheDocument();
     });
   },
 };
@@ -388,7 +388,7 @@ export const FileUploadProcess: Story = {
     
     // Find upload area
     const uploadArea = canvas.getByText(/drag.*drop.*upload/i).closest('div');
-    expect(uploadArea).toBeInTheDocument();
+    void expect(uploadArea).toBeInTheDocument();
     
     // Simulate file selection
     const fileInput = canvas.getByLabelText(/upload.*image/i);
@@ -398,7 +398,7 @@ export const FileUploadProcess: Story = {
     
     // Should show upload progress
     await waitFor(() => {
-      expect(canvas.getByText(/uploading/i)).toBeInTheDocument();
+      void expect(canvas.getByText(/uploading/i)).toBeInTheDocument();
     });
   },
 };
@@ -418,17 +418,17 @@ export const KeyboardNavigation: Story = {
     
     // First item should have focus
     const firstItem = canvas.getAllByRole('img')[0];
-    expect(document.activeElement?.closest('[role="img"]')).toBe(firstItem);
+    void expect(document.activeElement?.closest('[role="img"]')).toBe(firstItem);
     
     // Tab to drag handle
     await userEvent.tab();
     const dragHandle = canvas.getAllByRole('button', { name: /drag handle/i })[0];
-    expect(document.activeElement).toBe(dragHandle);
+    void expect(document.activeElement).toBe(dragHandle);
     
     // Tab to delete button
     await userEvent.tab();
     const deleteButton = canvas.getAllByRole('button', { name: /delete.*item/i })[0];
-    expect(document.activeElement).toBe(deleteButton);
+    void expect(document.activeElement).toBe(deleteButton);
     
     // Continue tabbing through items
     await userEvent.tab(); // Next item
@@ -451,7 +451,7 @@ export const AccessibilityAnnouncements: Story = {
     // Should announce deletion
     await waitFor(() => {
       const alert = canvas.getByRole('alert');
-      expect(alert).toHaveTextContent(/removed|deleted/i);
+      void expect(alert).toHaveTextContent(/removed|deleted/i);
     });
     
     // Reorder items
@@ -463,7 +463,7 @@ export const AccessibilityAnnouncements: Story = {
     // Should announce reorder
     await waitFor(() => {
       const alert = canvas.getByRole('alert');
-      expect(alert).toHaveTextContent(/moved|reordered/i);
+      void expect(alert).toHaveTextContent(/moved|reordered/i);
     });
   },
 };

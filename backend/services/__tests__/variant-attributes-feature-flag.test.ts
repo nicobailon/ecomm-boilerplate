@@ -41,8 +41,8 @@ describe('Variant Attributes Feature Flag', () => {
         inventory: 5,
       };
       
-      expect(() => productVariantSchema.parse(validVariant)).not.toThrow();
-      expect(() => productVariantSchema.parse(invalidVariant)).toThrow();
+      void expect(() => productVariantSchema.parse(validVariant)).not.toThrow();
+      void expect(() => productVariantSchema.parse(invalidVariant)).toThrow();
     });
     
     it('should allow free-form size when feature flag is enabled', async () => {
@@ -64,11 +64,11 @@ describe('Variant Attributes Feature Flag', () => {
         inventory: 3,
       };
       
-      expect(() => productVariantSchema.parse(customVariant)).not.toThrow();
+      void expect(() => productVariantSchema.parse(customVariant)).not.toThrow();
       
       const parsed = productVariantSchema.parse(customVariant);
-      expect(parsed.size).toBe('XXXL-Tall');
-      expect(parsed.attributes).toEqual({
+      void expect(parsed.size).toBe('XXXL-Tall');
+      void expect(parsed.attributes).toEqual({
         size: 'XXXL-Tall',
         color: '#000000',
         material: 'Cotton Blend',
@@ -95,8 +95,8 @@ describe('Variant Attributes Feature Flag', () => {
       };
       
       const result = productVariantSchema.parse(variantWithAttributes);
-      expect(result.attributes).toBeDefined();
-      expect(Object.keys(result.attributes!).length).toBe(5);
+      void expect(result.attributes).toBeDefined();
+      void expect(Object.keys(result.attributes!).length).toBe(5);
     });
   });
   
@@ -134,8 +134,8 @@ describe('Variant Attributes Feature Flag', () => {
         { size: 'M', color: 'Blue' },
       );
       
-      expect(result.variant?.variantId).toBe('v2');
-      expect(result.isVirtualDefault).toBe(false);
+      void expect(result.variant?.variantId).toBe('v2');
+      void expect(result.isVirtualDefault).toBe(false);
     });
     
     it('should fallback to legacy matching when feature flag is disabled', async () => {
@@ -171,8 +171,8 @@ describe('Variant Attributes Feature Flag', () => {
         { size: 'M', color: 'Any' },
       );
       
-      expect(result.variant?.variantId).toBe('v2');
-      expect(result.isVirtualDefault).toBe(false);
+      void expect(result.variant?.variantId).toBe('v2');
+      void expect(result.isVirtualDefault).toBe(false);
     });
   });
 });

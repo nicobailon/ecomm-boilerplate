@@ -204,7 +204,7 @@ const createEmailQueue = (): Bull.Queue<EmailJob> | null => {
     });
 
     queue.on('completed', (job) => {
-      console.error('[EmailQueue] Email job completed successfully:', {
+      console.info('[EmailQueue] Email job completed successfully:', {
         jobId: job.id,
         type: job.data.type,
         processingTime: job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : 'unknown',

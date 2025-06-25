@@ -343,22 +343,25 @@ export class AuthService {
       throw new AppError('Email is already verified', 400);
     }
 
-    // Check rate limiting - max 3 per hour
-    const rateLimitKey = `email-verification-resend:${userId}`;
-    const resendCount = await redis.incr(rateLimitKey);
-    
-    if (resendCount === 1) {
-      // Set expiry for 1 hour
-      await redis.expire(rateLimitKey, 3600);
-    }
-    
-    if (resendCount > 3) {
-      logEmailVerification.rateLimitExceeded({
-        userId,
-        email: user.email,
-        attemptNumber: resendCount,
-      });
-      throw new AppError('Too many verification email requests. Please try again later.', 429);
+    // Check rate limiting - max 3 per hour (skip in development)
+    let resendCount = 1;
+    if (process.env.NODE_ENV !== 'development') {
+      const rateLimitKey = `email-verification-resend:${userId}`;
+      resendCount = await redis.incr(rateLimitKey);
+      
+      if (resendCount === 1) {
+        // Set expiry for 1 hour
+        await redis.expire(rateLimitKey, 3600);
+      }
+      
+      if (resendCount > 3) {
+        logEmailVerification.rateLimitExceeded({
+          userId,
+          email: user.email,
+          attemptNumber: resendCount,
+        });
+        throw new AppError('Too many verification email requests. Please try again later.', 429);
+      }
     }
     
     // Log resend attempt

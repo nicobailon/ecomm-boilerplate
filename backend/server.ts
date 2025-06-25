@@ -87,20 +87,20 @@ const httpServer = createServer(app);
 
 // Initialize WebSocket service and inventory monitor
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.error('Server is running on http://localhost:' + PORT);
+  console.info('Server is running on http://localhost:' + PORT);
   
   void (async () => {
     try {
       await connectDB();
       await websocketService.initialize(httpServer);
       await inventoryMonitor.startMonitoring();
-      console.error('Real-time inventory monitoring started');
+      console.info('Real-time inventory monitoring started');
       
       // Initialize email queue if available
       const emailQueue = await getEmailQueueForShutdown();
       if (emailQueue) {
         await emailQueue.isReady();
-        console.error('Email queue initialized');
+        console.info('Email queue initialized');
         
         // Set up queue monitoring and alerts
         queueMonitoring.onAlert(alertHandlers.console);
@@ -124,7 +124,7 @@ httpServer.listen(PORT, '0.0.0.0', () => {
           });
         }
         
-        console.error('Queue monitoring and alerts configured');
+        console.info('Queue monitoring and alerts configured');
       } else {
         console.warn('Email queue not available - emails will be sent synchronously');
       }
@@ -140,7 +140,7 @@ httpServer.listen(PORT, '0.0.0.0', () => {
         redisMonitoring.onAlert(monitoringHandlers.metrics);
       }
       
-      console.error('Redis monitoring started');
+      console.info('Redis monitoring started');
     } catch (error) {
       console.error('Failed to initialize services:', error);
     }
@@ -150,19 +150,19 @@ httpServer.listen(PORT, '0.0.0.0', () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   void (async () => {
-  console.error('SIGTERM received, shutting down gracefully...');
+  console.info('SIGTERM received, shutting down gracefully...');
   
   try {
     // Stop Redis monitoring
     redisMonitoring.stopMonitoring();
-    console.error('Redis monitoring stopped');
+    console.info('Redis monitoring stopped');
     
     // Shutdown email queue with proper cleanup
     await shutdownEmailQueue();
     
     // Close HTTP server
     httpServer.close(() => {
-      console.error('HTTP server closed');
+      console.info('HTTP server closed');
       process.exit(0);
     });
   } catch (error) {

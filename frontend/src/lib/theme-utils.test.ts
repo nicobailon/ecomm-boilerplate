@@ -7,7 +7,6 @@ import {
   validateThemeContrast,
   applyThemeTransition,
 } from './theme-utils';
-
 // Create a minimal mock for CSSStyleDeclaration that only includes what we use
 function createMockCSSStyleDeclaration(getPropertyValueImpl: (prop: string) => string): CSSStyleDeclaration {
   return {
@@ -63,7 +62,9 @@ describe('Theme Utilities', () => {
       };
       
       vi.spyOn(window, 'getComputedStyle').mockReturnValue(createMockCSSStyleDeclaration(mockStyle.getPropertyValue));
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+        // Intentionally empty - suppressing console error during test
+      });
       
       expect(validateTheme()).toBe(false);
       expect(consoleSpy).toHaveBeenCalled();

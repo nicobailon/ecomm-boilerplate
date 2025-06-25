@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
-import { redis } from '../lib/redis.js';
+import { redis, isRedisHealthy } from '../lib/redis.js';
 import { queueMonitoring } from '../lib/queue-monitoring.js';
 import { getEmailQueueForShutdown } from '../lib/email-queue.js';
+import { RedisHealthService } from '../lib/redis-health.js';
 
 const router = Router();
 
@@ -17,6 +18,10 @@ interface HealthStatus {
     redis: {
       status: 'connected' | 'disconnected';
       latency?: number;
+      healthy?: boolean;
+      errorCount?: number;
+      lastError?: string | null;
+      inCooldown?: boolean;
     };
     emailQueue?: {
       status: 'healthy' | 'unhealthy';
@@ -59,16 +64,29 @@ router.get('/health', (_req, res) => {
     healthStatus.status = 'unhealthy';
   }
   
-  // Check Redis connection
+  // Check Redis connection with enhanced status
   try {
     const start = Date.now();
     await redis.ping();
+    const redisHealth = RedisHealthService.getHealthStatus();
     healthStatus.services.redis = {
       status: 'connected',
       latency: Date.now() - start,
+      healthy: redisHealth.healthy,
+      errorCount: redisHealth.errorCount,
+      lastError: redisHealth.lastError,
+      inCooldown: redisHealth.inCooldown,
     };
-  } catch {
+  } catch (error) {
+    const redisHealth = RedisHealthService.getHealthStatus();
     healthStatus.status = 'degraded';
+    healthStatus.services.redis = {
+      status: 'disconnected',
+      healthy: false,
+      errorCount: redisHealth.errorCount,
+      lastError: redisHealth.lastError ?? (error instanceof Error ? error.message : 'Unknown error'),
+      inCooldown: redisHealth.inCooldown,
+    };
   }
   
   // Check email queue if available
@@ -118,6 +136,20 @@ router.get('/health/ready', (_req, res) => {
     res.status(503).json({ status: 'not ready' });
   }
   })();
+});
+
+// Redis-specific health check
+router.get('/redis', (_req, res) => {
+  const redisHealth = RedisHealthService.getHealthStatus();
+  const status = {
+    healthy: isRedisHealthy(),
+    connected: redis.status === 'ready',
+    details: redisHealth,
+    timestamp: new Date().toISOString(),
+  };
+
+  const httpStatus = status.healthy ? 200 : 503;
+  res.status(httpStatus).json(status);
 });
 
 export default router;

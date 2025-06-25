@@ -63,8 +63,8 @@ export const EmailVerificationBanner: React.FC = () => {
           transition: {
             height: { duration: 0.3 },
             opacity: { duration: 0.2, delay: 0.1 },
-            y: { duration: 0.3 }
-          }
+            y: { duration: 0.3 },
+          },
         }}
         exit={{ 
           opacity: 0, 
@@ -73,8 +73,8 @@ export const EmailVerificationBanner: React.FC = () => {
           transition: {
             height: { duration: 0.2, delay: 0.1 },
             opacity: { duration: 0.1 },
-            y: { duration: 0.2 }
-          }
+            y: { duration: 0.2 },
+          },
         }}
         className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 overflow-hidden"
         role="alert"
@@ -93,10 +93,10 @@ export const EmailVerificationBanner: React.FC = () => {
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ 
-                  type: "spring",
+                  type: 'spring',
                   stiffness: 200,
                   damping: 15,
-                  delay: 0.3
+                  delay: 0.3,
                 }}
               >
                 <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />

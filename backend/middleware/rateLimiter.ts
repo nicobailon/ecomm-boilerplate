@@ -11,7 +11,7 @@ declare module 'express' {
 }
 
 // Store for rate limiter instances
-let rateLimiterCache = new Map<string, RateLimitRequestHandler>();
+const rateLimiterCache = new Map<string, RateLimitRequestHandler>();
 
 const createRateLimiter = (options: {
   windowMs: number;
@@ -23,7 +23,7 @@ const createRateLimiter = (options: {
 }): RateLimitRequestHandler => {
   // Return a wrapper middleware that creates the limiter on first request
   const middleware = ((req: Request, res: Response, next: NextFunction) => {
-    const cacheKey = options.key || `${options.windowMs}-${options.max}`;
+    const cacheKey = options.key ?? `${options.windowMs}-${options.max}`;
     
     // Check if we already have a limiter for this configuration
     let limiter = rateLimiterCache.get(cacheKey);

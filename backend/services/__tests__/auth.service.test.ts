@@ -1,19 +1,39 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, MockedFunction } from 'vitest';
 import { authService } from '../auth.service.js';
-import { User } from '../../models/user.model.js';
+import { User, IUserDocument } from '../../models/user.model.js';
 import { redis } from '../../lib/redis.js';
 import { queueEmail } from '../../lib/email-queue.js';
 import { AppError } from '../../utils/AppError.js';
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 
 vi.mock('../../models/user.model.js');
 vi.mock('../../lib/redis.js');
 vi.mock('../../lib/email-queue.js');
 
+type MockUserDocument = Partial<IUserDocument> & {
+  save: MockedFunction<() => Promise<void>>;
+  generateEmailVerificationToken: MockedFunction<() => string>;
+};
+
+const createMockUser = (overrides: Partial<MockUserDocument> = {}): MockUserDocument => {
+  const defaultUser: MockUserDocument = {
+    _id: new mongoose.Types.ObjectId(),
+    name: 'Test User',
+    email: 'test@example.com',
+    role: 'customer',
+    emailVerified: false,
+    save: vi.fn().mockResolvedValue(undefined),
+    generateEmailVerificationToken: vi.fn().mockReturnValue('verification-token'),
+    ...overrides,
+  };
+  return defaultUser;
+};
+
 describe('AuthService', () => {
   const mockRedis = {
-    incr: vi.fn(),
-    expire: vi.fn(),
+    incr: vi.fn() as MockedFunction<() => Promise<number>>,
+    expire: vi.fn() as MockedFunction<() => Promise<number>>,
   };
 
   beforeEach(() => {
@@ -26,26 +46,25 @@ describe('AuthService', () => {
       const token = 'valid-token';
       const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
       
-      const mockUser = {
-        _id: 'user-123',
-        name: 'Test User',
-        email: 'test@example.com',
-        role: 'customer',
-        emailVerified: false,
+      const mockUser = createMockUser({
         emailVerificationToken: hashedToken,
         emailVerificationExpires: new Date(Date.now() + 1000 * 60 * 60), // 1 hour from now
-        save: vi.fn(),
-      };
+      });
 
-      vi.spyOn(User, 'findOne').mockResolvedValue(mockUser as any);
-      vi.mocked(queueEmail).mockResolvedValue({ id: 'job-123' } as any);
+      vi.spyOn(User, 'findOne').mockResolvedValue(mockUser as IUserDocument);
+      vi.mocked(queueEmail).mockResolvedValue(undefined);
 
       const result = await authService.verifyEmail(token);
 
-      void expect(User.findOne).toHaveBeenCalledWith({
-        emailVerificationToken: hashedToken,
-        emailVerificationExpires: { $gt: expect.any(Number) },
-      });
+      const findOneSpy = vi.mocked(User.findOne);
+      const findOneCalls = findOneSpy.mock.calls;
+      void expect(findOneCalls.length).toBe(1);
+      const findOneArg = findOneCalls[0]?.[0] as {
+        emailVerificationToken: string;
+        emailVerificationExpires: { $gt: number };
+      };
+      void expect(findOneArg.emailVerificationToken).toBe(hashedToken);
+      void expect(findOneArg.emailVerificationExpires.$gt).toBeGreaterThan(0);
 
       void expect(mockUser.emailVerified).toBe(true);
       void expect(mockUser.emailVerificationToken).toBeUndefined();
@@ -55,10 +74,10 @@ describe('AuthService', () => {
       void expect(queueEmail).toHaveBeenCalledWith('welcomeEmail', { user: mockUser });
 
       void expect(result).toEqual({
-        _id: 'user-123',
-        name: 'Test User',
-        email: 'test@example.com',
-        role: 'customer',
+        _id: mockUser._id?.toString(),
+        name: mockUser.name,
+        email: mockUser.email,
+        role: mockUser.role,
         emailVerified: true,
       });
     });
@@ -85,21 +104,15 @@ describe('AuthService', () => {
       const token = 'valid-token';
       const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
       
-      const mockUser = {
-        _id: 'user-123',
-        name: 'Test User',
-        email: 'test@example.com',
-        role: 'customer',
-        emailVerified: false,
+      const mockUser = createMockUser({
         emailVerificationToken: hashedToken,
         emailVerificationExpires: new Date(Date.now() + 1000 * 60 * 60),
-        save: vi.fn(),
-      };
+      });
 
-      const findOneSpy = vi.spyOn(User, 'findOne').mockResolvedValue(mockUser as any);
+      const findOneSpy = vi.spyOn(User, 'findOne').mockResolvedValue(mockUser as IUserDocument);
       vi.mocked(queueEmail).mockRejectedValue(new Error('Queue error'));
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       const result = await authService.verifyEmail(token);
 
@@ -114,23 +127,22 @@ describe('AuthService', () => {
   describe('resendVerificationEmail', () => {
     it('should resend verification email for unverified user', async () => {
       const userId = 'user-123';
-      const mockUser = {
-        _id: userId,
-        email: 'test@example.com',
-        emailVerified: false,
+      const mockUser = createMockUser({
         emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        generateEmailVerificationToken: vi.fn().mockReturnValue('new-token'),
-        save: vi.fn(),
-      };
+      });
+      mockUser.generateEmailVerificationToken.mockReturnValue('new-token');
 
-      vi.spyOn(User, 'findById').mockResolvedValue(mockUser as any);
+      vi.spyOn(User, 'findById').mockResolvedValue(mockUser as IUserDocument);
       mockRedis.incr.mockResolvedValue(1);
       mockRedis.expire.mockResolvedValue(1);
-      vi.mocked(queueEmail).mockResolvedValue({ id: 'job-123' } as any);
+      vi.mocked(queueEmail).mockResolvedValue(undefined);
 
       await authService.resendVerificationEmail(userId);
 
-      void expect(User.findById).toHaveBeenCalledWith(userId);
+      const findByIdSpy = vi.mocked(User.findById);
+      const findByIdCalls = findByIdSpy.mock.calls;
+      void expect(findByIdCalls.length).toBe(1);
+      void expect(findByIdCalls[0]?.[0]).toBe(userId);
       void expect(mockUser.generateEmailVerificationToken).toHaveBeenCalled();
       void expect(mockUser.save).toHaveBeenCalled();
       void expect(queueEmail).toHaveBeenCalledWith('emailVerification', {
@@ -148,11 +160,11 @@ describe('AuthService', () => {
     });
 
     it('should throw error if email already verified', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         emailVerified: true,
-      };
+      });
 
-      vi.spyOn(User, 'findById').mockResolvedValue(mockUser as any);
+      vi.spyOn(User, 'findById').mockResolvedValue(mockUser as IUserDocument);
 
       await expect(authService.resendVerificationEmail('user-123')).rejects.toThrow(
         new AppError('Email is already verified', 400),
@@ -161,14 +173,11 @@ describe('AuthService', () => {
 
     it('should enforce rate limiting', async () => {
       const userId = 'user-123';
-      const mockUser = {
-        _id: userId,
+      const mockUser = createMockUser({
         emailVerified: false,
-        generateEmailVerificationToken: vi.fn(),
-        save: vi.fn(),
-      };
+      });
 
-      vi.spyOn(User, 'findById').mockResolvedValue(mockUser as any);
+      vi.spyOn(User, 'findById').mockResolvedValue(mockUser as IUserDocument);
       mockRedis.incr.mockResolvedValue(4); // Over the limit
 
       await expect(authService.resendVerificationEmail(userId)).rejects.toThrow(
@@ -180,19 +189,15 @@ describe('AuthService', () => {
 
     it('should set rate limit expiry on first request', async () => {
       const userId = 'user-123';
-      const mockUser = {
-        _id: userId,
-        email: 'test@example.com',
-        emailVerified: false,
+      const mockUser = createMockUser({
         emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        generateEmailVerificationToken: vi.fn().mockReturnValue('token'),
-        save: vi.fn(),
-      };
+      });
+      mockUser.generateEmailVerificationToken.mockReturnValue('token');
 
-      vi.spyOn(User, 'findById').mockResolvedValue(mockUser as any);
+      vi.spyOn(User, 'findById').mockResolvedValue(mockUser as IUserDocument);
       mockRedis.incr.mockResolvedValue(1);
       mockRedis.expire.mockResolvedValue(1);
-      vi.mocked(queueEmail).mockResolvedValue({ id: 'job-123' } as any);
+      vi.mocked(queueEmail).mockResolvedValue(undefined);
 
       await authService.resendVerificationEmail(userId);
 
@@ -201,16 +206,12 @@ describe('AuthService', () => {
 
     it('should handle email queue failure', async () => {
       const userId = 'user-123';
-      const mockUser = {
-        _id: userId,
-        email: 'test@example.com',
-        emailVerified: false,
+      const mockUser = createMockUser({
         emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        generateEmailVerificationToken: vi.fn().mockReturnValue('token'),
-        save: vi.fn(),
-      };
+      });
+      mockUser.generateEmailVerificationToken.mockReturnValue('token');
 
-      vi.spyOn(User, 'findById').mockResolvedValue(mockUser as any);
+      vi.spyOn(User, 'findById').mockResolvedValue(mockUser as IUserDocument);
       mockRedis.incr.mockResolvedValue(1);
       mockRedis.expire.mockResolvedValue(1);
       vi.mocked(queueEmail).mockRejectedValue(new Error('Queue error'));
@@ -229,30 +230,36 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
-      const mockUser = {
-        _id: 'user-123',
+      const mockUser = createMockUser({
         name: signupInput.name,
         email: signupInput.email,
-        role: 'customer',
-        emailVerified: false,
         emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        generateEmailVerificationToken: vi.fn().mockReturnValue('verification-token'),
-        save: vi.fn(),
-      };
+      });
 
       vi.spyOn(User, 'findOne').mockResolvedValue(null);
-      const createSpy = vi.spyOn(User, 'create').mockResolvedValue(mockUser as any);
-      vi.mocked(queueEmail).mockResolvedValue({ id: 'job-123' } as any);
+      // Mongoose's create method has overloaded signatures - when called with a single object,
+      // it returns a single document, but TypeScript types expect array return
+      const createSpy = vi.spyOn(User, 'create').mockImplementation(async () => {
+        return mockUser as unknown as ReturnType<typeof User.create>;
+      });
+      vi.mocked(queueEmail).mockResolvedValue(undefined);
 
-      const generateTokensSpy = vi.spyOn(authService as any, 'generateTokens').mockReturnValue({
+      type AuthServiceWithPrivateMethods = typeof authService & {
+        generateTokens: (userId: string) => { accessToken: string; refreshToken: string };
+        storeRefreshToken: (userId: string, token: string) => Promise<void>;
+      };
+      
+      const authServicePrivate = authService as unknown as AuthServiceWithPrivateMethods;
+      
+      const generateTokensSpy = vi.spyOn(authServicePrivate, 'generateTokens').mockReturnValue({
         accessToken: 'access-token',
         refreshToken: 'refresh-token',
       });
-      const storeRefreshTokenSpy = vi.spyOn(authService as any, 'storeRefreshToken').mockResolvedValue(undefined);
+      const storeRefreshTokenSpy = vi.spyOn(authServicePrivate, 'storeRefreshToken').mockResolvedValue(undefined);
 
       const result = await authService.signup(signupInput);
 
-      void expect(User.findOne).toHaveBeenCalledWith({ email: signupInput.email });
+      void expect(vi.mocked(User.findOne)).toHaveBeenCalledWith({ email: signupInput.email });
       void expect(createSpy).toHaveBeenCalledWith({
         name: signupInput.name,
         email: signupInput.email,

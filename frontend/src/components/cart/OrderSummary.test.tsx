@@ -73,7 +73,7 @@ describe('OrderSummary', () => {
         cartItems: [
           { 
             product: createMockProduct(), 
-            quantity: 1 
+            quantity: 1, 
           },
         ],
       },
@@ -198,10 +198,10 @@ describe('OrderSummary', () => {
       
       render(<OrderSummary />);
       
-      void expect(screen.getByText('Coupon (PRECISE)')).toBeInTheDocument();
-      void expect(screen.getByText('-12.5%')).toBeInTheDocument();
-      void expect(screen.getByText('-$12.50')).toBeInTheDocument();
-      void expect(screen.getByText('$87.49')).toBeInTheDocument();
+      expect(screen.getByText('Coupon (PRECISE)')).toBeInTheDocument();
+      expect(screen.getByText('-12.5%')).toBeInTheDocument();
+      expect(screen.getByText('-$12.50')).toBeInTheDocument();
+      expect(screen.getByText('$87.49')).toBeInTheDocument();
     });
   });
 

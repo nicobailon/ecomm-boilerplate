@@ -5,8 +5,12 @@ import { createLogger } from '../utils/logger.js';
 import { redis, isRedisHealthy } from './redis.js';
 import { RedisHealthService, withRedisHealth } from './redis-health.js';
 
-// Remove the module declaration as it conflicts with socket.io's built-in types
-// We'll use type assertions instead
+// Custom Socket type with authentication data
+interface AuthenticatedSocket extends Socket {
+  data: {
+    userId?: string;
+  };
+}
 
 const logger = createLogger({ service: 'WebSocketService' });
 
@@ -35,7 +39,7 @@ class WebSocketService {
   private isRedisConnected = false;
   private pendingPublishes: { channel: string; message: string }[] = [];
 
-  async initialize(httpServer: HTTPServer): Promise<void> {
+  initialize(httpServer: HTTPServer): void {
     this.io = new Server(httpServer, {
       cors: {
         origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -83,17 +87,17 @@ class WebSocketService {
           }
         });
 
-        this.subClient.on('ready', async () => {
+        this.subClient.on('ready', () => {
           logger.info('[WebSocket] SubClient connected');
-          try {
-            // Subscribe to channels after connection is ready
-            if (this.subClient) {
-              await this.subClient.subscribe('inventory:updates');
-              await this.subClient.subscribe('cart:validation');
-              logger.info('[WebSocket] Subscribed to Redis channels');
-            }
-          } catch (error) {
-            logger.error('[WebSocket] Failed to subscribe to channels:', error);
+          // Subscribe to channels after connection is ready
+          if (this.subClient) {
+            void this.subClient.subscribe('inventory:updates').catch((error) => {
+              logger.error('[WebSocket] Failed to subscribe to inventory:updates:', error);
+            });
+            void this.subClient.subscribe('cart:validation').catch((error) => {
+              logger.error('[WebSocket] Failed to subscribe to cart:validation:', error);
+            });
+            logger.info('[WebSocket] Subscribed to Redis channels');
           }
         });
         
@@ -110,11 +114,13 @@ class WebSocketService {
 
     this.io.use((socket: Socket, next: (err?: Error) => void) => {
       try {
+        // Initialize data object
+        socket.data = {};
+        
         const token = socket.handshake.auth.token as string | undefined;
         if (token && process.env.ACCESS_TOKEN_SECRET) {
           const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET) as { userId: string };
-          // Type socket.data properly
-          (socket as Socket & { data: { userId: string } }).data = { userId: decoded.userId };
+          socket.data.userId = decoded.userId;
         }
         next();
       } catch {
@@ -124,8 +130,8 @@ class WebSocketService {
 
     this.io.on('connection', (socket: Socket) => {
       // Access userId from socket data safely
-      const socketWithData = socket as Socket & { data?: { userId?: string } };
-      const userId = socketWithData.data?.userId;
+      const authenticatedSocket = socket as AuthenticatedSocket;
+      const userId = authenticatedSocket.data?.userId;
       logger.info('websocket.connection', {
         socketId: socket.id,
         userId,

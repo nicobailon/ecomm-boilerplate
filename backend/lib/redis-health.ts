@@ -124,7 +124,7 @@ export async function withRedisHealth<T>(
     }
     return null;
   }
-  
+
   try {
     const result = await operation();
     // Mark as healthy on successful operation
@@ -134,10 +134,18 @@ export async function withRedisHealth<T>(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error(`[RedisHealth] ${operationName} failed:`, errorMessage);
 
-    // Mark as unhealthy if it's a connection error
-    if (errorMessage.includes('ECONNRESET') ??
-        errorMessage.includes('ETIMEDOUT') ??
-        errorMessage.includes('ECONNREFUSED')) {
+    // Enhanced error detection for different types of Redis issues
+    const connectionErrors = ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'ENOTFOUND'];
+    const commandErrors = ['Command timed out', 'READONLY'];
+
+    if (connectionErrors.some(e => errorMessage.includes(e))) {
+      logger.warn(`[RedisHealth] Connection error detected, marking unhealthy: ${errorMessage}`);
+      RedisHealthService.markUnhealthy(errorMessage);
+    } else if (commandErrors.some(e => errorMessage.includes(e))) {
+      logger.warn(`[RedisHealth] Command error detected (not marking unhealthy): ${errorMessage}`);
+      // Don't mark unhealthy for command timeouts - they might be temporary
+    } else {
+      logger.error(`[RedisHealth] Unknown Redis error: ${errorMessage}`);
       RedisHealthService.markUnhealthy(errorMessage);
     }
 
@@ -148,4 +156,19 @@ export async function withRedisHealth<T>(
 
     return null;
   }
+}
+
+/**
+ * Test Redis connection health
+ */
+export async function testRedisConnection(): Promise<boolean> {
+  return withRedisHealth(
+    async () => {
+      const { redis } = await import('./redis.js');
+      await redis.ping();
+      return true;
+    },
+    () => false,
+    'Redis ping test',
+  ).then(result => result === true);
 }

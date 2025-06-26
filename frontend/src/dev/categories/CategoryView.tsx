@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { getComponentsByCategory, ComponentCategory, ComponentRegistryItem } from '../components/registry';
+import type { ComponentCategory, ComponentRegistryItem } from '../components/registry';
+import { getComponentsByCategory } from '../components/registry';
 import ComponentDisplay from '../ComponentDisplay';
 
 interface CategoryViewProps {
@@ -11,7 +12,7 @@ interface CategoryViewProps {
 export default function CategoryView({ category, title, description }: CategoryViewProps) {
   const components = getComponentsByCategory(category);
   const [selectedComponent, setSelectedComponent] = useState<ComponentRegistryItem | null>(null);
-  const [currentProps, setCurrentProps] = useState<Record<string, any>>({});
+  const [currentProps, setCurrentProps] = useState<Record<string, unknown>>({});
 
   return (
     <div className="space-y-6">
@@ -52,7 +53,7 @@ export default function CategoryView({ category, title, description }: CategoryV
                 key={item.id}
                 onClick={() => {
                   setSelectedComponent(item);
-                  setCurrentProps(item.defaultProps || {});
+                  setCurrentProps(item.defaultProps ?? {});
                 }}
                 className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-lg transition-shadow cursor-pointer"
               >

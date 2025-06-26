@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FEATURE_FLAGS } from '@/lib/feature-flags';
 import { useFeatureFlagsStore } from '@/stores/featureFlags.store';
 import { Card } from '@/components/ui/Card';
@@ -23,7 +23,7 @@ export const FeatureFlagsPanel: React.FC = () => {
   const [hasChanges, setHasChanges] = useState(false);
 
   // Combine all feature flags from different sources
-  const allFlags: FeatureFlag[] = [
+  const allFlags: FeatureFlag[] = useMemo(() => [
     // tRPC flags
     {
       key: 'USE_TRPC_PRODUCTS',
@@ -73,7 +73,7 @@ export const FeatureFlagsPanel: React.FC = () => {
       category: 'Features',
       description: 'Enable media gallery for products',
     },
-  ];
+  ], [storeFlags.useVariantAttributes]);
 
   useEffect(() => {
     // Initialize local flags from current values
@@ -82,7 +82,7 @@ export const FeatureFlagsPanel: React.FC = () => {
       initialFlags[flag.key] = flag.value;
     });
     setLocalFlags(initialFlags);
-  }, []);
+  }, [allFlags]);
 
   const handleToggle = (key: string, value: boolean) => {
     setLocalFlags(prev => ({
@@ -116,7 +116,7 @@ export const FeatureFlagsPanel: React.FC = () => {
         .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {}),
     };
 
-    navigator.clipboard.writeText(JSON.stringify(config, null, 2));
+    void navigator.clipboard.writeText(JSON.stringify(config, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -132,7 +132,7 @@ export const FeatureFlagsPanel: React.FC = () => {
   };
 
   const needsReload = hasChanges && allFlags.some(flag => 
-    flag.requiresReload && localFlags[flag.key] !== flag.value
+    flag.requiresReload && localFlags[flag.key] !== flag.value,
   );
 
   return (
@@ -247,7 +247,7 @@ ${Object.entries(localFlags)
           <p>• <strong>tRPC flags</strong> require environment variables and page reload</p>
           <p>• <strong>Feature flags</strong> can be toggled at runtime</p>
           <p>• <strong>Experimental flags</strong> may be unstable or incomplete</p>
-          <p>• Use the "Copy Config" button to get the current configuration</p>
+          <p>• Use the &quot;Copy Config&quot; button to get the current configuration</p>
         </div>
       </Card>
     </div>

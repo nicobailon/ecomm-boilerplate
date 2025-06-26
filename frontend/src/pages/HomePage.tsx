@@ -3,6 +3,8 @@ import { CollectionCard } from '@/components/collections/CollectionCard';
 import FeaturedProducts from '@/components/product/FeaturedProducts';
 import { useFeaturedProducts } from '@/hooks/product/useProducts';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { HeroBanner } from '@/components/ui/HeroBanner';
+import { useFeaturedCollections } from '@/hooks/queries/useHeroBanners';
 
 const HomePage = () => {
 	const { data: featuredProducts, isLoading: isLoadingFeatured } = useFeaturedProducts();
@@ -10,12 +12,28 @@ const HomePage = () => {
 		isPublic: true,
 		limit: 6,
 	});
+	const { data: featuredCollections, isLoading: isLoadingFeaturedCollections } = useFeaturedCollections();
 
 	const collections = collectionsData?.collections;
+	const heroCollection = featuredCollections?.[0];
 
 	return (
 		<div className='relative min-h-screen text-foreground overflow-hidden'>
 			<div className='relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16'>
+				{/* Hero Banner Section */}
+				{!isLoadingFeaturedCollections && heroCollection?.heroImage && (
+					<div className="mb-16">
+						<HeroBanner
+							title={heroCollection.heroTitle ?? heroCollection.name}
+							subtitle={heroCollection.heroSubtitle ?? heroCollection.description}
+							imageUrl={heroCollection.heroImage}
+							buttonText="Shop Collection"
+							buttonUrl={`/collections/${heroCollection.slug}`}
+							height="large"
+						/>
+					</div>
+				)}
+
 				<h1 className='text-center text-5xl sm:text-6xl font-bold text-primary mb-4'>
 					Explore Our Collections
 				</h1>

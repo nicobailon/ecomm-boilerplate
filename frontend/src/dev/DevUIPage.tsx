@@ -12,7 +12,7 @@ import {
   searchComponents,
   getComponentsByCategory,
   type ComponentRegistryItem,
-  type ComponentCategory 
+  type ComponentCategory, 
 } from './components/registry';
 
 export interface ComponentShowcaseProps {
@@ -21,7 +21,7 @@ export interface ComponentShowcaseProps {
 }
 
 export interface ToolsPanelProps {
-  selectedComponent: any;
+  selectedComponent: ComponentRegistryItem | null;
 }
 
 export default function DevUIPage() {
@@ -41,8 +41,10 @@ export default function DevUIPage() {
       // Cmd/Ctrl + K for search focus
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
-        searchInput?.focus();
+        const searchInput = document.querySelector('input[type="text"]');
+        if (searchInput instanceof HTMLInputElement) {
+          searchInput.focus();
+        }
       }
 
       // Cmd/Ctrl + / for keyboard shortcuts help
@@ -87,7 +89,7 @@ export default function DevUIPage() {
     // Use search function if there's a query
     if (searchQuery.trim()) {
       return searchComponents(searchQuery).filter(comp => 
-        selectedCategory === 'all' || comp.category === selectedCategory
+        selectedCategory === 'all' || comp.category === selectedCategory,
       );
     }
     
@@ -123,7 +125,7 @@ export default function DevUIPage() {
               </h2>
               {searchQuery && (
                 <p className="text-gray-600 dark:text-gray-400">
-                  Found {filteredComponents.length} components matching "{searchQuery}"
+                  Found {filteredComponents.length} components matching &quot;{searchQuery}&quot;
                 </p>
               )}
             </div>
@@ -146,7 +148,7 @@ export default function DevUIPage() {
                 <div className="col-span-full text-center py-12">
                   <p className="text-gray-500 dark:text-gray-400">
                     {searchQuery 
-                      ? `No components found matching "${searchQuery}"`
+                      ? `No components found matching &quot;${searchQuery}&quot;`
                       : 'Components will appear here once Engineer 2 creates the registry'
                     }
                   </p>
@@ -170,8 +172,8 @@ export default function DevUIPage() {
         {/* Preview Controls */}
         {showPreviewControls && (
           <PreviewControls
-            onViewportChange={() => {}}
-            onContainerWidthChange={() => {}}
+            onViewportChange={() => { /* TODO: implement */ }}
+            onContainerWidthChange={() => { /* TODO: implement */ }}
           />
         )}
 
@@ -189,7 +191,8 @@ export default function DevUIPage() {
               componentProps={selectedComponent?.defaultProps}
               onPropsChange={(props) => {
                 // This will be connected to the actual component display
-                console.log('Props changed:', props);
+                // Props changed - TODO: implement handler
+                void props;
               }}
             />
           </div>

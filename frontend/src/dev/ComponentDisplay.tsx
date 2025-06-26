@@ -1,25 +1,26 @@
-import { Component, ReactNode, ErrorInfo } from 'react';
+import type { ReactNode, ErrorInfo } from 'react';
+import { Component } from 'react';
 
 // Interface for component registry integration
 export interface ComponentMetadata {
   name: string;
   category: string;
   description?: string;
-  props?: Record<string, any>;
+  props?: Record<string, unknown>;
   examples?: ComponentExample[];
 }
 
 export interface ComponentExample {
   title: string;
-  props: Record<string, any>;
+  props: Record<string, unknown>;
   description?: string;
 }
 
 export interface ComponentDisplayProps {
-  component: React.ComponentType<any>;
+  component: React.ComponentType<Record<string, unknown>>;
   metadata: ComponentMetadata;
-  currentProps: Record<string, any>;
-  onPropsChange: (props: Record<string, any>) => void;
+  currentProps: Record<string, unknown>;
+  onPropsChange: (props: Record<string, unknown>) => void;
 }
 
 // Error boundary for component rendering
@@ -37,13 +38,13 @@ class ComponentErrorBoundary extends Component<
     retryCount: number;
   }
 > {
-  constructor(props: any) {
+  constructor(props: { children: ReactNode; onError?: (error: Error, errorInfo: ErrorInfo) => void; componentName?: string; onRetry?: () => void }) {
     super(props);
     this.state = { 
       hasError: false, 
       error: null,
       errorInfo: null,
-      retryCount: 0
+      retryCount: 0,
     };
   }
 
@@ -62,7 +63,7 @@ class ComponentErrorBoundary extends Component<
       hasError: false, 
       error: null,
       errorInfo: null,
-      retryCount: prev.retryCount + 1
+      retryCount: prev.retryCount + 1,
     }));
     this.props.onRetry?.();
   };
@@ -81,7 +82,7 @@ class ComponentErrorBoundary extends Component<
                 {componentName ? `Error in ${componentName}` : 'Component Error'}
               </h3>
               <p className="text-red-600 dark:text-red-300 text-sm mb-3">
-                {error?.message || 'An unexpected error occurred while rendering this component'}
+                {error?.message ?? 'An unexpected error occurred while rendering this component'}
               </p>
               
               {/* Error details */}

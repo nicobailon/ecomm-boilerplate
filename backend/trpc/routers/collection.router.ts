@@ -7,6 +7,7 @@ import { handleTRPCError } from '../../utils/trpcErrorHandler.js';
 import {
   createCollectionSchema,
   updateCollectionSchema,
+  updateHeroContentSchema,
   addProductsToCollectionSchema,
   removeProductsFromCollectionSchema,
   getCollectionByIdSchema,
@@ -240,6 +241,32 @@ export const collectionRouter = router({
           ctx.userId,
           input.name,
         );
+      } catch (error) {
+        handleTRPCError(error);
+      }
+    }),
+
+  updateHeroContent: protectedProcedure
+    .input(updateHeroContentSchema)
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const { id, ...heroData } = input;
+        const collection = await collectionService.updateHeroContent(
+          id,
+          ctx.userId,
+          heroData,
+        );
+        return collection;
+      } catch (error) {
+        handleTRPCError(error);
+      }
+    }),
+
+  getFeaturedCollections: publicProcedure
+    .query(async () => {
+      try {
+        const collections = await collectionService.getFeaturedCollections();
+        return collections;
       } catch (error) {
         handleTRPCError(error);
       }

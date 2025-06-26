@@ -7,7 +7,7 @@ import {
   createMockCoupon, 
   createMockMediaItem,
   createMockInventoryUpdate,
-  createMockAnalyticsData
+  createMockAnalyticsData,
 } from '@/mocks/factories';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -25,7 +25,7 @@ import {
   Check,
   Sparkles,
   RefreshCw,
-  Database
+  Database,
 } from 'lucide-react';
 import { nanoid } from 'nanoid';
 
@@ -76,8 +76,8 @@ export const MockDataPanel: React.FC = () => {
           generate: () => Array.from({ length: 5 }, (_, i) => 
             createMockUser({ 
               name: `User ${i + 1}`, 
-              email: `user${i + 1}@example.com` 
-            })
+              email: `user${i + 1}@example.com`, 
+            }),
           ),
           count: 5,
         },
@@ -102,7 +102,7 @@ export const MockDataPanel: React.FC = () => {
           generate: () => createMockProduct({ 
             isFeatured: true, 
             name: 'Featured Product',
-            price: 149.99 
+            price: 149.99, 
           }),
         },
         {
@@ -117,7 +117,7 @@ export const MockDataPanel: React.FC = () => {
                 price: Math.floor(Math.random() * 200) + 19.99,
                 inventory: Math.floor(Math.random() * 100),
                 isFeatured: Math.random() > 0.7,
-              })
+              }),
             );
           },
           count: 10,
@@ -128,7 +128,7 @@ export const MockDataPanel: React.FC = () => {
           description: 'Generate a product with no inventory',
           generate: () => createMockProduct({ 
             inventory: 0, 
-            name: 'Out of Stock Item' 
+            name: 'Out of Stock Item', 
           }),
         },
       ],
@@ -179,7 +179,7 @@ export const MockDataPanel: React.FC = () => {
           generate: () => Array.from({ length: 5 }, () => 
             createMockCartItem({
               quantity: Math.floor(Math.random() * 3) + 1,
-            })
+            }),
           ),
           count: 5,
         },
@@ -247,7 +247,7 @@ export const MockDataPanel: React.FC = () => {
             createMockMediaItem({
               order: i,
               url: `https://via.placeholder.com/800x600?text=Image+${i + 1}`,
-            })
+            }),
           ),
           count: 5,
         },
@@ -288,7 +288,7 @@ export const MockDataPanel: React.FC = () => {
       ? JSON.stringify(generatedData)
       : JSON.stringify(generatedData, null, 2);
     
-    navigator.clipboard.writeText(textToCopy);
+    void navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

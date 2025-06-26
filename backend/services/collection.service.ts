@@ -7,6 +7,7 @@ import { escapeRegExp } from '../utils/escapeRegex.js';
 import {
   CreateCollectionInput,
   UpdateCollectionInput,
+  UpdateHeroContentInput,
 } from '../validations/collection.validation.js';
 
 interface CollectionQuery {
@@ -514,6 +515,40 @@ export class CollectionService {
     } finally {
       await session.endSession();
     }
+  }
+
+  async updateHeroContent(
+    collectionId: string,
+    userId: string,
+    input: Omit<UpdateHeroContentInput, 'id'>,
+  ): Promise<ICollection> {
+    const collection = await Collection.findOne({
+      _id: collectionId,
+      owner: userId,
+    });
+
+    if (!collection) {
+      throw new AppError('Collection not found or unauthorized', 404);
+    }
+
+    Object.assign(collection, input);
+    await collection.save();
+    
+    return collection;
+  }
+
+  async getFeaturedCollections(): Promise<ICollection[]> {
+    return Collection.find({
+      isFeatured: true,
+      isPublic: true,
+    })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate('owner', 'name email')
+      .populate({
+        path: 'products',
+        select: '_id name description price image category isFeatured collectionId slug',
+      });
   }
 }
 

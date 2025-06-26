@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useWebSocketSimulator, ConnectionState, ConnectionQuality, WebSocketMessage } from '@/mocks/utils/websocket-simulator-hook';
+import { useWebSocketSimulator } from '@/mocks/utils/websocket-simulator-hook';
+import type { ConnectionState, ConnectionQuality, WebSocketMessage } from '@/mocks/utils/websocket-simulator-hook';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -24,7 +25,7 @@ export const WebSocketPanel: React.FC<WebSocketPanelProps> = ({ onMessage }) => 
     attemptReconnect,
   } = useWebSocketSimulator(
     { autoConnect: false },
-    onMessage
+    onMessage,
   );
 
   const [messageType, setMessageType] = useState('inventory.update');
@@ -56,13 +57,13 @@ export const WebSocketPanel: React.FC<WebSocketPanelProps> = ({ onMessage }) => 
   const handleSendMessage = (type: string, data: unknown) => {
     const messageId = sendMessage({ type, data });
     if (messageId) {
-      console.log(`Message sent: ${messageId}`);
+      // Message sent successfully
     }
   };
 
   const handleSendCustomMessage = () => {
     try {
-      const data = JSON.parse(customData);
+      const data = JSON.parse(customData) as unknown;
       handleSendMessage(messageType, data);
     } catch (error) {
       console.error('Invalid JSON data:', error);
@@ -154,7 +155,7 @@ export const WebSocketPanel: React.FC<WebSocketPanelProps> = ({ onMessage }) => 
                 { value: 'excellent', label: 'Excellent' },
                 { value: 'good', label: 'Good' },
                 { value: 'poor', label: 'Poor' },
-                { value: 'unstable', label: 'Unstable' }
+                { value: 'unstable', label: 'Unstable' },
               ]}
             />
           </div>

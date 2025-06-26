@@ -17,7 +17,7 @@ export function stripDevPlugin(): Plugin {
         if (id.includes('/dev/') || id.includes('\\dev\\')) {
           return {
             code: 'export default {}',
-            map: null
+            map: null,
           };
         }
         
@@ -31,11 +31,11 @@ export function stripDevPlugin(): Plugin {
           
           return {
             code: transformedCode,
-            map: null
+            map: null,
           };
         }
       }
       return null;
-    }
+    },
   };
 }

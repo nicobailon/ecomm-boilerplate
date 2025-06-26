@@ -96,6 +96,24 @@ export const uploadRouter = {
     .onUploadComplete(({ file }) => {
       return { thumbnailUrl: file.url };
     }),
+    
+  // Hero image uploader for collection hero banners
+  heroImageUploader: f({ 
+    image: { 
+      maxFileSize: '4MB', 
+      maxFileCount: 1,
+    },
+  })
+    .middleware(authMiddleware)
+    .onUploadComplete(({ metadata, file }) => {
+      return { 
+        uploadedBy: metadata.userId,
+        url: file.url,
+        key: file.key,
+        name: file.name,
+        size: file.size,
+      };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof uploadRouter;

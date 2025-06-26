@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { CreatableCollectionSelect, CreatableCollectionSelectSkeleton } from '@/components/ui/CreatableCollectionSelect';
-import { UploadButton } from '@/lib/uploadthing';
+import { ProductImageUpload } from '@/components/ui/ProductImageUpload';
 import { toast } from 'sonner';
 import { useState, useEffect, useCallback } from 'react';
 import { Switch } from '@/components/ui/Switch';
@@ -387,57 +387,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
         <label className="text-sm font-medium text-foreground">
           Product Image
         </label>
-        {(watchedImage ?? imagePreview) ? (
-          <div className="space-y-2">
-            <img
-              src={watchedImage ?? imagePreview}
-              alt="Preview"
-              className="w-32 h-32 object-cover rounded-md border"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                void setValue('image', '', { shouldValidate: true });
-                setImagePreview('');
-              }}
-            >
-              Change Image
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <UploadButton
-              endpoint="productImageUploader"
-              onClientUploadComplete={(res) => {
-                if (res && res.length > 0) {
-                  const uploadedFile = res[0];
-                  setValue('image', uploadedFile.ufsUrl, { shouldValidate: true });
-                  setImagePreview(uploadedFile.ufsUrl);
-                  toast.success('Image uploaded successfully!');
-                }
-              }}
-              onUploadError={(error: Error) => {
-                toast.error(`Upload Failed: ${error.message}`);
-              }}
-              onUploadProgress={() => {
-                // Progress tracking not needed for this form
-              }}
-              onUploadBegin={() => {
-                // Upload begin tracking not needed for this form
-              }}
-            />
-            <div className="text-sm text-muted-foreground">
-              or
-            </div>
-            <Input
-              {...register('image')}
-              placeholder="Enter image URL manually"
-              type="url"
-            />
-          </div>
-        )}
+        <ProductImageUpload
+          value={watchedImage ?? imagePreview}
+          onChange={(url) => {
+            setValue('image', url ?? '', { shouldValidate: true });
+            setImagePreview(url ?? '');
+            if (url) {
+              toast.success('Image uploaded successfully!');
+            }
+          }}
+          onImagePreviewChange={setImagePreview}
+          disabled={isSubmitting}
+        />
         {errors.image && (
           <p className="text-sm text-destructive">{errors.image.message}</p>
         )}

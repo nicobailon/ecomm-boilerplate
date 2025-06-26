@@ -30,6 +30,14 @@ export const updateCollectionSchema = z.object({
   isPublic: z.boolean().optional(),
 });
 
+export const updateHeroContentSchema = z.object({
+  id: z.string(),
+  heroImage: z.string().url().optional(),
+  heroTitle: z.string().max(100, 'Hero title cannot exceed 100 characters').trim().optional(),
+  heroSubtitle: z.string().max(200, 'Hero subtitle cannot exceed 200 characters').trim().optional(),
+  isFeatured: z.boolean().optional(),
+});
+
 export const addProductsToCollectionSchema = z.object({
   productIds: z.array(z.string()).min(1, 'At least one product ID is required'),
 });
@@ -68,6 +76,7 @@ export const checkAvailabilitySchema = z.object({
 
 export type CreateCollectionInput = z.infer<typeof createCollectionSchema>;
 export type UpdateCollectionInput = z.infer<typeof updateCollectionSchema>;
+export type UpdateHeroContentInput = z.infer<typeof updateHeroContentSchema>;
 export type AddProductsToCollectionInput = z.infer<typeof addProductsToCollectionSchema>;
 export type RemoveProductsFromCollectionInput = z.infer<typeof removeProductsFromCollectionSchema>;
 export type QuickCreateCollectionInput = z.infer<typeof quickCreateCollectionSchema>;

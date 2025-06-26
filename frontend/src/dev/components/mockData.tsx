@@ -1,7 +1,7 @@
 import { 
   createMockUser, 
   createMockProduct, 
-  createMockCollection
+  createMockCollection,
 } from '@/mocks/factories';
 
 // UI Component Mock Data
@@ -31,9 +31,38 @@ export const inputMockData = {
   withLabel: { placeholder: 'Your name', label: 'Full Name' },
 };
 
+export const heroBannerMockData = {
+  default: {
+    title: 'Welcome to Our Store',
+    subtitle: 'Discover amazing products and collections',
+    imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=600&fit=crop',
+    height: 'medium' as const,
+  },
+  withButton: {
+    title: 'Summer Sale Collection',
+    subtitle: 'Up to 50% off on selected items',
+    imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=600&fit=crop',
+    buttonText: 'Shop Now',
+    buttonUrl: '/collections/summer-sale',
+    height: 'large' as const,
+  },
+  small: {
+    title: 'New Arrivals',
+    imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=400&fit=crop',
+    height: 'small' as const,
+  },
+  noOverlay: {
+    title: 'Clean Design',
+    subtitle: 'Minimal and elegant',
+    imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=600&fit=crop',
+    overlay: false,
+    height: 'medium' as const,
+  },
+};
+
 export const cardMockData = {
   default: { 
-    children: 'This is a card component with some content inside.' 
+    children: 'This is a card component with some content inside.', 
   },
   withHeader: {
     children: (
@@ -41,7 +70,7 @@ export const cardMockData = {
         <h3 className="text-lg font-semibold mb-2">Card Title</h3>
         <p>Card content goes here.</p>
       </>
-    )
+    ),
   },
   withFooter: {
     children: (
@@ -54,29 +83,29 @@ export const cardMockData = {
           <p className="text-sm text-gray-600">Footer content</p>
         </div>
       </>
-    )
+    ),
   },
 };
 
 export const alertMockData = {
   default: { 
-    children: 'This is a default alert message.' 
+    children: 'This is a default alert message.', 
   },
   info: { 
     children: 'This is an informational message.',
-    variant: 'default'
+    variant: 'default',
   },
   success: { 
     children: 'Operation completed successfully!',
-    variant: 'success'
+    variant: 'success',
   },
   warning: { 
     children: 'Please review before proceeding.',
-    variant: 'warning'
+    variant: 'warning',
   },
   error: { 
     children: 'An error occurred. Please try again.',
-    variant: 'destructive'
+    variant: 'destructive',
   },
 };
 
@@ -236,27 +265,27 @@ export const stockBadgeMockData = {
 // Form Component Mock Data
 export const loginFormMockData = {
   default: {
-    onSubmit: (data: any) => console.log('Login submitted:', data),
+    onSubmit: (_data: unknown) => { /* Login submitted */ },
   },
   withError: {
-    onSubmit: (data: any) => console.log('Login submitted:', data),
+    onSubmit: (_data: unknown) => { /* Login submitted */ },
     initialError: 'Invalid email or password',
   },
 };
 
 export const signupFormMockData = {
   default: {
-    onSubmit: (data: any) => console.log('Signup submitted:', data),
+    onSubmit: (_data: unknown) => { /* Signup submitted */ },
   },
 };
 
 export const productFormMockData = {
   default: {
-    onSubmit: (data: any) => console.log('Product submitted:', data),
+    onSubmit: (_data: unknown) => { /* Product submitted */ },
   },
   withProduct: {
     product: createMockProduct(),
-    onSubmit: (data: any) => console.log('Product updated:', data),
+    onSubmit: (_data: unknown) => { /* Product updated */ },
   },
 };
 
@@ -274,7 +303,7 @@ export const productCardMockData = {
   onSale: {
     product: createMockProduct({ 
       price: 49.99, 
-      name: 'Sale Product' 
+      name: 'Sale Product', 
     }),
   },
 };
@@ -284,8 +313,8 @@ export const productsListMockData = {
     products: Array.from({ length: 6 }, (_, i) => 
       createMockProduct({ 
         name: `Product ${i + 1}`,
-        price: Math.floor(Math.random() * 100) + 19.99 
-      })
+        price: Math.floor(Math.random() * 100) + 19.99, 
+      }),
     ),
   },
   empty: {
@@ -304,16 +333,16 @@ export const cartItemMockData = {
       product: createMockProduct(),
       quantity: 1,
     },
-    onUpdateQuantity: (quantity: number) => console.log('Update quantity:', quantity),
-    onRemove: () => console.log('Remove item'),
+    onUpdateQuantity: (_quantity: number) => { /* Update quantity */ },
+    onRemove: () => { /* Remove item */ },
   },
   multipleQuantity: {
     item: {
       product: createMockProduct({ name: 'Bulk Item' }),
       quantity: 5,
     },
-    onUpdateQuantity: (quantity: number) => console.log('Update quantity:', quantity),
-    onRemove: () => console.log('Remove item'),
+    onUpdateQuantity: (_quantity: number) => { /* Update quantity */ },
+    onRemove: () => { /* Remove item */ },
   },
 };
 
@@ -349,7 +378,7 @@ export const inventoryManagementMockData = {
     products: Array.from({ length: 10 }, (_, i) => ({
       ...createMockProduct({ 
         name: `Product ${i + 1}`,
-        inventory: Math.floor(Math.random() * 100) 
+        inventory: Math.floor(Math.random() * 100), 
       }),
       sku: `SKU-${1000 + i}`,
     })),
@@ -377,7 +406,7 @@ export const collectionMockData = {
         name: `Collection ${i + 1}`,
         slug: `collection-${i + 1}`,
         products: Array.from({ length: 3 }, () => createMockProduct()._id),
-      })
+      }),
     ),
   },
   empty: {
@@ -386,8 +415,8 @@ export const collectionMockData = {
 };
 
 // Helper function to get mock data for a component
-export const getMockDataForComponent = (componentId: string): any => {
-  const mockDataMap: Record<string, any> = {
+export const getMockDataForComponent = (componentId: string): Record<string, unknown> => {
+  const mockDataMap: Record<string, Record<string, unknown>> = {
     // UI Components
     'button': buttonMockData.default,
     'input': inputMockData.default,
@@ -428,7 +457,7 @@ export const getMockDataForComponent = (componentId: string): any => {
     'collections-list': collectionMockData.default,
   };
   
-  return mockDataMap[componentId] || {};
+  return mockDataMap[componentId] ?? {};
 };
 
 // Export all mock data collections
@@ -506,7 +535,7 @@ export const productInfoMockData = {
       ],
     },
     selectedVariant: null,
-    onAddToCartSuccess: () => console.log('Added to cart successfully'),
+    onAddToCartSuccess: () => { /* Added to cart successfully */ },
   },
   withSelectedVariant: {
     product: {
@@ -537,7 +566,7 @@ export const productInfoMockData = {
       images: ['https://via.placeholder.com/600'],
       attributes: { color: 'Black' },
     },
-    onAddToCartSuccess: () => console.log('Added to cart successfully'),
+    onAddToCartSuccess: () => { /* Added to cart successfully */ },
   },
   outOfStock: {
     product: {
@@ -558,7 +587,7 @@ export const productInfoMockData = {
       images: ['https://via.placeholder.com/600/FFD700'],
       attributes: { color: 'Gold' },
     },
-    onAddToCartSuccess: () => console.log('Added to cart successfully'),
+    onAddToCartSuccess: () => { /* Added to cart successfully */ },
   },
 };
 

@@ -23,7 +23,7 @@ export default function ComponentFrame({
     const iframe = iframeRef.current;
     if (!iframe) return;
 
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
     if (!doc) return;
 
     // Copy all stylesheets from parent to iframe
@@ -85,7 +85,7 @@ export default function ComponentFrame({
       {iframeDoc &&
         createPortal(
           <div className={theme}>{children}</div>,
-          iframeDoc.getElementById('component-root')!
+          iframeDoc.getElementById('component-root') as Element,
         )}
     </div>
   );

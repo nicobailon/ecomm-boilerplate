@@ -12,6 +12,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { VirtualizedProductGrid } from '@/components/product/VirtualizedProductGrid';
 import { useOptimalColumnCount } from '@/hooks/useOptimalColumnCount';
 import { useWindowSize } from '@/hooks/useWindowSize';
+import { HeroBanner } from '@/components/ui/HeroBanner';
 
 // Type guard for product validation
 function isValidProduct(item: unknown): item is Product {
@@ -76,14 +77,15 @@ const CollectionPage = () => {
         );
         
         if (isProduct && isValidProduct(p)) {
+          const typedProduct = p as Product;
           const product: ProductWithInventory = {
-            ...p,
-            description: p.description || '',
-            collectionId: p.collectionId,
-            isFeatured: p.isFeatured || false,
-            slug: p.slug,
-            createdAt: p.createdAt || new Date().toISOString(),
-            updatedAt: p.updatedAt || new Date().toISOString(),
+            ...typedProduct,
+            description: typedProduct.description ?? '',
+            collectionId: typedProduct.collectionId,
+            isFeatured: typedProduct.isFeatured ?? false,
+            slug: typedProduct.slug,
+            createdAt: typedProduct.createdAt ?? new Date().toISOString(),
+            updatedAt: typedProduct.updatedAt ?? new Date().toISOString(),
           };
           products.push(product);
         }
@@ -120,7 +122,7 @@ const CollectionPage = () => {
     if (value === false || value === 'default' || !value) {
       newParams.delete(key);
     } else {
-      newParams.set(key, value.toString());
+      newParams.set(key, String(value));
     }
     setSearchParams(newParams);
   };
@@ -171,6 +173,18 @@ const CollectionPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
+        {/* Hero Banner */}
+        {collection.heroImage && (
+          <div className="mb-12">
+            <HeroBanner
+              title={collection.heroTitle ?? collection.name}
+              subtitle={collection.heroSubtitle ?? collection.description}
+              imageUrl={collection.heroImage}
+              height="medium"
+            />
+          </div>
+        )}
+
         {/* Collection Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
@@ -189,7 +203,7 @@ const CollectionPage = () => {
           
           <h1 className="text-3xl font-bold mb-4">{collection.name}</h1>
           
-          {collection.description && (
+          {collection.description && !collection.heroImage && (
             <p className="text-lg text-muted-foreground max-w-3xl">
               {collection.description}
             </p>

@@ -11,20 +11,20 @@ import {
   Database, 
   Settings2, 
   Wrench,
-  Info
+  Info,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
 interface ToolsPanelProps {
   selectedComponentId?: string;
-  componentProps?: Record<string, any>;
-  onPropsChange?: (props: Record<string, any>) => void;
+  componentProps?: Record<string, unknown>;
+  onPropsChange?: (props: Record<string, unknown>) => void;
 }
 
 export const ToolsPanel: React.FC<ToolsPanelProps> = ({ 
   selectedComponentId,
   componentProps = {},
-  onPropsChange 
+  onPropsChange, 
 }) => {
   const tabs = [
     {

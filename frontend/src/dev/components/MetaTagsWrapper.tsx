@@ -35,7 +35,7 @@ export default function MetaTagsWrapper(props: MetaTagsWrapperProps) {
           </div>
         )}
       </dl>
-      <p className="mt-3 text-xs text-gray-500">Check the browser's head element to see the meta tags</p>
+      <p className="mt-3 text-xs text-gray-500">Check the browser&apos;s head element to see the meta tags</p>
     </div>
   );
 }

@@ -11,21 +11,19 @@ import { Alert } from '@/components/ui/Alert';
 import { AlertCircle, Code, Copy, Check, RotateCcw } from 'lucide-react';
 
 interface PropEditorProps {
-  props: Record<string, any>;
-  onChange: (props: Record<string, any>) => void;
+  props: Record<string, unknown>;
+  onChange: (props: Record<string, unknown>) => void;
   schema?: PropSchema;
 }
 
-interface PropSchema {
-  [key: string]: {
+type PropSchema = Record<string, {
     type: 'string' | 'number' | 'boolean' | 'select' | 'json' | 'function';
     label?: string;
     description?: string;
-    options?: Array<{ label: string; value: any }>;
+    options?: { label: string; value: string }[];
     required?: boolean;
-    defaultValue?: any;
-  };
-}
+    defaultValue?: unknown;
+  }>;
 
 export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema }) => {
   const [jsonMode, setJsonMode] = useState(false);
@@ -42,21 +40,21 @@ export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema 
     setJsonError(null);
     
     try {
-      const parsed = JSON.parse(value);
+      const parsed = JSON.parse(value) as Record<string, unknown>;
       onChange(parsed);
     } catch (error) {
       setJsonError(error instanceof Error ? error.message : 'Invalid JSON');
     }
   };
 
-  const handlePropChange = (key: string, value: any) => {
+  const handlePropChange = (key: string, value: unknown) => {
     const newProps = { ...props, [key]: value };
     onChange(newProps);
   };
 
   const handleAddProp = () => {
     const key = prompt('Enter property name:');
-    if (key && !props.hasOwnProperty(key)) {
+    if (key && !Object.prototype.hasOwnProperty.call(props, key)) {
       handlePropChange(key, '');
     }
   };
@@ -68,14 +66,14 @@ export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema 
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(jsonValue);
+    void navigator.clipboard.writeText(jsonValue);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleReset = () => {
     if (schema) {
-      const defaultProps: Record<string, any> = {};
+      const defaultProps: Record<string, unknown> = {};
       Object.entries(schema).forEach(([key, config]) => {
         if (config.defaultValue !== undefined) {
           defaultProps[key] = config.defaultValue;
@@ -87,17 +85,17 @@ export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema 
     }
   };
 
-  const renderPropInput = (key: string, value: any, schemaConfig?: PropSchema[string]) => {
-    const type = schemaConfig?.type || typeof value;
+  const renderPropInput = (key: string, value: unknown, schemaConfig?: PropSchema[string]) => {
+    const type = schemaConfig?.type ?? typeof value;
 
     switch (type) {
       case 'boolean':
         return (
           <div className="flex items-center justify-between">
-            <Label htmlFor={key}>{schemaConfig?.label || key}</Label>
+            <Label htmlFor={key}>{schemaConfig?.label ?? key}</Label>
             <Switch
               id={key}
-              checked={value}
+              checked={Boolean(value)}
               onCheckedChange={(checked) => handlePropChange(key, checked)}
             />
           </div>
@@ -106,11 +104,11 @@ export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema 
       case 'number':
         return (
           <div className="space-y-2">
-            <Label htmlFor={key}>{schemaConfig?.label || key}</Label>
+            <Label htmlFor={key}>{schemaConfig?.label ?? key}</Label>
             <Input
               id={key}
               type="number"
-              value={value}
+              value={typeof value === 'number' ? String(value) : ''}
               onChange={(e) => handlePropChange(key, Number(e.target.value))}
             />
           </div>
@@ -119,11 +117,11 @@ export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema 
       case 'select':
         return (
           <div className="space-y-2">
-            <Label htmlFor={key}>{schemaConfig?.label || key}</Label>
+            <Label htmlFor={key}>{schemaConfig?.label ?? key}</Label>
             <Select
-              value={value}
+              value={typeof value === 'string' ? value : ''}
               onChange={(e) => handlePropChange(key, e.target.value)}
-              options={schemaConfig?.options || []}
+              options={schemaConfig?.options ?? []}
             />
           </div>
         );
@@ -132,15 +130,15 @@ export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema 
       case 'object':
         return (
           <div className="space-y-2">
-            <Label htmlFor={key}>{schemaConfig?.label || key}</Label>
+            <Label htmlFor={key}>{schemaConfig?.label ?? key}</Label>
             <Textarea
               id={key}
               value={JSON.stringify(value, null, 2)}
               onChange={(e) => {
                 try {
-                  const parsed = JSON.parse(e.target.value);
+                  const parsed: unknown = JSON.parse(e.target.value);
                   handlePropChange(key, parsed);
-                } catch (error) {
+                } catch {
                   // Invalid JSON, don't update
                 }
               }}
@@ -154,11 +152,11 @@ export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema 
         return (
           <div className="space-y-2">
             <Label htmlFor={key}>
-              {schemaConfig?.label || key}
+              {schemaConfig?.label ?? key}
               <Badge variant="outline" className="ml-2 text-xs">Function</Badge>
             </Label>
             <div className="p-2 bg-gray-50 rounded text-xs font-mono text-gray-600">
-              {value?.toString() || 'undefined'}
+              {(value as { toString?: () => string })?.toString?.() ?? 'undefined'}
             </div>
           </div>
         );
@@ -166,10 +164,10 @@ export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema 
       default:
         return (
           <div className="space-y-2">
-            <Label htmlFor={key}>{schemaConfig?.label || key}</Label>
+            <Label htmlFor={key}>{schemaConfig?.label ?? key}</Label>
             <Input
               id={key}
-              value={value}
+              value={typeof value === 'string' ? value : typeof value === 'number' ? String(value) : ''}
               onChange={(e) => handlePropChange(key, e.target.value)}
             />
           </div>
@@ -178,7 +176,7 @@ export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema 
   };
 
   const propEntries = schema 
-    ? Object.entries(schema).map(([key, config]) => [key, props[key] ?? config.defaultValue])
+    ? Object.entries(schema).map(([key, config]) => [key, props[key] ?? config.defaultValue] as [string, unknown])
     : Object.entries(props);
 
   return (
@@ -249,15 +247,15 @@ export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema 
         <div className="space-y-4">
           {propEntries.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-4">
-              No props defined. Click "Add Prop" to get started.
+              No props defined. Click &quot;Add Prop&quot; to get started.
             </p>
           ) : (
-            propEntries.map(([key, value]) => (
+            propEntries.map(([key, value]: [string, unknown]) => (
               <div key={key} className="relative">
                 {renderPropInput(key, value, schema?.[key])}
                 {!schema && (
                   <button
-                    onClick={() => handleRemoveProp(key)}
+                    onClick={() => handleRemoveProp(String(key))}
                     className="absolute -right-2 -top-2 w-5 h-5 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs hover:bg-red-200"
                     title="Remove prop"
                   >
@@ -265,7 +263,7 @@ export const PropEditor: React.FC<PropEditorProps> = ({ props, onChange, schema 
                   </button>
                 )}
                 {schema?.[key]?.description && (
-                  <p className="text-xs text-gray-500 mt-1">{schema[key].description}</p>
+                  <p className="text-xs text-gray-500 mt-1">{schema[key]?.description}</p>
                 )}
               </div>
             ))

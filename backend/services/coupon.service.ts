@@ -74,10 +74,70 @@ export class CouponService {
   }
 
   async listAllDiscounts(options: ListDiscountsInput): Promise<ListDiscountsResponse> {
-    const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc', isActive } = options;
+    const { 
+      page = 1, 
+      limit = 20, 
+      sortBy = 'createdAt', 
+      sortOrder = 'desc', 
+      isActive,
+      search,
+      status = 'all',
+      expirationDateFrom,
+      expirationDateTo,
+      usageStatus = 'all'
+    } = options;
     
     const query: mongoose.FilterQuery<ICouponDocument> = {};
-    if (isActive !== undefined) query.isActive = isActive;
+    
+    // Search filter
+    if (search) {
+      query.$or = [
+        { code: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Status filter
+    const now = new Date();
+    switch (status) {
+      case 'active':
+        query.isActive = true;
+        query.expirationDate = { $gt: now };
+        break;
+      case 'inactive':
+        query.isActive = false;
+        break;
+      case 'expired':
+        query.expirationDate = { $lte: now };
+        break;
+      case 'all':
+        if (isActive !== undefined) query.isActive = isActive;
+        break;
+    }
+    
+    // Date range filter
+    if (expirationDateFrom || expirationDateTo) {
+      query.expirationDate = {};
+      if (expirationDateFrom) {
+        query.expirationDate.$gte = new Date(expirationDateFrom);
+      }
+      if (expirationDateTo) {
+        query.expirationDate.$lte = new Date(expirationDateTo);
+      }
+    }
+    
+    // Usage status filter
+    switch (usageStatus) {
+      case 'never':
+        query.currentUses = 0;
+        break;
+      case 'low':
+        query.currentUses = { $gt: 0, $lte: 10 };
+        break;
+      case 'high':
+        query.currentUses = { $gt: 10 };
+        break;
+    }
     
     const [discounts, total] = await Promise.all([
       Coupon.find(query)

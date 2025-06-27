@@ -315,8 +315,34 @@ export class CollectionService {
     isPublic?: boolean;
     limit: number;
     cursor?: string;
-  }): Promise<{ collections: ICollection[]; nextCursor: string | null }> {
-    const { userId, isPublic, limit, cursor } = options;
+    // Page-based pagination
+    page?: number;
+    // Sorting
+    sortBy?: 'name' | 'createdAt' | 'updatedAt' | 'productCount';
+    sortOrder?: 'asc' | 'desc';
+    // Filtering
+    search?: string;
+  }): Promise<{ 
+    collections: ICollection[]; 
+    nextCursor: string | null;
+    // Page-based response
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  }> {
+    const { 
+      userId, 
+      isPublic, 
+      limit, 
+      cursor,
+      page,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      search
+    } = options;
 
     const query: CollectionQuery = {};
 
@@ -328,6 +354,56 @@ export class CollectionService {
       query.isPublic = isPublic;
     }
 
+    // Search filter
+    if (search) {
+      const searchRegex = new RegExp(escapeRegExp(search), 'i');
+      (query as any).$or = [
+        { name: searchRegex },
+        { description: searchRegex }
+      ];
+    }
+
+    // Use page-based pagination if page is provided
+    if (page !== undefined) {
+      const skip = (page - 1) * limit;
+      
+      // Determine sort field
+      let sortField: string = sortBy;
+      if (sortBy === 'productCount') {
+        // For product count, we'll need to use aggregation or sort by array length
+        sortField = 'products';
+      }
+      
+      const sortOptions: Record<string, 1 | -1> = {
+        [sortField]: sortOrder === 'asc' ? 1 : -1
+      };
+      
+      const [collections, total] = await Promise.all([
+        Collection.find(query)
+          .sort(sortOptions)
+          .skip(skip)
+          .limit(limit)
+          .populate('owner', 'name email')
+          .populate({
+            path: 'products',
+            select: '_id name description price image category isFeatured collectionId slug',
+          }),
+        Collection.countDocuments(query)
+      ]);
+
+      return {
+        collections,
+        nextCursor: null,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      };
+    }
+
+    // Original cursor-based pagination
     if (cursor) {
       query._id = { $lt: cursor };
     }
@@ -358,12 +434,31 @@ export class CollectionService {
     options: {
       limit: number;
       cursor?: string;
+      page?: number;
+      sortBy?: 'name' | 'createdAt' | 'updatedAt' | 'productCount';
+      sortOrder?: 'asc' | 'desc';
+      search?: string;
+      isPublic?: boolean;
     },
-  ): Promise<{ collections: ICollection[]; nextCursor: string | null }> {
+  ): Promise<{ 
+    collections: ICollection[]; 
+    nextCursor: string | null;
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  }> {
     return this.list({
       userId,
       limit: options.limit,
       cursor: options.cursor,
+      page: options.page,
+      sortBy: options.sortBy,
+      sortOrder: options.sortOrder,
+      search: options.search,
+      isPublic: options.isPublic,
     });
   }
 

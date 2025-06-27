@@ -24,6 +24,13 @@ class ProductService {
     limit: number = PAGINATION.DEFAULT_LIMIT, 
     search?: string,
     includeVariants = false,
+    filters?: {
+      collectionId?: string;
+      isFeatured?: boolean;
+      sortBy?: 'name' | 'price' | 'createdAt' | 'updatedAt';
+      sortOrder?: 'asc' | 'desc';
+      stockStatus?: 'all' | 'inStock' | 'lowStock' | 'outOfStock';
+    }
   ): Promise<{ products: (IProduct | IProductWithVariants)[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
     // Validate and sanitize pagination parameters
     const pageNum = Math.max(PAGINATION.DEFAULT_PAGE, page);
@@ -35,12 +42,49 @@ class ProductService {
       query.$text = { $search: search };
     }
     
+    // Apply filters
+    if (filters?.collectionId) {
+      query.collectionId = filters.collectionId;
+    }
+    
+    if (filters?.isFeatured !== undefined) {
+      query.isFeatured = filters.isFeatured;
+    }
+    
+    // Apply stock status filter
+    if (filters?.stockStatus && filters.stockStatus !== 'all') {
+      switch (filters.stockStatus) {
+        case 'inStock':
+          query.$or = [
+            { variants: { $exists: false }, inventory: { $gt: 0 } },
+            { 'variants.inventory': { $gt: 0 } }
+          ];
+          break;
+        case 'lowStock':
+          query.$or = [
+            { variants: { $exists: false }, inventory: { $lte: 10, $gt: 0 } },
+            { 'variants.inventory': { $lte: 10, $gt: 0 } }
+          ];
+          break;
+        case 'outOfStock':
+          query.$or = [
+            { variants: { $exists: false }, inventory: { $lte: 0 } },
+            { 'variants.inventory': { $lte: 0 } }
+          ];
+          break;
+      }
+    }
+    
     const skip = (pageNum - 1) * limitNum;
     
     let productsQuery = Product.find(query);
     
+    // Apply sorting
     if (search) {
       productsQuery = productsQuery.sort({ score: { $meta: 'textScore' } });
+    } else if (filters?.sortBy) {
+      const sortOrder = filters.sortOrder === 'asc' ? 1 : -1;
+      productsQuery = productsQuery.sort({ [filters.sortBy]: sortOrder });
     } else {
       productsQuery = productsQuery.sort({ createdAt: -1 });
     }

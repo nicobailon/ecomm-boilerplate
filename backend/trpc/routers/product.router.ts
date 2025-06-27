@@ -21,10 +21,25 @@ export const productRouter = router({
       includeVariants: z.boolean().optional().default(false),
       collectionId: z.string().optional(),
       isFeatured: z.boolean().optional(),
+      sortBy: z.enum(['name', 'price', 'createdAt', 'updatedAt']).optional(),
+      sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+      stockStatus: z.enum(['all', 'inStock', 'lowStock', 'outOfStock']).optional(),
     }))
     .query(async ({ input }) => {
       try {
-        const result = await productService.getAllProducts(input.page, input.limit, input.search, input.includeVariants);
+        const result = await productService.getAllProducts(
+          input.page, 
+          input.limit, 
+          input.search, 
+          input.includeVariants,
+          {
+            collectionId: input.collectionId,
+            isFeatured: input.isFeatured,
+            sortBy: input.sortBy,
+            sortOrder: input.sortOrder,
+            stockStatus: input.stockStatus,
+          }
+        );
         return result;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to fetch products';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CollectionsList } from '@/components/collections/CollectionsList';
+import { CollectionsTable } from '@/components/collections/CollectionsTable';
 import { CollectionEditDrawer } from '@/components/drawers/CollectionEditDrawer';
 import { Button } from '@/components/ui/Button';
 import { Plus, Star } from 'lucide-react';
@@ -108,7 +108,7 @@ export const CollectionsTab = () => {
         )}
       </div>
 
-      <CollectionsList onEdit={handleEdit} />
+      <CollectionsTable onEdit={handleEdit} />
 
       <CollectionEditDrawer
         isOpen={isDrawerOpen}

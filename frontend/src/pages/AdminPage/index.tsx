@@ -9,7 +9,7 @@ import { InventoryTab } from './InventoryTab';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { DiscountErrorFallback } from '@/components/discount/DiscountErrorFallback';
 import { ProductForm } from '@/components/forms/ProductForm';
-import ProductsList from '@/components/product/ProductsList';
+import { ProductsTable } from '@/components/product/ProductsTable';
 import { TransitionOverlay } from '@/components/ui/transition-overlay';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { TabId } from '@/types';
@@ -108,7 +108,7 @@ const AdminPage = () => {
 								exit={{ opacity: 0, x: -20 }}
 								transition={{ duration: 0.2 }}
 							>
-								<ProductsList 
+								<ProductsTable 
 									onEditProduct={openEditor}
 									highlightProductId={newProductId}
 									onHighlightComplete={clearHighlight}

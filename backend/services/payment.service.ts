@@ -44,6 +44,23 @@ interface CheckoutSessionResult {
 }
 
 export class PaymentService {
+  private async generateOrderNumber(): Promise<string> {
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    
+    // Count orders from today
+    const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+    
+    const orderCount = await Order.countDocuments({
+      createdAt: { $gte: startOfDay, $lte: endOfDay }
+    });
+    
+    const sequence = (orderCount + 1).toString().padStart(4, '0');
+    return `ORD-${year}${month}${day}-${sequence}`;
+  }
   async createCheckoutSession(
     user: IUserDocument,
     products: ProductCheckout[],
@@ -284,14 +301,29 @@ export class PaymentService {
           await couponService.incrementUsage(session.metadata.couponCode);
         }
 
+        // Get user for email
+        const User = (await import('../models/user.model.js')).User;
+        user = await User.findById(session.metadata?.userId).session(dbSession);
+        if (!user) {
+          throw new AppError('User not found', 404);
+        }
+
         // Create order
         const products = JSON.parse(session.metadata?.products ?? '[]') as CheckoutProduct[];
         const originalAmount = session.metadata?.couponCode 
           ? (session.amount_subtotal ?? session.amount_total ?? 0) / 100
           : undefined;
+        
+        const orderNumber = await this.generateOrderNumber();
+        const subtotal = (session.amount_subtotal ?? session.amount_total ?? 0) / 100;
+        const tax = ((session.total_details?.amount_tax ?? 0) / 100);
+        const shipping = ((session.total_details?.amount_shipping ?? 0) / 100);
+        const discount = ((session.total_details?.amount_discount ?? 0) / 100);
           
         const newOrder = new Order({
+          orderNumber,
           user: session.metadata?.userId,
+          email: user.email,
           products: products.map(product => ({
             product: product.id,
             quantity: product.quantity,
@@ -301,14 +333,29 @@ export class PaymentService {
             variantLabel: product.variantLabel,
           })),
           totalAmount: (session.amount_total ?? 0) / 100,
+          subtotal,
+          tax,
+          shipping,
+          discount,
           stripeSessionId: sessionId,
           shippingAddress: session.shipping_details?.address ? {
+            fullName: session.shipping_details?.name ?? user.name ?? 'Customer',
             line1: session.shipping_details.address.line1 ?? '123 Default Street',
             line2: session.shipping_details.address.line2 ?? undefined,
             city: session.shipping_details.address.city ?? 'Default City',
             state: session.shipping_details.address.state ?? 'CA',
             postalCode: session.shipping_details.address.postal_code ?? '12345',
             country: session.shipping_details.address.country ?? 'USA',
+            phone: session.customer_details?.phone ?? undefined,
+          } : undefined,
+          billingAddress: session.customer_details?.address ? {
+            fullName: session.customer_details?.name ?? user.name ?? 'Customer',
+            line1: session.customer_details.address.line1 ?? '123 Default Street',
+            line2: session.customer_details.address.line2 ?? undefined,
+            city: session.customer_details.address.city ?? 'Default City',
+            state: session.customer_details.address.state ?? 'CA',
+            postalCode: session.customer_details.address.postal_code ?? '12345',
+            country: session.customer_details.address.country ?? 'USA',
           } : undefined,
           paymentMethod: 'card',
           paymentIntentId: session.payment_intent as string,

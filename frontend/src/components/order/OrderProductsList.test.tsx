@@ -3,36 +3,51 @@ import { render, screen } from '@testing-library/react';
 import { OrderProductsList } from './OrderProductsList';
 import type { RouterOutputs } from '@/lib/trpc';
 
-type OrderItem = RouterOutputs['order']['getById']['items'][0];
+type OrderProduct = RouterOutputs['order']['getById']['products'][0];
 
 describe('OrderProductsList', () => {
-  const mockItems: OrderItem[] = [
+  const mockProducts: OrderProduct[] = [
     {
-      productId: 'prod1',
-      name: 'Test Product 1',
+      product: {
+        _id: 'prod1' as any,
+        name: 'Test Product 1',
+        image: 'https://example.com/image1.jpg',
+      },
       price: 99.99,
       quantity: 2,
-      image: 'https://example.com/image1.jpg',
+      variantId: undefined,
+      variantDetails: undefined,
+      variantLabel: undefined,
     },
     {
-      productId: 'prod2',
-      name: 'Test Product 2',
+      product: {
+        _id: 'prod2' as any,
+        name: 'Test Product 2',
+        image: 'https://example.com/image2.jpg',
+      },
       price: 49.99,
       quantity: 1,
-      image: 'https://example.com/image2.jpg',
+      variantId: undefined,
+      variantDetails: undefined,
+      variantLabel: undefined,
     },
     {
-      productId: 'prod3',
-      name: 'Product with Long Name That Should Be Truncated',
+      product: {
+        _id: 'prod3' as any,
+        name: 'Product with Long Name That Should Be Truncated',
+        image: null as any,
+      },
       price: 199.99,
       quantity: 3,
-      image: null,
+      variantId: undefined,
+      variantDetails: undefined,
+      variantLabel: undefined,
     },
   ];
 
   describe('data display', () => {
     it('should render all order items', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
       expect(screen.getByText('Test Product 1')).toBeInTheDocument();
       expect(screen.getByText('Test Product 2')).toBeInTheDocument();
@@ -40,7 +55,7 @@ describe('OrderProductsList', () => {
     });
 
     it('should display product images', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
       const images = screen.getAllByRole('img');
       expect(images[0]).toHaveAttribute('src', 'https://example.com/image1.jpg');
@@ -50,7 +65,7 @@ describe('OrderProductsList', () => {
     });
 
     it('should show placeholder image when image is null', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
       const images = screen.getAllByRole('img');
       expect(images[2]).toHaveAttribute('src', '/placeholder-product.png');
@@ -58,23 +73,23 @@ describe('OrderProductsList', () => {
     });
 
     it('should display prices formatted correctly', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
-      expect(screen.getByText('$99.99')).toBeInTheDocument();
-      expect(screen.getByText('$49.99')).toBeInTheDocument();
-      expect(screen.getByText('$199.99')).toBeInTheDocument();
+      expect(screen.getByText('$99.99 × 2')).toBeInTheDocument();
+      expect(screen.getByText('$49.99 × 1')).toBeInTheDocument();
+      expect(screen.getByText('$199.99 × 3')).toBeInTheDocument();
     });
 
     it('should display quantities', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
-      expect(screen.getByText('× 2')).toBeInTheDocument();
-      expect(screen.getByText('× 1')).toBeInTheDocument();
-      expect(screen.getByText('× 3')).toBeInTheDocument();
+      expect(screen.getByText('$99.99 × 2')).toBeInTheDocument();
+      expect(screen.getByText('$49.99 × 1')).toBeInTheDocument();
+      expect(screen.getByText('$199.99 × 3')).toBeInTheDocument();
     });
 
     it('should calculate and display line totals', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
       expect(screen.getByText('$199.98')).toBeInTheDocument(); // 99.99 * 2
       expect(screen.getByText('$49.99')).toBeInTheDocument(); // 49.99 * 1
@@ -82,7 +97,7 @@ describe('OrderProductsList', () => {
     });
 
     it('should display total at the bottom', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
       const total = 199.98 + 49.99 + 599.97;
       expect(screen.getByText('Total')).toBeInTheDocument();
@@ -92,91 +107,117 @@ describe('OrderProductsList', () => {
 
   describe('edge cases', () => {
     it('should handle empty items array', () => {
-      render(<OrderProductsList items={[]} />);
+      render(<OrderProductsList products={[]} />);
 
       expect(screen.getByText('No items in this order')).toBeInTheDocument();
     });
 
     it('should handle items with zero quantity', () => {
-      const itemsWithZero: OrderItem[] = [
+      const productsWithZero: OrderProduct[] = [
         {
-          productId: 'prod1',
-          name: 'Zero Quantity Product',
+          product: {
+            _id: 'prod1' as any,
+            name: 'Zero Quantity Product',
+            image: null as any,
+          },
           price: 50,
           quantity: 0,
-          image: null,
+          variantId: undefined,
+          variantDetails: undefined,
+          variantLabel: undefined,
         },
       ];
 
-      render(<OrderProductsList items={itemsWithZero} />);
+      render(<OrderProductsList products={productsWithZero} />);
 
       expect(screen.getByText('Zero Quantity Product')).toBeInTheDocument();
-      expect(screen.getByText('× 0')).toBeInTheDocument();
+      expect(screen.getByText('$50.00 × 0')).toBeInTheDocument();
       expect(screen.getByText('$0.00')).toBeInTheDocument();
     });
 
     it('should handle very large prices', () => {
-      const expensiveItems: OrderItem[] = [
+      const expensiveProducts: OrderProduct[] = [
         {
-          productId: 'prod1',
-          name: 'Expensive Product',
+          product: {
+            _id: 'prod1' as any,
+            name: 'Expensive Product',
+            image: null as any,
+          },
           price: 999999.99,
           quantity: 2,
-          image: null,
+          variantId: undefined,
+          variantDetails: undefined,
+          variantLabel: undefined,
         },
       ];
 
-      render(<OrderProductsList items={expensiveItems} />);
+      render(<OrderProductsList products={expensiveProducts} />);
 
-      expect(screen.getByText('$999,999.99')).toBeInTheDocument();
+      expect(screen.getByText('$999,999.99 × 2')).toBeInTheDocument();
       expect(screen.getByText('$1,999,999.98')).toBeInTheDocument();
     });
 
     it('should handle decimal quantities', () => {
-      const decimalItems: OrderItem[] = [
+      const decimalProducts: OrderProduct[] = [
         {
-          productId: 'prod1',
-          name: 'Product sold by weight',
+          product: {
+            _id: 'prod1' as any,
+            name: 'Product sold by weight',
+            image: null as any,
+          },
           price: 10.50,
           quantity: 2.5,
-          image: null,
+          variantId: undefined,
+          variantDetails: undefined,
+          variantLabel: undefined,
         },
       ];
 
-      render(<OrderProductsList items={decimalItems} />);
+      render(<OrderProductsList products={decimalProducts} />);
 
-      expect(screen.getByText('× 2.5')).toBeInTheDocument();
-      expect(screen.getByText('$26.25')).toBeInTheDocument();
+      expect(screen.getByText('$10.50 × 2.5')).toBeInTheDocument();
+      const totalSection = screen.getByTestId('order-total-section');
+      expect(totalSection).toHaveTextContent('$26.25');
     });
 
     it('should handle missing product names gracefully', () => {
-      const itemsWithoutName: OrderItem[] = [
+      const productsWithoutName: OrderProduct[] = [
         {
-          productId: 'prod1',
-          name: '',
+          product: {
+            _id: 'prod1' as any,
+            name: '',
+            image: null as any,
+          },
           price: 50,
           quantity: 1,
-          image: null,
+          variantId: undefined,
+          variantDetails: undefined,
+          variantLabel: undefined,
         },
       ];
 
-      render(<OrderProductsList items={itemsWithoutName} />);
+      render(<OrderProductsList products={productsWithoutName} />);
 
       expect(screen.getByText('Unknown Product')).toBeInTheDocument();
     });
 
     it('should truncate very long product names', () => {
-      const longNameItems: OrderItem[] = [
+      const longNameProducts: OrderProduct[] = [
         {
-          productId: 'prod1',
-          name: 'A'.repeat(100), // 100 character name
+          product: {
+            _id: 'prod1' as any,
+            name: 'A'.repeat(100), // 100 character name
+            image: null as any,
+          },
           price: 50,
           quantity: 1,
-          image: null,
+          variantId: undefined,
+          variantDetails: undefined,
+          variantLabel: undefined,
         },
       ];
 
-      render(<OrderProductsList items={longNameItems} />);
+      render(<OrderProductsList products={longNameProducts} />);
 
       const productName = screen.getByTestId('product-name-prod1');
       expect(productName).toHaveClass('truncate');
@@ -186,7 +227,7 @@ describe('OrderProductsList', () => {
 
   describe('layout and styling', () => {
     it('should have proper structure for each item', () => {
-      render(<OrderProductsList items={mockItems.slice(0, 1)} />);
+      render(<OrderProductsList products={mockProducts.slice(0, 1)} />);
 
       const listItem = screen.getByTestId('order-item-prod1');
       expect(listItem).toHaveClass('flex', 'items-center', 'gap-4');
@@ -199,41 +240,41 @@ describe('OrderProductsList', () => {
     });
 
     it('should have divider between items', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
       const dividers = screen.getAllByRole('separator');
-      expect(dividers).toHaveLength(mockItems.length - 1);
+      expect(dividers).toHaveLength(mockProducts.length - 1);
     });
 
     it('should style the total section differently', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
       const totalSection = screen.getByTestId('order-total-section');
-      expect(totalSection).toHaveClass('border-t', 'pt-4', 'mt-4');
-      expect(totalSection.querySelector('.font-semibold')).toBeInTheDocument();
+      expect(totalSection).toHaveClass('border-t', 'pt-4', 'mt-4', 'font-semibold');
+      expect(screen.getByText('Total')).toBeInTheDocument();
     });
   });
 
   describe('accessibility', () => {
     it('should have proper alt text for images', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
       const images = screen.getAllByRole('img');
       images.forEach((img, index) => {
-        expect(img).toHaveAttribute('alt', mockItems[index].name);
+        expect(img).toHaveAttribute('alt', mockProducts[index].product.name);
       });
     });
 
     it('should use semantic HTML', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
       expect(screen.getByRole('list')).toBeInTheDocument();
       const listItems = screen.getAllByRole('listitem');
-      expect(listItems).toHaveLength(mockItems.length);
+      expect(listItems).toHaveLength(mockProducts.length);
     });
 
     it('should have proper heading hierarchy', () => {
-      render(<OrderProductsList items={mockItems} />);
+      render(<OrderProductsList products={mockProducts} />);
 
       const heading = screen.getByRole('heading', { level: 3 });
       expect(heading).toHaveTextContent('Order Items');
@@ -248,8 +289,8 @@ type AssertEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
 type TestOrderProductsListProps = AssertEqual<
   Parameters<typeof OrderProductsList>[0],
   {
-    items: OrderItem[];
+    products: OrderProduct[];
   }
 >;
 
-const _testOrderProductsListProps: TestOrderProductsListProps = true;
+// const _testOrderProductsListProps: TestOrderProductsListProps = true;

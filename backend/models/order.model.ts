@@ -2,7 +2,9 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IOrderDocument extends Document {
   _id: mongoose.Types.ObjectId;
+  orderNumber: string;
   user: mongoose.Types.ObjectId;
+  email: string;
   products: {
     product: mongoose.Types.ObjectId;
     quantity: number;
@@ -16,9 +18,24 @@ export interface IOrderDocument extends Document {
     variantLabel?: string;
   }[];
   totalAmount: number;
+  subtotal: number;
+  tax: number;
+  shipping: number;
+  discount: number;
   stripeSessionId: string;
   status: 'pending' | 'completed' | 'cancelled' | 'refunded';
   shippingAddress?: {
+    fullName: string;
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phone?: string;
+  };
+  billingAddress?: {
+    fullName: string;
     line1: string;
     line2?: string;
     city: string;
@@ -36,9 +53,18 @@ export interface IOrderDocument extends Document {
 
 const orderSchema = new Schema<IOrderDocument>(
   {
+    orderNumber: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      required: true,
+    },
+    email: {
+      type: String,
       required: true,
     },
     products: [
@@ -90,6 +116,29 @@ const orderSchema = new Schema<IOrderDocument>(
       required: true,
       min: 0,
     },
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    tax: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+    shipping: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+    discount: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
     stripeSessionId: {
       type: String,
       unique: true,
@@ -102,6 +151,20 @@ const orderSchema = new Schema<IOrderDocument>(
     },
     shippingAddress: {
       type: {
+        fullName: { type: String, required: true },
+        line1: { type: String, required: true },
+        line2: { type: String },
+        city: { type: String, required: true },
+        state: { type: String, required: true },
+        postalCode: { type: String, required: true },
+        country: { type: String, required: true },
+        phone: { type: String },
+      },
+      required: false,
+    },
+    billingAddress: {
+      type: {
+        fullName: { type: String, required: true },
         line1: { type: String, required: true },
         line2: { type: String },
         city: { type: String, required: true },

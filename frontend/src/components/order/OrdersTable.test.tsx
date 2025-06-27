@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { OrdersTable } from './OrdersTable';
-import { renderWithProviders } from '@/test/utils';
+import { renderWithProviders } from '@/test/test-utils';
 import type { RouterOutputs } from '@/lib/trpc';
 
 // Mock tRPC hooks
@@ -36,64 +36,97 @@ vi.mock('lodash.debounce', () => ({
 const mockOrders: RouterOutputs['order']['listAll'] = {
   orders: [
     {
-      _id: 'order1',
+      _id: 'order1' as any,
       orderNumber: 'ORD-001',
-      userId: 'user1',
+      user: {
+        _id: 'user1' as any,
+        name: 'John Doe',
+        email: 'customer1@example.com',
+      },
       email: 'customer1@example.com',
       status: 'pending',
-      items: [
+      products: [
         {
-          productId: 'prod1',
-          name: 'Product 1',
+          product: {
+            _id: 'prod1' as any,
+            name: 'Product 1',
+            image: 'image1.jpg',
+          },
           price: 99.99,
           quantity: 2,
-          image: 'image1.jpg',
+          variantId: undefined,
+          variantDetails: undefined,
+          variantLabel: undefined,
         },
       ],
       totalAmount: 199.98,
+      subtotal: 199.98,
+      tax: 0,
+      shipping: 0,
+      discount: 0,
       shippingAddress: {
-        street: '123 Main St',
+        fullName: 'John Doe',
+        line1: '123 Main St',
+        line2: undefined,
         city: 'New York',
         state: 'NY',
         postalCode: '10001',
         country: 'US',
       },
+      billingAddress: undefined,
       paymentMethod: 'card',
       paymentIntentId: 'pi_123',
-      createdAt: new Date('2024-01-01').toISOString(),
-      updatedAt: new Date('2024-01-01').toISOString(),
+      createdAt: new Date('2024-01-01') as any,
+      updatedAt: new Date('2024-01-01') as any,
     },
     {
-      _id: 'order2',
+      _id: 'order2' as any,
       orderNumber: 'ORD-002',
-      userId: 'user2',
+      user: {
+        _id: 'user2' as any,
+        name: 'Jane Smith',
+        email: 'customer2@example.com',
+      },
       email: 'customer2@example.com',
       status: 'completed',
-      items: [
+      products: [
         {
-          productId: 'prod2',
-          name: 'Product 2',
+          product: {
+            _id: 'prod2' as any,
+            name: 'Product 2',
+            image: 'image2.jpg',
+          },
           price: 49.99,
           quantity: 1,
-          image: 'image2.jpg',
+          variantId: undefined,
+          variantDetails: undefined,
+          variantLabel: undefined,
         },
       ],
       totalAmount: 49.99,
+      subtotal: 49.99,
+      tax: 0,
+      shipping: 0,
+      discount: 0,
       shippingAddress: {
-        street: '456 Oak Ave',
+        fullName: 'Jane Smith',
+        line1: '456 Oak Ave',
+        line2: undefined,
         city: 'Los Angeles',
         state: 'CA',
         postalCode: '90001',
         country: 'US',
       },
+      billingAddress: undefined,
       paymentMethod: 'paypal',
       paymentIntentId: 'pi_456',
-      createdAt: new Date('2024-01-02').toISOString(),
-      updatedAt: new Date('2024-01-02').toISOString(),
+      createdAt: new Date('2024-01-02') as any,
+      updatedAt: new Date('2024-01-02') as any,
     },
   ],
-  total: 2,
-  hasMore: false,
+  totalCount: 2,
+  currentPage: 1,
+  totalPages: 1,
 };
 
 describe('OrdersTable', () => {
@@ -144,7 +177,7 @@ describe('OrdersTable', () => {
 
     it('should render empty state when no orders', () => {
       mockListOrders.mockReturnValue({
-        data: { orders: [], total: 0, hasMore: false },
+        data: { orders: [], totalCount: 0, currentPage: 1, totalPages: 0 },
         isLoading: false,
         error: null,
       });

@@ -3,7 +3,6 @@ import { orderService } from './order.service.js';
 import { Order } from '../models/order.model.js';
 import { AppError } from '../utils/AppError.js';
 import type { ListOrdersInput, UpdateOrderStatusInput, BulkUpdateOrderStatusInput, GetOrderStatsInput } from '../validations/order.validation.js';
-import type { OrderListResponse, OrderStats, OrderWithPopulatedData } from '../types/order.types.js';
 import mongoose from 'mongoose';
 
 vi.mock('../models/order.model.js');
@@ -84,10 +83,14 @@ describe('OrderService', () => {
       expect(mockAggregate).toHaveBeenCalled();
       const pipeline = mockAggregate.mock.calls[0][0];
       
-      const skipStage = pipeline.find((stage: any) => stage.$skip !== undefined);
+      const facetStage = pipeline.find((stage: any) => stage.$facet !== undefined);
+      expect(facetStage).toBeDefined();
+      expect(facetStage.$facet.orders).toBeDefined();
+      
+      const skipStage = facetStage.$facet.orders.find((stage: any) => stage.$skip !== undefined);
       expect(skipStage.$skip).toBe(0);
       
-      const limitStage = pipeline.find((stage: any) => stage.$limit !== undefined);
+      const limitStage = facetStage.$facet.orders.find((stage: any) => stage.$limit !== undefined);
       expect(limitStage.$limit).toBe(10);
     });
 
@@ -200,7 +203,9 @@ describe('OrderService', () => {
       await orderService.listAllOrders(input);
 
       const pipeline = mockAggregate.mock.calls[0][0];
-      const sortStage = pipeline.find((stage: any) => stage.$sort !== undefined);
+      const facetStage = pipeline.find((stage: any) => stage.$facet !== undefined);
+      expect(facetStage).toBeDefined();
+      const sortStage = facetStage.$facet.orders.find((stage: any) => stage.$sort !== undefined);
       expect(sortStage.$sort).toEqual({ totalAmount: 1 });
     });
 
@@ -230,7 +235,9 @@ describe('OrderService', () => {
       expect(result.currentPage).toBe(3);
       
       const pipeline = mockAggregate.mock.calls[0][0];
-      const skipStage = pipeline.find((stage: any) => stage.$skip !== undefined);
+      const facetStage = pipeline.find((stage: any) => stage.$facet !== undefined);
+      expect(facetStage).toBeDefined();
+      const skipStage = facetStage.$facet.orders.find((stage: any) => stage.$skip !== undefined);
       expect(skipStage.$skip).toBe(40);
     });
 

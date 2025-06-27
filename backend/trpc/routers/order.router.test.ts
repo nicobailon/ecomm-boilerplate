@@ -4,7 +4,6 @@ import { orderService } from '../../services/order.service.js';
 import { TRPCError } from '@trpc/server';
 import { AppError } from '../../utils/AppError.js';
 import type { inferProcedureInput } from '@trpc/server';
-import type { AppRouter } from './app.router.js';
 import mongoose from 'mongoose';
 
 vi.mock('../../services/order.service.js');

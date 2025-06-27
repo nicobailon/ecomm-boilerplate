@@ -35,7 +35,8 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
 import { Checkbox } from '@/components/ui/Checkbox';
-import { trpc, type RouterOutputs } from '@/lib/trpc';
+import { trpc } from '@/lib/trpc';
+import type { RouterOutputs } from '@/lib/trpc';
 import { useDeleteCollection } from '@/hooks/collections/useCollections';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { toast } from 'sonner';
@@ -372,11 +373,13 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
     toast.success(`Deleted ${selectedRows.length} collections`);
   };
 
+  const updateCollection = trpc.collection.update.useMutation();
+
   const handleBulkToggleVisibility = async (makePublic: boolean) => {
     if (selectedRows.length === 0) return;
 
     for (const row of selectedRows) {
-      await utils.collection.update.mutate({
+      await updateCollection.mutateAsync({
         id: row.original._id as string,
         data: { isPublic: makePublic }
       });

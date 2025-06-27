@@ -3,13 +3,15 @@ import { Plus } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { DiscountsTable } from '../../components/discount/DiscountsTable';
 import { DiscountEditDrawer } from '../../components/drawers/DiscountEditDrawer';
-import type { Discount } from '@/types/discount';
+import type { RouterOutputs } from '@/lib/trpc';
+
+type CouponFromAPI = RouterOutputs['coupon']['listAll']['discounts'][0] & { _id: string; createdAt?: string | Date; updatedAt?: string | Date; };
 
 const DiscountsTab = () => {
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit' | null>(null);
-  const [selectedDiscount, setSelectedDiscount] = useState<Discount | null>(null);
+  const [selectedDiscount, setSelectedDiscount] = useState<CouponFromAPI | null>(null);
   
-  const handleEdit = (discount: Discount) => {
+  const handleEdit = (discount: CouponFromAPI) => {
     setSelectedDiscount(discount);
     setDrawerMode('edit');
   };
@@ -35,7 +37,6 @@ const DiscountsTab = () => {
       </div>
       
       <DiscountsTable onEditDiscount={handleEdit} />
-      
       
       {drawerMode && (
         <DiscountEditDrawer

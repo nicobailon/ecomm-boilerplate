@@ -10,11 +10,13 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Switch } from '@/components/ui/Switch';
 import { Label } from '@/components/ui/Label';
-import type { Discount } from '@/types/discount';
+import type { RouterOutputs } from '@/lib/trpc';
+
+type CouponFromAPI = RouterOutputs['coupon']['listAll']['discounts'][0] & { _id: string; createdAt?: string | Date; updatedAt?: string | Date; };
 
 interface DiscountFormProps {
   mode: 'create' | 'edit';
-  initialData?: Discount;
+  initialData?: CouponFromAPI;
   onSubmit: (data: DiscountFormInput) => void | Promise<void>;
   isSubmitting?: boolean;
 }

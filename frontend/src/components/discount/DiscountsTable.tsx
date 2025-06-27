@@ -5,8 +5,10 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   getFilteredRowModel,
-  ColumnDef,
   flexRender,
+} from '@tanstack/react-table';
+import type {
+  ColumnDef,
   SortingState,
   ColumnFiltersState,
   VisibilityState,
@@ -25,7 +27,7 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -36,7 +38,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Progress } from '@/components/ui/Progress';
 import { trpc } from '@/lib/trpc';
-import type { Discount } from '@/types/discount';
+import type { RouterOutputs } from '@/lib/trpc';
 import { useDeleteDiscount } from '@/hooks/queries/useDiscounts';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { toast } from 'sonner';
@@ -45,12 +47,14 @@ import { BulkActionBar } from '@/components/table/BulkActionBar';
 import { DateRangeFilter } from '@/components/table/DateRangeFilter';
 import { ExportButton } from '@/components/table/ExportButton';
 
+type CouponFromAPI = RouterOutputs['coupon']['listAll']['discounts'][0] & { _id: string; createdAt?: string | Date; updatedAt?: string | Date; };
+
 interface DiscountsTableProps {
-  onEditDiscount?: (discount: Discount) => void;
+  onEditDiscount?: (discount: CouponFromAPI) => void;
 }
 
 // Status helper functions
-function getDiscountStatus(discount: Discount): 'active' | 'inactive' | 'expired' {
+function getDiscountStatus(discount: CouponFromAPI): 'active' | 'inactive' | 'expired' {
   const now = new Date();
   const expirationDate = new Date(discount.expirationDate);
   
@@ -59,7 +63,7 @@ function getDiscountStatus(discount: Discount): 'active' | 'inactive' | 'expired
   return 'active';
 }
 
-function getStatusBadge(discount: Discount) {
+function getStatusBadge(discount: CouponFromAPI) {
   const status = getDiscountStatus(discount);
   
   switch (status) {
@@ -72,7 +76,7 @@ function getStatusBadge(discount: Discount) {
   }
 }
 
-function getUsageStatus(discount: Discount): 'never' | 'low' | 'high' | 'maxed' {
+function getUsageStatus(discount: CouponFromAPI): 'never' | 'low' | 'high' | 'maxed' {
   if (discount.currentUses === 0) return 'never';
   if (discount.maxUses && discount.currentUses >= discount.maxUses) return 'maxed';
   if (discount.currentUses <= 10) return 'low';
@@ -96,7 +100,7 @@ export function DiscountsTable({ onEditDiscount }: DiscountsTableProps) {
 
   // Mutations
   const deleteDiscount = useDeleteDiscount();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   // Fetch data with tRPC
   const { data, isLoading, isError } = trpc.coupon.listAll.useQuery({
@@ -116,11 +120,11 @@ export function DiscountsTable({ onEditDiscount }: DiscountsTableProps) {
   // Debounced search
   const debouncedSetGlobalFilter = useMemo(
     () => debounce((value: string) => setGlobalFilter(value), 300),
-    []
+    [],
   );
 
   // Column definitions
-  const columns = useMemo<ColumnDef<Discount>[]>(
+  const columns = useMemo<ColumnDef<CouponFromAPI>[]>(
     () => [
       {
         id: 'select',
@@ -163,13 +167,30 @@ export function DiscountsTable({ onEditDiscount }: DiscountsTableProps) {
         },
         cell: ({ row }) => {
           const discount = row.original;
-          const [copied, setCopied] = useState(false);
+          const CopyButton = () => {
+            const [copied, setCopied] = useState(false);
 
-          const handleCopy = async (e: React.MouseEvent) => {
-            e.stopPropagation();
-            await navigator.clipboard.writeText(discount.code);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            const handleCopy = async (e: React.MouseEvent) => {
+              e.stopPropagation();
+              await navigator.clipboard.writeText(discount.code);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            };
+
+            return (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => void handleCopy(e)}
+                className="h-6 w-6 p-0"
+              >
+                {copied ? (
+                  <CheckCircle className="h-3 w-3 text-green-600" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </Button>
+            );
           };
 
           return (
@@ -180,18 +201,7 @@ export function DiscountsTable({ onEditDiscount }: DiscountsTableProps) {
                   <div className="text-xs text-muted-foreground">{discount.description}</div>
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCopy}
-                className="h-6 w-6 p-0"
-              >
-                {copied ? (
-                  <CheckCircle className="h-3 w-3 text-green-600" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-              </Button>
+              <CopyButton />
             </div>
           );
         },
@@ -303,9 +313,9 @@ export function DiscountsTable({ onEditDiscount }: DiscountsTableProps) {
 
           return (
             <div className={cn(
-              "text-sm",
-              isExpired && "text-destructive",
-              isExpiringSoon && "text-orange-600"
+              'text-sm',
+              isExpired && 'text-destructive',
+              isExpiringSoon && 'text-orange-600',
             )}>
               <div>{format(date, 'MMM dd, yyyy')}</div>
               <div className="text-xs">
@@ -356,12 +366,12 @@ export function DiscountsTable({ onEditDiscount }: DiscountsTableProps) {
         enableHiding: false,
       },
     ],
-    [deleteDiscount, onEditDiscount]
+    [deleteDiscount, onEditDiscount],
   );
 
   // Table instance
-  const table = useReactTable({
-    data: data?.discounts ?? [],
+  const table = useReactTable<CouponFromAPI>({
+    data: (data?.discounts ?? []) as CouponFromAPI[],
     columns,
     pageCount: Math.ceil((data?.total ?? 0) / pagination.pageSize),
     state: {
@@ -403,13 +413,15 @@ export function DiscountsTable({ onEditDiscount }: DiscountsTableProps) {
     toast.success(`Deleted ${selectedRows.length} discount codes`);
   };
 
+  const updateCoupon = trpc.coupon.update.useMutation();
+
   const handleBulkToggleStatus = async (activate: boolean) => {
     if (selectedRows.length === 0) return;
 
     for (const row of selectedRows) {
-      await utils.coupon.update.mutate({
+      await updateCoupon.mutateAsync({
         id: row.original._id,
-        data: { isActive: activate }
+        data: { isActive: activate },
       });
     }
 
@@ -419,16 +431,16 @@ export function DiscountsTable({ onEditDiscount }: DiscountsTableProps) {
   };
 
   const handleExport = () => {
-    const discounts = data?.discounts ?? [];
+    const discounts = (data?.discounts ?? []) as CouponFromAPI[];
     const csv = [
       ['Code', 'Description', 'Discount %', 'Status', 'Current Uses', 'Max Uses', 'Expiration Date', 'Created At'].join(','),
       ...discounts.map(d => [
         `"${d.code}"`,
-        `"${d.description || ''}"`,
+        `"${d.description ?? ''}"`,
         d.discountPercentage,
         getDiscountStatus(d),
         d.currentUses,
-        d.maxUses || 'Unlimited',
+        d.maxUses ?? 'Unlimited',
         format(new Date(d.expirationDate), 'yyyy-MM-dd'),
         d.createdAt ? format(new Date(d.createdAt), 'yyyy-MM-dd') : '',
       ].join(',')),
@@ -549,7 +561,7 @@ export function DiscountsTable({ onEditDiscount }: DiscountsTableProps) {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -577,7 +589,7 @@ export function DiscountsTable({ onEditDiscount }: DiscountsTableProps) {
                       <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}

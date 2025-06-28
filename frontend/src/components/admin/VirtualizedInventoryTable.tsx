@@ -138,7 +138,7 @@ export function VirtualizedInventoryTable({
         itemSize={ROW_HEIGHT}
         width="100%"
         itemData={itemData}
-        className="scrollbar-thin scrollbar-thumb-primary scrollbar-track-muted"
+        className="scrollbar-table"
       >
         {Row}
       </List>

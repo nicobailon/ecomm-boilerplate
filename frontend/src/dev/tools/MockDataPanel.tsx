@@ -310,7 +310,7 @@ export const MockDataPanel: React.FC = () => {
         </div>
 
         <Tabs defaultValue={categories[0].id} className="w-full">
-          <div className="w-full overflow-auto">
+          <div className="w-full overflow-auto scrollbar-overlay">
             <TabsList className="inline-flex w-max">
               {categories.map(category => {
                 const Icon = category.icon;

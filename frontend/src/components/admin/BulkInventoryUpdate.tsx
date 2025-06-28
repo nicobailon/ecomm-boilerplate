@@ -284,7 +284,7 @@ Winter-Jacket,10,`}
                 </p>
               </div>
 
-              <div className="max-h-[300px] overflow-y-auto border rounded-lg">
+              <div className="max-h-[300px] overflow-y-auto border rounded-lg scrollbar-table">
                 <table className="w-full">
                   <thead className="bg-muted/50 sticky top-0">
                     <tr>

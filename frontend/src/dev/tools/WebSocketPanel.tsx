@@ -260,7 +260,7 @@ export const WebSocketPanel: React.FC<WebSocketPanelProps> = ({ onMessage }) => 
           </TabsList>
           
           <TabsContent value="sent">
-            <div className="h-48 w-full overflow-auto">
+            <div className="h-48 w-full overflow-auto scrollbar-content">
               <div className="space-y-2">
                 {state.sentMessages.length === 0 ? (
                   <p className="text-sm text-gray-500 text-center py-4">No messages sent</p>

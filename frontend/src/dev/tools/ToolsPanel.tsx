@@ -101,7 +101,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
           </TabsList>
         </div>
 
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-auto p-4 scrollbar-content">
           <TabsContent value="websocket" className="mt-0 h-full">
             <WebSocketPanel />
           </TabsContent>

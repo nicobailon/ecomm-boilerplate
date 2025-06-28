@@ -298,7 +298,7 @@ export function OrdersTable({ onEditOrder, mode = 'admin', data: externalData, i
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
               <Dropdown isOpen={isOpen} triggerRef={triggerRef}>
-                <div className="bg-popover border rounded-md shadow-md p-1 min-w-[200px]">
+                <div className="bg-popover text-popover-foreground border rounded-md shadow-lg backdrop-blur-sm p-1 min-w-[200px]">
                   <button
                     onClick={() => {
                       onEditOrder?.(order);

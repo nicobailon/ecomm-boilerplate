@@ -1,6 +1,7 @@
 import type { HTMLAttributes } from 'react';
 import { useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { cn } from '@/lib/utils';
 
 interface DropdownProps extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
@@ -62,7 +63,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
         zIndex: 999999,
         pointerEvents: 'auto',
       }}
-      className={className}
+      className={cn(
+        'bg-popover text-popover-foreground border rounded-md shadow-lg backdrop-blur-sm',
+        className
+      )}
       data-portal-id={portalId}
       data-radix-popper-content-wrapper=""
       {...props}

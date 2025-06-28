@@ -232,6 +232,308 @@ body {
   .theme-transitioning * {
     transition: none !important;
   }
+
+  /* Ensure dropdown menus have solid, opaque backgrounds */
+  .bg-popover {
+    background-color: rgb(var(--popover)) !important;
+  }
+
+  .bg-card {
+    background-color: rgb(var(--card)) !important;
+  }
+
+  /* Ensure dropdown content is properly styled */
+  [data-radix-popper-content-wrapper],
+  [data-portal-id] {
+    background-color: rgb(var(--popover));
+    border: 1px solid rgb(var(--border));
+    border-radius: var(--radius);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Dark mode adjustments for better contrast */
+  .dark [data-radix-popper-content-wrapper],
+  .dark [data-portal-id] {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  }
+
+  /*
+   * Refined Scrollbar Styling System
+   *
+   * This system provides subtle, well-integrated scrollbar styles:
+   *
+   * 1. .scrollbar-subtle (Default): Minimal, theme-integrated scrollbars
+   * 2. .scrollbar-enhanced (Interactive): Slightly more visible for interactive elements
+   * 3. .scrollbar-overlay (Minimal): Ultra-minimal overlay style
+   * 4. .scrollbar-accessible (Accessible): High contrast for accessibility needs
+   *
+   * Design Principles:
+   * - Subtle colors that blend with the design system
+   * - Proper theme integration (light/dark mode)
+   * - Accessibility-first approach
+   * - Cross-browser compatibility
+   * - Smooth theme transitions
+   *
+   * Usage Guidelines:
+   * - .scrollbar-subtle: General content areas, modals
+   * - .scrollbar-enhanced: Dropdown menus, interactive lists
+   * - .scrollbar-overlay: Large content areas where scrollbars should be minimal
+   * - .scrollbar-accessible: When accessibility is the primary concern
+   */
+
+  .scrollbar-subtle {
+    /* Firefox: Use very subtle colors */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--muted-foreground), 0.15) transparent;
+  }
+
+  /* Webkit: Subtle scrollbar styling */
+  .scrollbar-subtle::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-thumb {
+    background: rgba(var(--muted-foreground), 0.15);
+    border-radius: 3px;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--muted-foreground), 0.25);
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-thumb:active {
+    background: rgba(var(--muted-foreground), 0.35);
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Enhanced scrollbar for interactive elements */
+  .scrollbar-enhanced {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--muted-foreground), 0.2) transparent;
+  }
+
+  .scrollbar-enhanced::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-enhanced::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+  }
+
+  .scrollbar-enhanced::-webkit-scrollbar-thumb {
+    background: rgba(var(--muted-foreground), 0.2);
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background-clip: content-box;
+    transition: all 0.2s ease;
+    min-height: 20px;
+  }
+
+  .scrollbar-enhanced::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--muted-foreground), 0.3);
+  }
+
+  .scrollbar-enhanced::-webkit-scrollbar-thumb:active {
+    background: rgba(var(--primary), 0.4);
+  }
+
+  /* Overlay scrollbar for minimal interference */
+  .scrollbar-overlay {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--muted-foreground), 0.1) transparent;
+    scrollbar-gutter: stable;
+  }
+
+  .scrollbar-overlay::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .scrollbar-overlay::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-overlay::-webkit-scrollbar-thumb {
+    background: rgba(var(--muted-foreground), 0.1);
+    border-radius: 2px;
+    transition: all 0.15s ease;
+    opacity: 0;
+  }
+
+  .scrollbar-overlay:hover::-webkit-scrollbar-thumb {
+    opacity: 1;
+    background: rgba(var(--muted-foreground), 0.2);
+  }
+
+  .scrollbar-overlay::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--muted-foreground), 0.25);
+  }
+
+  .scrollbar-overlay::-webkit-scrollbar-thumb:active {
+    background: rgba(var(--muted-foreground), 0.35);
+  }
+
+  /* Accessible scrollbar for high visibility */
+  .scrollbar-accessible {
+    scrollbar-width: auto;
+    scrollbar-color: rgba(var(--muted-foreground), 0.4) rgba(var(--muted), 0.3);
+  }
+
+  .scrollbar-accessible::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  .scrollbar-accessible::-webkit-scrollbar-track {
+    background: rgba(var(--muted), 0.3);
+    border-radius: 6px;
+    border: 1px solid rgba(var(--border), 0.5);
+  }
+
+  .scrollbar-accessible::-webkit-scrollbar-thumb {
+    background: rgba(var(--muted-foreground), 0.4);
+    border-radius: 6px;
+    border: 2px solid rgba(var(--muted), 0.3);
+    min-height: 24px;
+    transition: background-color 0.2s ease;
+  }
+
+  .scrollbar-accessible::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--muted-foreground), 0.6);
+  }
+
+  .scrollbar-accessible::-webkit-scrollbar-thumb:active {
+    background: rgba(var(--primary), 0.6);
+  }
+
+  /* Focus state for keyboard navigation */
+  .scrollbar-focus:focus-visible {
+    scrollbar-color: rgba(var(--primary), 0.4) transparent;
+  }
+
+  .scrollbar-focus:focus-visible::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary), 0.4) !important;
+    border-color: rgba(var(--primary), 0.2) !important;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .scrollbar-subtle,
+    .scrollbar-enhanced,
+    .scrollbar-overlay {
+      scrollbar-width: auto;
+      scrollbar-color: rgb(var(--foreground)) rgba(var(--background), 0.5);
+    }
+
+    .scrollbar-subtle::-webkit-scrollbar,
+    .scrollbar-enhanced::-webkit-scrollbar,
+    .scrollbar-overlay::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+
+    .scrollbar-subtle::-webkit-scrollbar-thumb,
+    .scrollbar-enhanced::-webkit-scrollbar-thumb,
+    .scrollbar-overlay::-webkit-scrollbar-thumb {
+      background: rgba(var(--foreground), 0.8) !important;
+      border: 2px solid rgba(var(--background), 0.5) !important;
+      opacity: 1 !important;
+    }
+
+    .scrollbar-subtle::-webkit-scrollbar-track,
+    .scrollbar-enhanced::-webkit-scrollbar-track,
+    .scrollbar-overlay::-webkit-scrollbar-track {
+      background: rgba(var(--background), 0.5) !important;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .scrollbar-subtle::-webkit-scrollbar-thumb,
+    .scrollbar-enhanced::-webkit-scrollbar-thumb,
+    .scrollbar-overlay::-webkit-scrollbar-thumb,
+    .scrollbar-accessible::-webkit-scrollbar-thumb {
+      transition: none;
+    }
+  }
+
+  /* Theme transition support */
+  .scrollbar-subtle,
+  .scrollbar-enhanced,
+  .scrollbar-overlay,
+  .scrollbar-accessible {
+    transition: scrollbar-color 0.2s ease;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-thumb,
+  .scrollbar-enhanced::-webkit-scrollbar-thumb,
+  .scrollbar-overlay::-webkit-scrollbar-thumb,
+  .scrollbar-accessible::-webkit-scrollbar-thumb {
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-track,
+  .scrollbar-enhanced::-webkit-scrollbar-track,
+  .scrollbar-overlay::-webkit-scrollbar-track,
+  .scrollbar-accessible::-webkit-scrollbar-track {
+    transition: background-color 0.2s ease;
+  }
+}
+
+@layer utilities {
+  /* Refined Scrollbar Utility Classes */
+
+  /* Primary scrollbar styles */
+  .scrollbar-default {
+    @apply scrollbar-subtle;
+  }
+
+  /* Utility classes for hiding scrollbars */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Responsive scrollbar utilities */
+  .scrollbar-auto {
+    scrollbar-width: auto;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  /* Combined utility classes for common use cases */
+  .scrollbar-dropdown {
+    @apply scrollbar-enhanced scrollbar-focus;
+  }
+
+  .scrollbar-content {
+    @apply scrollbar-subtle;
+  }
+
+  .scrollbar-modal {
+    @apply scrollbar-overlay;
+  }
+
+  .scrollbar-table {
+    @apply scrollbar-enhanced;
+  }
   
   /* Disable transitions on interactive elements for better performance */
   .theme-transitioning input,

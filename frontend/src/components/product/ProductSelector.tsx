@@ -171,7 +171,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
 
       {/* Products List */}
       <div className="border rounded-lg overflow-hidden">
-        <div className="max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto scrollbar-content">
           {products.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               {searchQuery ? 'No products found matching your search.' : 'No products available.'}

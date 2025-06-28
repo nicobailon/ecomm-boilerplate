@@ -318,7 +318,7 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
         
         {isOpen && (
           <div className="absolute z-50 w-full mt-1">
-            <div className="rounded-md border bg-popover shadow-md">
+            <div className="rounded-md border bg-popover text-popover-foreground shadow-lg backdrop-blur-sm">
           <div
             id={`${id}-listbox`}
             role="listbox"
@@ -343,7 +343,7 @@ const CreatableCollectionSelectComponent: React.FC<CreatableCollectionSelectProp
             
             <div
               ref={listRef}
-              className="max-h-60 overflow-auto p-1"
+              className="max-h-60 overflow-auto p-1 scrollbar-dropdown"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center py-4">

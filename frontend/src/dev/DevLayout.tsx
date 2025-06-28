@@ -52,7 +52,7 @@ export default function DevLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto scrollbar-content">
           <ul className="p-2">
             {categories.map((category) => (
               <li key={category.id}>

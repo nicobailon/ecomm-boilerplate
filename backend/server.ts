@@ -13,6 +13,7 @@ import { createContext } from './trpc/context.js';
 import { appRouter } from './trpc/routers/app.router.js';
 import { websocketService } from './lib/websocket.js';
 import { inventoryMonitor } from './services/inventory-monitor.service.js';
+import { cacheWarmingService } from './services/cache-warming.service.js';
 import { getEmailQueueForShutdown, shutdownEmailQueue } from './lib/email-queue.js';
 import { queueMonitoring, alertHandlers } from './lib/queue-monitoring.js';
 import { redisMonitoring, monitoringHandlers } from './lib/redis-monitoring.js';
@@ -97,6 +98,10 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   void (async () => {
     try {
       await connectDB();
+      
+      // Warm caches after database connection
+      await cacheWarmingService.warmAllCaches();
+      
       await websocketService.initialize(httpServer);
       await inventoryMonitor.startMonitoring();
       console.info('Real-time inventory monitoring started');

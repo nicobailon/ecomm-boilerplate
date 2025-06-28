@@ -3,7 +3,7 @@ import { stripe } from '../lib/stripe.js';
 import { Coupon } from '../models/coupon.model.js';
 import { Order } from '../models/order.model.js';
 import { Product } from '../models/product.model.js';
-import { AppError, InventoryError } from '../utils/AppError.js';
+import { AppError, InventoryError, NotFoundError, ValidationError, PaymentError, AuthorizationError } from '../utils/AppError.js';
 import { IUserDocument } from '../models/user.model.js';
 import { couponService } from './coupon.service.js';
 import { inventoryService } from './inventory.service.js';
@@ -75,7 +75,7 @@ export class PaymentService {
     const validProducts = await Product.find({ _id: { $in: productIds } });
     
     if (validProducts.length !== products.length) {
-      throw new AppError('One or more products not found', 404);
+      throw new NotFoundError('One or more products');
     }
 
     // Calculate total amount and prepare line items
@@ -87,7 +87,7 @@ export class PaymentService {
     for (const requestedProduct of products) {
       const serverProduct = validProducts.find(p => String(p._id) === requestedProduct._id);
       if (!serverProduct) {
-        throw new AppError(`Product ${requestedProduct._id} not found`, 404);
+        throw new NotFoundError('Product', requestedProduct._id as string);
       }
 
       let productPrice = serverProduct.price;
@@ -99,7 +99,7 @@ export class PaymentService {
       if (requestedProduct.variantId) {
         const variant = serverProduct.variants?.find(v => v.variantId === requestedProduct.variantId);
         if (!variant) {
-          throw new AppError(`Variant ${requestedProduct.variantId} not found for product ${serverProduct.name}`, 404);
+          throw new NotFoundError('Variant', requestedProduct.variantId);
         }
 
         // Check and adjust inventory availability using inventory service
@@ -212,7 +212,7 @@ export class PaymentService {
 
     // Check if we have any items after adjustments
     if (lineItems.length === 0) {
-      throw new AppError('All items in your cart are currently out of stock', 400);
+      throw new ValidationError('All items in your cart are currently out of stock');
     }
 
     // Handle coupon if provided
@@ -237,18 +237,18 @@ export class PaymentService {
       if (coupon) {
         // Check if expired
         if (coupon.expirationDate < new Date()) {
-          throw new AppError('Coupon has expired', 400);
+          throw new ValidationError('Coupon has expired');
         }
         
         // Check max uses
         if (coupon.maxUses && coupon.currentUses >= coupon.maxUses) {
-          throw new AppError('Coupon has reached maximum usage limit', 400);
+          throw new ValidationError('Coupon has reached maximum usage limit');
         }
         
         // Check minimum purchase amount
         const totalInDollars = totalAmount / 100;
         if (coupon.minimumPurchaseAmount && totalInDollars < coupon.minimumPurchaseAmount) {
-          throw new AppError(`Minimum purchase amount of $${coupon.minimumPurchaseAmount} required`, 400);
+          throw new ValidationError(`Minimum purchase amount of $${coupon.minimumPurchaseAmount} required`);
         }
         
         totalAmount -= Math.round((totalAmount * coupon.discountPercentage) / 100);
@@ -288,7 +288,7 @@ export class PaymentService {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status !== 'paid') {
-      throw new AppError('Payment not completed', 400);
+      throw new PaymentError('Payment not completed', 'PAYMENT_FAILED');
     }
 
     // Use transaction to ensure atomicity between coupon usage and order creation
@@ -304,7 +304,7 @@ export class PaymentService {
         const User = (await import('../models/user.model.js')).User;
         user = await User.findById(session.metadata?.userId).session(dbSession);
         if (!user) {
-          throw new AppError('User not found', 404);
+          throw new NotFoundError('User');
         }
 
         // Parse products from session metadata
@@ -544,11 +544,11 @@ export class PaymentService {
       await dbSession.withTransaction(async () => {
         const order = await Order.findById(orderId).session(dbSession);
         if (!order) {
-          throw new AppError('Order not found', 404);
+          throw new NotFoundError('Order');
         }
 
         if (order.status === 'refunded') {
-          throw new AppError('Order already refunded', 400);
+          throw new ValidationError('Order already refunded');
         }
 
         // Process refund through Stripe
@@ -590,15 +590,15 @@ export class PaymentService {
       await dbSession.withTransaction(async () => {
         const order = await Order.findById(orderId).session(dbSession);
         if (!order) {
-          throw new AppError('Order not found', 404);
+          throw new NotFoundError('Order');
         }
 
         if (order.user.toString() !== userId) {
-          throw new AppError('Unauthorized to cancel this order', 403);
+          throw new AuthorizationError('Unauthorized to cancel this order');
         }
 
         if (order.status !== 'pending') {
-          throw new AppError('Only pending orders can be cancelled', 400);
+          throw new ValidationError('Only pending orders can be cancelled');
         }
 
         // Restore inventory for each product

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { Coupon, ICouponDocument } from '../models/coupon.model.js';
 import { IUserDocument } from '../models/user.model.js';
-import { AppError } from '../utils/AppError.js';
+import { NotFoundError, ValidationError, ConflictError } from '../utils/AppError.js';
 import type { CreateDiscountInput, UpdateDiscountInput, ListDiscountsInput } from '../validations/coupon.validation.js';
 
 interface ValidCouponResponse {
@@ -31,23 +31,23 @@ export class CouponService {
     coupon ??= await Coupon.findOne({ code: upperCode, userId: { $exists: false }, isActive: true });
 
     if (!coupon) {
-      throw new AppError('Coupon not found', 404);
+      throw new NotFoundError('Coupon');
     }
 
     if (coupon.expirationDate < new Date()) {
       coupon.isActive = false;
       await coupon.save();
-      throw new AppError('Coupon expired', 404);
+      throw new ValidationError('Coupon expired');
     }
 
     // Check if max uses has been reached
     if (coupon.maxUses && coupon.currentUses >= coupon.maxUses) {
-      throw new AppError('Coupon has reached maximum usage limit', 400);
+      throw new ValidationError('Coupon has reached maximum usage limit');
     }
 
     // Check minimum purchase amount if provided
     if (cartTotal !== undefined && coupon.minimumPurchaseAmount && cartTotal < coupon.minimumPurchaseAmount) {
-      throw new AppError(`Minimum purchase amount of $${coupon.minimumPurchaseAmount} required`, 400);
+      throw new ValidationError(`Minimum purchase amount of $${coupon.minimumPurchaseAmount} required`);
     }
 
     return {
@@ -154,7 +154,7 @@ export class CouponService {
   async createDiscount(data: CreateDiscountInput): Promise<ICouponDocument> {
     const existingCoupon = await Coupon.findOne({ code: data.code.toUpperCase() });
     if (existingCoupon) {
-      throw new AppError('A discount code with this name already exists', 409);
+      throw new ConflictError('Discount code', 'name');
     }
 
     const coupon = new Coupon({
@@ -170,7 +170,7 @@ export class CouponService {
   async updateDiscount(id: string, data: UpdateDiscountInput['data']): Promise<ICouponDocument> {
     const coupon = await Coupon.findById(id);
     if (!coupon) {
-      throw new AppError('Discount not found', 404);
+      throw new NotFoundError('Discount');
     }
 
     Object.assign(coupon, data);
@@ -181,7 +181,7 @@ export class CouponService {
   async deleteDiscount(id: string): Promise<{ success: boolean; message: string }> {
     const coupon = await Coupon.findById(id);
     if (!coupon) {
-      throw new AppError('Discount not found', 404);
+      throw new NotFoundError('Discount');
     }
 
     if (coupon.currentUses > 0) {
@@ -226,13 +226,13 @@ export class CouponService {
       // Check if coupon exists but is inactive or at max usage
       const coupon = await Coupon.findOne({ code: upperCode });
       if (!coupon) {
-        throw new AppError('Coupon not found', 404);
+        throw new NotFoundError('Coupon');
       }
       if (!coupon.isActive) {
-        throw new AppError('Coupon is no longer active', 400);
+        throw new ValidationError('Coupon is no longer active');
       }
       if (coupon.maxUses && coupon.currentUses >= coupon.maxUses) {
-        throw new AppError('Coupon has reached maximum usage limit', 400);
+        throw new ValidationError('Coupon has reached maximum usage limit');
       }
     }
     

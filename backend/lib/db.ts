@@ -1,11 +1,60 @@
 import mongoose from 'mongoose';
 import { defaultLogger as logger } from '../utils/logger.js';
 
+// Setup comprehensive connection event listeners
+const setupConnectionEventListeners = (): void => {
+  const connection = mongoose.connection;
+  
+  // Connection lifecycle events
+  connection.on('connecting', () => {
+    logger.info('[MongoDB] Attempting to connect to database...');
+  });
+  
+  connection.on('connected', () => {
+    logger.info('[MongoDB] Successfully connected to database');
+  });
+  
+  connection.on('error', (error) => {
+    logger.error('[MongoDB] Connection error:', {
+      error: error.message,
+      stack: error.stack,
+    });
+  });
+  
+  connection.on('disconnected', () => {
+    logger.warn('[MongoDB] Disconnected from database');
+  });
+  
+  connection.on('reconnected', () => {
+    logger.info('[MongoDB] Successfully reconnected to database');
+  });
+  
+  connection.on('reconnectFailed', () => {
+    logger.error('[MongoDB] Failed to reconnect to database after multiple attempts');
+  });
+  
+  // Additional monitoring events
+  connection.on('close', () => {
+    logger.info('[MongoDB] Connection closed');
+  });
+  
+  connection.on('all', () => {
+    logger.debug('[MongoDB] Replica set state: all servers connected');
+  });
+  
+  connection.on('fullsetup', () => {
+    logger.info('[MongoDB] Replica set fully connected');
+  });
+};
+
 export const connectDB = async (): Promise<void> => {
   const mongoUri = process.env.MONGO_URI;
   if (!mongoUri) {
     throw new Error('MONGO_URI is not defined in environment variables');
   }
+  
+  // Set up comprehensive connection event listeners before connecting
+  setupConnectionEventListeners();
   
   try {
     const conn = await mongoose.connect(mongoUri, {
@@ -13,10 +62,16 @@ export const connectDB = async (): Promise<void> => {
       maxPoolSize: 10,        // Maximum number of connections in the pool
       minPoolSize: 2,         // Minimum number of connections to maintain
       maxIdleTimeMS: 30000,   // Close connections after 30 seconds of inactivity
-      serverSelectionTimeoutMS: 5000,  // How long to try selecting a server
-      socketTimeoutMS: 45000, // How long a send or receive on a socket can take
-      connectTimeoutMS: 10000, // How long to wait for a connection to be established
-      heartbeatFrequencyMS: 10000, // How often to check server status
+      
+      // Retry and timeout configuration (explicit for clarity)
+      serverSelectionTimeoutMS: 5000,  // How long to try selecting a server (default: 30000)
+      socketTimeoutMS: 45000,          // How long a send or receive on a socket can take (default: 0)
+      connectTimeoutMS: 10000,         // How long to wait for a connection to be established (default: 30000)
+      heartbeatFrequencyMS: 10000,     // How often to check server status (default: 10000)
+      
+      // Retry behavior (Mongoose handles retries internally)
+      retryWrites: true,               // Retry writes on network errors (default: true)
+      retryReads: true,                // Retry reads on network errors (default: true)
 
       // Additional optimizations
       bufferCommands: false,  // Disable mongoose buffering

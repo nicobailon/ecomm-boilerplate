@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Order, IOrderDocument } from '../models/order.model.js';
-import { AppError } from '../utils/AppError.js';
+import { NotFoundError, ValidationError } from '../utils/AppError.js';
 import { OrderStatusValidator } from '../utils/order-status-validator.js';
 import type { 
   ListOrdersInput, 
@@ -181,7 +181,7 @@ export class OrderService {
       .populate('products.product', 'name image');
 
     if (!order) {
-      throw new AppError('Order not found', 404);
+      throw new NotFoundError('Order');
     }
 
     return toSerializedOrder(order as unknown as OrderWithPopulatedData);
@@ -202,7 +202,7 @@ export class OrderService {
       try {
         const order = await Order.findById(orderId).session(session);
         if (!order) {
-          throw new AppError('Order not found', 404);
+          throw new NotFoundError('Order');
         }
 
         // Use centralized validator
@@ -243,7 +243,7 @@ export class OrderService {
       // Non-transactional update for environments without replica set
       const order = await Order.findById(orderId);
       if (!order) {
-        throw new AppError('Order not found', 404);
+        throw new NotFoundError('Order');
       }
 
       // Use centralized validator
@@ -292,7 +292,7 @@ export class OrderService {
         const orders = await Order.find({ _id: { $in: orderIds } }).session(session);
         
         if (orders.length === 0) {
-          throw new AppError('No orders found', 404);
+          throw new NotFoundError('Orders');
         }
 
         // Validate all transitions
@@ -309,7 +309,7 @@ export class OrderService {
         );
 
         if (validation.valid.length === 0) {
-          throw new AppError('No valid status transitions found', 422);
+          throw new ValidationError('No valid status transitions found');
         }
 
         // Get valid order IDs and prepare bulk operations
@@ -370,7 +370,7 @@ export class OrderService {
       const orders = await Order.find({ _id: { $in: orderIds } });
       
       if (orders.length === 0) {
-        throw new AppError('No orders found', 404);
+        throw new NotFoundError('Orders');
       }
 
       // Validate all transitions
@@ -387,7 +387,7 @@ export class OrderService {
       );
 
       if (validation.valid.length === 0) {
-        throw new AppError('No valid status transitions found', 422);
+        throw new ValidationError('No valid status transitions found');
       }
 
       // Get valid order IDs and prepare bulk operations

@@ -13,12 +13,14 @@ import {
   validateInventoryPreCheckout, 
   logInventoryValidation 
 } from '../middleware/inventory-validation.middleware.js';
+import { idempotencyMiddleware } from '../middleware/idempotency.middleware.js';
 
 const router = Router();
 
 router.post(
   '/create-checkout-session', 
   protectRoute, 
+  idempotencyMiddleware,
   inventoryCheckRateLimit,
   emailRateLimit, 
   validateBody(checkoutSchema), 
@@ -26,7 +28,14 @@ router.post(
   validateInventoryPreCheckout,
   createCheckoutSession
 );
-router.post('/checkout-success', protectRoute, emailRateLimit, validateBody(checkoutSuccessSchema), checkoutSuccess);
+router.post(
+  '/checkout-success', 
+  protectRoute, 
+  idempotencyMiddleware,
+  emailRateLimit, 
+  validateBody(checkoutSuccessSchema), 
+  checkoutSuccess
+);
 
 // Webhook endpoints
 router.post(

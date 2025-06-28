@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import path from 'path';
 import * as trpcExpress from '@trpc/server/adapters/express';
-import { connectDB } from './lib/db.js';
+import { connectDB, disconnectDB } from './lib/db.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { securityMiddleware, authRateLimit, trpcRateLimit, emailRateLimit } from './middleware/security.middleware.js';
 import { validateEnvVariables } from './utils/validateEnv.js';
@@ -167,12 +167,15 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   })();
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  void (async () => {
-  console.info('SIGTERM received, shutting down gracefully...');
+// Graceful shutdown handler
+const gracefulShutdown = async (signal: string): Promise<void> => {
+  console.info(`${signal} received, shutting down gracefully...`);
   
   try {
+    // Stop inventory monitoring
+    await inventoryMonitor.stopMonitoring();
+    console.info('Inventory monitoring stopped');
+    
     // Stop Redis monitoring
     redisMonitoring.stopMonitoring();
     console.info('Redis monitoring stopped');
@@ -184,16 +187,35 @@ process.on('SIGTERM', () => {
     // Shutdown email queue with proper cleanup
     await shutdownEmailQueue();
     
+    // Close WebSocket connections
+    await websocketService.close();
+    console.info('WebSocket connections closed');
+    
     // Close HTTP server
-    httpServer.close(() => {
-      console.info('HTTP server closed');
-      process.exit(0);
+    await new Promise<void>((resolve) => {
+      httpServer.close(() => {
+        console.info('HTTP server closed');
+        resolve();
+      });
     });
+    
+    // Disconnect from MongoDB
+    await disconnectDB();
+    
+    process.exit(0);
   } catch (error) {
     console.error('Error during shutdown:', error);
     process.exit(1);
   }
-  })();
+};
+
+// Register graceful shutdown handlers
+process.on('SIGTERM', () => {
+  void gracefulShutdown('SIGTERM');
+});
+
+process.on('SIGINT', () => {
+  void gracefulShutdown('SIGINT');
 });
 
 export default app;

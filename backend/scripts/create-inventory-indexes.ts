@@ -84,10 +84,10 @@ async function createInventoryIndexes() {
         sparse: true,
         background: true,
       },
-      // Unique index for stripePaymentIntentId
+      // Unique index for paymentIntentId
       {
-        key: { 'stripePaymentIntentId': 1 },
-        name: 'idx_stripe_payment_intent_unique',
+        key: { 'paymentIntentId': 1 },
+        name: 'idx_payment_intent_unique',
         unique: true,
         sparse: true,
         background: true,

@@ -273,6 +273,36 @@ class WebSocketService {
   getIO(): Server | null {
     return this.io;
   }
+
+  async close(): Promise<void> {
+    logger.info('[WebSocket] Closing WebSocket connections...');
+    
+    // Close all socket connections
+    if (this.io) {
+      await new Promise<void>((resolve) => {
+        this.io!.close(() => {
+          logger.info('[WebSocket] Socket.IO server closed');
+          resolve();
+        });
+      });
+    }
+    
+    // Close Redis pub/sub clients
+    if (this.pubClient) {
+      await this.pubClient.quit();
+      logger.info('[WebSocket] PubClient closed');
+    }
+    
+    if (this.subClient) {
+      await this.subClient.quit();
+      logger.info('[WebSocket] SubClient closed');
+    }
+    
+    this.io = null;
+    this.pubClient = null;
+    this.subClient = null;
+    this.isRedisConnected = false;
+  }
 }
 
 export const websocketService = new WebSocketService();

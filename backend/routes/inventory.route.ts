@@ -1,4 +1,5 @@
 import express from 'express';
+import { z } from 'zod';
 import {
   getProductInventory,
   checkAvailability,
@@ -9,7 +10,7 @@ import {
   getInventoryTurnover,
 } from '../controllers/inventory.controller.js';
 import { adminRoute } from '../middleware/auth.middleware.js';
-import { validateRequest } from '../middleware/validation.middleware.js';
+import { validateRequest, validateParams } from '../middleware/validation.middleware.js';
 import {
   inventoryUpdateSchema,
   bulkInventoryUpdateSchema,
@@ -19,8 +20,8 @@ import { rateLimiter } from '../middleware/rateLimiter.js';
 const router = express.Router();
 
 // Public routes with rate limiting
-router.get('/check/:productId', rateLimiter(100, 1), checkAvailability);
-router.get('/product/:productId', getProductInventory);
+router.get('/check/:productId', rateLimiter(100, 1), validateParams(z.object({ productId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid product ID format') })), checkAvailability);
+router.get('/product/:productId', validateParams(z.object({ productId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid product ID format') })), getProductInventory);
 
 // Admin-only routes
 router.post(

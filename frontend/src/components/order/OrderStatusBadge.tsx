@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/Badge';
-import { Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, RefreshCw, AlertCircle } from 'lucide-react';
 import type { OrderStatus } from '@/types/order';
 
 interface OrderStatusBadgeProps {
@@ -36,6 +36,12 @@ const statusConfig: Record<OrderStatus, {
     label: 'Refunded',
     icon: RefreshCw,
     iconTestId: 'refresh-icon',
+  },
+  pending_inventory: {
+    variant: 'warning',
+    label: 'Pending Inventory',
+    icon: AlertCircle,
+    iconTestId: 'alert-circle-icon',
   },
 };
 

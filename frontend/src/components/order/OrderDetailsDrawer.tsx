@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/Label';
 import { OrderStatusBadge } from './OrderStatusBadge';
 import { OrderProductsList } from './OrderProductsList';
 import { OrderCustomerInfo } from './OrderCustomerInfo';
-import { useGetOrderById, useUpdateOrderStatus } from '@/hooks/queries/useOrders';
+import { useGetOrderById, useGetMyOrderById, useUpdateOrderStatus } from '@/hooks/queries/useOrders';
+import { useOrderStatusValidation } from '@/hooks/useOrderStatusValidation';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import type { OrderStatus } from '@/types/order';
 
@@ -15,12 +16,20 @@ interface OrderDetailsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   orderId: string | null;
+  mode?: 'admin' | 'customer';
 }
 
-export function OrderDetailsDrawer({ isOpen, onClose, orderId }: OrderDetailsDrawerProps) {
+export function OrderDetailsDrawer({ isOpen, onClose, orderId, mode = 'admin' }: OrderDetailsDrawerProps) {
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null);
-  const { data: order, isLoading, error } = useGetOrderById(orderId);
+  
+  // Use appropriate hook based on mode
+  const adminQuery = useGetOrderById(mode === 'admin' ? orderId : null);
+  const customerQuery = useGetMyOrderById(mode === 'customer' ? orderId : null);
+  
+  const { data: order, isLoading, error } = mode === 'admin' ? adminQuery : customerQuery;
+  
   const updateStatusMutation = useUpdateOrderStatus();
+  const { getValidNextStatuses } = useOrderStatusValidation();
 
   useEffect(() => {
     if (order) {
@@ -98,46 +107,54 @@ export function OrderDetailsDrawer({ isOpen, onClose, orderId }: OrderDetailsDra
 
             <div className="border-b my-4" />
 
-            {/* Order Status Update */}
-            <div className="space-y-3">
-              <h3 className="font-semibold">Order Status</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm">Current Status:</span>
-                <OrderStatusBadge status={order.status} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status-select">Update Status</Label>
-                <div className="flex gap-2">
-                  <Select
-                    id="status-select"
-                    value={selectedStatus || order.status}
-                    onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
-                    options={[
-                      { value: 'pending', label: 'Pending' },
-                      { value: 'completed', label: 'Completed' },
-                      { value: 'cancelled', label: 'Cancelled' },
-                      { value: 'refunded', label: 'Refunded' },
-                    ]}
-                    aria-label="Status"
-                  />
-                  <Button
-                    onClick={handleStatusUpdate}
-                    disabled={
-                      !selectedStatus ||
-                      selectedStatus === order.status ||
-                      updateStatusMutation.isPending
-                    }
-                  >
-                    {updateStatusMutation.isPending && (
-                      <LoadingSpinner className="mr-2" />
+            {/* Order Status Update - Admin only */}
+            {mode === 'admin' && (
+              <>
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Order Status</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Current Status:</span>
+                    <OrderStatusBadge status={order.status} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="status-select">Update Status</Label>
+                    {getValidNextStatuses(order.status).length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        This order is in a final status and cannot be changed.
+                      </p>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Select
+                          id="status-select"
+                          value={selectedStatus || order.status}
+                          onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
+                          options={getValidNextStatuses(order.status).map(status => ({
+                            value: status,
+                            label: status.charAt(0).toUpperCase() + status.slice(1),
+                          }))}
+                          aria-label="Status"
+                        />
+                        <Button
+                          onClick={handleStatusUpdate}
+                          disabled={
+                            !selectedStatus ||
+                            selectedStatus === order.status ||
+                            updateStatusMutation.isPending
+                          }
+                        >
+                          {updateStatusMutation.isPending && (
+                            <span className="mr-2">Loading...</span>
+                          )}
+                          Update Status
+                        </Button>
+                      </div>
                     )}
-                    Update Status
-                  </Button>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="border-b my-4" />
+                <div className="border-b my-4" />
+              </>
+            )}
 
             {/* Customer Information */}
             <OrderCustomerInfo order={order} />
@@ -194,7 +211,7 @@ export function OrderDetailsDrawer({ isOpen, onClose, orderId }: OrderDetailsDra
             {/* Payment Information */}
             <div className="space-y-3">
               <h3 className="font-semibold">Payment Method</h3>
-              <p>{formatPaymentMethod(order.paymentMethod)}</p>
+              <p>{order.paymentMethod ? formatPaymentMethod(order.paymentMethod) : 'N/A'}</p>
               {order.paymentIntentId && (
                 <p className="text-xs text-muted-foreground font-mono">
                   {order.paymentIntentId}

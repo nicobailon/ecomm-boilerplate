@@ -205,10 +205,3 @@ describe('OrdersTab', () => {
   });
 });
 
-// Type-level tests
-type AssertEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
-
-// Test that OrdersTab component has no required props
-type TestOrdersTabProps = AssertEqual<Parameters<typeof OrdersTab>[0], Record<string, never> | undefined>;
-
-// const _testOrdersTabProps: TestOrdersTabProps = true;

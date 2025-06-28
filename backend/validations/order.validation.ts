@@ -4,7 +4,7 @@ export const listOrdersSchema = z.object({
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(100).default(10),
   search: z.string().optional(),
-  status: z.enum(['pending', 'completed', 'cancelled', 'refunded', 'all']).default('all'),
+  status: z.enum(['pending', 'pending_inventory', 'completed', 'cancelled', 'refunded', 'all']).default('all'),
   sortBy: z.enum(['createdAt', 'total', 'status']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
   dateFrom: z.string().datetime().optional(),
@@ -13,12 +13,12 @@ export const listOrdersSchema = z.object({
 
 export const updateOrderStatusSchema = z.object({
   orderId: z.string().min(1),
-  status: z.enum(['pending', 'completed', 'cancelled', 'refunded']),
+  status: z.enum(['pending', 'pending_inventory', 'completed', 'cancelled', 'refunded']),
 });
 
 export const bulkUpdateOrderStatusSchema = z.object({
   orderIds: z.array(z.string().min(1)).min(1),
-  status: z.enum(['pending', 'completed', 'cancelled', 'refunded']),
+  status: z.enum(['pending', 'pending_inventory', 'completed', 'cancelled', 'refunded']),
 });
 
 export const getOrderByIdSchema = z.object({

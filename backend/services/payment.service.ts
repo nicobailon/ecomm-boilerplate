@@ -3,12 +3,14 @@ import { stripe } from '../lib/stripe.js';
 import { Coupon } from '../models/coupon.model.js';
 import { Order } from '../models/order.model.js';
 import { Product } from '../models/product.model.js';
-import { AppError } from '../utils/AppError.js';
+import { AppError, InventoryError } from '../utils/AppError.js';
 import { IUserDocument } from '../models/user.model.js';
 import { couponService } from './coupon.service.js';
 import { inventoryService } from './inventory.service.js';
 import { IPopulatedOrderDocument } from './email.service.js';
 import { queueEmail } from '../lib/email-queue.js';
+import { CheckoutProduct as InventoryCheckoutProduct } from '../types/inventory.types.js';
+import { createLogger } from '../utils/logger.js';
 
 interface ProductCheckout {
   _id: string;
@@ -44,6 +46,8 @@ interface CheckoutSessionResult {
 }
 
 export class PaymentService {
+  private logger = createLogger({ service: 'PaymentService' });
+
   private async generateOrderNumber(): Promise<string> {
     const date = new Date();
     const year = date.getFullYear().toString().slice(-2);
@@ -296,11 +300,6 @@ export class PaymentService {
 
     try {
       await dbSession.withTransaction(async () => {
-        // Increment coupon usage if used
-        if (session.metadata?.couponCode) {
-          await couponService.incrementUsage(session.metadata.couponCode);
-        }
-
         // Get user for email
         const User = (await import('../models/user.model.js')).User;
         user = await User.findById(session.metadata?.userId).session(dbSession);
@@ -308,8 +307,60 @@ export class PaymentService {
           throw new AppError('User not found', 404);
         }
 
-        // Create order
+        // Parse products from session metadata
         const products = JSON.parse(session.metadata?.products ?? '[]') as CheckoutProduct[];
+        
+        // Step 1: Validate inventory atomically BEFORE creating order
+        this.logger.info('checkout.inventory.validation.start', {
+          sessionId,
+          productCount: products.length,
+        });
+
+        const inventoryProducts: InventoryCheckoutProduct[] = products.map(p => ({
+          id: p.id,
+          quantity: p.quantity,
+          variantId: p.variantId,
+          variantLabel: p.variantLabel,
+        }));
+
+        const inventoryValidation = await inventoryService.validateAndReserveInventory(
+          inventoryProducts,
+          dbSession
+        );
+
+        if (!inventoryValidation.isValid) {
+          this.logger.error('checkout.inventory.validation.failed', {
+            sessionId,
+            errors: inventoryValidation.errors,
+          });
+          
+          throw new InventoryError(
+            `Insufficient inventory: ${inventoryValidation.errors.join('; ')}`,
+            'INSUFFICIENT_INVENTORY',
+            inventoryValidation.validatedProducts
+              .filter(vp => vp.availableStock < vp.requestedQuantity)
+              .map(vp => ({
+                productId: vp.productId,
+                productName: vp.productName,
+                variantId: vp.variantId,
+                variantDetails: vp.variantDetails,
+                requestedQuantity: vp.requestedQuantity,
+                availableStock: vp.availableStock,
+              }))
+          );
+        }
+
+        this.logger.info('checkout.inventory.validation.success', {
+          sessionId,
+          validatedCount: inventoryValidation.validatedProducts.length,
+        });
+
+        // Step 2: Increment coupon usage if used
+        if (session.metadata?.couponCode) {
+          await couponService.incrementUsage(session.metadata.couponCode);
+        }
+
+        // Step 3: Create order (inventory has been validated)
         const originalAmount = session.metadata?.couponCode 
           ? (session.amount_subtotal ?? session.amount_total ?? 0) / 100
           : undefined;
@@ -361,6 +412,13 @@ export class PaymentService {
           paymentIntentId: session.payment_intent as string,
           couponCode: session.metadata?.couponCode ?? undefined,
           originalAmount,
+          statusHistory: [{
+            from: 'pending',
+            to: 'completed',
+            timestamp: new Date(),
+            userId: session.metadata?.userId ? new mongoose.Types.ObjectId(session.metadata.userId) : undefined,
+            reason: 'Payment processed successfully',
+          }],
         });
 
         await newOrder.save({ session: dbSession });
@@ -372,16 +430,41 @@ export class PaymentService {
           .populate('products.product', 'name image price')
           .session(dbSession) as unknown as IPopulatedOrderDocument;
 
-        // Decrement inventory for each product
+        // Step 4: Deduct inventory atomically (guaranteed to be valid due to earlier validation)
         for (const product of products) {
-          await inventoryService.updateInventory(
-            product.id,
-            product.variantId,
-            -product.quantity,
-            'sale',
-            session.metadata?.userId ?? 'system',
-            { orderId: String(orderId) },
-          );
+          try {
+            // Use atomic deduction instead of updateInventory
+            await inventoryService.atomicInventoryDeduction(
+              product.id,
+              product.variantId,
+              product.quantity,
+              dbSession
+            );
+
+            // Record inventory history within the same transaction
+            await inventoryService.recordInventoryHistory(
+              product.id,
+              product.variantId,
+              -product.quantity,
+              'sale',
+              session.metadata?.userId ?? 'system',
+              { orderId: String(orderId) },
+              dbSession
+            );
+          } catch (error) {
+            this.logger.error('checkout.inventory.deduction.error', error, {
+              sessionId,
+              productId: product.id,
+              variantId: product.variantId,
+              quantity: product.quantity,
+            });
+            
+            // This should rarely happen due to validation, but if it does, throw error
+            if (error instanceof InventoryError) {
+              throw error;
+            }
+            throw new AppError('Failed to update inventory during checkout', 500);
+          }
         }
         
         // Clear the user's cart after successful payment
@@ -398,6 +481,12 @@ export class PaymentService {
           }
         }
       });
+    } catch (error) {
+      // Log and re-throw transaction errors
+      this.logger.error('checkout.transaction.error', error, {
+        sessionId,
+      });
+      throw error;
     } finally {
       await dbSession.endSession();
     }

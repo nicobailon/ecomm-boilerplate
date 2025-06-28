@@ -77,7 +77,7 @@ export function OrderCustomerInfo({ order }: OrderCustomerInfoProps) {
           <div>
             <span className="text-sm text-muted-foreground" data-testid="userid-label">User ID</span>
             <p className="font-medium" data-testid="userid-value">
-              {order.user._id.toString() || 'Guest Checkout'}
+              {order.user._id ? order.user._id.toString().slice(-8) : 'Guest Checkout'}
             </p>
           </div>
         </div>
@@ -106,13 +106,15 @@ export function OrderCustomerInfo({ order }: OrderCustomerInfoProps) {
               </p>
             )}
             <p>
-              {[
-                order.shippingAddress.city,
-                order.shippingAddress.state,
-                order.shippingAddress.postalCode,
-              ]
-                .filter(Boolean)
-                .join(', ')}
+              {order.shippingAddress.city && order.shippingAddress.state && order.shippingAddress.postalCode
+                ? `${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.postalCode}`
+                : [
+                    order.shippingAddress.city,
+                    order.shippingAddress.state,
+                    order.shippingAddress.postalCode,
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}
             </p>
             <p>{order.shippingAddress.country}</p>
           </div>
@@ -143,13 +145,15 @@ export function OrderCustomerInfo({ order }: OrderCustomerInfoProps) {
                 </p>
               )}
               <p>
-                {[
-                  order.billingAddress.city,
-                  order.billingAddress.state,
-                  order.billingAddress.postalCode,
-                ]
-                  .filter(Boolean)
-                  .join(', ')}
+                {order.billingAddress.city && order.billingAddress.state && order.billingAddress.postalCode
+                  ? `${order.billingAddress.city}, ${order.billingAddress.state} ${order.billingAddress.postalCode}`
+                  : [
+                      order.billingAddress.city,
+                      order.billingAddress.state,
+                      order.billingAddress.postalCode,
+                    ]
+                      .filter(Boolean)
+                      .join(', ')}
               </p>
               <p>{order.billingAddress.country}</p>
             </div>

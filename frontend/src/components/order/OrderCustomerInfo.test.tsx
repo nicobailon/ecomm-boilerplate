@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { OrderCustomerInfo } from './OrderCustomerInfo';
 import type { RouterOutputs } from '@/lib/trpc';
 
@@ -7,10 +7,10 @@ type Order = RouterOutputs['order']['getById'];
 
 describe('OrderCustomerInfo', () => {
   const mockOrder: Order = {
-    _id: 'order1' as any,
+    _id: '507f1f77bcf86cd799439011',
     orderNumber: 'ORD-001',
     user: {
-      _id: 'user1',
+      _id: '507f1f77bcf86cd799439012',
       name: 'John Doe',
       email: 'customer@example.com',
     },
@@ -43,8 +43,10 @@ describe('OrderCustomerInfo', () => {
     },
     paymentMethod: 'card',
     paymentIntentId: 'pi_123',
-    createdAt: new Date('2024-01-01T10:00:00Z') as any,
-    updatedAt: new Date('2024-01-01T10:00:00Z') as any,
+    createdAt: new Date('2024-01-01T10:00:00Z'),
+    updatedAt: new Date('2024-01-01T10:00:00Z'),
+    stripeSessionId: 'cs_test_123456',
+    statusHistory: [],
   };
 
   describe('customer information display', () => {
@@ -76,7 +78,7 @@ describe('OrderCustomerInfo', () => {
       render(<OrderCustomerInfo order={mockOrder} />);
 
       expect(screen.getByTestId('userid-label')).toHaveTextContent('User ID');
-      expect(screen.getByTestId('userid-value')).toHaveTextContent('user1');
+      expect(screen.getByTestId('userid-value')).toHaveTextContent('99439012');
     });
   });
 
@@ -84,10 +86,11 @@ describe('OrderCustomerInfo', () => {
     it('should display complete shipping address', () => {
       render(<OrderCustomerInfo order={mockOrder} />);
 
+      const shippingSection = screen.getByTestId('shipping-address-section');
       expect(screen.getByText('Shipping Address')).toBeInTheDocument();
       expect(screen.getByText('123 Main St')).toBeInTheDocument();
       expect(screen.getByText('New York, NY 10001')).toBeInTheDocument();
-      expect(screen.getByText('United States')).toBeInTheDocument();
+      expect(within(shippingSection).getByText('United States')).toBeInTheDocument();
     });
 
     it('should handle missing shipping address', () => {
@@ -112,9 +115,10 @@ describe('OrderCustomerInfo', () => {
       };
       render(<OrderCustomerInfo order={partialAddress} />);
 
-      expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+      const shippingSection = screen.getByTestId('shipping-address-section');
+      expect(within(shippingSection).getByText('Jane Doe')).toBeInTheDocument();
       expect(screen.getByText('Chicago')).toBeInTheDocument();
-      expect(screen.getByText('United States')).toBeInTheDocument();
+      expect(within(shippingSection).getByText('United States')).toBeInTheDocument();
     });
   });
 
@@ -172,7 +176,7 @@ describe('OrderCustomerInfo', () => {
 
       paymentMethods.forEach(({ method, display }) => {
         const { unmount } = render(
-          <OrderCustomerInfo order={{ ...mockOrder, paymentMethod: method }} />
+          <OrderCustomerInfo order={{ ...mockOrder, paymentMethod: method }} />,
         );
         expect(screen.getByText(display)).toBeInTheDocument();
         unmount();

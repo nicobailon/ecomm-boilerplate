@@ -349,10 +349,3 @@ describe('AdminPage', () => {
   });
 });
 
-// Type-level tests
-type AssertEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
-
-// Test that AdminPage component has no required props
-type TestAdminPageProps = AssertEqual<Parameters<typeof AdminPage>[0], Record<string, never> | undefined>;
-
-// const _testAdminPageProps: TestAdminPageProps = true;

@@ -111,13 +111,3 @@ describe('OrderStatusBadge', () => {
   });
 });
 
-// Type-level tests
-type AssertEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
-
-// Test that OrderStatus is properly typed
-type TestOrderStatus = AssertEqual<
-  Parameters<typeof OrderStatusBadge>[0]['status'],
-  'pending' | 'completed' | 'cancelled' | 'refunded'
->;
-
-// const _testOrderStatus: TestOrderStatus = true;

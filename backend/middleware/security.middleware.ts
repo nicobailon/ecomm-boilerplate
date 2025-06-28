@@ -16,6 +16,16 @@ export const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   message: 'Too many authentication attempts',
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: {
+        message: 'Too many authentication attempts, please try again later.',
+        code: 'TOO_MANY_REQUESTS',
+      },
+    });
+  },
 });
 
 export const trpcRateLimit = rateLimit({
@@ -26,6 +36,16 @@ export const trpcRateLimit = rateLimit({
     const body = req.body as Record<string, { procedure?: string }> | undefined;
     const procedure = body?.['0']?.procedure ?? 'unknown';
     return `${req.ip}-${procedure}`;
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: {
+        message: 'Too many requests from this IP, please try again later.',
+        code: 'TOO_MANY_REQUESTS',
+      },
+    });
   },
 });
 
@@ -44,4 +64,21 @@ export const emailRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: {
+        message: 'Too many email requests, please try again later.',
+        code: 'TOO_MANY_REQUESTS',
+      },
+    });
+  },
+});
+
+export const inventoryCheckRateLimit = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 30, // limit each IP to 30 inventory check requests per minute
+  message: 'Too many inventory check requests, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful requests
 });

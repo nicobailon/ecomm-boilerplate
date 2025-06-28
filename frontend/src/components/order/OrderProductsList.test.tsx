@@ -132,7 +132,9 @@ describe('OrderProductsList', () => {
 
       expect(screen.getByText('Zero Quantity Product')).toBeInTheDocument();
       expect(screen.getByText('$50.00 × 0')).toBeInTheDocument();
-      expect(screen.getByText('$0.00')).toBeInTheDocument();
+      // Check both line total and order total
+      const zeroDollarElements = screen.getAllByText('$0.00');
+      expect(zeroDollarElements).toHaveLength(2); // One for line total, one for order total
     });
 
     it('should handle very large prices', () => {
@@ -154,7 +156,9 @@ describe('OrderProductsList', () => {
       render(<OrderProductsList products={expensiveProducts} />);
 
       expect(screen.getByText('$999,999.99 × 2')).toBeInTheDocument();
-      expect(screen.getByText('$1,999,999.98')).toBeInTheDocument();
+      // Check both line total and order total
+      const largeAmountElements = screen.getAllByText('$1,999,999.98');
+      expect(largeAmountElements).toHaveLength(2); // One for line total, one for order total
     });
 
     it('should handle decimal quantities', () => {
@@ -282,15 +286,3 @@ describe('OrderProductsList', () => {
   });
 });
 
-// Type-level tests
-type AssertEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
-
-// Test that OrderProductsList props are properly typed
-type TestOrderProductsListProps = AssertEqual<
-  Parameters<typeof OrderProductsList>[0],
-  {
-    products: OrderProduct[];
-  }
->;
-
-// const _testOrderProductsListProps: TestOrderProductsListProps = true;

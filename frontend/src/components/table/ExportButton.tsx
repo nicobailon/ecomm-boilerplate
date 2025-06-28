@@ -12,7 +12,7 @@ export function ExportButton({
   onExport, 
   disabled, 
   loading,
-  className 
+  className, 
 }: ExportButtonProps) {
   return (
     <Button

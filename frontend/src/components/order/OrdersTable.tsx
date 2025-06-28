@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -23,7 +23,6 @@ import {
   ChevronsUpDown, 
   Search,
   Eye,
-  ShoppingBag,
   CheckCircle,
   XCircle,
   RefreshCw,
@@ -35,57 +34,81 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Checkbox } from '@/components/ui/Checkbox';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/Dropdown';
+import { Dropdown } from '@/components/ui/Dropdown';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { BulkActionBar } from '@/components/table/BulkActionBar';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/Dialog';
 import { DateRangeFilter } from '@/components/table/DateRangeFilter';
-import { ExportButton } from '@/components/table/ExportButton';
 import { OrderStatusBadge } from './OrderStatusBadge';
-import { toast } from 'sonner';
 import debounce from 'lodash.debounce';
 import { 
   useListOrders,
   useBulkUpdateOrderStatus,
   useUpdateOrderStatus,
+  useExportOrders,
 } from '@/hooks/queries/useOrders';
+import { useOrderStatusValidation } from '@/hooks/useOrderStatusValidation';
+import { toast } from 'sonner';
 import type { OrderListItem, OrderStatus } from '@/types/order';
 
 interface OrdersTableProps {
   onEditOrder?: (order: OrderListItem) => void;
+  mode?: 'admin' | 'customer';
+  data?: ReturnType<typeof useListOrders>['data'];
+  isLoading?: boolean;
 }
 
-export function OrdersTable({ onEditOrder }: OrdersTableProps) {
+export function OrdersTable({ onEditOrder, mode = 'admin', data: externalData, isLoading: externalLoading }: OrdersTableProps) {
   // State management
   const [sorting, setSorting] = useState<SortingState>([
-    { id: 'createdAt', desc: true }
+    { id: 'createdAt', desc: true },
   ]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [globalFilter, setGlobalFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [dateRange, setDateRange] = useState<{ from?: string; to?: string }>({});
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
+  const [showColumnVisibility, setShowColumnVisibility] = useState(false);
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
   // Mutations
   const bulkUpdateStatus = useBulkUpdateOrderStatus();
   const updateStatus = useUpdateOrderStatus();
-  // const exportOrders = useExportOrders(); // Not yet implemented
+  const { validateBulkTransitions, isValidTransition } = useOrderStatusValidation();
+  const { exportOrders, isExporting } = useExportOrders();
 
-  // Fetch data
-  const { data, isLoading, error } = useListOrders({
-    page: pagination.pageIndex + 1,
-    limit: pagination.pageSize,
-    search: globalFilter || undefined,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    startDate: dateRange.from,
-    endDate: dateRange.to,
-    sortBy: sorting[0]?.id as 'createdAt' | 'totalAmount' | 'status' | undefined,
-    sortOrder: sorting[0]?.desc ? 'desc' : 'asc',
-  });
+  // Fetch data - only fetch admin data if not in customer mode
+  const adminQuery = useListOrders(
+    mode === 'admin' && !externalData
+      ? {
+          page: pagination.pageIndex + 1,
+          limit: pagination.pageSize,
+          search: globalFilter || undefined,
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          startDate: dateRange.from ? new Date(dateRange.from) : undefined,
+          endDate: dateRange.to ? new Date(dateRange.to) : undefined,
+          sortBy: sorting[0]?.id as 'createdAt' | 'totalAmount' | 'status' | undefined,
+          sortOrder: sorting[0]?.desc ? 'desc' : 'asc',
+        }
+      : undefined
+  );
+
+  // Use external data if provided (customer mode), otherwise fetch admin data
+  const data = externalData || adminQuery.data;
+  const isLoading = externalLoading !== undefined ? externalLoading : adminQuery.isLoading;
+  const error = adminQuery.error;
 
   // Debounced search
   const debouncedSetGlobalFilter = useMemo(
@@ -94,27 +117,32 @@ export function OrdersTable({ onEditOrder }: OrdersTableProps) {
   );
 
   // Column definitions
-  const columns = useMemo<ColumnDef<OrderListItem>[]>(
-    () => [
-      {
-        id: 'select',
-        header: ({ table }) => (
-          <Checkbox
-            checked={table.getIsAllPageRowsSelected()}
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-          />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-      },
+  const columns = useMemo<ColumnDef<OrderListItem>[]>(() => {
+    const baseColumns: ColumnDef<OrderListItem>[] = [
+      // Select checkbox - only show in admin mode
+      ...(mode === 'admin'
+        ? [
+            {
+              id: 'select',
+              header: ({ table }) => (
+                <Checkbox
+                  checked={table.getIsAllPageRowsSelected()}
+                  onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                  aria-label="Select all"
+                />
+              ),
+              cell: ({ row }) => (
+                <Checkbox
+                  checked={row.getIsSelected()}
+                  onCheckedChange={(value) => row.toggleSelected(!!value)}
+                  aria-label="Select row"
+                />
+              ),
+              enableSorting: false,
+              enableHiding: false,
+            } as ColumnDef<OrderListItem>,
+          ]
+        : []),
       {
         id: 'order',
         header: 'Order',
@@ -124,29 +152,34 @@ export function OrdersTable({ onEditOrder }: OrdersTableProps) {
             <div className="space-y-1">
               <div className="font-medium">{order.orderNumber}</div>
               <div className="text-xs text-muted-foreground">
-                ID: {order._id.slice(-8)}
+                ID: {String(order._id).slice(-8)}
               </div>
             </div>
           );
         },
       },
-      {
-        id: 'customer',
-        header: 'Customer',
-        cell: ({ row }) => {
-          const order = row.original;
-          return (
-            <div className="space-y-1">
-              <div className="text-sm">{order.email}</div>
-              {order.shippingAddress?.fullName && (
-                <div className="text-xs text-muted-foreground">
-                  {order.shippingAddress.fullName}
-                </div>
-              )}
-            </div>
-          );
-        },
-      },
+      // Customer column - only show in admin mode
+      ...(mode === 'admin'
+        ? [
+            {
+              id: 'customer',
+              header: 'Customer',
+              cell: ({ row }) => {
+                const order = row.original;
+                return (
+                  <div className="space-y-1">
+                    <div className="text-sm">{order.email}</div>
+                    {order.shippingAddress?.fullName && (
+                      <div className="text-xs text-muted-foreground">
+                        {order.shippingAddress.fullName}
+                      </div>
+                    )}
+                  </div>
+                );
+              },
+            } as ColumnDef<OrderListItem>,
+          ]
+        : []),
       {
         accessorKey: 'status',
         header: ({ column }) => (
@@ -231,67 +264,106 @@ export function OrdersTable({ onEditOrder }: OrdersTableProps) {
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => {
           const order = row.original;
+          const [isOpen, setIsOpen] = useState(false);
+          const triggerRef = useRef<HTMLButtonElement>(null);
           
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+          // Customer mode - only show view action
+          if (mode === 'customer') {
+            return (
+              <div className="relative">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0"
-                  aria-label="Actions"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
+                  aria-label="View order"
                   onClick={() => onEditOrder?.(order)}
                 >
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => updateStatus.mutate({
-                    orderId: order._id.toString(),
-                    status: 'completed',
-                  })}
-                  disabled={order.status === 'completed'}
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Mark as Completed
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => updateStatus.mutate({
-                    orderId: order._id.toString(),
-                    status: 'cancelled',
-                  })}
-                  disabled={order.status === 'cancelled'}
-                >
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Mark as Cancelled
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => updateStatus.mutate({
-                    orderId: order._id.toString(),
-                    status: 'refunded',
-                  })}
-                  disabled={order.status === 'refunded'}
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Mark as Refunded
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+            );
+          }
+          
+          // Admin mode - show all actions
+          return (
+            <div className="relative">
+              <Button
+                ref={triggerRef}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                aria-label="Actions"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+              <Dropdown isOpen={isOpen} triggerRef={triggerRef}>
+                <div className="bg-popover border rounded-md shadow-md p-1 min-w-[200px]">
+                  <button
+                    onClick={() => {
+                      onEditOrder?.(order);
+                      setIsOpen(false);
+                    }}
+                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Details
+                  </button>
+                  <div className="h-px bg-border my-1" />
+                  <button
+                    onClick={() => {
+                      updateStatus.mutate({
+                        orderId: String(order._id),
+                        status: 'completed',
+                      });
+                      setIsOpen(false);
+                    }}
+                    disabled={!isValidTransition(order.status, 'completed')}
+                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Mark as Completed
+                  </button>
+                  <button
+                    onClick={() => {
+                      updateStatus.mutate({
+                        orderId: String(order._id),
+                        status: 'cancelled',
+                      });
+                      setIsOpen(false);
+                    }}
+                    disabled={!isValidTransition(order.status, 'cancelled')}
+                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Mark as Cancelled
+                  </button>
+                  <button
+                    onClick={() => {
+                      updateStatus.mutate({
+                        orderId: String(order._id),
+                        status: 'refunded',
+                      });
+                      setIsOpen(false);
+                    }}
+                    disabled={!isValidTransition(order.status, 'refunded')}
+                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Mark as Refunded
+                  </button>
+                </div>
+              </Dropdown>
+            </div>
           );
         },
         enableSorting: false,
         enableHiding: false,
       },
-    ],
-    [onEditOrder, updateStatus],
-  );
+    ];
+    
+    return baseColumns;
+  }, [onEditOrder, updateStatus, mode, isValidTransition]);
 
   // Table instance
   const table = useReactTable<OrderListItem>({
@@ -325,19 +397,61 @@ export function OrdersTable({ onEditOrder }: OrdersTableProps) {
   const handleBulkStatusUpdate = async (status: OrderStatus) => {
     if (selectedRows.length === 0) return;
     
-    const orderIds = selectedRows.map(row => row.original._id.toString());
-    await bulkUpdateStatus.mutateAsync({ orderIds, status });
-    setRowSelection({});
+    // Validate transitions before making API call
+    const orders = selectedRows.map(row => ({ status: row.original.status }));
+    const validation = validateBulkTransitions(orders, status);
+    
+    if (validation.invalid.length > 0) {
+      // Show warning about invalid transitions
+      const firstError = validation.invalid[0].error;
+      toast.error(`${validation.invalid.length} order(s) cannot be changed to ${status}. ${firstError}`);
+      
+      if (validation.valid.length === 0) {
+        return; // No valid transitions, don't proceed
+      }
+    }
+    
+    // Only update orders with valid transitions
+    const validOrderIds = selectedRows
+      .filter((_, index) => validation.valid.includes(index))
+      .map(row => row.original._id.toString());
+    
+    if (validOrderIds.length > 0) {
+      await bulkUpdateStatus.mutateAsync({ orderIds: validOrderIds, status });
+      setRowSelection({});
+    }
   };
 
-  const handleExport = () => {
-    // TODO: Implement export functionality
-    console.log('Export not yet implemented', {
-      search: globalFilter,
+  const handleExport = async () => {
+    const orders = data?.orders ?? [];
+    const selectedIds = Object.keys(rowSelection);
+    const ordersToExport = selectedIds.length > 0 
+      ? orders.filter(order => selectedIds.includes(order._id))
+      : orders;
+    
+    // Show confirmation dialog for large datasets
+    if (ordersToExport.length > 100) {
+      setShowExportConfirmation(true);
+      return;
+    }
+    
+    await performExport();
+  };
+  
+  const performExport = async () => {
+    const orders = data?.orders ?? [];
+    const selectedIds = Object.keys(rowSelection);
+    
+    await exportOrders(orders, {
+      selectedOnly: selectedIds.length > 0,
+      selectedIds: selectedIds.length > 0 ? selectedIds : undefined,
+      includeAddresses: true,
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      startDate: dateRange.from,
-      endDate: dateRange.to,
+      startDate: dateRange.from ? new Date(dateRange.from) : undefined,
+      endDate: dateRange.to ? new Date(dateRange.to) : undefined,
     });
+    
+    setShowExportConfirmation(false);
   };
 
   if (isLoading) {
@@ -360,20 +474,23 @@ export function OrdersTable({ onEditOrder }: OrdersTableProps) {
     <div className="space-y-4">
       {/* Filters and search */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Search orders..."
-            onChange={(e) => debouncedSetGlobalFilter(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+        {mode === 'admin' && (
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search orders..."
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => debouncedSetGlobalFilter(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        )}
         <Select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as typeof statusFilter)}
           options={[
             { value: 'all', label: 'All Status' },
             { value: 'pending', label: 'Pending' },
+            { value: 'pending_inventory', label: 'Pending Inventory' },
             { value: 'completed', label: 'Completed' },
             { value: 'cancelled', label: 'Cancelled' },
             { value: 'refunded', label: 'Refunded' },
@@ -386,16 +503,28 @@ export function OrdersTable({ onEditOrder }: OrdersTableProps) {
           onChange={setDateRange}
           placeholder="Order date range"
         />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExport}
-          disabled={!data?.orders.length}
-          aria-label="Export"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Export
-        </Button>
+        {mode === 'admin' && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            disabled={!data?.orders.length || isExporting}
+            aria-label="Export orders to CSV"
+            title="Export filtered orders to CSV file"
+          >
+            {isExporting ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </>
+            )}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"
@@ -408,36 +537,43 @@ export function OrdersTable({ onEditOrder }: OrdersTableProps) {
         >
           Clear filters
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" aria-label="Columns">
+        {mode === 'admin' && (
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Columns"
+              onClick={() => setShowColumnVisibility(!showColumnVisibility)}
+            >
               Columns
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table.getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuItem
-                    key={column.id}
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    <Checkbox
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                      aria-label={`Toggle ${column.id} column`}
-                    />
-                    <span className="ml-2">{column.id}</span>
-                  </DropdownMenuItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            {showColumnVisibility && (
+              <div className="absolute right-0 top-full mt-2 bg-popover border rounded-md shadow-md p-1 min-w-[150px] z-50">
+              {table.getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <div
+                      key={column.id}
+                      className="flex items-center px-2 py-1.5 hover:bg-accent hover:text-accent-foreground rounded"
+                    >
+                      <Checkbox
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                        aria-label={`Toggle ${column.id} column`}
+                      />
+                      <span className="ml-2 text-sm">{column.id}</span>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+          </div>
+        )}
       </div>
 
       {/* Bulk actions */}
-      {selectedRows.length > 0 && (
+      {mode === 'admin' && selectedRows.length > 0 && (
         <div data-testid="bulk-action-bar">
           <BulkActionBar
             selectedCount={selectedRows.length}
@@ -510,8 +646,8 @@ export function OrdersTable({ onEditOrder }: OrdersTableProps) {
                     key={row.id}
                     onClick={() => onEditOrder?.(row.original)}
                     className={cn(
-                      "hover:bg-muted/50 transition-colors cursor-pointer",
-                      row.getIsSelected() && "bg-muted/30"
+                      'hover:bg-muted/50 transition-colors cursor-pointer',
+                      row.getIsSelected() && 'bg-muted/30',
                     )}
                   >
                     {row.getVisibleCells().map((cell) => (
@@ -537,7 +673,7 @@ export function OrdersTable({ onEditOrder }: OrdersTableProps) {
           <div className="flex items-center gap-2">
             <Select
               value={pagination.pageSize.toString()}
-              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => table.setPageSize(Number(e.target.value))}
               options={[
                 { value: '10', label: '10' },
                 { value: '20', label: '20' },
@@ -571,6 +707,38 @@ export function OrdersTable({ onEditOrder }: OrdersTableProps) {
           </div>
         </div>
       </motion.div>
+      
+      {/* Export Confirmation Dialog */}
+      <Dialog open={showExportConfirmation} onOpenChange={setShowExportConfirmation}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Large Dataset</DialogTitle>
+            <DialogDescription>
+              You are about to export {
+                Object.keys(rowSelection).length > 0 
+                  ? Object.keys(rowSelection).length 
+                  : data?.orders.length || 0
+              } orders. This may create a large file and take a few moments.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowExportConfirmation(false)}
+              aria-label="Cancel export"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={performExport}
+              disabled={isExporting}
+              aria-label={isExporting ? 'Export in progress' : 'Confirm export'}
+            >
+              {isExporting ? 'Exporting...' : 'Continue with Export'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

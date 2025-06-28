@@ -53,7 +53,7 @@ export function DateRangeFilter({
           className={cn(
             'justify-start text-left font-normal',
             !value.from && !value.to && 'text-muted-foreground',
-            className
+            className,
           )}
         >
           <Calendar className="mr-2 h-4 w-4" />

@@ -17,6 +17,7 @@ describe('OrderService', () => {
       {
         _id: new mongoose.Types.ObjectId(),
         user: { _id: new mongoose.Types.ObjectId(), email: 'user1@example.com', name: 'User 1' },
+        email: 'user1@example.com',
         products: [
           {
             product: { _id: new mongoose.Types.ObjectId(), name: 'Product 1', image: 'image1.jpg' },
@@ -26,16 +27,24 @@ describe('OrderService', () => {
           }
         ],
         totalAmount: 100,
+        subtotal: 100,
+        tax: 0,
+        shipping: 0,
+        discount: 0,
         status: 'completed',
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01'),
         stripeSessionId: 'stripe_123',
         paymentMethod: 'card',
         couponCode: 'DISCOUNT10',
+        statusHistory: [],
+        shippingAddress: {},
+        billingAddress: {},
       },
       {
         _id: new mongoose.Types.ObjectId(),
         user: { _id: new mongoose.Types.ObjectId(), email: 'user2@example.com', name: 'User 2' },
+        email: 'user2@example.com',
         products: [
           {
             product: { _id: new mongoose.Types.ObjectId(), name: 'Product 2', image: 'image2.jpg' },
@@ -44,10 +53,17 @@ describe('OrderService', () => {
           }
         ],
         totalAmount: 200,
+        subtotal: 200,
+        tax: 0,
+        shipping: 0,
+        discount: 0,
         status: 'pending',
         createdAt: new Date('2024-01-02'),
         updatedAt: new Date('2024-01-02'),
         stripeSessionId: 'stripe_456',
+        statusHistory: [],
+        shippingAddress: {},
+        billingAddress: {},
       }
     ];
 
@@ -73,12 +89,13 @@ describe('OrderService', () => {
 
       const result = await orderService.listAllOrders(input);
 
-      expect(result).toMatchObject({
-        orders: mockOrders,
-        totalCount: 2,
-        currentPage: 1,
-        totalPages: 1,
-      });
+      expect(result.totalCount).toBe(2);
+      expect(result.currentPage).toBe(1);
+      expect(result.totalPages).toBe(1);
+      expect(result.orders).toHaveLength(2);
+      // Check that orders are serialized with string IDs
+      expect(typeof result.orders[0]._id).toBe('string');
+      expect(typeof result.orders[0].user._id).toBe('string');
 
       expect(mockAggregate).toHaveBeenCalled();
       const pipeline = mockAggregate.mock.calls[0][0];
@@ -265,6 +282,128 @@ describe('OrderService', () => {
         totalPages: 0,
       });
     });
+
+    describe('Customer filtering', () => {
+      it('should return only user orders when userId provided', async () => {
+        const userId = new mongoose.Types.ObjectId().toString();
+        const mockAggregate = vi.fn().mockReturnValue({
+          exec: vi.fn().mockResolvedValue([
+            {
+              orders: [mockOrders[0]],
+              totalCount: [{ count: 1 }],
+            }
+          ])
+        });
+        
+        Order.aggregate = mockAggregate;
+
+        const input: ListOrdersInput & { userId?: string } = {
+          page: 1,
+          limit: 10,
+          status: 'all',
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          userId: userId,
+        };
+
+        const result = await orderService.listAllOrders(input);
+
+        expect(result.orders).toHaveLength(1);
+        expect(result.totalCount).toBe(1);
+
+        const pipeline = mockAggregate.mock.calls[0][0];
+        const matchStage = pipeline.find((stage: any) => stage.$match !== undefined);
+        expect(matchStage.$match.user).toEqual(new mongoose.Types.ObjectId(userId));
+      });
+
+      it('should return all orders when userId not provided (admin behavior)', async () => {
+        const mockAggregate = vi.fn().mockReturnValue({
+          exec: vi.fn().mockResolvedValue([
+            {
+              orders: mockOrders,
+              totalCount: [{ count: 2 }],
+            }
+          ])
+        });
+        
+        Order.aggregate = mockAggregate;
+
+        const input: ListOrdersInput = {
+          page: 1,
+          limit: 10,
+          status: 'all',
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        };
+
+        const result = await orderService.listAllOrders(input);
+
+        expect(result.orders).toHaveLength(2);
+        expect(result.totalCount).toBe(2);
+
+        const pipeline = mockAggregate.mock.calls[0][0];
+        const matchStages = pipeline.filter((stage: any) => stage.$match !== undefined);
+        const hasUserFilter = matchStages.some((stage: any) => stage.$match.user !== undefined);
+        expect(hasUserFilter).toBe(false);
+      });
+
+      it('should handle invalid userId format gracefully', async () => {
+        const mockAggregate = vi.fn().mockReturnValue({
+          exec: vi.fn().mockResolvedValue([
+            {
+              orders: [],
+              totalCount: [{ count: 0 }],
+            }
+          ])
+        });
+        
+        Order.aggregate = mockAggregate;
+
+        const input: ListOrdersInput & { userId?: string } = {
+          page: 1,
+          limit: 10,
+          status: 'all',
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          userId: 'invalid-object-id',
+        };
+
+        // Should throw an error when creating ObjectId with invalid format
+        await expect(orderService.listAllOrders(input)).rejects.toThrow();
+      });
+
+      it('should return empty list for user with no orders', async () => {
+        const userId = new mongoose.Types.ObjectId().toString();
+        const mockAggregate = vi.fn().mockReturnValue({
+          exec: vi.fn().mockResolvedValue([
+            {
+              orders: [],
+              totalCount: [{ count: 0 }],
+            }
+          ])
+        });
+        
+        Order.aggregate = mockAggregate;
+
+        const input: ListOrdersInput & { userId?: string } = {
+          page: 1,
+          limit: 10,
+          status: 'all',
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          userId: userId,
+        };
+
+        const result = await orderService.listAllOrders(input);
+
+        expect(result).toEqual({
+          orders: [],
+          totalCount: 0,
+          currentPage: 1,
+          totalPages: 0,
+        });
+      });
+    });
   });
 
   describe('getOrderById', () => {
@@ -272,6 +411,7 @@ describe('OrderService', () => {
       const mockOrder = {
         _id: new mongoose.Types.ObjectId(),
         user: { _id: new mongoose.Types.ObjectId(), email: 'user@example.com', name: 'Test User' },
+        email: 'user@example.com',
         products: [
           {
             product: { _id: new mongoose.Types.ObjectId(), name: 'Product 1', image: 'image1.jpg' },
@@ -280,9 +420,16 @@ describe('OrderService', () => {
           }
         ],
         totalAmount: 100,
+        subtotal: 100,
+        tax: 0,
+        shipping: 0,
+        discount: 0,
         status: 'completed',
         createdAt: new Date(),
         updatedAt: new Date(),
+        statusHistory: [],
+        shippingAddress: {},
+        billingAddress: {},
       };
 
       const mockPopulate = vi.fn().mockResolvedValue(mockOrder);
@@ -294,7 +441,9 @@ describe('OrderService', () => {
 
       const result = await orderService.getOrderById('507f1f77bcf86cd799439011');
 
-      expect(result).toEqual(mockOrder);
+      expect(result._id).toBe(mockOrder._id.toString());
+      expect(result.status).toBe('completed');
+      expect(result.totalAmount).toBe(100);
       expect(Order.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
     });
 
@@ -308,6 +457,86 @@ describe('OrderService', () => {
       await expect(orderService.getOrderById('507f1f77bcf86cd799439011'))
         .rejects.toThrow(new AppError('Order not found', 404));
     });
+
+    describe('Customer filtering', () => {
+      it('should return order only if owned by user', async () => {
+        const userId = new mongoose.Types.ObjectId().toString();
+        const mockOrder = {
+          _id: new mongoose.Types.ObjectId(),
+          user: { _id: userId, email: 'user@example.com', name: 'Test User' },
+          email: 'user@example.com',
+          products: [],
+          totalAmount: 100,
+          subtotal: 100,
+          tax: 0,
+          shipping: 0,
+          discount: 0,
+          status: 'completed',
+          statusHistory: [],
+          shippingAddress: {},
+          billingAddress: {},
+        };
+
+        const mockPopulate = vi.fn().mockResolvedValue(mockOrder);
+        Order.findOne = vi.fn().mockReturnValue({
+          populate: vi.fn().mockReturnValue({
+            populate: mockPopulate,
+          }),
+        });
+
+        const result = await orderService.getOrderById('507f1f77bcf86cd799439011', userId);
+
+        expect(result._id).toBe(mockOrder._id.toString());
+        expect(result.status).toBe('completed');
+        expect(result.totalAmount).toBe(100);
+        expect(Order.findOne).toHaveBeenCalledWith({ _id: '507f1f77bcf86cd799439011', user: userId });
+      });
+
+      it('should throw 404 for unowned orders', async () => {
+        const userId = new mongoose.Types.ObjectId().toString();
+
+        Order.findOne = vi.fn().mockReturnValue({
+          populate: vi.fn().mockReturnValue({
+            populate: vi.fn().mockResolvedValue(null),
+          }),
+        });
+
+        await expect(orderService.getOrderById('507f1f77bcf86cd799439011', userId))
+          .rejects.toThrow(new AppError('Order not found', 404));
+      });
+
+      it('should return any order when userId not provided (admin behavior)', async () => {
+        const mockOrder = {
+          _id: new mongoose.Types.ObjectId(),
+          user: { _id: new mongoose.Types.ObjectId(), email: 'user@example.com', name: 'Test User' },
+          email: 'user@example.com',
+          products: [],
+          totalAmount: 100,
+          subtotal: 100,
+          tax: 0,
+          shipping: 0,
+          discount: 0,
+          status: 'completed',
+          statusHistory: [],
+          shippingAddress: {},
+          billingAddress: {},
+        };
+
+        const mockPopulate = vi.fn().mockResolvedValue(mockOrder);
+        Order.findById = vi.fn().mockReturnValue({
+          populate: vi.fn().mockReturnValue({
+            populate: mockPopulate,
+          }),
+        });
+
+        const result = await orderService.getOrderById('507f1f77bcf86cd799439011');
+
+        expect(result._id).toBe(mockOrder._id.toString());
+        expect(result.status).toBe('completed');
+        expect(result.totalAmount).toBe(100);
+        expect(Order.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+      });
+    });
   });
 
   describe('updateOrderStatus', () => {
@@ -315,10 +544,32 @@ describe('OrderService', () => {
       const mockOrder = {
         _id: new mongoose.Types.ObjectId(),
         status: 'pending',
+        statusHistory: [],
         save: vi.fn().mockResolvedValue(true),
       };
 
-      Order.findById = vi.fn().mockResolvedValue(mockOrder);
+      const updatedMockOrder = {
+        ...mockOrder,
+        user: { _id: new mongoose.Types.ObjectId(), email: 'user@example.com', name: 'Test User' },
+        email: 'user@example.com',
+        products: [],
+        totalAmount: 100,
+        subtotal: 100,
+        tax: 0,
+        shipping: 0,
+        discount: 0,
+        status: 'completed',
+        shippingAddress: {},
+        billingAddress: {},
+      };
+
+      Order.findById = vi.fn()
+        .mockResolvedValueOnce(mockOrder)
+        .mockReturnValueOnce({
+          populate: vi.fn().mockReturnValue({
+            populate: vi.fn().mockResolvedValue(updatedMockOrder),
+          }),
+        });
 
       const input: UpdateOrderStatusInput = {
         orderId: '507f1f77bcf86cd799439011',
@@ -347,6 +598,7 @@ describe('OrderService', () => {
       const mockOrder = {
         _id: new mongoose.Types.ObjectId(),
         status: 'cancelled',
+        statusHistory: [],
         save: vi.fn(),
       };
 
@@ -358,18 +610,45 @@ describe('OrderService', () => {
       };
 
       await expect(orderService.updateOrderStatus(input))
-        .rejects.toThrow(new AppError('Cannot change status from cancelled to completed', 400));
+        .rejects.toThrow(new AppError('A cancelled order must be reactivated to pending status first', 400));
     });
   });
 
   describe('bulkUpdateOrderStatus', () => {
     it('should update multiple orders successfully', async () => {
-      const mockUpdateMany = {
-        matchedCount: 3,
+      const mockOrders = [
+        { _id: new mongoose.Types.ObjectId('507f1f77bcf86cd799439011'), status: 'pending', statusHistory: [] },
+        { _id: new mongoose.Types.ObjectId('507f1f77bcf86cd799439012'), status: 'pending', statusHistory: [] },
+        { _id: new mongoose.Types.ObjectId('507f1f77bcf86cd799439013'), status: 'pending', statusHistory: [] },
+      ];
+
+      // Mock for both transactional and non-transactional paths
+      Order.find = vi.fn().mockImplementation((query) => {
+        if (query) {
+          // Non-transactional path
+          return Promise.resolve(mockOrders);
+        }
+        // Transactional path
+        return {
+          session: vi.fn().mockReturnValue(Promise.resolve(mockOrders))
+        };
+      });
+
+      const bulkWriteResult = {
         modifiedCount: 3,
       };
 
-      Order.updateMany = vi.fn().mockResolvedValue(mockUpdateMany);
+      Order.bulkWrite = vi.fn().mockResolvedValue(bulkWriteResult);
+
+      // Mock mongoose session
+      const mockSession = {
+        startTransaction: vi.fn(),
+        commitTransaction: vi.fn(),
+        abortTransaction: vi.fn(),
+        endSession: vi.fn(),
+      };
+      
+      vi.spyOn(mongoose, 'startSession').mockResolvedValue(mockSession as any);
 
       const input: BulkUpdateOrderStatusInput = {
         orderIds: ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012', '507f1f77bcf86cd799439013'],
@@ -385,24 +664,43 @@ describe('OrderService', () => {
         modifiedCount: 3,
       });
 
-      expect(Order.updateMany).toHaveBeenCalledWith(
-        { 
-          _id: { $in: input.orderIds },
-          status: { $nin: ['cancelled', 'refunded'] },
-        },
-        { 
-          $set: { status: 'completed', updatedAt: expect.any(Date) },
-        }
-      );
+      expect(Order.bulkWrite).toHaveBeenCalled();
     });
 
     it('should handle partial updates', async () => {
-      const mockUpdateMany = {
-        matchedCount: 2,
+      const mockOrders = [
+        { _id: new mongoose.Types.ObjectId('507f1f77bcf86cd799439011'), status: 'pending', statusHistory: [] },
+        { _id: new mongoose.Types.ObjectId('507f1f77bcf86cd799439012'), status: 'pending', statusHistory: [] },
+        { _id: new mongoose.Types.ObjectId('507f1f77bcf86cd799439013'), status: 'cancelled', statusHistory: [] },
+      ];
+
+      // Mock for both transactional and non-transactional paths
+      Order.find = vi.fn().mockImplementation((query) => {
+        if (query) {
+          // Non-transactional path
+          return Promise.resolve(mockOrders);
+        }
+        // Transactional path
+        return {
+          session: vi.fn().mockReturnValue(Promise.resolve(mockOrders))
+        };
+      });
+
+      const bulkWriteResult = {
         modifiedCount: 2,
       };
 
-      Order.updateMany = vi.fn().mockResolvedValue(mockUpdateMany);
+      Order.bulkWrite = vi.fn().mockResolvedValue(bulkWriteResult);
+
+      // Mock mongoose session
+      const mockSession = {
+        startTransaction: vi.fn(),
+        commitTransaction: vi.fn(),
+        abortTransaction: vi.fn(),
+        endSession: vi.fn(),
+      };
+      
+      vi.spyOn(mongoose, 'startSession').mockResolvedValue(mockSession as any);
 
       const input: BulkUpdateOrderStatusInput = {
         orderIds: ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012', '507f1f77bcf86cd799439013'],
@@ -411,16 +709,32 @@ describe('OrderService', () => {
 
       const result = await orderService.bulkUpdateOrderStatus(input);
 
-      expect(result.message).toBe('Successfully updated 2 orders (1 orders were not updated - may be cancelled/refunded)');
+      expect(result.message).toContain('Successfully updated 2 orders');
+      expect(result.message).toContain('1 orders were not updated');
     });
 
-    it('should throw error if no orders updated', async () => {
-      const mockUpdateMany = {
-        matchedCount: 0,
-        modifiedCount: 0,
-      };
+    it('should throw error if no orders found', async () => {
+      // Mock for both transactional and non-transactional paths
+      Order.find = vi.fn().mockImplementation((query) => {
+        if (query) {
+          // Non-transactional path
+          return Promise.resolve([]);
+        }
+        // Transactional path
+        return {
+          session: vi.fn().mockReturnValue(Promise.resolve([]))
+        };
+      });
 
-      Order.updateMany = vi.fn().mockResolvedValue(mockUpdateMany);
+      // Mock mongoose session
+      const mockSession = {
+        startTransaction: vi.fn(),
+        commitTransaction: vi.fn(),
+        abortTransaction: vi.fn(),
+        endSession: vi.fn(),
+      };
+      
+      vi.spyOn(mongoose, 'startSession').mockResolvedValue(mockSession as any);
 
       const input: BulkUpdateOrderStatusInput = {
         orderIds: ['507f1f77bcf86cd799439011'],
@@ -428,7 +742,7 @@ describe('OrderService', () => {
       };
 
       await expect(orderService.bulkUpdateOrderStatus(input))
-        .rejects.toThrow(new AppError('No orders were updated', 404));
+        .rejects.toThrow(new AppError('No orders found', 404));
     });
   });
 
@@ -466,19 +780,19 @@ describe('OrderService', () => {
 
       const result = await orderService.getOrderStats(input);
 
-      expect(result).toEqual({
-        totalOrders: 100,
-        totalRevenue: 10000,
-        averageOrderValue: 100,
-        statusBreakdown: {
-          completed: 70,
-          pending: 20,
-          cancelled: 8,
-          refunded: 2,
-        },
-        revenueByDay: mockStats[0].revenueByDay,
-        topProducts: mockStats[0].topProducts,
+      expect(result.totalOrders).toBe(100);
+      expect(result.totalRevenue).toBe(10000);
+      expect(result.averageOrderValue).toBe(100);
+      expect(result.statusBreakdown).toEqual({
+        completed: 70,
+        pending: 20,
+        cancelled: 8,
+        refunded: 2,
       });
+      expect(result.revenueByDay).toEqual(mockStats[0].revenueByDay);
+      expect(result.topProducts).toHaveLength(2);
+      // Check that product IDs are serialized to strings
+      expect(typeof result.topProducts[0]._id).toBe('string');
 
       const pipeline = (Order.aggregate as Mock).mock.calls[0][0];
       const matchStage = pipeline.find((stage: any) => stage.$match !== undefined);

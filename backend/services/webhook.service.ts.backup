@@ -1,0 +1,536 @@
+import mongoose from 'mongoose';
+import Stripe from 'stripe';
+import { stripe } from '../lib/stripe.js';
+import { WebhookEvent } from '../models/webhook-event.model.js';
+import { Order } from '../models/order.model.js';
+import { InventoryError } from '../utils/AppError.js';
+import { 
+  WebhookProcessingResult, 
+  WebhookError, 
+  WebhookServiceOptions,
+} from '../types/webhook.types.js';
+import { inventoryService } from './inventory.service.js';
+import { queueEmail } from '../lib/email-queue.js';
+import { User } from '../models/user.model.js';
+import { IPopulatedOrderDocument } from './email.service.js';
+import { webhookMonitoring } from '../lib/webhook-monitoring.js';
+import { CheckoutProduct as InventoryCheckoutProduct } from '../types/inventory.types.js';
+import { createLogger } from '../utils/logger.js';
+
+export class WebhookService {
+  private options: WebhookServiceOptions;
+  private logger = createLogger({ service: 'WebhookService' });
+
+  constructor(options: Partial<WebhookServiceOptions> = {}) {
+    this.options = {
+      maxRetries: options.maxRetries ?? 3,
+      retryDelay: options.retryDelay ?? 1000,
+    };
+  }
+
+  async processWebhookEvent(event: Stripe.Event): Promise<WebhookProcessingResult> {
+    console.info(`Processing webhook event: ${event.type} (${event.id})`);
+    const startTime = Date.now();
+
+    try {
+      const isProcessed = await this.isEventProcessed(event.id);
+      if (isProcessed) {
+        console.info(`Event ${event.id} already processed, skipping`);
+        return { 
+          success: true, 
+          error: 'Event already processed' 
+        };
+      }
+
+      let result: WebhookProcessingResult;
+
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          result = await this.handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent, event.id);
+          break;
+        
+        case 'payment_intent.payment_failed':
+          result = await this.handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
+          break;
+        
+        case 'checkout.session.completed':
+          result = await this.handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session, event.id);
+          break;
+        
+        default:
+          console.warn(`Unhandled webhook event type: ${event.type}`);
+          result = { success: true };
+      }
+
+      await this.markEventProcessed(event.id, result.orderId);
+      
+      const processingTime = Date.now() - startTime;
+      await webhookMonitoring.logWebhookEvent(
+        event.id,
+        event.type,
+        true,
+        processingTime
+      );
+      
+      return result;
+
+    } catch (error) {
+      console.error(`Error processing webhook event ${event.id}:`, error);
+      
+      await this.recordEventError(event.id, error);
+      
+      const processingTime = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await webhookMonitoring.logWebhookEvent(
+        event.id,
+        event.type,
+        false,
+        processingTime,
+        errorMessage
+      );
+      
+      if (error instanceof WebhookError) {
+        throw error;
+      }
+      
+      throw new WebhookError(
+        'Failed to process webhook event',
+        'PROCESSING_ERROR',
+        500,
+        true
+      );
+    }
+  }
+
+  private async handlePaymentIntentSucceeded(
+    paymentIntent: Stripe.PaymentIntent,
+    eventId: string
+  ): Promise<WebhookProcessingResult> {
+    console.info(`Processing payment_intent.succeeded: ${paymentIntent.id}`);
+
+    const existingOrder = await Order.findOne({ paymentIntentId: paymentIntent.id });
+    if (existingOrder) {
+      console.info(`Order already exists for payment intent ${paymentIntent.id}`);
+      return { 
+        success: true, 
+        orderId: String(existingOrder._id) 
+      };
+    }
+
+    if (!paymentIntent.metadata?.checkoutSessionId) {
+      console.warn(`Payment intent ${paymentIntent.id} missing checkout session ID`);
+      return { 
+        success: false, 
+        error: 'Missing checkout session ID in payment intent metadata' 
+      };
+    }
+
+    return await this.createOrderFromWebhook(
+      paymentIntent.metadata.checkoutSessionId,
+      paymentIntent.id,
+      eventId
+    );
+  }
+
+  private async handlePaymentIntentFailed(
+    paymentIntent: Stripe.PaymentIntent
+  ): Promise<WebhookProcessingResult> {
+    console.error(`Payment failed for intent ${paymentIntent.id}`);
+    
+    try {
+      if (paymentIntent.metadata?.userId) {
+        const user = await User.findById(paymentIntent.metadata.userId);
+        if (user) {
+          await queueEmail('paymentFailed', {
+            user,
+            paymentIntentId: paymentIntent.id,
+            error: paymentIntent.last_payment_error?.message ?? 'Payment failed',
+          });
+        }
+      }
+    } catch (emailError) {
+      console.error('Failed to send payment failure email:', emailError);
+    }
+
+    return { 
+      success: true,
+      error: 'Payment failed' 
+    };
+  }
+
+  private async handleCheckoutSessionCompleted(
+    session: Stripe.Checkout.Session,
+    eventId: string
+  ): Promise<WebhookProcessingResult> {
+    console.info(`Processing checkout.session.completed: ${session.id}`);
+
+    const existingOrder = await Order.findOne({ stripeSessionId: session.id });
+    if (existingOrder) {
+      console.info(`Order already exists for session ${session.id}`);
+      return { 
+        success: true, 
+        orderId: String(existingOrder._id) 
+      };
+    }
+
+    if (session.payment_status !== 'paid') {
+      console.warn(`Session ${session.id} not paid, status: ${session.payment_status}`);
+      return { 
+        success: false, 
+        error: 'Session not paid' 
+      };
+    }
+
+    return await this.createOrderFromWebhook(session.id, session.payment_intent as string, eventId);
+  }
+
+  private async createOrderFromWebhook(
+    sessionId: string,
+    paymentIntentId?: string,
+    eventId?: string
+  ): Promise<WebhookProcessingResult> {
+    const dbSession = await mongoose.startSession();
+    
+    try {
+      let orderId: string | undefined;
+      let orderStatus: 'completed' | 'pending_inventory' = 'completed';
+      let inventoryIssues: string[] | undefined;
+      
+      await dbSession.withTransaction(async () => {
+        const existingOrder = await Order.findOne({ 
+          stripeSessionId: sessionId 
+        }).session(dbSession);
+        
+        if (existingOrder) {
+          orderId = String(existingOrder._id);
+          return;
+        }
+
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {
+          expand: ['line_items', 'customer_details', 'shipping_details'],
+        });
+
+        if (!session.metadata?.userId || !session.metadata?.products) {
+          throw new WebhookError(
+            'Missing required metadata in checkout session',
+            'INVALID_SESSION_METADATA',
+            400,
+            false
+          );
+        }
+
+        const user = await User.findById(session.metadata.userId).session(dbSession);
+        if (!user) {
+          throw new WebhookError(
+            'User not found',
+            'USER_NOT_FOUND',
+            404,
+            false
+          );
+        }
+
+        const products = JSON.parse(session.metadata.products) as Array<{
+          id: string;
+          quantity: number;
+          price: number;
+          variantId?: string;
+          variantDetails?: {
+            size?: string;
+            color?: string;
+            sku?: string;
+          };
+          variantLabel?: string;
+        }>;
+
+        // Step 1: Validate inventory atomically BEFORE creating order
+        this.logger.info('webhook.inventory.validation.start', {
+          sessionId,
+          productCount: products.length,
+          eventId,
+        });
+
+        const inventoryProducts: InventoryCheckoutProduct[] = products.map(p => ({
+          id: p.id,
+          quantity: p.quantity,
+          variantId: p.variantId,
+          variantLabel: p.variantLabel,
+        }));
+
+        const inventoryValidation = await inventoryService.validateAndReserveInventory(
+          inventoryProducts,
+          dbSession
+        );
+
+        if (!inventoryValidation.isValid) {
+          // Log the issue but continue with order creation
+          this.logger.warn('webhook.inventory.validation.failed', {
+            sessionId,
+            errors: inventoryValidation.errors,
+            eventId,
+          });
+          
+          // Create order with special status for manual review
+          orderStatus = 'pending_inventory';
+          inventoryIssues = inventoryValidation.errors;
+        }
+
+        this.logger.info('webhook.inventory.validation.success', {
+          sessionId,
+          validatedCount: inventoryValidation.validatedProducts.length,
+          eventId,
+        });
+
+        const orderNumber = await this.generateOrderNumber();
+        const subtotal = (session.amount_subtotal ?? session.amount_total ?? 0) / 100;
+        const tax = ((session.total_details?.amount_tax ?? 0) / 100);
+        const shipping = ((session.total_details?.amount_shipping ?? 0) / 100);
+        const discount = ((session.total_details?.amount_discount ?? 0) / 100);
+        
+        const newOrder = new Order({
+          orderNumber,
+          user: session.metadata.userId,
+          email: user.email,
+          products: products.map(product => ({
+            product: product.id,
+            quantity: product.quantity,
+            price: product.price,
+            variantId: product.variantId,
+            variantDetails: product.variantDetails,
+            variantLabel: product.variantLabel,
+          })),
+          totalAmount: (session.amount_total ?? 0) / 100,
+          subtotal,
+          tax,
+          shipping,
+          discount,
+          stripeSessionId: sessionId,
+          paymentIntentId: paymentIntentId ?? (session.payment_intent as string),
+          shippingAddress: session.shipping_details?.address ? {
+            fullName: session.shipping_details?.name ?? user.name ?? 'Customer',
+            line1: session.shipping_details.address.line1 ?? '',
+            line2: session.shipping_details.address.line2 ?? undefined,
+            city: session.shipping_details.address.city ?? '',
+            state: session.shipping_details.address.state ?? '',
+            postalCode: session.shipping_details.address.postal_code ?? '',
+            country: session.shipping_details.address.country ?? 'US',
+            phone: session.customer_details?.phone ?? undefined,
+          } : undefined,
+          billingAddress: session.customer_details?.address ? {
+            fullName: session.customer_details?.name ?? user.name ?? 'Customer',
+            line1: session.customer_details.address.line1 ?? '',
+            line2: session.customer_details.address.line2 ?? undefined,
+            city: session.customer_details.address.city ?? '',
+            state: session.customer_details.address.state ?? '',
+            postalCode: session.customer_details.address.postal_code ?? '',
+            country: session.customer_details.address.country ?? 'US',
+          } : undefined,
+          paymentMethod: 'card',
+          couponCode: session.metadata?.couponCode ?? undefined,
+          originalAmount: session.metadata?.couponCode 
+            ? (session.amount_subtotal ?? session.amount_total ?? 0) / 100
+            : undefined,
+          webhookEventId: eventId,
+          status: orderStatus,
+          inventoryIssues: inventoryIssues,
+          statusHistory: [{
+            from: 'pending',
+            to: orderStatus,
+            timestamp: new Date(),
+            userId: session.metadata.userId ? new mongoose.Types.ObjectId(session.metadata.userId) : undefined,
+            reason: orderStatus === 'pending_inventory' 
+              ? 'Payment processed via webhook with inventory issues' 
+              : 'Payment processed via webhook',
+          }],
+        });
+
+        await newOrder.save({ session: dbSession });
+        orderId = String(newOrder._id);
+
+        // Step 2: Deduct inventory atomically (only if inventory validation passed)
+        if (orderStatus !== 'pending_inventory') {
+          for (const product of products) {
+            try {
+              // Use atomic deduction
+              await inventoryService.atomicInventoryDeduction(
+                product.id,
+                product.variantId,
+                product.quantity,
+                dbSession
+              );
+
+              // Record inventory history
+              await inventoryService.updateInventory(
+                product.id,
+                product.variantId,
+                -product.quantity,
+                'sale',
+                session.metadata.userId,
+                { orderId, skipDeduction: true, webhookEventId: eventId },
+              );
+            } catch (error) {
+              this.logger.error('webhook.inventory.deduction.error', error, {
+                sessionId,
+                productId: product.id,
+                variantId: product.variantId,
+                quantity: product.quantity,
+                eventId,
+              });
+              
+              // This should rarely happen due to validation, but if it does, throw error
+              if (error instanceof InventoryError) {
+                throw new WebhookError(
+                  error.message,
+                  'INVENTORY_DEDUCTION_FAILED',
+                  500,
+                true // Retry
+              );
+            }
+            throw error;
+          }
+        }
+
+        if (user) {
+          user.cartItems = [];
+          user.appliedCoupon = null;
+          await user.save({ session: dbSession });
+        }
+
+        // Get populated order for email
+        const populatedOrder = await Order.findById(orderId)
+          .populate('products.product', 'name image price')
+          .session(dbSession) as unknown as IPopulatedOrderDocument;
+
+        // Queue email (non-critical, so we don't await)
+        if (user && populatedOrder) {
+          queueEmail('orderConfirmation', {
+            order: populatedOrder,
+            user,
+          }).catch(emailError => {
+            console.error('Failed to send order confirmation email:', emailError);
+          });
+        }
+      });
+
+      // Log final result
+      if (orderStatus === 'pending_inventory') {
+        this.logger.warn('webhook.order.created.with.inventory.issues', {
+          orderId,
+          sessionId,
+          inventoryIssues,
+          eventId,
+        });
+      } else {
+        this.logger.info('webhook.order.created.successfully', {
+          orderId,
+          sessionId,
+          eventId,
+        });
+      }
+
+      return {
+        success: true,
+        orderId,
+      };
+    } finally {
+      await dbSession.endSession();
+    }
+  }
+
+  private async isEventProcessed(eventId: string): Promise<boolean> {
+    const event = await WebhookEvent.findOne({ stripeEventId: eventId });
+    return event?.processed ?? false;
+  }
+
+  private async markEventProcessed(
+    eventId: string,
+    orderId?: string
+  ): Promise<void> {
+    await WebhookEvent.findOneAndUpdate(
+      { stripeEventId: eventId },
+      {
+        processed: true,
+        processedAt: new Date(),
+        orderId: orderId ? new mongoose.Types.ObjectId(orderId) : undefined,
+      },
+      { upsert: true }
+    );
+  }
+
+  private async recordEventError(eventId: string, error: unknown): Promise<void> {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    await WebhookEvent.findOneAndUpdate(
+      { stripeEventId: eventId },
+      {
+        $inc: { retryCount: 1 },
+        error: errorMessage,
+      },
+      { upsert: true }
+    );
+  }
+
+  private async generateOrderNumber(): Promise<string> {
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    
+    const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+    
+    const orderCount = await Order.countDocuments({
+      createdAt: { $gte: startOfDay, $lte: endOfDay }
+    });
+    
+    const sequence = (orderCount + 1).toString().padStart(4, '0');
+    return `ORD-${year}${month}${day}-${sequence}`;
+  }
+
+  async retryFailedEvents(): Promise<void> {
+    const failedEvents = await WebhookEvent.find({
+      processed: false,
+      retryCount: { $lt: this.options.maxRetries },
+      error: { $exists: true },
+    }).sort({ createdAt: 1 }).limit(10);
+
+    for (const webhookEvent of failedEvents) {
+      try {
+        console.info(`Retrying webhook event ${webhookEvent.stripeEventId}`);
+        
+        // Add exponential backoff for retries
+        const delayMs = this.options.retryDelay * Math.pow(2, webhookEvent.retryCount);
+        
+        // Special handling for inventory-related failures
+        if (webhookEvent.error?.includes('inventory') || webhookEvent.error?.includes('INSUFFICIENT_INVENTORY')) {
+          this.logger.info('webhook.retry.inventory_failure', {
+            eventId: webhookEvent.stripeEventId,
+            retryCount: webhookEvent.retryCount,
+            delay: delayMs,
+          });
+          
+          // Wait before retrying to allow inventory to be replenished
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+        
+        const stripeEvent = await stripe.events.retrieve(webhookEvent.stripeEventId);
+        await this.processWebhookEvent(stripeEvent);
+        
+      } catch (error) {
+        console.error(`Failed to retry webhook event ${webhookEvent.stripeEventId}:`, error);
+        
+        // If it's still an inventory error and we've reached max retries, we may need manual intervention
+        if (error instanceof WebhookError && error.code === 'INSUFFICIENT_INVENTORY' && 
+            webhookEvent.retryCount >= this.options.maxRetries - 1) {
+          this.logger.error('webhook.retry.max_inventory_failures', {
+            eventId: webhookEvent.stripeEventId,
+            error: error.message,
+          });
+          
+          // TODO: Send alert to admin about order requiring manual review
+        }
+      }
+    }
+  }
+}
+
+export const webhookService = new WebhookService();

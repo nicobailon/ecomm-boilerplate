@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Order, IOrderDocument } from '../models/order.model.js';
 import { AppError } from '../utils/AppError.js';
+import { OrderStatusValidator } from '../utils/order-status-validator.js';
 import type { 
   ListOrdersInput, 
   UpdateOrderStatusInput, 
@@ -8,14 +9,19 @@ import type {
   GetOrderStatsInput 
 } from '../validations/order.validation.js';
 import type { 
-  OrderListResponse, 
   OrderWithPopulatedData, 
-  BulkUpdateResponse, 
-  OrderStats 
+  BulkUpdateResponse 
 } from '../types/order.types.js';
+import { 
+  toSerializedOrder, 
+  toSerializedOrderStats,
+  type SerializedOrderListResponse,
+  type SerializedOrder,
+  type SerializedOrderStats
+} from '../utils/order-type-converters.js';
 
 export class OrderService {
-  async listAllOrders(options: ListOrdersInput): Promise<OrderListResponse> {
+  async listAllOrders(options: ListOrdersInput & { userId?: string }): Promise<SerializedOrderListResponse> {
     const {
       page = 1,
       limit = 10,
@@ -25,11 +31,16 @@ export class OrderService {
       sortOrder = 'desc',
       dateFrom,
       dateTo,
+      userId,
     } = options;
 
     const pipeline: mongoose.PipelineStage[] = [];
 
     const matchStage: mongoose.FilterQuery<IOrderDocument> = {};
+    
+    if (userId) {
+      matchStage.user = new mongoose.Types.ObjectId(userId);
+    }
     
     if (status !== 'all') {
       matchStage.status = status;
@@ -153,15 +164,19 @@ export class OrderService {
     const total = totalCount[0]?.count || 0;
 
     return {
-      orders: orders as OrderWithPopulatedData[],
+      orders: (orders as OrderWithPopulatedData[]).map(toSerializedOrder),
       totalCount: total,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
     };
   }
 
-  async getOrderById(orderId: string): Promise<OrderWithPopulatedData> {
-    const order = await Order.findById(orderId)
+  async getOrderById(orderId: string, userId?: string): Promise<SerializedOrder> {
+    const query = userId
+      ? Order.findOne({ _id: orderId, user: userId })
+      : Order.findById(orderId);
+    
+    const order = await query
       .populate('user', 'email name')
       .populate('products.product', 'name image');
 
@@ -169,65 +184,261 @@ export class OrderService {
       throw new AppError('Order not found', 404);
     }
 
-    return order as unknown as OrderWithPopulatedData;
+    return toSerializedOrder(order as unknown as OrderWithPopulatedData);
   }
 
-  async updateOrderStatus(input: UpdateOrderStatusInput): Promise<IOrderDocument> {
-    const { orderId, status } = input;
+  async updateOrderStatus(input: UpdateOrderStatusInput & { userId?: string; reason?: string }): Promise<SerializedOrder> {
+    const { orderId, status, userId, reason } = input;
 
-    const order = await Order.findById(orderId);
-    if (!order) {
-      throw new AppError('Order not found', 404);
-    }
+    // Check if we can use transactions (requires replica set)
+    // For simplicity, try to use transactions and catch if not supported
+    const useTransaction = mongoose.connection.readyState === 1;
 
-    const invalidTransitions: Record<string, string[]> = {
-      cancelled: ['completed', 'refunded'],
-      refunded: ['completed', 'cancelled'],
-    };
+    if (useTransaction) {
+      // Use transaction for atomic update
+      const session = await mongoose.startSession();
+      session.startTransaction();
+      
+      try {
+        const order = await Order.findById(orderId).session(session);
+        if (!order) {
+          throw new AppError('Order not found', 404);
+        }
 
-    if (invalidTransitions[order.status]?.includes(status)) {
-      throw new AppError(`Cannot change status from ${order.status} to ${status}`, 400);
-    }
+        // Use centralized validator
+        OrderStatusValidator.validateTransition({
+          from: order.status,
+          to: status,
+          userId,
+          reason
+        });
 
-    order.status = status;
-    await order.save();
+        // Add to status history
+        order.statusHistory.push({
+          from: order.status,
+          to: status,
+          timestamp: new Date(),
+          userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
+          reason
+        });
 
-    return order;
-  }
+        order.status = status;
+        await order.save({ session });
 
-  async bulkUpdateOrderStatus(input: BulkUpdateOrderStatusInput): Promise<BulkUpdateResponse> {
-    const { orderIds, status } = input;
-
-    const result = await Order.updateMany(
-      {
-        _id: { $in: orderIds },
-        status: { $nin: ['cancelled', 'refunded'] },
-      },
-      {
-        $set: { status, updatedAt: new Date() },
+        await session.commitTransaction();
+        
+        // Re-fetch with populated data (outside transaction for population)
+        const updatedOrder = await Order.findById(orderId)
+          .populate('user', 'email name')
+          .populate('products.product', 'name image');
+        
+        return toSerializedOrder(updatedOrder as unknown as OrderWithPopulatedData);
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
       }
-    );
+    } else {
+      // Non-transactional update for environments without replica set
+      const order = await Order.findById(orderId);
+      if (!order) {
+        throw new AppError('Order not found', 404);
+      }
 
-    if (result.matchedCount === 0) {
-      throw new AppError('No orders were updated', 404);
+      // Use centralized validator
+      OrderStatusValidator.validateTransition({
+        from: order.status,
+        to: status,
+        userId,
+        reason
+      });
+
+      // Add to status history
+      order.statusHistory.push({
+        from: order.status,
+        to: status,
+        timestamp: new Date(),
+        userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
+        reason
+      });
+
+      order.status = status;
+      await order.save();
+
+      // Re-fetch with populated data
+      const updatedOrder = await Order.findById(orderId)
+        .populate('user', 'email name')
+        .populate('products.product', 'name image');
+      
+      return toSerializedOrder(updatedOrder as unknown as OrderWithPopulatedData);
     }
-
-    const notUpdatedCount = orderIds.length - result.modifiedCount;
-    let message = `Successfully updated ${result.modifiedCount} orders`;
-    
-    if (notUpdatedCount > 0) {
-      message += ` (${notUpdatedCount} orders were not updated - may be cancelled/refunded)`;
-    }
-
-    return {
-      success: true,
-      message,
-      matchedCount: result.matchedCount,
-      modifiedCount: result.modifiedCount,
-    };
   }
 
-  async getOrderStats(options: GetOrderStatsInput): Promise<OrderStats> {
+  async bulkUpdateOrderStatus(input: BulkUpdateOrderStatusInput & { userId?: string; reason?: string }): Promise<BulkUpdateResponse> {
+    const { orderIds, status, userId, reason } = input;
+
+    // Check if we can use transactions (requires replica set)
+    // For simplicity, try to use transactions and catch if not supported
+    const useTransaction = mongoose.connection.readyState === 1;
+
+    if (useTransaction) {
+      // Use transaction for atomic bulk update
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        // Fetch all orders to validate transitions individually
+        const orders = await Order.find({ _id: { $in: orderIds } }).session(session);
+        
+        if (orders.length === 0) {
+          throw new AppError('No orders found', 404);
+        }
+
+        // Validate all transitions
+        const transitions = orders.map(order => ({
+          orderId: order._id.toString(),
+          from: order.status,
+          to: status,
+          userId,
+          reason
+        }));
+
+        const validation = OrderStatusValidator.validateBulkTransitions(
+          transitions.map(({ from, to, userId, reason }) => ({ from, to, userId, reason }))
+        );
+
+        if (validation.valid.length === 0) {
+          throw new AppError('No valid status transitions found', 422);
+        }
+
+        // Get valid order IDs and prepare bulk operations
+        const validOrderIds = transitions
+          .filter((_, index) => validation.valid.includes(validation.valid[index]))
+          .map(t => t.orderId);
+
+        const timestamp = new Date();
+        const bulkOps = validOrderIds.map(orderId => {
+          const order = orders.find(o => o._id.toString() === orderId)!;
+          return {
+            updateOne: {
+              filter: { _id: orderId },
+              update: {
+                $set: { status },
+                $push: {
+                  statusHistory: {
+                    from: order.status,
+                    to: status,
+                    timestamp,
+                    userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
+                    reason
+                  }
+                }
+              }
+            }
+          };
+        });
+
+        // Execute bulk update
+        const bulkResult = await Order.bulkWrite(bulkOps, { session });
+        const modifiedCount = bulkResult.modifiedCount || 0;
+
+        await session.commitTransaction();
+
+        let message = `Successfully updated ${modifiedCount} orders`;
+        
+        if (validation.invalid.length > 0) {
+          const invalidCount = validation.invalid.length;
+          const firstError = validation.invalid[0].error;
+          message += ` (${invalidCount} orders were not updated - ${firstError})`;
+        }
+
+        return {
+          success: modifiedCount > 0,
+          message,
+          matchedCount: orders.length,
+          modifiedCount,
+        };
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
+    } else {
+      // Non-transactional bulk update
+      const orders = await Order.find({ _id: { $in: orderIds } });
+      
+      if (orders.length === 0) {
+        throw new AppError('No orders found', 404);
+      }
+
+      // Validate all transitions
+      const transitions = orders.map(order => ({
+        orderId: order._id.toString(),
+        from: order.status,
+        to: status,
+        userId,
+        reason
+      }));
+
+      const validation = OrderStatusValidator.validateBulkTransitions(
+        transitions.map(({ from, to, userId, reason }) => ({ from, to, userId, reason }))
+      );
+
+      if (validation.valid.length === 0) {
+        throw new AppError('No valid status transitions found', 422);
+      }
+
+      // Get valid order IDs and prepare bulk operations
+      const validOrderIds = transitions
+        .filter((_, index) => validation.valid.includes(validation.valid[index]))
+        .map(t => t.orderId);
+
+      const timestamp = new Date();
+      const bulkOps = validOrderIds.map(orderId => {
+        const order = orders.find(o => o._id.toString() === orderId)!;
+        return {
+          updateOne: {
+            filter: { _id: orderId },
+            update: {
+              $set: { status },
+              $push: {
+                statusHistory: {
+                  from: order.status,
+                  to: status,
+                  timestamp,
+                  userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
+                  reason
+                }
+              }
+            }
+          }
+        };
+      });
+
+      // Execute bulk update
+      const bulkResult = await Order.bulkWrite(bulkOps);
+      const modifiedCount = bulkResult.modifiedCount || 0;
+
+      let message = `Successfully updated ${modifiedCount} orders`;
+      
+      if (validation.invalid.length > 0) {
+        const invalidCount = validation.invalid.length;
+        const firstError = validation.invalid[0].error;
+        message += ` (${invalidCount} orders were not updated - ${firstError})`;
+      }
+
+      return {
+        success: modifiedCount > 0,
+        message,
+        matchedCount: orders.length,
+        modifiedCount,
+      };
+    }
+  }
+
+  async getOrderStats(options: GetOrderStatsInput): Promise<SerializedOrderStats> {
     const pipeline: mongoose.PipelineStage[] = [];
 
     if (options.dateFrom || options.dateTo) {
@@ -325,7 +536,7 @@ export class OrderService {
     const result = await Order.aggregate(pipeline);
 
     if (result.length === 0 || !result[0]) {
-      return {
+      return toSerializedOrderStats({
         totalOrders: 0,
         totalRevenue: 0,
         averageOrderValue: 0,
@@ -337,7 +548,7 @@ export class OrderService {
         },
         revenueByDay: [],
         topProducts: [],
-      };
+      });
     }
 
     const stats = result[0];
@@ -355,14 +566,14 @@ export class OrderService {
       }
     });
 
-    return {
+    return toSerializedOrderStats({
       totalOrders: stats.totalOrders || 0,
       totalRevenue: stats.totalRevenue || 0,
       averageOrderValue: stats.averageOrderValue || 0,
       statusBreakdown,
       revenueByDay: stats.revenueByDay || [],
       topProducts: stats.topProducts || [],
-    };
+    });
   }
 }
 

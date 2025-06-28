@@ -23,7 +23,8 @@ export interface IOrderDocument extends Document {
   shipping: number;
   discount: number;
   stripeSessionId: string;
-  status: 'pending' | 'completed' | 'cancelled' | 'refunded';
+  status: 'pending' | 'completed' | 'cancelled' | 'refunded' | 'pending_inventory';
+  inventoryIssues?: string[];
   shippingAddress?: {
     fullName: string;
     line1: string;
@@ -47,6 +48,14 @@ export interface IOrderDocument extends Document {
   paymentIntentId?: string;
   couponCode?: string;
   originalAmount?: number;
+  webhookEventId?: string;
+  statusHistory: {
+    from: 'pending' | 'completed' | 'cancelled' | 'refunded' | 'pending_inventory';
+    to: 'pending' | 'completed' | 'cancelled' | 'refunded' | 'pending_inventory';
+    timestamp: Date;
+    userId?: mongoose.Types.ObjectId;
+    reason?: string;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -141,13 +150,17 @@ const orderSchema = new Schema<IOrderDocument>(
     },
     stripeSessionId: {
       type: String,
-      unique: true,
+      required: false,
     },
     status: {
       type: String,
-      enum: ['pending', 'completed', 'cancelled', 'refunded'],
+      enum: ['pending', 'completed', 'cancelled', 'refunded', 'pending_inventory'],
       default: 'completed',
       required: true,
+    },
+    inventoryIssues: {
+      type: [String],
+      required: false,
     },
     shippingAddress: {
       type: {
@@ -191,11 +204,46 @@ const orderSchema = new Schema<IOrderDocument>(
       required: false,
       min: 0,
     },
+    webhookEventId: {
+      type: String,
+      required: false,
+    },
+    statusHistory: [
+      {
+        from: {
+          type: String,
+          enum: ['pending', 'completed', 'cancelled', 'refunded', 'pending_inventory'],
+          required: true,
+        },
+        to: {
+          type: String,
+          enum: ['pending', 'completed', 'cancelled', 'refunded', 'pending_inventory'],
+          required: true,
+        },
+        timestamp: {
+          type: Date,
+          required: true,
+          default: Date.now,
+        },
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          required: false,
+        },
+        reason: {
+          type: String,
+          required: false,
+        },
+      },
+    ],
   },
   { timestamps: true },
 );
 
 orderSchema.index({ user: 1 });
 orderSchema.index({ createdAt: -1 });
+orderSchema.index({ 'statusHistory.timestamp': -1 });
+orderSchema.index({ stripeSessionId: 1 }, { unique: true, sparse: true });
+orderSchema.index({ stripePaymentIntentId: 1 }, { unique: true, sparse: true });
 
 export const Order = mongoose.model<IOrderDocument>('Order', orderSchema);

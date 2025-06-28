@@ -1,17 +1,18 @@
 import { useState, useMemo } from 'react';
+import type {
+  ColumnDef,
+  SortingState,
+  ColumnFiltersState,
+  VisibilityState,
+  RowSelectionState,
+  PaginationState} from '@tanstack/react-table';
 import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   getFilteredRowModel,
-  ColumnDef,
   flexRender,
-  SortingState,
-  ColumnFiltersState,
-  VisibilityState,
-  RowSelectionState,
-  PaginationState,
 } from '@tanstack/react-table';
 import { motion } from 'framer-motion';
 import { Trash, Star, AlertTriangle, ChevronUp, ChevronDown, ChevronsUpDown, Search, Download, EyeOff } from 'lucide-react';
@@ -27,7 +28,7 @@ import type { RouterOutputs } from '@/lib/trpc';
 import type { Product as LegacyProduct } from '@/types';
 
 type Product = RouterOutputs['product']['list']['products'][0];
-type CollectionRef = { _id: string; name: string; slug: string };
+interface CollectionRef { _id: string; name: string; slug: string }
 
 // Type guard for collection reference
 function isCollectionRef(obj: unknown): obj is CollectionRef {
@@ -111,7 +112,7 @@ const FeaturedCountBanner = () => {
 export function ProductsTable({ 
   highlightProductId, 
   onHighlightComplete: _onHighlightComplete, 
-  onEditProduct 
+  onEditProduct, 
 }: ProductsTableProps) {
   // State management
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -148,7 +149,7 @@ export function ProductsTable({
   // Debounced search
   const debouncedSetGlobalFilter = useMemo(
     () => debounce((value: string) => setGlobalFilter(value), 300),
-    []
+    [],
   );
 
   // Column definitions
@@ -336,7 +337,7 @@ export function ProductsTable({
         enableHiding: false,
       },
     ],
-    [deleteProduct, toggleFeatured]
+    [deleteProduct, toggleFeatured],
   );
 
   // Table instance
@@ -509,7 +510,7 @@ export function ProductsTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -557,7 +558,7 @@ export function ProductsTable({
                       <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}

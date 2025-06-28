@@ -27,7 +27,7 @@ export function BulkActionBar({
     <div
       className={cn(
         'bg-muted/50 rounded-lg p-3 flex items-center justify-between animate-in slide-in-from-top-2',
-        className
+        className,
       )}
     >
       <div className="flex items-center gap-3">

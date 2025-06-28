@@ -1,4 +1,4 @@
-import { router, adminProcedure } from '../index.js';
+import { router, adminProcedure, protectedProcedure } from '../index.js';
 import { TRPCError } from '@trpc/server';
 import { isAppError } from '../../utils/error-types.js';
 import { 
@@ -103,6 +103,42 @@ export const orderRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to fetch order statistics',
+        });
+      }
+    }),
+
+  // Customer endpoints
+  listMine: protectedProcedure
+    .input(listOrdersSchema.omit({ search: true }))
+    .query(async ({ input, ctx }) => {
+      try {
+        return await orderService.listAllOrders({
+          ...input,
+          userId: ctx.user._id.toString()
+        });
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch orders',
+        });
+      }
+    }),
+
+  getMine: protectedProcedure
+    .input(getOrderByIdSchema)
+    .query(async ({ input, ctx }) => {
+      try {
+        return await orderService.getOrderById(input.orderId, ctx.user._id.toString());
+      } catch (error) {
+        if (isAppError(error) && error.statusCode === 404) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Order not found or access denied',
+          });
+        }
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch order',
         });
       }
     }),

@@ -1,17 +1,18 @@
 import { useState, useMemo } from 'react';
+import type {
+  ColumnDef,
+  SortingState,
+  ColumnFiltersState,
+  VisibilityState,
+  RowSelectionState,
+  PaginationState} from '@tanstack/react-table';
 import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   getFilteredRowModel,
-  ColumnDef,
   flexRender,
-  SortingState,
-  ColumnFiltersState,
-  VisibilityState,
-  RowSelectionState,
-  PaginationState,
 } from '@tanstack/react-table';
 import { motion } from 'framer-motion';
 import { 
@@ -26,7 +27,7 @@ import {
   ExternalLink,
   FolderOpen,
   ChevronRight,
-  Package
+  Package,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -84,7 +85,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
   // Debounced search
   const debouncedSetGlobalFilter = useMemo(
     () => debounce((value: string) => setGlobalFilter(value), 300),
-    []
+    [],
   );
 
   // Toggle row expansion
@@ -138,8 +139,8 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
             >
               <ChevronRight 
                 className={cn(
-                  "h-4 w-4 transition-transform",
-                  isExpanded && "rotate-90"
+                  'h-4 w-4 transition-transform',
+                  isExpanded && 'rotate-90',
                 )}
               />
             </Button>
@@ -326,7 +327,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
         enableHiding: false,
       },
     ],
-    [deleteCollection, onEdit, expandedRows]
+    [deleteCollection, onEdit, expandedRows],
   );
 
   // Table instance
@@ -381,7 +382,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
     for (const row of selectedRows) {
       await updateCollection.mutateAsync({
         id: row.original._id as string,
-        data: { isPublic: makePublic }
+        data: { isPublic: makePublic },
       });
     }
 
@@ -430,7 +431,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       {/* Filters and search */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -503,7 +504,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -533,7 +534,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
                       <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}

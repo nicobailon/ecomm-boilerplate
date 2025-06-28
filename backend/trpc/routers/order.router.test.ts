@@ -349,4 +349,283 @@ describe('Order Router', () => {
         .rejects.toThrow();
     });
   });
+
+  describe('Customer endpoints', () => {
+    const customerContext = {
+      user: {
+        _id: new mongoose.Types.ObjectId('507f1f77bcf86cd799439000'),
+        email: 'customer@example.com',
+        name: 'Customer User',
+        role: 'user',
+      },
+    };
+
+    const customerCaller = orderRouter.createCaller(customerContext as any);
+
+    describe('listMine', () => {
+      it('should return only authenticated user orders', async () => {
+        const mockResponse = {
+          orders: [],
+          totalCount: 0,
+          currentPage: 1,
+          totalPages: 0,
+        };
+
+        (orderService.listAllOrders as Mock).mockResolvedValue(mockResponse);
+
+        const input: OrderRouterInput<'listMine'> = {
+          page: 1,
+          limit: 10,
+          status: 'all',
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        };
+
+        const result = await customerCaller.listMine(input);
+
+        expect(result).toEqual(mockResponse);
+        expect(orderService.listAllOrders).toHaveBeenCalledWith({
+          ...input,
+          userId: '507f1f77bcf86cd799439000'
+        });
+      });
+
+      it('should ignore search parameter if provided', async () => {
+        const mockResponse = {
+          orders: [],
+          totalCount: 0,
+          currentPage: 1,
+          totalPages: 0,
+        };
+
+        (orderService.listAllOrders as Mock).mockResolvedValue(mockResponse);
+
+        const inputWithSearch = {
+          page: 1,
+          limit: 10,
+          search: 'test@example.com',
+        };
+
+        await customerCaller.listMine(inputWithSearch as any);
+
+        // Verify search was not passed to the service
+        expect(orderService.listAllOrders).toHaveBeenCalledWith({
+          page: 1,
+          limit: 10,
+          status: 'all',
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          userId: '507f1f77bcf86cd799439000'
+        });
+        
+        // Note: search parameter should NOT be in the call
+        const lastCall = (orderService.listAllOrders as Mock).mock.lastCall?.[0];
+        expect(lastCall).toBeDefined();
+        expect(lastCall).not.toHaveProperty('search');
+      });
+
+      it('should respect pagination parameters', async () => {
+        const mockResponse = {
+          orders: [],
+          totalCount: 50,
+          currentPage: 2,
+          totalPages: 5,
+        };
+
+        (orderService.listAllOrders as Mock).mockResolvedValue(mockResponse);
+
+        const input: OrderRouterInput<'listMine'> = {
+          page: 2,
+          limit: 10,
+        };
+
+        await customerCaller.listMine(input);
+
+        expect(orderService.listAllOrders).toHaveBeenCalledWith({
+          page: 2,
+          limit: 10,
+          status: 'all',
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          userId: '507f1f77bcf86cd799439000'
+        });
+      });
+
+      it('should throw UNAUTHORIZED for unauthenticated requests', async () => {
+        const unauthCaller = orderRouter.createCaller({ user: null } as any);
+
+        await expect(unauthCaller.listMine({}))
+          .rejects.toThrow(TRPCError);
+      });
+
+      it('should return empty list for user with no orders', async () => {
+        const mockResponse = {
+          orders: [],
+          totalCount: 0,
+          currentPage: 1,
+          totalPages: 0,
+        };
+
+        (orderService.listAllOrders as Mock).mockResolvedValue(mockResponse);
+
+        const result = await customerCaller.listMine({});
+
+        expect(result).toEqual(mockResponse);
+      });
+    });
+
+    describe('getMine', () => {
+      it('should return order details for owned order', async () => {
+        const mockOrder = {
+          _id: '507f1f77bcf86cd799439011',
+          user: { _id: '507f1f77bcf86cd799439000', email: 'customer@example.com' },
+          products: [],
+          totalAmount: 100,
+          status: 'completed',
+        };
+
+        (orderService.getOrderById as Mock).mockResolvedValue(mockOrder);
+
+        const input: OrderRouterInput<'getMine'> = {
+          orderId: '507f1f77bcf86cd799439011',
+        };
+
+        const result = await customerCaller.getMine(input);
+
+        expect(result).toEqual(mockOrder);
+        expect(orderService.getOrderById).toHaveBeenCalledWith(
+          '507f1f77bcf86cd799439011',
+          '507f1f77bcf86cd799439000'
+        );
+      });
+
+      it('should throw NOT_FOUND for non-existent order', async () => {
+        (orderService.getOrderById as Mock).mockRejectedValue(new AppError('Order not found', 404));
+
+        const input: OrderRouterInput<'getMine'> = {
+          orderId: '507f1f77bcf86cd799439011',
+        };
+
+        try {
+          await customerCaller.getMine(input);
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error).toBeInstanceOf(TRPCError);
+          expect((error as TRPCError).code).toBe('NOT_FOUND');
+          expect((error as TRPCError).message).toBe('Order not found or access denied');
+        }
+      });
+
+      it('should throw NOT_FOUND for order owned by different user', async () => {
+        (orderService.getOrderById as Mock).mockRejectedValue(new AppError('Order not found', 404));
+
+        const input: OrderRouterInput<'getMine'> = {
+          orderId: '507f1f77bcf86cd799439011',
+        };
+
+        try {
+          await customerCaller.getMine(input);
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error).toBeInstanceOf(TRPCError);
+          expect((error as TRPCError).code).toBe('NOT_FOUND');
+          expect((error as TRPCError).message).toBe('Order not found or access denied');
+        }
+      });
+
+      it('should throw UNAUTHORIZED for unauthenticated requests', async () => {
+        const unauthCaller = orderRouter.createCaller({ user: null } as any);
+
+        await expect(unauthCaller.getMine({ orderId: '507f1f77bcf86cd799439011' }))
+          .rejects.toThrow(TRPCError);
+      });
+
+      it('should include populated product and user data', async () => {
+        const mockOrder = {
+          _id: '507f1f77bcf86cd799439011',
+          user: { 
+            _id: '507f1f77bcf86cd799439000', 
+            email: 'customer@example.com',
+            name: 'Customer User'
+          },
+          products: [
+            {
+              product: {
+                _id: '507f1f77bcf86cd799439012',
+                name: 'Test Product',
+                image: 'test.jpg'
+              },
+              quantity: 2,
+              price: 50
+            }
+          ],
+          totalAmount: 100,
+          status: 'completed',
+        };
+
+        (orderService.getOrderById as Mock).mockResolvedValue(mockOrder);
+
+        const result = await customerCaller.getMine({ orderId: '507f1f77bcf86cd799439011' });
+
+        expect(result.products[0].product.name).toBe('Test Product');
+        expect(result.user.email).toBe('customer@example.com');
+      });
+    });
+
+    describe('Customer data isolation', () => {
+      it('should prevent customer A from accessing customer B orders via listMine', async () => {
+        const customerA = new mongoose.Types.ObjectId('507f1f77bcf86cd799439001');
+
+        const customerAContext = {
+          user: {
+            _id: customerA,
+            email: 'customerA@example.com',
+            name: 'Customer A',
+            role: 'user',
+          },
+        };
+
+        const customerACaller = orderRouter.createCaller(customerAContext as any);
+
+        await customerACaller.listMine({});
+
+        // Verify that listAllOrders was called with customerA's ID
+        expect(orderService.listAllOrders).toHaveBeenCalledWith({
+          page: 1,
+          limit: 10,
+          status: 'all',
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          userId: customerA.toString()
+        });
+      });
+
+      it('should prevent customer from accessing other customer order via getMine', async () => {
+        // Customer B's order
+        (orderService.getOrderById as Mock).mockRejectedValue(new AppError('Order not found', 404));
+
+        const input: OrderRouterInput<'getMine'> = {
+          orderId: '507f1f77bcf86cd799439011',
+        };
+
+        try {
+          await customerCaller.getMine(input);
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error).toBeInstanceOf(TRPCError);
+          expect((error as TRPCError).code).toBe('NOT_FOUND');
+        }
+      });
+
+      it('should require authentication for customer endpoints', async () => {
+        const unauthCaller = orderRouter.createCaller({ user: null } as any);
+
+        await expect(unauthCaller.listMine({}))
+          .rejects.toThrow(TRPCError);
+
+        await expect(unauthCaller.getMine({ orderId: '507f1f77bcf86cd799439011' }))
+          .rejects.toThrow(TRPCError);
+      });
+    });
+  });
 });

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { signup, login, logout, refreshToken, getProfile, forgotPassword, resetPassword } from '../controllers/auth.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
-import { validateBody } from '../middleware/validation.middleware.js';
+import { validateBody } from '../middleware/enhanced-validation.middleware.js';
 import { loginSchema, signupSchema, refreshTokenSchema } from '../validations/index.js';
 import { emailRateLimit } from '../middleware/security.middleware.js';
 import { passwordResetRequestSchema, passwordResetConfirmSchema } from '../validations/email.validation.js';

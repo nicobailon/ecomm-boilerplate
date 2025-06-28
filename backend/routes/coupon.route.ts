@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getCoupon, validateCoupon, applyCoupon, removeCoupon } from '../controllers/coupon.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
-import { validateBody } from '../middleware/validation.middleware.js';
+import { validateBody } from '../middleware/enhanced-validation.middleware.js';
 import { couponValidationLimiter, couponApplicationLimiter, strictCouponLimiter } from '../middleware/rateLimiter.js';
 import { applyCouponSchema } from '../validations/index.js';
 

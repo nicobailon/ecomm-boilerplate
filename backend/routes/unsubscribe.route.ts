@@ -2,7 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { User } from '../models/user.model.js';
 import { AppError } from '../utils/AppError.js';
-import { validateQuery, validateBody } from '../middleware/validation.middleware.js';
+import { validateQuery, validateBody } from '../middleware/enhanced-validation.middleware.js';
 
 const router = express.Router();
 

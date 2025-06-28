@@ -10,7 +10,7 @@ import {
   getInventoryTurnover,
 } from '../controllers/inventory.controller.js';
 import { adminRoute } from '../middleware/auth.middleware.js';
-import { validateRequest, validateParams } from '../middleware/validation.middleware.js';
+import { enhancedValidate, validateParams } from '../middleware/enhanced-validation.middleware.js';
 import {
   inventoryUpdateSchema,
   bulkInventoryUpdateSchema,
@@ -27,14 +27,14 @@ router.get('/product/:productId', validateParams(z.object({ productId: z.string(
 router.post(
   '/update',
   adminRoute,
-  validateRequest(inventoryUpdateSchema),
+  enhancedValidate(inventoryUpdateSchema),
   updateInventory,
 );
 
 router.post(
   '/bulk-update',
   adminRoute,
-  validateRequest(bulkInventoryUpdateSchema),
+  enhancedValidate(bulkInventoryUpdateSchema),
   bulkUpdateInventory,
 );
 

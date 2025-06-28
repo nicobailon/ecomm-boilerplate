@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { createCheckoutSession, checkoutSuccess } from '../controllers/payment.controller.js';
 import { handleStripeWebhook, retryFailedWebhooks } from '../controllers/webhook.controller.js';
 import { protectRoute, adminRoute } from '../middleware/auth.middleware.js';
-import { validateBody } from '../middleware/validation.middleware.js';
+import { validateBody } from '../middleware/enhanced-validation.middleware.js';
 import { checkoutSchema, checkoutSuccessSchema } from '../validations/index.js';
 import { emailRateLimit, inventoryCheckRateLimit } from '../middleware/security.middleware.js';
 import { 

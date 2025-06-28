@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getAnalytics, getDailySales } from '../controllers/analytics.controller.js';
 import { protectRoute, adminRoute } from '../middleware/auth.middleware.js';
-import { validateQuery } from '../middleware/validation.middleware.js';
+import { validateQuery } from '../middleware/enhanced-validation.middleware.js';
 import { dateRangeSchema } from '../validations/index.js';
 
 const router = Router();

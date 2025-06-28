@@ -34,3 +34,12 @@ coverage/
 *storybook.log
 storybook-static
 .storybook/local
+
+# HTTP cookie files
+cookies.txt
+*.cookies
+
+# Frontend build
+frontend/dist
+frontend/node_modules
+frontend/build

@@ -23,7 +23,7 @@ A feature-rich, scalable, and modern e-commerce solution built with the MERN sta
 | Category         | Technology                                                                                              |
 | :--------------- | :------------------------------------------------------------------------------------------------------ |
 | **Backend**      | Node.js, Express.js, TypeScript, tRPC, Mongoose (MongoDB), Redis, JWT                                   |
-| **Frontend**     | React 19, Vite, TypeScript, TanStack Query, React Router, Zustand, Tailwind CSS                        |
+| **Frontend**     | React 19, Vite, TypeScript, TanStack Query, TanStack Table, React Router, Zustand, Tailwind CSS        |
 | **Payments**     | Stripe                                                                                                  |
 | **Database**     | MongoDB, Redis (Upstash)                                                                                |
 | **File Uploads** | UploadThing                                                                                             |

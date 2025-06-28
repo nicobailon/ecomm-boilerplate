@@ -4,10 +4,16 @@ import { MoveRight, Loader, AlertCircle } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import { useUnifiedCart } from '@/hooks/cart/useUnifiedCart';
 import { apiClient } from '@/lib/api-client';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
-
+import { useInventoryValidation } from '@/hooks/useInventoryValidation';
+import { InventoryWarning } from '@/components/inventory/InventoryWarning';
+import { 
+  getInventoryErrorMessage,
+  getInventoryErrorTitle,
+  formatInventoryAdjustments 
+} from '@/utils/inventory-errors';
 interface CheckoutProduct {
 	_id: string;
 	quantity: number;
@@ -29,6 +35,15 @@ interface ErrorResponse {
 	errors?: ValidationError[];
 	error?: string;
 	message?: string;
+	code?: string;
+	details?: Array<{
+		productId: string;
+		productName?: string;
+		variantId?: string;
+		variantDetails?: string;
+		requestedQuantity: number;
+		availableStock: number;
+	}>;
 }
 
 interface InventoryAdjustment {
@@ -53,7 +68,15 @@ const OrderSummary = () => {
 	const { data: cart, source } = useUnifiedCart();
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [adjustments, setAdjustments] = useState<InventoryAdjustment[]>([]);
+	const [inventoryError, setInventoryError] = useState<{ code: string; details: ErrorResponse['details'] } | null>(null);
 	const navigate = useNavigate();
+	
+	const { checkInventoryAvailability } = useInventoryValidation({
+		showToasts: false,
+		onAdjustments: (adjs) => {
+			setAdjustments(adjs);
+		},
+	});
 
 	const subtotal = cart?.subtotal ?? 0;
 	const total = cart?.totalAmount ?? 0;
@@ -64,6 +87,31 @@ const OrderSummary = () => {
 	const formattedSubtotal = subtotal.toFixed(2);
 	const formattedTotal = total.toFixed(2);
 	const formattedSavings = savings.toFixed(2);
+
+	const handleInventoryError = useCallback((error: ErrorResponse) => {
+		if (error.code && error.details) {
+			setInventoryError({ code: error.code, details: error.details });
+			
+			const { title, messages } = getInventoryErrorMessage({
+				code: error.code as any,
+				message: error.message ?? '',
+				details: error.details,
+			});
+			
+			toast.error(title, {
+				description: messages.join('\n'),
+				duration: 8000,
+				action: {
+					label: 'Update Cart',
+					onClick: async () => {
+						// Re-validate inventory and auto-adjust cart
+						await checkInventoryAvailability();
+						setInventoryError(null);
+					},
+				},
+			});
+		}
+	}, [checkInventoryAvailability]);
 
 	const handlePayment = async () => {
 		if (cartItems.length === 0) {
@@ -79,6 +127,16 @@ const OrderSummary = () => {
 
 		try {
 			setIsProcessing(true);
+			setInventoryError(null);
+			setAdjustments([]);
+			
+			// Pre-validate inventory before creating session
+			const validationResult = await checkInventoryAvailability();
+			if (!validationResult.isValid) {
+				setIsProcessing(false);
+				return;
+			}
+			
 			const stripe = await stripePromise;
 			
 			if (!stripe) {
@@ -107,14 +165,12 @@ const OrderSummary = () => {
 			if (session.adjustments && session.adjustments.length > 0) {
 				setAdjustments(session.adjustments);
 				
-				// Show toast notification for adjustments
-				const adjustmentMessage = session.adjustments.map(adj => {
-					const variantInfo = adj.variantDetails ? ` (${adj.variantDetails})` : '';
-					return `${adj.productName}${variantInfo}: quantity adjusted from ${adj.requestedQuantity} to ${adj.adjustedQuantity}`;
-				}).join('\n');
+				// Show formatted adjustment message
+				const { title, messages } = formatInventoryAdjustments(session.adjustments);
 				
-				toast.info(`Cart adjusted due to inventory changes:\n${adjustmentMessage}`, {
-					duration: 5000,
+				toast.info(title, {
+					description: messages.join('\n'),
+					duration: 6000,
 				});
 				
 				// Wait a moment for user to see the adjustment message
@@ -134,6 +190,13 @@ const OrderSummary = () => {
 			// Handle validation errors with details
 			if (isAxiosError<ErrorResponse>(error)) {
 				const data = error.response?.data;
+				
+				// Check if it's an inventory error
+				if (data?.code && ['INSUFFICIENT_INVENTORY', 'PRODUCT_NOT_FOUND', 'VARIANT_NOT_FOUND'].includes(data.code)) {
+					handleInventoryError(data);
+					return;
+				}
+				
 				if (data?.errors && Array.isArray(data.errors)) {
 					const validationErrors = data.errors
 						.map((err) => `${err.field}: ${err.message}`)
@@ -166,7 +229,26 @@ const OrderSummary = () => {
 			<p className='text-xl font-semibold text-primary'>Order summary</p>
 
 			<AnimatePresence>
-				{adjustments.length > 0 && (
+				{inventoryError && inventoryError.details && (
+					<motion.div
+						initial={{ opacity: 0, height: 0 }}
+						animate={{ opacity: 1, height: 'auto' }}
+						exit={{ opacity: 0, height: 0 }}
+					>
+						<InventoryWarning
+							type="error"
+							title={getInventoryErrorTitle(inventoryError.code as any)}
+							details={inventoryError.details}
+							onAction={async () => {
+								await checkInventoryAvailability();
+								setInventoryError(null);
+							}}
+							actionLabel="Update Cart"
+						/>
+					</motion.div>
+				)}
+				
+				{adjustments.length > 0 && !inventoryError && (
 					<motion.div
 						initial={{ opacity: 0, height: 0 }}
 						animate={{ opacity: 1, height: 'auto' }}

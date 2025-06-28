@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { ChevronDown, ChevronRight, Edit2, Plus, Minus, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { InventoryBadge } from '@/components/ui/InventoryBadge';
 import { Button } from '@/components/ui/Button';
@@ -234,35 +235,42 @@ function RegularInventoryTable({
   onCancelEdit,
 }: RegularInventoryTableProps) {
   return (
-    <div className="hidden md:block border rounded-lg overflow-hidden">
-      <table className="w-full">
-        <thead className="bg-muted">
-          <tr>
-            <th className="p-4 text-left">Product</th>
-            <th className="p-4 text-center">Stock Status</th>
-            <th className="p-4 text-center">Available</th>
-            <th className="p-4 text-center">Quick Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((product) => (
-            <ProductInventoryRow
-              key={product._id ?? ''}
-              product={product}
-              isExpanded={expandedProducts.has(product._id ?? '')}
-              isSelected={selectedProducts.has(product._id ?? '')}
-              editingCell={editingCell}
-              tempValues={tempValues}
-              onToggle={() => onToggleRow(product._id ?? '')}
-              onSelect={() => onSelectProduct(product._id ?? '')}
-              onStartEdit={onStartEdit}
-              onSaveEdit={onSaveEdit}
-              onCancelEdit={onCancelEdit}
-            />
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <motion.div
+      className="hidden md:block bg-card shadow-lg rounded-lg overflow-hidden"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+    >
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Product</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock Status</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Available</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Quick Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-card divide-y divide-border">
+            {products.map((product) => (
+              <ProductInventoryRow
+                key={product._id ?? ''}
+                product={product}
+                isExpanded={expandedProducts.has(product._id ?? '')}
+                isSelected={selectedProducts.has(product._id ?? '')}
+                editingCell={editingCell}
+                tempValues={tempValues}
+                onToggle={() => onToggleRow(product._id ?? '')}
+                onSelect={() => onSelectProduct(product._id ?? '')}
+                onStartEdit={onStartEdit}
+                onSaveEdit={onSaveEdit}
+                onCancelEdit={onCancelEdit}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </motion.div>
   );
 }
 
@@ -316,8 +324,8 @@ function ProductInventoryRow({
   
   return (
     <>
-      <tr className="border-t hover:bg-muted/30 transition-colors group">
-        <td className="p-4">
+      <tr className="hover:bg-muted/50 transition-all duration-300">
+        <td className="px-6 py-4 whitespace-nowrap">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -344,7 +352,7 @@ function ProductInventoryRow({
             </div>
           </div>
         </td>
-        <td className="p-4 text-center">
+        <td className="px-6 py-4 whitespace-nowrap text-center">
           {isLoading ? (
             <div className="animate-pulse bg-muted h-6 w-20 mx-auto rounded" />
           ) : (
@@ -361,7 +369,7 @@ function ProductInventoryRow({
             </>
           )}
         </td>
-        <td className="p-4 text-center">
+        <td className="px-6 py-4 whitespace-nowrap text-center">
           {hasVariants ? (
             <div className="flex items-center justify-center gap-2">
               <span className="font-semibold text-lg">{totalVariantInventory}</span>
@@ -422,14 +430,14 @@ function ProductInventoryRow({
               <span className="font-semibold text-lg">{inventory}</span>
               <button
                 onClick={() => onStartEdit(cellKey, inventory)}
-                className="p-1 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                className="p-1 hover:bg-muted rounded"
               >
                 <Edit2 className="w-3 h-3" />
               </button>
             </div>
           )}
         </td>
-        <td className="p-4">
+        <td className="px-6 py-4 whitespace-nowrap">
           <div className="flex items-center justify-center gap-1">
             {hasVariants ? (
               <span className="text-sm text-muted-foreground">
@@ -538,8 +546,8 @@ function VariantInventoryRow({
   const variantDisplayName = getVariantDisplayText(variant);
   
   return (
-    <tr className="border-t bg-muted/20 hover:bg-muted/40 transition-colors group">
-      <td className="p-4 pl-12">
+    <tr className="bg-muted/20 hover:bg-muted/40 transition-all duration-300">
+      <td className="px-6 py-4 whitespace-nowrap pl-12">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">↳</span>
           <div>
@@ -553,14 +561,14 @@ function VariantInventoryRow({
           </div>
         </div>
       </td>
-      <td className="p-4 text-center">
+      <td className="px-6 py-4 whitespace-nowrap text-center">
         {isLoading ? (
           <div className="animate-pulse bg-muted h-6 w-20 mx-auto rounded" />
         ) : (
           <InventoryBadge inventory={currentInventory} variant="admin" />
         )}
       </td>
-      <td className="p-4 text-center">
+      <td className="px-6 py-4 whitespace-nowrap text-center">
         {isEditing ? (
           <div className="flex items-center justify-center gap-2">
             <Input
@@ -620,14 +628,14 @@ function VariantInventoryRow({
             <span className="font-semibold">{currentInventory}</span>
             <button
               onClick={() => onStartEdit(cellKey, currentInventory)}
-              className="p-1 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity"
+              className="p-1 hover:bg-muted rounded"
             >
               <Edit2 className="w-3 h-3" />
             </button>
           </div>
         )}
       </td>
-      <td className="p-4">
+      <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center justify-center gap-1">
           <Button
             size="sm"

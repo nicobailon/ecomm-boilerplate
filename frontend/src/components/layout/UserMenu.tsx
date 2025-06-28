@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, User, ChevronDown } from 'lucide-react';
+import { LogOut, User, ChevronDown, Package } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useCurrentUser, useLogout } from '@/hooks/auth/useAuth';
 import { VerificationBadge } from '../ui/VerificationBadge';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -59,6 +60,19 @@ export const UserMenu: React.FC = () => {
                 </span>
               </div>
             </div>
+
+            <div className="py-1">
+              <Link
+                to="/account/orders"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+              >
+                <Package size={16} className="mr-2" />
+                My Orders
+              </Link>
+            </div>
+            
+            <div className="border-b border-border" />
 
             <div className="py-1">
               <button

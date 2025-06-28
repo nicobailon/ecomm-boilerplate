@@ -18,6 +18,7 @@ import {
   PurchaseCancelPage,
 } from '@/pages';
 import NotFoundPage from '@/pages/NotFoundPage';
+import AccountOrdersPage from '@/pages/AccountOrdersPage';
 
 export const router = createBrowserRouter([
   {
@@ -79,6 +80,11 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        id: 'verify-email-query',
+        path: 'verify-email',
+        element: <VerifyEmailPage />,
+      },
+      {
         id: 'verify-email',
         path: 'verify-email/:token',
         element: <VerifyEmailPage />,
@@ -113,6 +119,15 @@ export const router = createBrowserRouter([
         element: (
           <AuthGuard requireAuth={true} redirectTo="/login">
             <PurchaseCancelPage />
+          </AuthGuard>
+        ),
+      },
+      {
+        id: 'account-orders',
+        path: '/account/orders',
+        element: (
+          <AuthGuard requireAuth={true} redirectTo="/login">
+            <AccountOrdersPage />
           </AuthGuard>
         ),
       },

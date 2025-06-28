@@ -35,6 +35,18 @@ declare global {
       
       // Redis health status (runtime)
       REDIS_HEALTH_STATUS?: string;
+      
+      // Webhook configuration (optional)
+      WEBHOOK_RATE_LIMIT?: string;
+      WEBHOOK_TIMEOUT?: string;
+      WEBHOOK_MAX_RETRIES?: string;
+      
+      // Monitoring and alerts (optional)
+      SLACK_WEBHOOK_URL?: string;
+      ALERT_EMAIL?: string;
+      SENTRY_DSN?: string;
+      DATADOG_API_KEY?: string;
+      MONITORING_ENABLED?: string;
     }
   }
 }

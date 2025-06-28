@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { Product } from '../models/product.model.js';
 import { InventoryHistory } from '../models/inventory-history.model.js';
-import { AppError } from '../utils/AppError.js';
+import { AppError, InventoryError } from '../utils/AppError.js';
 import { CacheService } from './cache.service.js';
 import { createLogger, generateCorrelationId } from '../utils/logger.js';
 import { getVariantOrDefault } from './helpers/variant.helper.js';
@@ -17,6 +17,18 @@ import {
   InventoryMetrics,
   InventoryTurnoverData,
 } from '../../shared/types/inventory.types.js';
+import {
+  CheckoutProduct,
+  ValidationResult,
+  ValidatedProduct,
+  AtomicInventoryCheckResult,
+} from '../types/inventory.types.js';
+import {
+  formatVariantDetails,
+  buildAtomicUpdateFilter,
+  buildAtomicUpdateOperation,
+  getArrayFilters,
+} from '../utils/inventory-atomicity.js';
 
 const CACHE_KEYS = {
   INVENTORY_METRICS: 'inventory:metrics',
@@ -61,6 +73,328 @@ export class InventoryService {
 
   constructor() {
     this.cacheService = new CacheService();
+  }
+
+  async batchValidateInventory(
+    products: { _id: string; quantity: number; variantId?: string }[]
+  ): Promise<{
+    isValid: boolean;
+    validatedProducts: {
+      productId: string;
+      variantId?: string;
+      requestedQuantity: number;
+      availableStock: number;
+      productName?: string;
+      variantDetails?: string;
+      hasStock: boolean;
+    }[];
+  }> {
+    const productIds = products.map(p => p._id);
+    const productDocs = await Product.find({ _id: { $in: productIds } });
+    const productMap = new Map(productDocs.map(p => [p._id!.toString(), p]));
+    
+    const validatedProducts = [];
+    let isValid = true;
+
+    for (const item of products) {
+      const product = productMap.get(item._id);
+      
+      if (!product) {
+        validatedProducts.push({
+          productId: item._id,
+          variantId: item.variantId,
+          requestedQuantity: item.quantity,
+          availableStock: 0,
+          hasStock: false,
+        });
+        isValid = false;
+        continue;
+      }
+
+      let availableStock = 0;
+      let variantDetails: string | undefined;
+
+      if (!product.variants || product.variants.length === 0) {
+        availableStock = 0;
+      } else if (item.variantId) {
+        const variant = product.variants.find(v => v.variantId === item.variantId);
+        if (variant) {
+          availableStock = variant.inventory;
+          variantDetails = formatVariantDetails(variant);
+        }
+      } else {
+        availableStock = product.variants.reduce((sum, v) => sum + v.inventory, 0);
+      }
+
+      const hasStock = availableStock >= item.quantity;
+      if (!hasStock) {
+        isValid = false;
+      }
+
+      validatedProducts.push({
+        productId: item._id,
+        variantId: item.variantId,
+        requestedQuantity: item.quantity,
+        availableStock,
+        productName: product.name,
+        variantDetails,
+        hasStock,
+      });
+    }
+
+    return { isValid, validatedProducts };
+  }
+
+  async validateAndReserveInventory(
+    products: CheckoutProduct[],
+    session: mongoose.ClientSession
+  ): Promise<ValidationResult> {
+    const correlationId = generateCorrelationId();
+    const errors: string[] = [];
+    const validatedProducts: ValidatedProduct[] = [];
+    
+    this.logger.info('inventory.validate.start', {
+      correlationId,
+      productCount: products.length,
+    });
+
+    for (const product of products) {
+      try {
+        const result = await this.atomicInventoryCheck(
+          product.id,
+          product.variantId,
+          product.quantity,
+          session
+        );
+
+        if (!result.success) {
+          const variantInfo = result.variantDetails ? ` (${result.variantDetails})` : '';
+          errors.push(
+            `${result.productName}${variantInfo}: Only ${result.availableStock} available, ${product.quantity} requested`
+          );
+        }
+
+        validatedProducts.push({
+          productId: product.id,
+          variantId: product.variantId,
+          requestedQuantity: product.quantity,
+          availableStock: result.availableStock,
+          productName: result.productName,
+          variantDetails: result.variantDetails,
+        });
+
+      } catch (error) {
+        this.logger.error('inventory.validate.product.error', error, {
+          correlationId,
+          productId: product.id,
+          variantId: product.variantId,
+        });
+
+        if (error instanceof Error) {
+          errors.push(`${product.id}: ${error.message}`);
+        }
+      }
+    }
+
+    const isValid = errors.length === 0;
+    
+    this.logger.info('inventory.validate.complete', {
+      correlationId,
+      isValid,
+      errorCount: errors.length,
+      validatedCount: validatedProducts.length,
+    });
+
+    return {
+      isValid,
+      errors,
+      validatedProducts,
+    };
+  }
+
+  async atomicInventoryCheck(
+    productId: string,
+    variantId: string | undefined,
+    quantity: number,
+    session: mongoose.ClientSession
+  ): Promise<AtomicInventoryCheckResult> {
+    const product = await Product.findById(productId).session(session);
+    
+    if (!product) {
+      throw new InventoryError('Product not found', 'PRODUCT_NOT_FOUND', [{
+        productId,
+        variantId,
+        requestedQuantity: quantity,
+        availableStock: 0,
+      }]);
+    }
+
+    let availableStock = 0;
+    let variantDetails = '';
+    
+    if (variantId) {
+      const variant = product.variants.find(v => v.variantId === variantId);
+      if (!variant) {
+        throw new InventoryError('Variant not found', 'VARIANT_NOT_FOUND', [{
+          productId,
+          productName: product.name,
+          variantId,
+          requestedQuantity: quantity,
+          availableStock: 0,
+        }]);
+      }
+      
+      availableStock = variant.inventory;
+      variantDetails = formatVariantDetails(variant);
+    } else {
+      if (product.variants.length > 0) {
+        const firstVariant = product.variants[0];
+        if (firstVariant) {
+          availableStock = firstVariant.inventory;
+        }
+      }
+    }
+
+    const success = availableStock >= quantity;
+
+    return {
+      success,
+      availableStock,
+      productName: product.name,
+      variantDetails,
+    };
+  }
+
+  async getInventoryWithLock(
+    productId: string,
+    variantId: string | undefined,
+    session: mongoose.ClientSession
+  ): Promise<number> {
+    const product = await Product.findById(productId).session(session);
+    
+    if (!product) {
+      throw new InventoryError('Product not found', 'PRODUCT_NOT_FOUND', [{
+        productId,
+        variantId,
+        requestedQuantity: 0,
+        availableStock: 0,
+      }]);
+    }
+
+    if (variantId) {
+      const variant = product.variants.find(v => v.variantId === variantId);
+      if (!variant) {
+        throw new InventoryError('Variant not found', 'VARIANT_NOT_FOUND', [{
+          productId,
+          productName: product.name,
+          variantId,
+          requestedQuantity: 0,
+          availableStock: 0,
+        }]);
+      }
+      return variant.inventory;
+    } else {
+      if (product.variants.length > 0) {
+        const firstVariant = product.variants[0];
+        if (firstVariant) {
+          return firstVariant.inventory;
+        }
+      }
+      return 0;
+    }
+  }
+
+  async atomicInventoryDeduction(
+    productId: string,
+    variantId: string | undefined,
+    quantity: number,
+    session: mongoose.ClientSession
+  ): Promise<boolean> {
+    const filter = buildAtomicUpdateFilter(productId, quantity, variantId);
+    const update = buildAtomicUpdateOperation(variantId, -quantity);
+    const options = {
+      session,
+      new: true,
+      arrayFilters: getArrayFilters(variantId),
+    };
+
+    const result = await Product.findOneAndUpdate(filter, update, options);
+
+    if (!result) {
+      const product = await Product.findById(productId).session(session);
+      if (!product) {
+        throw new InventoryError('Product not found', 'PRODUCT_NOT_FOUND', [{
+          productId,
+          variantId,
+          requestedQuantity: quantity,
+          availableStock: 0,
+        }]);
+      }
+
+      const availableStock = await this.getInventoryWithLock(productId, variantId, session);
+      throw new InventoryError('Insufficient inventory', 'INSUFFICIENT_INVENTORY', [{
+        productId,
+        productName: product.name,
+        variantId,
+        variantDetails: variantId ? formatVariantDetails(product.variants.find(v => v.variantId === variantId) ?? {}) : undefined,
+        requestedQuantity: quantity,
+        availableStock,
+      }]);
+    }
+
+    return true;
+  }
+
+  async recordInventoryHistory(
+    productId: string,
+    variantId: string | undefined,
+    adjustment: number,
+    reason: InventoryUpdateReason,
+    userId: string,
+    metadata?: Record<string, unknown>,
+    session?: mongoose.ClientSession
+  ): Promise<void> {
+    const product = await Product.findById(productId).session(session || null);
+    if (!product) {
+      throw new AppError('Product not found', 404);
+    }
+
+    let previousQuantity = 0;
+    let newQuantity = 0;
+
+    if (variantId) {
+      const variant = product.variants.find(v => v.variantId === variantId);
+      if (variant) {
+        previousQuantity = variant.inventory + Math.abs(adjustment);
+        newQuantity = variant.inventory;
+      }
+    } else {
+      // For products without variants, assume first variant or 0
+      if (product.variants.length > 0) {
+        const firstVariant = product.variants[0];
+        if (firstVariant) {
+          previousQuantity = firstVariant.inventory + Math.abs(adjustment);
+          newQuantity = firstVariant.inventory;
+        }
+      }
+    }
+
+    const historyData = {
+      productId,
+      variantId,
+      previousQuantity,
+      newQuantity,
+      adjustment,
+      reason,
+      userId,
+      metadata,
+    };
+
+    if (session) {
+      await InventoryHistory.create([historyData], { session });
+    } else {
+      await InventoryHistory.create(historyData);
+    }
   }
   async checkAvailability(
     productId: string,
@@ -156,6 +490,9 @@ export class InventoryService {
     });
     
     try {
+      // Check if this is a history-only update (inventory already deducted atomically)
+      const skipDeduction = metadata?.skipDeduction === true;
+      
       // First, check if product exists and has variants
       const product = await Product.findById(productId);
       if (!product) {
@@ -177,72 +514,86 @@ export class InventoryService {
         await product.save();
       }
       
-      // Use atomic operation
-      const updateQuery = variantId
-        ? {
-            _id: productId,
-            'variants.variantId': variantId,
-            'variants.inventory': { 
-              $gte: adjustment < 0 ? Math.abs(adjustment) : 0,
-              $lte: adjustment > 0 ? MAX_INVENTORY - adjustment : MAX_INVENTORY,
-            },
-          }
-        : {
-            _id: productId,
-            'variants.0.inventory': { 
-              $gte: adjustment < 0 ? Math.abs(adjustment) : 0,
-              $lte: adjustment > 0 ? MAX_INVENTORY - adjustment : MAX_INVENTORY,
-            },
-          };
+      let updatedProduct = product;
+      let previousQuantity: number;
+      let newQuantity: number;
       
-      // Additional validation for sales
-      if (reason === 'sale' && adjustment < 0) {
-        const availableStock = await this.getAvailableInventory(productId, variantId);
-        if (Math.abs(adjustment) > availableStock) {
-          throw new AppError(
-            `Cannot sell ${Math.abs(adjustment)} items. Only ${availableStock} available`,
-            400,
-          );
-        }
-      }
-      
-      const updateOperation = variantId
-        ? { $inc: { 'variants.$.inventory': adjustment } }
-        : { $inc: { 'variants.0.inventory': adjustment } };
-      
-      const updatedProduct = await Product.findOneAndUpdate(
-        updateQuery,
-        updateOperation,
-        { new: true, runValidators: true },
-      );
-      
-      if (!updatedProduct) {
-        if (variantId) {
-          const variant = product.variants.find(v => v.variantId === variantId);
-          if (!variant) {
-            throw new AppError('Variant not found', 404);
+      if (!skipDeduction) {
+        // Use atomic operation
+        const updateQuery = variantId
+          ? {
+              _id: productId,
+              'variants.variantId': variantId,
+              'variants.inventory': { 
+                $gte: adjustment < 0 ? Math.abs(adjustment) : 0,
+                $lte: adjustment > 0 ? MAX_INVENTORY - adjustment : MAX_INVENTORY,
+              },
+            }
+          : {
+              _id: productId,
+              'variants.0.inventory': { 
+                $gte: adjustment < 0 ? Math.abs(adjustment) : 0,
+                $lte: adjustment > 0 ? MAX_INVENTORY - adjustment : MAX_INVENTORY,
+              },
+            };
+        
+        // Additional validation for sales
+        if (reason === 'sale' && adjustment < 0) {
+          const availableStock = await this.getAvailableInventory(productId, variantId);
+          if (Math.abs(adjustment) > availableStock) {
+            throw new AppError(
+              `Cannot sell ${Math.abs(adjustment)} items. Only ${availableStock} available`,
+              400,
+            );
           }
         }
         
-        throw new AppError(
-          adjustment < 0 
-            ? `Insufficient inventory. Current: ${product.variants[0]?.inventory ?? 0}, Requested adjustment: ${adjustment}`
-            : `Inventory limit exceeded. Maximum allowed: ${MAX_INVENTORY}`,
-          400,
+        const updateOperation = variantId
+          ? { $inc: { 'variants.$.inventory': adjustment } }
+          : { $inc: { 'variants.0.inventory': adjustment } };
+        
+        const result = await Product.findOneAndUpdate(
+          updateQuery,
+          updateOperation,
+          { new: true, runValidators: true },
         );
+        
+        if (!result) {
+          if (variantId) {
+            const variant = product.variants.find(v => v.variantId === variantId);
+            if (!variant) {
+              throw new AppError('Variant not found', 404);
+            }
+          }
+          
+          throw new AppError(
+            adjustment < 0 
+              ? `Insufficient inventory. Current: ${product.variants[0]?.inventory ?? 0}, Requested adjustment: ${adjustment}`
+              : `Inventory limit exceeded. Maximum allowed: ${MAX_INVENTORY}`,
+            400,
+          );
+        }
+        
+        updatedProduct = result;
       }
       
       // Get the variant data for history
       const variant = variantId
         ? updatedProduct.variants.find(v => v.variantId === variantId)
-        : updatedProduct.variants[0];
+        : updatedProduct.variants.length > 0 ? updatedProduct.variants[0] : undefined;
       
       if (!variant) {
         throw new AppError('Variant not found after update', 500);
       }
       
-      const previousQuantity = variant.inventory - adjustment;
-      const newQuantity = variant.inventory;
+      if (skipDeduction) {
+        // For history-only updates, calculate what the values would have been
+        previousQuantity = variant.inventory - adjustment;
+        newQuantity = variant.inventory;
+      } else {
+        previousQuantity = variant.inventory - adjustment;
+        newQuantity = variant.inventory;
+      }
       
       // Save history
       const historyRecord = new InventoryHistory({

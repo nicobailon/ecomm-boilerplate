@@ -2,13 +2,15 @@ import { Drawer } from '../ui/Drawer';
 import { DiscountForm } from '../forms/DiscountForm';
 import { useCreateDiscount, useUpdateDiscount } from '../../hooks/queries/useDiscounts';
 import type { DiscountFormInput } from '@/lib/validations';
-import type { Discount } from '@/types/discount';
+import type { RouterOutputs } from '@/lib/trpc';
+
+type CouponFromAPI = RouterOutputs['coupon']['listAll']['discounts'][0] & { _id: string; createdAt?: string | Date; updatedAt?: string | Date; };
 
 interface DiscountEditDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   mode: 'create' | 'edit';
-  discount?: Discount;
+  discount?: CouponFromAPI;
 }
 
 export const DiscountEditDrawer: React.FC<DiscountEditDrawerProps> = ({

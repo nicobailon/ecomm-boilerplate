@@ -9,6 +9,7 @@ import { collectionRouter } from './collection.router.js';
 import { inventoryRouter } from './inventory.router.js';
 import { statusRouter } from './status.router.js';
 import { mediaRouter } from './media.router.js';
+import { orderRouter } from './order.router.js';
 
 export const appRouter = router({
   auth: authRouter,
@@ -21,6 +22,7 @@ export const appRouter = router({
   inventory: inventoryRouter,
   status: statusRouter,
   media: mediaRouter,
+  order: orderRouter,
 });
 
 export type AppRouter = typeof appRouter;

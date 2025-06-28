@@ -45,6 +45,7 @@ describe('EmailService Integration Tests', () => {
           },
         ],
         shippingAddress: {
+          fullName: 'Test Customer',
           line1: '123 Test St',
           city: 'Test City',
           state: 'TS',
@@ -118,6 +119,7 @@ describe('EmailService Integration Tests', () => {
           },
         ],
         shippingAddress: {
+          fullName: 'John Doe',
           line1: '456 Main Ave',
           line2: 'Apt 2B',
           city: 'New York',

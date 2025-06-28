@@ -16,6 +16,12 @@ export interface IPopulatedOrderDocument extends Omit<IOrderDocument, 'products'
     product: IProductDocument;
     quantity: number;
     price: number;
+    variantId?: string;
+    variantDetails?: {
+      size?: string;
+      color?: string;
+      sku?: string;
+    };
     variantLabel?: string;
   }[];
 }
@@ -356,7 +362,7 @@ export class EmailService {
   async sendEmailVerification(user: IUserDocument, verificationToken: string): Promise<void> {
     const data: EmailVerificationData = {
       userName: user.name?.split(' ')[0] ?? 'there',
-      verificationUrl: `${this.baseUrl}/verify-email?token=${verificationToken}`,
+      verificationUrl: `${this.baseUrl}/verify-email/${verificationToken}`,
       expirationTime: '24 hours',
       supportEmail: process.env.SUPPORT_EMAIL ?? 'support@example.com',
     };

@@ -16,6 +16,7 @@ import { inventoryMonitor } from './services/inventory-monitor.service.js';
 import { getEmailQueueForShutdown, shutdownEmailQueue } from './lib/email-queue.js';
 import { queueMonitoring, alertHandlers } from './lib/queue-monitoring.js';
 import { redisMonitoring, monitoringHandlers } from './lib/redis-monitoring.js';
+import { webhookMonitoring, webhookAlertHandlers } from './lib/webhook-monitoring.js';
 import authRoutes from './routes/auth.route.js';
 import productRoutes from './routes/product.route.js';
 import cartRoutes from './routes/cart.route.js';
@@ -40,9 +41,13 @@ app.use(cors({
   origin: process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',') : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
 }));
-// Apply JSON parsing to all routes except uploadthing
+
+// Apply raw body parser for webhook endpoint before other parsers
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+
+// Apply JSON parsing to all routes except uploadthing and webhook
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api/uploadthing')) {
+  if (req.path.startsWith('/api/uploadthing') || req.path === '/api/payments/webhook') {
     next();
   } else {
     express.json({ limit: '10mb' })(req, res, next);
@@ -141,6 +146,21 @@ httpServer.listen(PORT, '0.0.0.0', () => {
       }
       
       console.info('Redis monitoring started');
+      
+      // Start webhook monitoring
+      webhookMonitoring.startMonitoring(60000); // Check every minute
+      
+      // Set up webhook monitoring alerts
+      webhookMonitoring.onAlert(webhookAlertHandlers.console);
+      webhookMonitoring.onAlert(webhookAlertHandlers.monitoring);
+      
+      if (process.env.SLACK_WEBHOOK_URL) {
+        webhookMonitoring.onAlert((alert) => {
+          void webhookAlertHandlers.slack(alert);
+        });
+      }
+      
+      console.info('Webhook monitoring started');
     } catch (error) {
       console.error('Failed to initialize services:', error);
     }
@@ -156,6 +176,10 @@ process.on('SIGTERM', () => {
     // Stop Redis monitoring
     redisMonitoring.stopMonitoring();
     console.info('Redis monitoring stopped');
+    
+    // Stop webhook monitoring
+    webhookMonitoring.stopMonitoring();
+    console.info('Webhook monitoring stopped');
     
     // Shutdown email queue with proper cleanup
     await shutdownEmailQueue();

@@ -197,6 +197,14 @@ export const collectionRouter = router({
       z.object({
         limit: z.number().min(1).max(100).default(20),
         cursor: z.string().optional(),
+        // Page-based pagination
+        page: z.number().min(1).optional(),
+        // Sorting
+        sortBy: z.enum(['name', 'createdAt', 'updatedAt', 'productCount']).default('createdAt').optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('desc').optional(),
+        // Filtering
+        search: z.string().optional(),
+        isPublic: z.boolean().optional(),
       }),
     )
     .query(async ({ input, ctx }) => {

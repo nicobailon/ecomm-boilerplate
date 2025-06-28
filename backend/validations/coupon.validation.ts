@@ -29,9 +29,14 @@ export const updateDiscountSchema = z.object({
 export const listDiscountsSchema = z.object({
   page: z.number().int().positive().default(1).optional(),
   limit: z.number().int().positive().max(100).default(20).optional(),
-  sortBy: z.enum(['code', 'discountPercentage', 'expirationDate', 'createdAt', 'updatedAt']).default('createdAt').optional(),
+  sortBy: z.enum(['code', 'discountPercentage', 'expirationDate', 'createdAt', 'updatedAt', 'currentUses']).default('createdAt').optional(),
   sortOrder: z.enum(['asc', 'desc']).default('desc').optional(),
   isActive: z.boolean().optional(),
+  search: z.string().optional(),
+  status: z.enum(['all', 'active', 'inactive', 'expired']).default('all').optional(),
+  expirationDateFrom: z.string().optional(),
+  expirationDateTo: z.string().optional(),
+  usageStatus: z.enum(['all', 'never', 'low', 'high']).default('all').optional(),
 });
 
 export const deleteDiscountSchema = z.object({

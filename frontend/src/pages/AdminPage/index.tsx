@@ -1,4 +1,4 @@
-import { BarChart, PlusCircle, ShoppingBasket, FolderOpen, Tag, Package } from 'lucide-react';
+import { BarChart, PlusCircle, ShoppingBasket, FolderOpen, Tag, Package, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
@@ -6,10 +6,11 @@ import AnalyticsTab from './AnalyticsTab';
 import { CollectionsTab } from './CollectionsTab';
 import DiscountsTab from './DiscountsTab';
 import { InventoryTab } from './InventoryTab';
+import { OrdersTab } from './OrdersTab';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { DiscountErrorFallback } from '@/components/discount/DiscountErrorFallback';
 import { ProductForm } from '@/components/forms/ProductForm';
-import ProductsList from '@/components/product/ProductsList';
+import { ProductsTable } from '@/components/product/ProductsTable';
 import { TransitionOverlay } from '@/components/ui/transition-overlay';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { TabId } from '@/types';
@@ -57,7 +58,7 @@ const AdminPage = () => {
 				</motion.h1>
 
 				<Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-					<TabsList className="grid w-full max-w-2xl mx-auto grid-cols-6 mb-8">
+					<TabsList className="grid w-full max-w-4xl mx-auto grid-cols-7 mb-8">
 						<TabsTrigger value="create" disabled={isNavigating} className={isNavigating && activeTab === 'create' ? 'animate-pulse' : ''}>
 							<PlusCircle className="mr-2 h-5 w-5" />
 							Create Product
@@ -81,6 +82,10 @@ const AdminPage = () => {
 						<TabsTrigger value="inventory" disabled={isNavigating} className={isNavigating && activeTab === 'inventory' ? 'animate-pulse' : ''}>
 							<Package className="mr-2 h-5 w-5" />
 							Inventory
+						</TabsTrigger>
+						<TabsTrigger value="orders" id="orders-tab" disabled={isNavigating} className={isNavigating && activeTab === 'orders' ? 'animate-pulse' : ''}>
+							<ShoppingCart className="mr-2 h-5 w-5" />
+							Orders
 						</TabsTrigger>
 					</TabsList>
 
@@ -108,7 +113,7 @@ const AdminPage = () => {
 								exit={{ opacity: 0, x: -20 }}
 								transition={{ duration: 0.2 }}
 							>
-								<ProductsList 
+								<ProductsTable 
 									onEditProduct={openEditor}
 									highlightProductId={newProductId}
 									onHighlightComplete={clearHighlight}
@@ -163,6 +168,17 @@ const AdminPage = () => {
 								transition={{ duration: 0.2 }}
 							>
 								<InventoryTab />
+							</motion.div>
+						</TabsContent>
+						
+						<TabsContent value="orders">
+							<motion.div
+								initial={{ opacity: 0, x: 20 }}
+								animate={{ opacity: 1, x: 0 }}
+								exit={{ opacity: 0, x: -20 }}
+								transition={{ duration: 0.2 }}
+							>
+								<OrdersTab />
 							</motion.div>
 						</TabsContent>
 					</div>

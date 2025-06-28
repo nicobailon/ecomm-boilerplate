@@ -27,6 +27,7 @@
 		"deactivate-coupon": "tsx backend/scripts/deactivate-coupon.ts",
 		"migrate-appliedCoupon": "tsx backend/scripts/migrate-appliedCoupon.ts",
 		"generate-slugs": "tsx backend/scripts/generate-slugs.ts",
+		"create-indexes": "tsx backend/scripts/create-inventory-indexes.ts",
 		"migrate-product-slugs": "tsx backend/scripts/migrate-product-slugs.ts",
 		"migrate:variant-labels": "tsx backend/scripts/migrate-variant-label.ts",
 		"revert:variant-labels": "tsx backend/scripts/revert-variant-label.ts",

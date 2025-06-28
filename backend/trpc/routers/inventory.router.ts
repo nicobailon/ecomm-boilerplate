@@ -31,6 +31,71 @@ const inventoryQueryLimiter = createRateLimiter({
 });
 
 export const inventoryRouter = router({
+  validateCheckout: publicProcedure
+    .use(inventoryCheckLimiter)
+    .input(
+      z.object({
+        products: z.array(
+          z.object({
+            _id: z.string(),
+            quantity: z.number().positive().int(),
+            variantId: z.string().optional(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const validationResult = {
+          isValid: true,
+          adjustments: [] as Array<{
+            productId: string;
+            productName: string;
+            variantDetails?: string;
+            requestedQuantity: number;
+            adjustedQuantity: number;
+            availableStock: number;
+          }>,
+        };
+
+        // Check each product's inventory
+        for (const product of input.products) {
+          const availableStock = await inventoryService.getAvailableInventory(
+            product._id,
+            product.variantId
+          );
+
+          if (availableStock < product.quantity) {
+            validationResult.isValid = false;
+            
+            const adjustedQuantity = Math.min(product.quantity, availableStock);
+            
+            validationResult.adjustments.push({
+              productId: product._id,
+              productName: product._id, // We'd need to fetch this from Product model
+              variantDetails: product.variantId,
+              requestedQuantity: product.quantity,
+              adjustedQuantity,
+              availableStock,
+            });
+          }
+        }
+
+        return validationResult;
+      } catch (error) {
+        if (isAppError(error)) {
+          throw new TRPCError({
+            code: error.statusCode === 404 ? 'NOT_FOUND' : 'BAD_REQUEST',
+            message: error.message,
+          });
+        }
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to validate checkout inventory',
+        });
+      }
+    }),
+
   getProductInventory: publicProcedure
     .use(inventoryQueryLimiter)
     .input(

@@ -1,7 +1,7 @@
 import { beforeAll, afterAll } from 'vitest';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '.env.test' });
+dotenv.config({ path: '.env' });
 
 beforeAll(() => {
   // Setting up tests

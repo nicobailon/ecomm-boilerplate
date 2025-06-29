@@ -49,6 +49,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TRPCErrorBoundary } from '@/components/ui/TRPCErrorBoundary';
 import { InventoryErrorBoundary } from '@/components/ui/InventoryErrorBoundary';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import EmailVerifiedSuccess from '@/components/auth/EmailVerifiedSuccess';
 import Layout from '@/components/layout/Layout';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -91,7 +92,7 @@ import {
   productCardMockData, productsListMockData, cartItemMockData, orderSummaryMockData,
   inventoryManagementMockData, navbarMockData, collectionMockData,
   stockBadgeMockData, productInfoMockData, emailVerificationBannerMockData,
-  verificationBadgeMockData, heroBannerMockData,
+  verificationBadgeMockData, heroBannerMockData, emailVerificationMockData,
 } from './mockData.js';
 
 // Helper to safely cast components to the registry type
@@ -1166,6 +1167,22 @@ export const componentRegistry: ComponentRegistry = {
       category: 'auth',
       subcategory: 'verification',
       status: 'stable',
+    },
+    {
+      id: 'email-verified-success',
+      name: 'Email Verified Success',
+      description: 'Success state component for email verification with role-specific messaging',
+      component: castComponent(EmailVerifiedSuccess),
+      defaultProps: emailVerificationMockData.customer,
+      category: 'auth',
+      subcategory: 'verification',
+      status: 'stable',
+      variations: [
+        { id: 'customer', name: 'Customer Role', props: emailVerificationMockData.customer },
+        { id: 'admin', name: 'Admin Role', props: emailVerificationMockData.admin },
+        { id: 'withCountdown', name: 'With Countdown', props: { ...emailVerificationMockData.customer, showCountdown: true } },
+      ],
+      requirements: ['Role-based messaging', 'Countdown timer', 'Redirect handling'],
     },
   ],
   collections: [

@@ -179,11 +179,23 @@ For detailed documentation, see `/backend/docs/email-system.md`.
     - Mock data generation
     - WebSocket simulation tools
     - Feature flag management
+-   **Email Verification Preview Routes** (requires authentication):
+    - Customer success page: `http://localhost:5173/dev/email-verified/customer`
+    - Admin success page: `http://localhost:5173/dev/email-verified/admin`
+    - These routes allow developers and designers to preview the email verification success states without going through the actual email verification flow
 -   Dev code is automatically stripped from production builds.
 
 ### Admin Management
 -   `npm run list-users`: Lists all users and their roles.
 -   `npm run make-admin <email>`: Promotes a user to admin role.
+
+### Development Route Authentication
+To access the email verification preview routes:
+1. Sign in to the application with any user account
+2. Navigate to the desired route:
+   - `/dev/email-verified/customer` - Shows the customer success experience
+   - `/dev/email-verified/admin` - Shows the admin success experience
+3. The routes are accessible to any authenticated user, allowing developers to preview both customer and admin experiences regardless of their actual role
 
 ## 🤝 Contributing
 

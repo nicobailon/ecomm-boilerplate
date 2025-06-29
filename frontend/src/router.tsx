@@ -169,4 +169,38 @@ if (import.meta.env.DEV) {
   if (rootRoute && rootRoute.children) {
     rootRoute.children.push(devRoute);
   }
+  
+  // Add email verification dev routes
+  const DevEmailVerifiedCustomerPage = lazy(() => import('@/dev/pages/DevEmailVerifiedCustomerPage'));
+  const DevEmailVerifiedAdminPage = lazy(() => import('@/dev/pages/DevEmailVerifiedAdminPage'));
+  
+  const devEmailRoutes = [
+    {
+      id: 'dev-email-verified-customer',
+      path: 'dev/email-verified/customer',
+      element: (
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <AuthGuard requireAuth={true} requireAdmin={false} redirectTo="/login">
+            <DevEmailVerifiedCustomerPage />
+          </AuthGuard>
+        </React.Suspense>
+      ),
+    },
+    {
+      id: 'dev-email-verified-admin',
+      path: 'dev/email-verified/admin',
+      element: (
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <AuthGuard requireAuth={true} requireAdmin={false} redirectTo="/login">
+            <DevEmailVerifiedAdminPage />
+          </AuthGuard>
+        </React.Suspense>
+      ),
+    },
+  ];
+  
+  // Add email verification routes to router children
+  if (rootRoute && rootRoute.children) {
+    rootRoute.children.push(...devEmailRoutes);
+  }
 }

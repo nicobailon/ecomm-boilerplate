@@ -20,6 +20,26 @@ export const useListCollections = (params?: {
   });
 };
 
+export const useAdminCollections = (params?: {
+  limit?: number;
+  cursor?: string;
+  page?: number;
+  sortBy?: 'name' | 'createdAt' | 'updatedAt' | 'productCount';
+  sortOrder?: 'asc' | 'desc';
+  search?: string;
+  isPublic?: boolean;
+}) => {
+  return trpc.collection.adminCollections.useQuery({
+    limit: params?.limit ?? 20,
+    cursor: params?.cursor,
+    page: params?.page,
+    sortBy: params?.sortBy,
+    sortOrder: params?.sortOrder,
+    search: params?.search,
+    isPublic: params?.isPublic,
+  });
+};
+
 export const useMyCollections = (params?: {
   limit?: number;
   cursor?: string;
@@ -204,11 +224,77 @@ export const useQuickCreateCollection = () => {
 
 export const useCheckCollectionAvailability = () => {
   const utils = trpc.useContext();
-  
+
   const checkAvailability = useCallback(async (name: string) => {
     const result = await utils.collection.checkAvailability.fetch({ name });
     return result;
   }, [utils]);
-  
+
   return { checkAvailability };
+};
+
+// Admin-specific mutation hooks
+export const useAdminUpdateCollection = () => {
+  const queryClient = useQueryClient();
+
+  return trpc.collection.adminUpdateCollection.useMutation({
+    onSuccess: (updatedCollection) => {
+      // Update admin collections cache
+      queryClient.setQueryData(
+        [['collection', 'adminCollections'], { type: 'query' }],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            collections: oldData.collections.map((collection: any) =>
+              collection._id === updatedCollection._id ? updatedCollection : collection
+            ),
+          };
+        },
+      );
+
+      // Also update individual collection cache
+      queryClient.setQueryData(
+        [['collection', 'getById'], { input: { id: updatedCollection._id }, type: 'query' }],
+        updatedCollection,
+      );
+
+      toast.success(`Collection "${updatedCollection.name}" updated`);
+    },
+    onError: (error) => {
+      const message = getErrorMessage(error);
+      toast.error(message);
+    },
+  });
+};
+
+export const useAdminDeleteCollection = () => {
+  const queryClient = useQueryClient();
+
+  return trpc.collection.adminDeleteCollection.useMutation({
+    onSuccess: (_, variables) => {
+      // Remove from admin collections cache
+      queryClient.setQueryData(
+        [['collection', 'adminCollections'], { type: 'query' }],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            collections: oldData.collections.filter((collection: any) => collection._id !== variables.id),
+          };
+        },
+      );
+
+      // Remove individual collection cache
+      queryClient.removeQueries({
+        queryKey: [['collection', 'getById'], { input: { id: variables.id }, type: 'query' }],
+      });
+
+      toast.success('Collection deleted successfully');
+    },
+    onError: (error) => {
+      const message = getErrorMessage(error);
+      toast.error(message);
+    },
+  });
 };

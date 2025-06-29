@@ -5,7 +5,8 @@ import type { FormVariant, VariantSubmission } from '@/types';
 import { productSchema } from '@/lib/validations';
 import { useProductCreation } from '@/hooks/product/useProductCreation';
 import { useCreateProduct, useUpdateProduct } from '@/hooks/migration/use-products-migration';
-import { useListCollections, useQuickCreateCollection } from '@/hooks/collections/useCollections';
+import { useQuickCreateCollection } from '@/hooks/collections/useCollections';
+import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
@@ -38,7 +39,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
   const productCreationData = mode === 'create' ? productCreation : null;
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
-  const { data: collectionsData, isLoading: isLoadingCollections } = useListCollections({ limit: 100 });
+  const { data: collectionsData, isLoading: isLoadingCollections } = trpc.collection.adminCollections.useQuery({ limit: 100 });
   const { mutateAsync: quickCreateCollection } = useQuickCreateCollection();
 
   const [imagePreview, setImagePreview] = useState<string>('');  
@@ -212,35 +213,47 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
           });
       } else {
         // Fallback to direct mutation if not in admin context
-        createProductMutation.mutate(apiData, {
-          onSuccess: (result: Product) => {
-            let product: Product;
-            if ('product' in result && result.product) {
-              product = result.product as Product;
-              if ('created' in result && result.created && typeof result.created === 'object' && 'collection' in result.created) {
-                toast.success('Created product in new collection');
-              }
-            } else {
-              product = result;
-            }
-            
-            reset();
-            setImagePreview('');
-            setMediaGallery([]);
-            onSuccess?.(product);
-          },
-        });
+        createProductMutation.mutate(apiData);
       }
     } else {
-      updateProductMutation.mutate({ id: initialData?._id ?? '', data: apiData }, {
-        onSuccess: (updatedProduct: Product) => {
-          toast.success('Product updated!');
-          onSuccess?.(updatedProduct);
-        },
-      });
+      updateProductMutation.mutate({ id: initialData?._id ?? '', data: apiData });
     }
   }, [mode, createProductMutation, updateProductMutation, initialData, reset, onSuccess, productCreationData, useVariantAttributes, mediaGallery]);
-  
+
+  // Handle create product success
+  useEffect(() => {
+    if (createProductMutation.isSuccess && createProductMutation.data) {
+      const result = createProductMutation.data;
+      
+      // The tRPC mutation always returns an object with product, collection, and created properties
+      const product = result.product;
+      
+      // Ensure the product has an _id before proceeding
+      if (!product._id) {
+        console.error('Created product is missing _id');
+        return;
+      }
+      
+      if (result.created && result.created.collection) {
+        toast.success('Created product in new collection');
+      }
+
+      reset();
+      setImagePreview('');
+      setMediaGallery([]);
+      onSuccess?.(product as Product);
+    }
+  }, [createProductMutation.isSuccess, createProductMutation.data, reset, onSuccess]);
+
+  // Handle update product success
+  useEffect(() => {
+    if (updateProductMutation.isSuccess && updateProductMutation.data) {
+      toast.success('Product updated!');
+      // Cast IProduct to Product since the backend returns IProduct but frontend expects Product
+      onSuccess?.(updateProductMutation.data as Product);
+    }
+  }, [updateProductMutation.isSuccess, updateProductMutation.data, onSuccess]);
+
   // Keyboard shortcuts
   useEffect(() => {
     // Only add listener if form is mounted
@@ -368,10 +381,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ mode, initialData, onS
             value={watch('collectionId')}
             onChange={(value) => setValue('collectionId', value)}
             onCreateCollection={handleCreateCollection}
-            collections={collections.map(c => ({ 
-              _id: c._id as string, 
-              name: c.name, 
-              slug: c.slug, 
+            collections={collections.map((c: any) => ({
+              _id: c._id as string,
+              name: c.name,
+              slug: c.slug,
             }))}
             isLoading={isLoadingCollections}
             label="Collection (Optional)"

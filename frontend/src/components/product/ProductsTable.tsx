@@ -44,7 +44,6 @@ import { InventoryBadgeLoading } from '@/components/ui/InventorySkeleton';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { toast } from 'sonner';
 import debounce from 'lodash.debounce';
-import { FEATURE_FLAGS } from '@/lib/feature-flags';
 
 // Separate component for featured toggle to avoid hooks in non-component functions
 function FeaturedToggleCell({ product }: { product: Product }) {
@@ -182,7 +181,6 @@ export function ProductsTable({
     isFeatured: featuredFilter === 'featured' ? true : featuredFilter === 'notFeatured' ? false : undefined,
     includeVariants: false,
   }, {
-    enabled: FEATURE_FLAGS.USE_TRPC_PRODUCTS,
     placeholderData: (previousData) => previousData,
   });
 

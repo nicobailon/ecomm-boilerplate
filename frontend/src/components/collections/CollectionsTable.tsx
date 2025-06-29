@@ -70,8 +70,8 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
   const deleteCollection = useDeleteCollection();
   const utils = trpc.useUtils();
 
-  // Fetch data with tRPC
-  const { data, isLoading, isError } = trpc.collection.myCollections.useQuery({
+  // Fetch data with tRPC - use admin endpoint to see all collections
+  const { data, isLoading, isError } = trpc.collection.adminCollections.useQuery({
     limit: pagination.pageSize,
     page: pagination.pageIndex + 1,
     search: globalFilter || undefined,
@@ -386,7 +386,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
       });
     }
 
-    await utils.collection.myCollections.invalidate();
+    await utils.collection.adminCollections.invalidate();
     setRowSelection({});
     toast.success(`Made ${selectedRows.length} collections ${makePublic ? 'public' : 'private'}`);
   };

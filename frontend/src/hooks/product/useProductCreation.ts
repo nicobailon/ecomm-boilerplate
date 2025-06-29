@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useCreateProduct } from './useProducts';
+import { useCreateProduct } from '../migration/use-products-migration';
 import type { ProductInput, ProductFormInput } from '@/lib/validations';
 import { productEvents } from '@/lib/events';
 import { useLocalStorage } from '@/hooks/utils/useLocalStorage';
-import type { TabId, Product, FormVariant } from '@/types';
+import type { TabId, FormVariant } from '@/types';
 import { NAVIGATION_DELAY } from '@/types';
 import { transformFormVariantToSubmission } from '@/utils/variant-transform';
 
@@ -157,31 +157,35 @@ export function useProductCreation(options: UseProductCreationOptions = {}) {
         mediaGallery: 'mediaGallery' in data ? data.mediaGallery ?? [] : [],
       };
       
-      createProductMutation.mutate(productData, {
-        onSuccess: (response: Product) => {
+      // Use mutateAsync for better error handling with tRPC
+      createProductMutation.mutateAsync(productData)
+        .then((response) => {
+          // Extract product from tRPC response structure
+          const product = response.product;
+
           // Clear draft on successful creation
           if (enableDraft) {
             clearDraft();
           }
-          
+
           // Increment session counter
           setSessionCount(prev => prev + 1);
-          
+
           // Handle navigation based on bulk mode
           if (!bulkMode && enableBulkMode) {
-            navigateToProducts(response._id);
+            navigateToProducts(product._id || '');
             toast.success('Product created successfully!');
           } else {
             toast.success('Product created! Form ready for next product.');
           }
-          
-          resolve(response._id);
-        },
-        onError: (error: Error) => {
-          toast.error('Failed to create product');
+
+          resolve(product._id || '');
+        })
+        .catch((error: Error) => {
+          console.error('Product creation error:', error);
+          toast.error(error.message || 'Failed to create product');
           reject(error);
-        },
-      });
+        });
     });
   }, [
     createProductMutation,

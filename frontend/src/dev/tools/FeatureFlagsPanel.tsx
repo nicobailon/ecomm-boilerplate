@@ -26,13 +26,6 @@ export const FeatureFlagsPanel: React.FC = () => {
   const allFlags: FeatureFlag[] = useMemo(() => [
     // tRPC flags
     {
-      key: 'USE_TRPC_PRODUCTS',
-      value: FEATURE_FLAGS.USE_TRPC_PRODUCTS,
-      category: 'tRPC',
-      description: 'Use tRPC for product operations',
-      requiresReload: true,
-    },
-    {
       key: 'USE_TRPC_CART',
       value: FEATURE_FLAGS.USE_TRPC_CART,
       category: 'tRPC',

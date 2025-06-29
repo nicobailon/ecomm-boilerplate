@@ -36,8 +36,10 @@ class ProductService {
     const pageNum = Math.max(PAGINATION.DEFAULT_PAGE, page);
     const limitNum = Math.min(PAGINATION.MAX_LIMIT, Math.max(PAGINATION.MIN_LIMIT, limit));
     
-    const query: mongoose.FilterQuery<IProductDocument> = {};
-    
+    const query: mongoose.FilterQuery<IProductDocument> = {
+      isDeleted: { $ne: true }, // Exclude soft-deleted products
+    };
+
     if (search) {
       query.$text = { $search: search };
     }
@@ -335,7 +337,10 @@ class ProductService {
     }
 
     // If not in cache or bypassing cache, get from database
-    const featuredProducts = await Product.find({ isFeatured: true }).lean();
+    const featuredProducts = await Product.find({
+      isFeatured: true,
+      isDeleted: { $ne: true },
+    }).lean();
 
     // Return empty array if no featured products, don't throw error
     if (!featuredProducts || featuredProducts.length === 0) {
@@ -421,7 +426,10 @@ class ProductService {
 
   private async updateFeaturedProductsCache(): Promise<void> {
     try {
-      const featuredProducts = await Product.find({ isFeatured: true }).lean();
+      const featuredProducts = await Product.find({
+        isFeatured: true,
+        isDeleted: { $ne: true },
+      }).lean();
       await redis.set(CACHE_KEYS.FEATURED_PRODUCTS, JSON.stringify(featuredProducts), 'EX', CACHE_TTL.FEATURED_PRODUCTS);
     } catch (error) {
       console.error('error in update cache function', error);

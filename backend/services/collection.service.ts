@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { Collection, ICollection } from '../models/collection.model.js';
 import { Product } from '../models/product.model.js';
-import { AppError } from '../utils/AppError.js';
+import { AppError, NotFoundError } from '../utils/AppError.js';
 import { generateSlug, generateUniqueSlug } from '../utils/slugify.js';
 import { escapeRegExp } from '../utils/escapeRegex.js';
 import {
@@ -485,7 +485,7 @@ export class CollectionService {
           description: '',
           owner: userId,
           products: [],
-          isPublic: data.isPublic ?? false,
+          isPublic: data.isPublic ?? true,
         }],
         { session },
       );
@@ -644,6 +644,67 @@ export class CollectionService {
         path: 'products',
         select: '_id name description price image category isFeatured collectionId slug',
       });
+  }
+
+  // Admin-specific methods for collection management
+  async adminUpdate(
+    collectionId: string,
+    _adminUserId: string, // Prefixed with underscore to indicate intentionally unused
+    updateData: UpdateCollectionInput,
+  ): Promise<ICollection> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const collection = await Collection.findById(collectionId).session(session);
+
+      if (!collection) {
+        throw new NotFoundError('Collection');
+      }
+
+      // Admin can update any collection
+      Object.assign(collection, updateData);
+
+      // Update the updatedAt timestamp
+      collection.updatedAt = new Date();
+
+      await collection.save({ session });
+      await session.commitTransaction();
+
+      const updatedCollection = await this.getCollectionWithAuth({ _id: collectionId });
+      if (!updatedCollection) {
+        throw new NotFoundError('Collection', collectionId);
+      }
+
+      return updatedCollection;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  async adminDelete(collectionId: string, _adminUserId: string): Promise<void> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const collection = await Collection.findById(collectionId).session(session);
+
+      if (!collection) {
+        throw new NotFoundError('Collection');
+      }
+
+      // Admin can delete any collection
+      await Collection.findByIdAndDelete(collectionId).session(session);
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
   }
 }
 

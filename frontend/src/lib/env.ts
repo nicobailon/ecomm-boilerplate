@@ -5,23 +5,23 @@ const envSchema = z.object({
   VITE_USE_TRPC_AUTH: z
     .string()
     .transform((val) => val === 'true')
-    .default('false'),
+    .default('true'),
   VITE_USE_TRPC_CART: z
     .string()
     .transform((val) => val === 'true')
-    .default('false'),
+    .default('true'),
   VITE_USE_TRPC_ANALYTICS: z
     .string()
     .transform((val) => val === 'true')
-    .default('false'),
+    .default('true'),
   VITE_USE_TRPC_COUPONS: z
     .string()
     .transform((val) => val === 'true')
-    .default('false'),
+    .default('true'),
   VITE_USE_TRPC_PAYMENT: z
     .string()
     .transform((val) => val === 'true')
-    .default('false'),
+    .default('true'),
 });
 
 type EnvSchema = z.infer<typeof envSchema>;

@@ -1,6 +1,8 @@
-import { router, protectedProcedure } from '../index.js';
+import { router, protectedProcedure, adminProcedure } from '../index.js';
+import { z } from 'zod';
 import { checkoutSchema, checkoutSuccessSchema } from '../../validations/index.js';
 import { paymentService } from '../../services/payment.service.js';
+import { webhookService } from '../../services/webhook.service.js';
 import { TRPCError } from '@trpc/server';
 import { isAppError } from '../../utils/error-types.js';
 
@@ -45,6 +47,34 @@ export const paymentRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: message ?? 'Failed to process checkout success',
+        });
+      }
+    }),
+    
+  retryWebhooks: adminProcedure
+    .input(z.object({
+      maxAttempts: z.number().int().min(1).max(10).optional().default(3),
+      olderThanHours: z.number().int().min(1).max(168).optional().default(24), // max 7 days
+    }).optional())
+    .mutation(async ({ input }) => {
+      try {
+        const olderThan = new Date(Date.now() - (input?.olderThanHours ?? 24) * 60 * 60 * 1000);
+        const result = await webhookService.retryFailedEvents(
+          input?.maxAttempts ?? 3,
+          olderThan
+        );
+        
+        return {
+          success: true,
+          message: 'Failed webhook retry process completed',
+          processed: result.processed,
+          failed: result.failed,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to retry webhooks';
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to retry webhooks',
         });
       }
     }),

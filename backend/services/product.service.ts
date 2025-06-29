@@ -1325,11 +1325,8 @@ class ProductService {
 
       // If any updates failed, abort the transaction
       if (failed.length > 0) {
-        throw new AppError(
-          'Bulk update failed for some products',
-          400,
-          errors.map(e => ({...e, message: e.error, path: [e.id]}))
-        );
+        const errorMessage = `Bulk update failed for ${failed.length} product(s): ${errors.map(e => `${e.id} - ${e.error}`).join('; ')}`;
+        throw new AppError(errorMessage, 400);
       }
       
       await session.commitTransaction();

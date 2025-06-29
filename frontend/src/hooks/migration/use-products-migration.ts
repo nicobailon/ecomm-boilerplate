@@ -49,6 +49,9 @@ export function useCreateProduct() {
       void queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Product created successfully');
     },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to create product');
+    },
   });
 
   return {
@@ -99,6 +102,9 @@ export function useUpdateProduct() {
 
       toast.success('Product updated successfully');
     },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update product');
+    },
   });
 
   return {
@@ -130,6 +136,9 @@ export function useDeleteProduct() {
       void queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Product deleted successfully');
     },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete product');
+    },
   });
 
   return {
@@ -151,6 +160,9 @@ export function useToggleFeatured() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Product updated');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update product');
     },
   });
 

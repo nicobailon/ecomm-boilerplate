@@ -224,7 +224,7 @@ describe('WebhookService', () => {
           orderId: expect.any(String),
           skipDeduction: true,
           webhookEventId: 'evt_test123',
-        })
+        }),
       );
     });
 
@@ -403,7 +403,7 @@ describe('WebhookService', () => {
       vi.mocked(Order.findOne).mockRejectedValueOnce(new Error('Database error'));
 
       await expect(webhookService.processWebhookEvent(mockEvent)).rejects.toThrow(
-        WebhookError
+        WebhookError,
       );
 
       // Check the second call which is the error recording
@@ -416,7 +416,7 @@ describe('WebhookService', () => {
             error: 'Database error',
           }),
         }),
-        { upsert: true }
+        { upsert: true },
       );
     });
   });
@@ -506,7 +506,7 @@ describe('WebhookService', () => {
         metadata: {
           userId: '507f1f77bcf86cd799439011',
           products: JSON.stringify([
-            { id: 'product123', quantity: 10, price: 100 }
+            { id: 'product123', quantity: 10, price: 100 },
           ]),
         },
       } as any;
@@ -610,11 +610,11 @@ describe('WebhookService', () => {
       
       // Mock network timeout
       vi.mocked(stripe.checkout.sessions.retrieve).mockRejectedValueOnce(
-        new Error('Request timeout')
+        new Error('Request timeout'),
       );
 
       await expect(
-        webhookService.processWebhookEvent(mockEvent)
+        webhookService.processWebhookEvent(mockEvent),
       ).rejects.toThrow(WebhookError);
 
       // Verify error was recorded
@@ -628,7 +628,7 @@ describe('WebhookService', () => {
             error: 'Request timeout',
           }),
         }),
-        { upsert: true }
+        { upsert: true },
       );
     });
 
@@ -640,7 +640,7 @@ describe('WebhookService', () => {
         'Invalid signature',
         'INVALID_SIGNATURE',
         401,
-        false
+        false,
       );
 
       expect(error.message).toBe('Invalid signature');
@@ -677,7 +677,7 @@ describe('WebhookService', () => {
           id: eventId,
           type: 'payment_intent.succeeded',
           data: { object: {} },
-        } as any)
+        } as any),
       );
 
       // Mock successful reprocessing
@@ -706,7 +706,7 @@ describe('WebhookService', () => {
       }) as any);
 
       vi.mocked(stripe.events.retrieve).mockRejectedValueOnce(
-        new Error('Event not found')
+        new Error('Event not found'),
       );
 
       // Should not throw
@@ -795,7 +795,7 @@ describe('WebhookService', () => {
           headers: {},
           requestId: 'req_test123',
           statusCode: 200,
-        }
+        },
       });
       vi.mocked(User.findById).mockImplementation(() => ({
         session: () => ({ 

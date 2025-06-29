@@ -126,7 +126,7 @@ export function OrderDetailsDrawer({ isOpen, onClose, orderId, mode = 'admin' }:
                       <div className="flex gap-2">
                         <Select
                           id="status-select"
-                          value={selectedStatus || order.status}
+                          value={selectedStatus ?? order.status}
                           onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
                           options={getValidNextStatuses(order.status).map(status => ({
                             value: status,
@@ -135,7 +135,7 @@ export function OrderDetailsDrawer({ isOpen, onClose, orderId, mode = 'admin' }:
                           aria-label="Status"
                         />
                         <Button
-                          onClick={handleStatusUpdate}
+                          onClick={() => void handleStatusUpdate()}
                           disabled={
                             !selectedStatus ||
                             selectedStatus === order.status ||
@@ -178,7 +178,7 @@ export function OrderDetailsDrawer({ isOpen, onClose, orderId, mode = 'admin' }:
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>{formatCurrency(order.subtotal || order.totalAmount)}</span>
+                  <span>{formatCurrency(order.subtotal ?? order.totalAmount)}</span>
                 </div>
                 {order.tax !== undefined && (
                   <div className="flex justify-between">

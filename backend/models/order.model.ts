@@ -244,6 +244,6 @@ orderSchema.index({ user: 1 });
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ 'statusHistory.timestamp': -1 });
 orderSchema.index({ stripeSessionId: 1 }, { unique: true, sparse: true });
-orderSchema.index({ stripePaymentIntentId: 1 }, { unique: true, sparse: true });
+orderSchema.index({ paymentIntentId: 1 }, { unique: true, sparse: true });
 
 export const Order = mongoose.model<IOrderDocument>('Order', orderSchema);

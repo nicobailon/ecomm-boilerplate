@@ -2,38 +2,47 @@ import { Router } from 'express';
 import { createCheckoutSession, checkoutSuccess } from '../controllers/payment.controller.js';
 import { handleStripeWebhook, retryFailedWebhooks } from '../controllers/webhook.controller.js';
 import { protectRoute, adminRoute } from '../middleware/auth.middleware.js';
-import { validateBody } from '../middleware/validation.middleware.js';
+import { validateBody } from '../middleware/enhanced-validation.middleware.js';
 import { checkoutSchema, checkoutSuccessSchema } from '../validations/index.js';
 import { emailRateLimit, inventoryCheckRateLimit } from '../middleware/security.middleware.js';
 import { 
   verifyWebhookSignature, 
-  webhookRateLimiter
+  webhookRateLimiter,
 } from '../middleware/webhook.middleware.js';
 import { 
   validateInventoryPreCheckout, 
-  logInventoryValidation 
+  logInventoryValidation, 
 } from '../middleware/inventory-validation.middleware.js';
+import { idempotencyMiddleware } from '../middleware/idempotency.middleware.js';
 
 const router = Router();
 
 router.post(
   '/create-checkout-session', 
   protectRoute, 
+  idempotencyMiddleware,
   inventoryCheckRateLimit,
   emailRateLimit, 
   validateBody(checkoutSchema), 
   logInventoryValidation,
   validateInventoryPreCheckout,
-  createCheckoutSession
+  createCheckoutSession,
 );
-router.post('/checkout-success', protectRoute, emailRateLimit, validateBody(checkoutSuccessSchema), checkoutSuccess);
+router.post(
+  '/checkout-success', 
+  protectRoute, 
+  idempotencyMiddleware,
+  emailRateLimit, 
+  validateBody(checkoutSuccessSchema), 
+  checkoutSuccess,
+);
 
 // Webhook endpoints
 router.post(
   '/webhook',
   webhookRateLimiter,
   verifyWebhookSignature,
-  handleStripeWebhook
+  handleStripeWebhook,
 );
 
 // Admin endpoint to manually retry failed webhooks

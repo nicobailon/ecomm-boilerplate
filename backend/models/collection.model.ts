@@ -48,7 +48,7 @@ const collectionSchema = new Schema<ICollection>(
     ],
     isPublic: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     heroImage: {
       type: String,

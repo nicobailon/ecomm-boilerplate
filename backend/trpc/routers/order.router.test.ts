@@ -190,7 +190,7 @@ describe('Order Router', () => {
 
     it('should handle invalid status transition', async () => {
       (orderService.updateOrderStatus as Mock).mockRejectedValue(
-        new AppError('Cannot change status from cancelled to completed', 400)
+        new AppError('Cannot change status from cancelled to completed', 400),
       );
 
       const input: OrderRouterInput<'updateStatus'> = {
@@ -232,7 +232,7 @@ describe('Order Router', () => {
 
     it('should handle no orders updated', async () => {
       (orderService.bulkUpdateOrderStatus as Mock).mockRejectedValue(
-        new AppError('No orders were updated', 404)
+        new AppError('No orders were updated', 404),
       );
 
       const input: OrderRouterInput<'bulkUpdateStatus'> = {
@@ -386,7 +386,7 @@ describe('Order Router', () => {
         expect(result).toEqual(mockResponse);
         expect(orderService.listAllOrders).toHaveBeenCalledWith({
           ...input,
-          userId: '507f1f77bcf86cd799439000'
+          userId: '507f1f77bcf86cd799439000',
         });
       });
 
@@ -415,7 +415,7 @@ describe('Order Router', () => {
           status: 'all',
           sortBy: 'createdAt',
           sortOrder: 'desc',
-          userId: '507f1f77bcf86cd799439000'
+          userId: '507f1f77bcf86cd799439000',
         });
         
         // Note: search parameter should NOT be in the call
@@ -447,7 +447,7 @@ describe('Order Router', () => {
           status: 'all',
           sortBy: 'createdAt',
           sortOrder: 'desc',
-          userId: '507f1f77bcf86cd799439000'
+          userId: '507f1f77bcf86cd799439000',
         });
       });
 
@@ -495,7 +495,7 @@ describe('Order Router', () => {
         expect(result).toEqual(mockOrder);
         expect(orderService.getOrderById).toHaveBeenCalledWith(
           '507f1f77bcf86cd799439011',
-          '507f1f77bcf86cd799439000'
+          '507f1f77bcf86cd799439000',
         );
       });
 
@@ -546,18 +546,18 @@ describe('Order Router', () => {
           user: { 
             _id: '507f1f77bcf86cd799439000', 
             email: 'customer@example.com',
-            name: 'Customer User'
+            name: 'Customer User',
           },
           products: [
             {
               product: {
                 _id: '507f1f77bcf86cd799439012',
                 name: 'Test Product',
-                image: 'test.jpg'
+                image: 'test.jpg',
               },
               quantity: 2,
-              price: 50
-            }
+              price: 50,
+            },
           ],
           totalAmount: 100,
           status: 'completed',
@@ -596,7 +596,7 @@ describe('Order Router', () => {
           status: 'all',
           sortBy: 'createdAt',
           sortOrder: 'desc',
-          userId: customerA.toString()
+          userId: customerA.toString(),
         });
       });
 

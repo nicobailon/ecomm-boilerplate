@@ -1,5 +1,4 @@
 import {
-  USE_TRPC_PRODUCTS,
   USE_TRPC_CART,
   USE_TRPC_ANALYTICS,
   USE_TRPC_COUPONS,
@@ -9,8 +8,9 @@ import {
 
 // Feature flags for gradual migration
 // AUTH HAS BEEN MIGRATED - DO NOT ADD BACK
+// PRODUCTS HAS BEEN MIGRATED - DO NOT ADD BACK
 export const FEATURE_FLAGS = {
-  USE_TRPC_PRODUCTS,
+  USE_TRPC_PRODUCTS: true, // Fully migrated - always enabled
   USE_TRPC_CART,
   USE_TRPC_ANALYTICS,
   USE_TRPC_COUPONS,

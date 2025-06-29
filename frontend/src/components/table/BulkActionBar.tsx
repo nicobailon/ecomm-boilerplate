@@ -48,9 +48,9 @@ export function BulkActionBar({
         {actions.map((action, index) => (
           <Button
             key={index}
-            variant={action.variant || 'outline'}
+            variant={action.variant ?? 'outline'}
             size="sm"
-            onClick={action.onClick}
+            onClick={() => void action.onClick()}
             disabled={action.disabled}
           >
             {action.icon && <span className="mr-2">{action.icon}</span>}

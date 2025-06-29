@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as productController from '../controllers/product.controller.js';
 import { protectRoute, adminRoute } from '../middleware/auth.middleware.js';
-import { validateBody, validateQuery, validateParams } from '../middleware/validation.middleware.js';
+import { validateBody, validateQuery, validateParams } from '../middleware/enhanced-validation.middleware.js';
 import { createProductSchema, updateProductSchema, paginationSchema, productIdParamSchema } from '../validations/index.js';
 
 const router = Router();

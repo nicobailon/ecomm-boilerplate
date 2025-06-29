@@ -3,6 +3,8 @@ import { MEDIA_LIMITS } from '../types/media.types.js';
 import { IMediaItem } from '../types/media.types.js';
 import { AppError } from '../utils/AppError.js';
 import { redis } from '../lib/redis.js';
+import { withRedisHealth } from '../lib/redis-health.js';
+import { defaultLogger as logger } from '../utils/logger.js';
 
 export class MediaService {
   
@@ -117,25 +119,35 @@ export class MediaService {
       // UploadThing file deletion implementation would go here
       // await this.utapi.deleteFiles(uploadThingUrls);
     } catch (error) {
-      console.error('Error deleting media files:', error);
+      logger.error('[MediaService] Error deleting media files:', error);
     }
   }
   
   async getMediaMetadata(mediaId: string): Promise<{ views: number; lastViewed: Date }> {
     const cacheKey = `media:metadata:${mediaId}`;
     
-    try {
-      const cached = await redis.get(cacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached) as { views: number; lastViewed: string | Date };
-        // Convert string dates back to Date objects if they exist
-        if (parsed.lastViewed) {
-          parsed.lastViewed = new Date(parsed.lastViewed);
+    const cached = await withRedisHealth(
+      async () => {
+        const cachedData = await redis.get(cacheKey);
+        if (cachedData) {
+          const parsed = JSON.parse(cachedData) as { views: number; lastViewed: string | Date };
+          // Convert string dates back to Date objects if they exist
+          if (parsed.lastViewed) {
+            parsed.lastViewed = new Date(parsed.lastViewed);
+          }
+          return parsed as { views: number; lastViewed: Date };
         }
-        return parsed as { views: number; lastViewed: Date };
-      }
-    } catch (error) {
-      console.error('Redis error:', error);
+        return null;
+      },
+      () => {
+        logger.debug(`[MediaService] Redis unavailable, returning null for media metadata: ${mediaId}`);
+        return null;
+      },
+      `Media metadata get: ${mediaId}`,
+    );
+    
+    if (cached) {
+      return cached;
     }
     
     const metadata = {
@@ -143,11 +155,15 @@ export class MediaService {
       lastViewed: new Date(),
     };
     
-    try {
-      await redis.setex(cacheKey, 3600, JSON.stringify(metadata));
-    } catch (error) {
-      console.error('Redis error:', error);
-    }
+    await withRedisHealth(
+      async () => {
+        await redis.setex(cacheKey, 3600, JSON.stringify(metadata));
+      },
+      () => {
+        logger.debug(`[MediaService] Redis unavailable, skipping metadata cache set for media: ${mediaId}`);
+      },
+      `Media metadata set: ${mediaId}`,
+    );
     
     return metadata;
   }

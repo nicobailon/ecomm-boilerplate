@@ -108,6 +108,27 @@ export const cartProductIdParamSchema = z.object({
 
 // Category param validation
 
+// Password reset schemas
+export const passwordResetRequestSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
+export const passwordResetConfirmSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+// Refresh token schema
+export const refreshTokenSchema = z.object({
+  refreshToken: z.string().optional(), // Optional since it might come from cookies
+});
+
+// Unsubscribe schema
+export const unsubscribeSchema = z.object({
+  token: z.string().min(1, 'Unsubscribe token is required'),
+  email: z.string().email('Invalid email address').optional(),
+});
+
 // Export all validations from other files
 export * from './coupon.validation.js';
 export * from './product.validation.js';

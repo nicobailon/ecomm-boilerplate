@@ -2,12 +2,13 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { useCartStore } from '@/stores/cart-store';
-import { 
+import type { 
   InventoryError, 
-  InventoryAdjustment, 
+  InventoryAdjustment} from '@/utils/inventory-errors';
+import { 
   isInventoryError, 
   getInventoryErrorMessage,
-  formatInventoryAdjustments 
+  formatInventoryAdjustments, 
 } from '@/utils/inventory-errors';
 
 interface UseInventoryValidationOptions {
@@ -97,7 +98,7 @@ export function useInventoryValidation(options: UseInventoryValidationOptions = 
       return { 
         isValid: false, 
         adjustments: [],
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     } finally {
       setIsValidating(false);
@@ -107,7 +108,7 @@ export function useInventoryValidation(options: UseInventoryValidationOptions = 
   const validateSingleProduct = useCallback(async (
     productId: string,
     variantId: string | undefined,
-    quantity: number
+    quantity: number,
   ): Promise<boolean> => {
     try {
       const result = await validateInventory.mutateAsync({
@@ -125,7 +126,7 @@ export function useInventoryValidation(options: UseInventoryValidationOptions = 
         productId,
         variantId,
         quantity,
-        error: error instanceof Error ? error.message : error
+        error: error instanceof Error ? error.message : error,
       });
       
       if (isInventoryError(error) && showToasts) {

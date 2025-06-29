@@ -28,7 +28,7 @@ export function OrdersTab() {
       <OrderDetailsDrawer
         isOpen={isDrawerOpen}
         onClose={handleCloseDrawer}
-        orderId={selectedOrder?._id.toString() || null}
+        orderId={selectedOrder?._id.toString() ?? null}
       />
     </div>
   );

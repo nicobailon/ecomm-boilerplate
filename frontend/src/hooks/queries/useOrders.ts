@@ -32,7 +32,7 @@ export function useListOrders(filters: OrderFilters = {}) {
 
 export function useGetOrderById(orderId: string | null) {
   const { data, isLoading, error } = trpc.order.getById.useQuery(
-    { orderId: orderId || '' },
+    { orderId: orderId ?? '' },
     { enabled: !!orderId },
   );
 
@@ -60,7 +60,7 @@ export function useBulkUpdateOrderStatus() {
   const utils = trpc.useContext();
 
   return trpc.order.bulkUpdateStatus.useMutation({
-    onMutate: async ({ orderIds }) => {
+    onMutate: ({ orderIds }) => {
       const toastId = toast.loading(`Updating ${orderIds.length} orders...`);
       return toastId;
     },
@@ -108,7 +108,7 @@ export function useListMyOrders(filters: Omit<OrderFilters, 'search'> = {}) {
 
 export function useGetMyOrderById(orderId: string | null) {
   const { data, isLoading, error } = trpc.order.getMine.useQuery(
-    { orderId: orderId || '' },
+    { orderId: orderId ?? '' },
     { enabled: !!orderId },
   );
 
@@ -121,7 +121,7 @@ export function useExportOrders() {
   
   const exportOrders = useCallback(async (
     orders: OrderListItem[], 
-    options?: Partial<OrderExportFilters>
+    options?: Partial<OrderExportFilters>,
   ) => {
     try {
       setIsExporting(true);
@@ -140,11 +140,11 @@ export function useExportOrders() {
           orderNumber: order.orderNumber,
           orderId: String(order._id).slice(-8),
           customerEmail: order.email,
-          customerName: order.shippingAddress?.fullName || '',
+          customerName: order.shippingAddress?.fullName ?? '',
           status: order.status,
           totalAmount: order.totalAmount.toFixed(2),
-          items: order.products?.length || 0,
-          paymentMethod: order.paymentMethod || 'N/A',
+          items: order.products?.length ?? 0,
+          paymentMethod: order.paymentMethod ?? 'N/A',
           date: formatDateForCSV(order.createdAt),
         };
         
@@ -152,8 +152,8 @@ export function useExportOrders() {
         if (options?.includeAddresses !== false) {
           return {
             ...baseData,
-            shippingAddress: formatAddressForCSV(order.shippingAddress || {}),
-            billingAddress: formatAddressForCSV(order.billingAddress || {}),
+            shippingAddress: formatAddressForCSV(order.shippingAddress ?? {}),
+            billingAddress: formatAddressForCSV(order.billingAddress ?? {}),
           };
         }
         
@@ -161,7 +161,7 @@ export function useExportOrders() {
       });
       
       // Define columns for CSV with proper typing
-      type BaseExportData = {
+      interface BaseExportData {
         orderNumber: string;
         orderId: string;
         customerEmail: string;
@@ -171,14 +171,14 @@ export function useExportOrders() {
         items: number;
         paymentMethod: string;
         date: string;
-      };
+      }
       
       type FullExportData = BaseExportData & {
         shippingAddress: string;
         billingAddress: string;
       };
       
-      const baseColumns: Array<{ key: keyof BaseExportData; label: string }> = [
+      const baseColumns: { key: keyof BaseExportData; label: string }[] = [
         { key: 'orderNumber', label: 'Order Number' },
         { key: 'orderId', label: 'Order ID' },
         { key: 'customerEmail', label: 'Customer Email' },
@@ -193,10 +193,10 @@ export function useExportOrders() {
       // Generate CSV with proper type inference
       let csv: string;
       if (options?.includeAddresses !== false) {
-        const fullColumns: Array<{ key: keyof FullExportData; label: string }> = [
+        const fullColumns: { key: keyof FullExportData; label: string }[] = [
           ...baseColumns,
           { key: 'shippingAddress', label: 'Shipping Address' },
-          { key: 'billingAddress', label: 'Billing Address' }
+          { key: 'billingAddress', label: 'Billing Address' },
         ];
         csv = arrayToCSV(exportData as FullExportData[], fullColumns);
       } else {

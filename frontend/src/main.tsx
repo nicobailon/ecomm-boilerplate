@@ -9,7 +9,13 @@ import { router } from './router';
 import { trpc } from './lib/trpc';
 import { createTRPCClient } from './lib/trpc-client';
 import { ThemeProvider } from './providers/theme-provider';
+import { initializeFrontendLogger } from './lib/logger';
 import './index.css';
+
+// Initialize frontend logging
+if (import.meta.env.VITE_ENABLE_FRONTEND_LOGGING !== 'false') {
+	initializeFrontendLogger();
+}
 
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Root element not found');

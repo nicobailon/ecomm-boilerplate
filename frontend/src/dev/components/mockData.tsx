@@ -629,3 +629,17 @@ export const withInventoryErrorBoundaryMockData = {
     // The actual implementation will be shown in the demo
   },
 };
+
+// Mock data for EmailVerifiedSuccess
+export const emailVerificationMockData = {
+  customer: {
+    role: 'customer' as const,
+    onCountdownFinish: () => { console.log('Redirect to home'); },
+    showCountdown: false,
+  },
+  admin: {
+    role: 'admin' as const,
+    onCountdownFinish: () => { console.log('Redirect to dashboard'); },
+    showCountdown: false,
+  },
+};

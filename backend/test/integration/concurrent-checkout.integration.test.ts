@@ -73,8 +73,8 @@ describe('Concurrent Checkout Race Conditions', () => {
         performAtomicInventoryUpdate(
           testProduct._id.toString(),
           quantityPerCheckout,
-          undefined
-        )
+          undefined,
+        ),
       );
     }
 
@@ -137,8 +137,8 @@ describe('Concurrent Checkout Race Conditions', () => {
         performAtomicInventoryUpdate(
           multiVariantProduct._id!.toString(),
           1,
-          'variant-1'
-        )
+          'variant-1',
+        ),
       );
 
       // Variant 2 checkout
@@ -146,8 +146,8 @@ describe('Concurrent Checkout Race Conditions', () => {
         performAtomicInventoryUpdate(
           multiVariantProduct._id!.toString(),
           1,
-          'variant-2'
-        )
+          'variant-2',
+        ),
       );
     }
 
@@ -157,10 +157,10 @@ describe('Concurrent Checkout Race Conditions', () => {
     ]);
 
     const variant1Successful = variant1Results.filter(
-      (r) => r.status === 'fulfilled' && r.value !== null
+      (r) => r.status === 'fulfilled' && r.value !== null,
     );
     const variant2Successful = variant2Results.filter(
-      (r) => r.status === 'fulfilled' && r.value !== null
+      (r) => r.status === 'fulfilled' && r.value !== null,
     );
 
     expect(variant1Successful.length).toBe(3);
@@ -168,10 +168,10 @@ describe('Concurrent Checkout Race Conditions', () => {
 
     const updatedProduct = await Product.findById(multiVariantProduct._id);
     const variant1 = updatedProduct?.variants.find(
-      (v) => v.variantId === 'variant-1'
+      (v) => v.variantId === 'variant-1',
     );
     const variant2 = updatedProduct?.variants.find(
-      (v) => v.variantId === 'variant-2'
+      (v) => v.variantId === 'variant-2',
     );
 
     expect(variant1?.inventory).toBe(0);
@@ -187,8 +187,8 @@ describe('Concurrent Checkout Race Conditions', () => {
         performAtomicInventoryUpdate(
           testProduct._id.toString(),
           1,
-          undefined
-        )
+          undefined,
+        ),
       );
     }
 
@@ -198,8 +198,8 @@ describe('Concurrent Checkout Race Conditions', () => {
         performAtomicInventoryUpdate(
           testProduct._id.toString(),
           1,
-          undefined
-        )
+          undefined,
+        ),
       );
     }
 
@@ -209,7 +209,7 @@ describe('Concurrent Checkout Race Conditions', () => {
     const finalProduct = await Product.findById(testProduct._id);
     const totalVariantInventory = finalProduct?.variants.reduce(
       (sum, v) => sum + v.inventory,
-      0
+      0,
     ) || 0;
 
     expect(finalProduct?.variants[0]?.inventory).toBe(0);
@@ -225,8 +225,8 @@ describe('Concurrent Checkout Race Conditions', () => {
         performAtomicInventoryUpdate(
           testProduct._id.toString(),
           1,
-          undefined
-        )
+          undefined,
+        ),
       );
     }
 
@@ -270,14 +270,14 @@ describe('Concurrent Checkout Race Conditions', () => {
     // These should succeed (total: 8 items)
     for (let i = 0; i < 4; i++) {
       operations.push(
-        performAtomicInventoryUpdate(testProduct2._id!.toString(), 2, undefined)
+        performAtomicInventoryUpdate(testProduct2._id!.toString(), 2, undefined),
       );
     }
     
     // These should fail (requesting more than available)
     for (let i = 0; i < 3; i++) {
       operations.push(
-        performAtomicInventoryUpdate(testProduct2._id!.toString(), 5, undefined)
+        performAtomicInventoryUpdate(testProduct2._id!.toString(), 5, undefined),
       );
     }
 

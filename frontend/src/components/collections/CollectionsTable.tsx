@@ -70,8 +70,8 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
   const deleteCollection = useDeleteCollection();
   const utils = trpc.useUtils();
 
-  // Fetch data with tRPC
-  const { data, isLoading, isError } = trpc.collection.myCollections.useQuery({
+  // Fetch data with tRPC - use admin endpoint to see all collections
+  const { data, isLoading, isError } = trpc.collection.adminCollections.useQuery({
     limit: pagination.pageSize,
     page: pagination.pageIndex + 1,
     search: globalFilter || undefined,
@@ -327,7 +327,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
         enableHiding: false,
       },
     ],
-    [deleteCollection, onEdit, expandedRows],
+    [deleteCollection, onEdit, expandedRows, toggleRowExpansion],
   );
 
   // Table instance
@@ -386,7 +386,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
       });
     }
 
-    await utils.collection.myCollections.invalidate();
+    await utils.collection.adminCollections.invalidate();
     setRowSelection({});
     toast.success(`Made ${selectedRows.length} collections ${makePublic ? 'public' : 'private'}`);
   };
@@ -397,7 +397,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
       ['Name', 'Description', 'Products', 'Visibility', 'Slug', 'Created'].join(','),
       ...collections.map(c => [
         `"${c.name}"`,
-        `"${c.description || ''}"`,
+        `"${c.description ?? ''}"`,
         Array.isArray(c.products) ? c.products.length : 0,
         c.isPublic ? 'Public' : 'Private',
         c.slug,

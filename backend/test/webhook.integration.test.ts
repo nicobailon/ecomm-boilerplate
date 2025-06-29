@@ -205,7 +205,7 @@ describe('Webhook Integration Tests', () => {
     it('should handle insufficient inventory gracefully', async () => {
       // Update product to have insufficient inventory
       await Product.findByIdAndUpdate(testProduct._id, {
-        'variants.0.inventory': 1
+        'variants.0.inventory': 1,
       });
 
       const mockEvent: Partial<Stripe.Event> = {
@@ -326,7 +326,7 @@ describe('Webhook Integration Tests', () => {
       
       // Mock a timeout when retrieving session
       vi.mocked(stripe.checkout.sessions.retrieve).mockRejectedValue(
-        new Error('Request timeout')
+        new Error('Request timeout'),
       );
 
       const response = await request(app)
@@ -345,7 +345,7 @@ describe('Webhook Integration Tests', () => {
         data: {
           object: { 
             id: 'cs_test_missing',
-            payment_status: 'paid'
+            payment_status: 'paid',
           } as Stripe.Checkout.Session,
         },
       };
@@ -425,7 +425,7 @@ describe('Webhook Integration Tests', () => {
       
       // Mock an error during processing
       vi.mocked(stripe.checkout.sessions.retrieve).mockRejectedValue(
-        new WebhookError('Processing failed', 'PROCESSING_ERROR', 500, true)
+        new WebhookError('Processing failed', 'PROCESSING_ERROR', 500, true),
       );
 
       await request(app)

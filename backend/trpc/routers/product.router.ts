@@ -38,7 +38,7 @@ export const productRouter = router({
             sortBy: input.sortBy,
             sortOrder: input.sortOrder,
             stockStatus: input.stockStatus,
-          }
+          },
         );
         return result;
       } catch (error) {

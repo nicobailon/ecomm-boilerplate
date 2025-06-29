@@ -1,23 +1,23 @@
 import mongoose from 'mongoose';
 import { Order, IOrderDocument } from '../models/order.model.js';
-import { AppError } from '../utils/AppError.js';
+import { NotFoundError, ValidationError } from '../utils/AppError.js';
 import { OrderStatusValidator } from '../utils/order-status-validator.js';
 import type { 
   ListOrdersInput, 
   UpdateOrderStatusInput, 
   BulkUpdateOrderStatusInput, 
-  GetOrderStatsInput 
+  GetOrderStatsInput, 
 } from '../validations/order.validation.js';
 import type { 
   OrderWithPopulatedData, 
-  BulkUpdateResponse 
+  BulkUpdateResponse, 
 } from '../types/order.types.js';
 import { 
   toSerializedOrder, 
   toSerializedOrderStats,
   type SerializedOrderListResponse,
   type SerializedOrder,
-  type SerializedOrderStats
+  type SerializedOrderStats,
 } from '../utils/order-type-converters.js';
 
 export class OrderService {
@@ -79,7 +79,7 @@ export class OrderService {
           foreignField: '_id',
           as: 'populatedProducts',
         },
-      }
+      },
     );
 
     if (search) {
@@ -146,7 +146,7 @@ export class OrderService {
           ],
           totalCount: [{ $count: 'count' }],
         },
-      }
+      },
     );
 
     const result = await Order.aggregate(pipeline).exec();
@@ -181,7 +181,7 @@ export class OrderService {
       .populate('products.product', 'name image');
 
     if (!order) {
-      throw new AppError('Order not found', 404);
+      throw new NotFoundError('Order');
     }
 
     return toSerializedOrder(order as unknown as OrderWithPopulatedData);
@@ -202,7 +202,7 @@ export class OrderService {
       try {
         const order = await Order.findById(orderId).session(session);
         if (!order) {
-          throw new AppError('Order not found', 404);
+          throw new NotFoundError('Order');
         }
 
         // Use centralized validator
@@ -210,7 +210,7 @@ export class OrderService {
           from: order.status,
           to: status,
           userId,
-          reason
+          reason,
         });
 
         // Add to status history
@@ -219,7 +219,7 @@ export class OrderService {
           to: status,
           timestamp: new Date(),
           userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
-          reason
+          reason,
         });
 
         order.status = status;
@@ -243,7 +243,7 @@ export class OrderService {
       // Non-transactional update for environments without replica set
       const order = await Order.findById(orderId);
       if (!order) {
-        throw new AppError('Order not found', 404);
+        throw new NotFoundError('Order');
       }
 
       // Use centralized validator
@@ -251,7 +251,7 @@ export class OrderService {
         from: order.status,
         to: status,
         userId,
-        reason
+        reason,
       });
 
       // Add to status history
@@ -260,7 +260,7 @@ export class OrderService {
         to: status,
         timestamp: new Date(),
         userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
-        reason
+        reason,
       });
 
       order.status = status;
@@ -292,7 +292,7 @@ export class OrderService {
         const orders = await Order.find({ _id: { $in: orderIds } }).session(session);
         
         if (orders.length === 0) {
-          throw new AppError('No orders found', 404);
+          throw new NotFoundError('Orders');
         }
 
         // Validate all transitions
@@ -301,15 +301,15 @@ export class OrderService {
           from: order.status,
           to: status,
           userId,
-          reason
+          reason,
         }));
 
         const validation = OrderStatusValidator.validateBulkTransitions(
-          transitions.map(({ from, to, userId, reason }) => ({ from, to, userId, reason }))
+          transitions.map(({ from, to, userId, reason }) => ({ from, to, userId, reason })),
         );
 
         if (validation.valid.length === 0) {
-          throw new AppError('No valid status transitions found', 422);
+          throw new ValidationError('No valid status transitions found');
         }
 
         // Get valid order IDs and prepare bulk operations
@@ -331,11 +331,11 @@ export class OrderService {
                     to: status,
                     timestamp,
                     userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
-                    reason
-                  }
-                }
-              }
-            }
+                    reason,
+                  },
+                },
+              },
+            },
           };
         });
 
@@ -370,7 +370,7 @@ export class OrderService {
       const orders = await Order.find({ _id: { $in: orderIds } });
       
       if (orders.length === 0) {
-        throw new AppError('No orders found', 404);
+        throw new NotFoundError('Orders');
       }
 
       // Validate all transitions
@@ -379,15 +379,15 @@ export class OrderService {
         from: order.status,
         to: status,
         userId,
-        reason
+        reason,
       }));
 
       const validation = OrderStatusValidator.validateBulkTransitions(
-        transitions.map(({ from, to, userId, reason }) => ({ from, to, userId, reason }))
+        transitions.map(({ from, to, userId, reason }) => ({ from, to, userId, reason })),
       );
 
       if (validation.valid.length === 0) {
-        throw new AppError('No valid status transitions found', 422);
+        throw new ValidationError('No valid status transitions found');
       }
 
       // Get valid order IDs and prepare bulk operations
@@ -409,11 +409,11 @@ export class OrderService {
                   to: status,
                   timestamp,
                   userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
-                  reason
-                }
-              }
-            }
-          }
+                  reason,
+                },
+              },
+            },
+          },
         };
       });
 

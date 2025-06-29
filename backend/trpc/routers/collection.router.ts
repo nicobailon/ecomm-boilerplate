@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import mongoose from 'mongoose';
-import { protectedProcedure, publicProcedure, router } from '../index.js';
+import { protectedProcedure, publicProcedure, adminProcedure, router } from '../index.js';
 import { createRateLimiter } from '../middleware/rateLimiter.js';
 import { handleTRPCError } from '../../utils/trpcErrorHandler.js';
 import {
@@ -275,6 +275,68 @@ export const collectionRouter = router({
       try {
         const collections = await collectionService.getFeaturedCollections();
         return collections;
+      } catch (error) {
+        handleTRPCError(error);
+      }
+    }),
+
+  // Admin-only endpoints for collection management
+  adminCollections: adminProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(20),
+        cursor: z.string().optional(),
+        // Page-based pagination
+        page: z.number().min(1).optional(),
+        // Sorting
+        sortBy: z.enum(['name', 'createdAt', 'updatedAt', 'productCount']).default('createdAt').optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('desc').optional(),
+        // Filtering
+        search: z.string().optional(),
+        isPublic: z.boolean().optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      try {
+        // Admin can see ALL collections regardless of owner
+        const result = await collectionService.list({
+          ...input,
+          // No userId filter - admins see all collections
+        });
+        return result;
+      } catch (error) {
+        handleTRPCError(error);
+      }
+    }),
+
+  adminUpdateCollection: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        data: updateCollectionSchema,
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        // Admin can update any collection, pass admin's userId for audit trail
+        const collection = await collectionService.adminUpdate(
+          input.id,
+          ctx.userId,
+          input.data,
+        );
+        return collection;
+      } catch (error) {
+        handleTRPCError(error);
+      }
+    }),
+
+  adminDeleteCollection: adminProcedure
+    .input(deleteCollectionSchema)
+    .mutation(async ({ input, ctx }) => {
+      try {
+        // Admin can delete any collection
+        await collectionService.adminDelete(input.id, ctx.userId);
+        return { success: true };
       } catch (error) {
         handleTRPCError(error);
       }

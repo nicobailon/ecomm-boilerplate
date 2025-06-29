@@ -108,7 +108,7 @@ const createEmailQueue = (): Bull.Queue<EmailJob> | null => {
 
         // Wait 60 seconds before allowing new connection attempts
         connectionTimeout = setTimeout(() => {
-          console.info('[EmailQueue] Re-enabling Redis health check after cooldown period');
+          console.error('[EmailQueue] Re-enabling Redis health check after cooldown period');
           isRedisHealthy = true;
           connectionTimeout = null;
         }, 60000);
@@ -122,7 +122,7 @@ const createEmailQueue = (): Bull.Queue<EmailJob> | null => {
     });
 
     queue.on('ready', () => {
-      console.info('[EmailQueue] Successfully connected to Redis');
+      console.error('[EmailQueue] Successfully connected to Redis');
       isRedisHealthy = true;
 
       // Clear any existing circuit breaker timeout
@@ -139,7 +139,7 @@ const createEmailQueue = (): Bull.Queue<EmailJob> | null => {
 
     // Add reconnecting event monitoring
     queue.on('reconnecting', (delay: number) => {
-      console.info(`[EmailQueue] Reconnecting to Redis in ${delay}ms`);
+      console.error(`[EmailQueue] Reconnecting to Redis in ${delay}ms`);
     });
     
     // Set up job processing with enhanced error handling
@@ -155,7 +155,7 @@ const createEmailQueue = (): Bull.Queue<EmailJob> | null => {
 
       const { type, data } = job.data;
 
-      console.info('[EmailQueue] Processing email job:', {
+      console.error('[EmailQueue] Processing email job:', {
         jobId: job.id,
         type,
         timestamp: new Date().toISOString(),
@@ -204,7 +204,7 @@ const createEmailQueue = (): Bull.Queue<EmailJob> | null => {
     });
 
     queue.on('completed', (job) => {
-      console.info('[EmailQueue] Email job completed successfully:', {
+      console.error('[EmailQueue] Email job completed successfully:', {
         jobId: job.id,
         type: job.data.type,
         processingTime: job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : 'unknown',
@@ -303,7 +303,7 @@ export const queueEmail = async (type: EmailJob['type'], data: EmailJob['data'])
 
     try {
       await sendEmailDirectly(type, data);
-      console.info('[EmailQueue] Direct send fallback successful:', {
+      console.error('[EmailQueue] Direct send fallback successful:', {
         type,
         method: 'direct-send',
         timestamp: new Date().toISOString(),
@@ -332,7 +332,7 @@ export const queueEmail = async (type: EmailJob['type'], data: EmailJob['data'])
       timeout: 30000, // 30 second job timeout
     });
 
-    console.info('[EmailQueue] Successfully queued email:', {
+    console.error('[EmailQueue] Successfully queued email:', {
       jobId: job.id,
       type,
       queueSize: await queue.count(),
@@ -360,7 +360,7 @@ export const queueEmail = async (type: EmailJob['type'], data: EmailJob['data'])
     // Immediate fallback to direct send
     try {
       await sendEmailDirectly(type, data);
-      console.info('[EmailQueue] Direct send fallback successful:', {
+      console.error('[EmailQueue] Direct send fallback successful:', {
         type,
         method: 'direct-send',
         timestamp: new Date().toISOString(),
@@ -388,12 +388,12 @@ export const getEmailQueueForShutdown = (): Bull.Queue<EmailJob> | null => {
 // Enhanced shutdown function with proper connection cleanup
 export const shutdownEmailQueue = async (): Promise<void> => {
   if (!emailQueue) {
-    console.info('[EmailQueue] No queue to shutdown');
+    console.error('[EmailQueue] No queue to shutdown');
     return;
   }
 
   try {
-    console.info('[EmailQueue] Starting graceful shutdown...');
+    console.error('[EmailQueue] Starting graceful shutdown...');
 
     // Clear any circuit breaker timeout
     if (connectionTimeout) {
@@ -404,7 +404,7 @@ export const shutdownEmailQueue = async (): Promise<void> => {
     // Wait for active jobs to complete (with timeout)
     const activeJobs = await emailQueue.getActive();
     if (activeJobs.length > 0) {
-      console.info(`[EmailQueue] Waiting for ${activeJobs.length} active jobs to complete...`);
+      console.error(`[EmailQueue] Waiting for ${activeJobs.length} active jobs to complete...`);
 
       // Wait up to 30 seconds for jobs to complete
       const maxWaitTime = 30000;
@@ -422,7 +422,7 @@ export const shutdownEmailQueue = async (): Promise<void> => {
 
     // Close the queue and its Redis connections
     await emailQueue.close();
-    console.info('[EmailQueue] Queue closed successfully');
+    console.error('[EmailQueue] Queue closed successfully');
 
     // Reset state
     emailQueue = null;

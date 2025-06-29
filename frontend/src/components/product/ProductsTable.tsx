@@ -44,7 +44,46 @@ import { InventoryBadgeLoading } from '@/components/ui/InventorySkeleton';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { toast } from 'sonner';
 import debounce from 'lodash.debounce';
-import { FEATURE_FLAGS } from '@/lib/feature-flags';
+
+// Separate component for featured toggle to avoid hooks in non-component functions
+function FeaturedToggleCell({ product }: { product: Product }) {
+  const [isToggling, setIsToggling] = useState(false);
+  const toggleFeatured = useToggleFeatured();
+
+  const handleToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsToggling(true);
+    try {
+      if (product._id) await toggleFeatured.mutateAsync(product._id);
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleToggle}
+      disabled={isToggling}
+      data-testid="toggle-feature"
+      className={cn(
+        'p-1 rounded-full transition-all duration-200',
+        product.isFeatured
+          ? 'bg-warning text-warning-foreground hover:bg-warning/80 ring-2 ring-warning/40'
+          : 'bg-muted text-muted-foreground hover:bg-warning/80',
+        isToggling && 'opacity-50 cursor-not-allowed animate-pulse',
+      )}
+      title={product.isFeatured ? 'Remove from homepage carousel' : 'Add to homepage carousel'}
+    >
+      <Star 
+        className={cn(
+          'h-5 w-5 transition-transform',
+          isToggling && 'animate-spin',
+          product.isFeatured && 'fill-current',
+        )} 
+      />
+    </button>
+  );
+}
 
 interface ProductsTableProps {
   highlightProductId?: string | null;
@@ -142,7 +181,6 @@ export function ProductsTable({
     isFeatured: featuredFilter === 'featured' ? true : featuredFilter === 'notFeatured' ? false : undefined,
     includeVariants: false,
   }, {
-    enabled: FEATURE_FLAGS.USE_TRPC_PRODUCTS,
     placeholderData: (previousData) => previousData,
   });
 
@@ -275,44 +313,7 @@ export function ProductsTable({
             </div>
           );
         },
-        cell: ({ row }) => {
-          const product = row.original;
-          const [isToggling, setIsToggling] = useState(false);
-
-          const handleToggle = async (e: React.MouseEvent) => {
-            e.stopPropagation();
-            setIsToggling(true);
-            try {
-              if (product._id) await toggleFeatured.mutateAsync(product._id);
-            } finally {
-              setIsToggling(false);
-            }
-          };
-
-          return (
-            <button
-              onClick={handleToggle}
-              disabled={isToggling}
-              data-testid="toggle-feature"
-              className={cn(
-                'p-1 rounded-full transition-all duration-200',
-                product.isFeatured
-                  ? 'bg-warning text-warning-foreground hover:bg-warning/80 ring-2 ring-warning/40'
-                  : 'bg-muted text-muted-foreground hover:bg-warning/80',
-                isToggling && 'opacity-50 cursor-not-allowed animate-pulse',
-              )}
-              title={product.isFeatured ? 'Remove from homepage carousel' : 'Add to homepage carousel'}
-            >
-              <Star 
-                className={cn(
-                  'h-5 w-5 transition-transform',
-                  isToggling && 'animate-spin',
-                  product.isFeatured && 'fill-current',
-                )} 
-              />
-            </button>
-          );
-        },
+        cell: ({ row }) => <FeaturedToggleCell product={row.original} />,
         enableSorting: false,
       },
       {
@@ -376,7 +377,9 @@ export function ProductsTable({
     }
 
     for (const row of selectedRows) {
-      await deleteProduct.mutateAsync(row.original._id!);
+      if (row.original._id) {
+        await deleteProduct.mutateAsync(row.original._id);
+      }
     }
     
     setRowSelection({});
@@ -474,7 +477,7 @@ export function ProductsTable({
             <Button
               variant="destructive"
               size="sm"
-              onClick={handleBulkDelete}
+              onClick={() => void handleBulkDelete()}
             >
               Delete Selected
             </Button>

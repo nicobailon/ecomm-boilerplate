@@ -60,7 +60,7 @@ describe('OrderStatusValidator', () => {
         from: 'pending',
         to: 'completed',
         userId: 'user123',
-        reason: 'Payment processed'
+        reason: 'Payment processed',
       };
       expect(() => OrderStatusValidator.validateTransition(transition)).not.toThrow();
     });
@@ -121,12 +121,12 @@ describe('OrderStatusValidator', () => {
 
     it('should return final status error for refunded', () => {
       const error = OrderStatusValidator.getTransitionErrorMessage('refunded', 'pending');
-      expect(error).toBe("Order status 'refunded' is final and cannot be changed");
+      expect(error).toBe('Order status \'refunded\' is final and cannot be changed');
     });
 
     it('should return generic error with valid transitions for unhandled cases', () => {
       const error = OrderStatusValidator.getTransitionErrorMessage('pending', 'pending');
-      expect(error).toBe("Invalid status transition from 'pending' to 'pending'. Valid transitions: completed, cancelled");
+      expect(error).toBe('Invalid status transition from \'pending\' to \'pending\'. Valid transitions: completed, cancelled');
     });
   });
 
@@ -135,7 +135,7 @@ describe('OrderStatusValidator', () => {
       const transitions: StatusTransition[] = [
         { from: 'pending', to: 'completed' },
         { from: 'pending', to: 'cancelled' },
-        { from: 'completed', to: 'refunded' }
+        { from: 'completed', to: 'refunded' },
       ];
 
       const result = OrderStatusValidator.validateBulkTransitions(transitions);
@@ -147,7 +147,7 @@ describe('OrderStatusValidator', () => {
       const transitions: StatusTransition[] = [
         { from: 'completed', to: 'cancelled' },
         { from: 'refunded', to: 'completed' },
-        { from: 'cancelled', to: 'refunded' }
+        { from: 'cancelled', to: 'refunded' },
       ];
 
       const result = OrderStatusValidator.validateBulkTransitions(transitions);
@@ -160,7 +160,7 @@ describe('OrderStatusValidator', () => {
         { from: 'pending', to: 'completed' },
         { from: 'completed', to: 'cancelled' },
         { from: 'cancelled', to: 'pending' },
-        { from: 'refunded', to: 'completed' }
+        { from: 'refunded', to: 'completed' },
       ];
 
       const result = OrderStatusValidator.validateBulkTransitions(transitions);
@@ -174,7 +174,7 @@ describe('OrderStatusValidator', () => {
     it('should include error messages for invalid transitions', () => {
       const transitions: StatusTransition[] = [
         { from: 'completed', to: 'cancelled' },
-        { from: 'refunded', to: 'completed' }
+        { from: 'refunded', to: 'completed' },
       ];
 
       const result = OrderStatusValidator.validateBulkTransitions(transitions);
@@ -186,7 +186,7 @@ describe('OrderStatusValidator', () => {
     it('should preserve metadata in validated transitions', () => {
       const transitions: StatusTransition[] = [
         { from: 'pending', to: 'completed', userId: 'user1', reason: 'Payment processed' },
-        { from: 'completed', to: 'cancelled', userId: 'user2', reason: 'Invalid attempt' }
+        { from: 'completed', to: 'cancelled', userId: 'user2', reason: 'Invalid attempt' },
       ];
 
       const result = OrderStatusValidator.validateBulkTransitions(transitions);
@@ -195,14 +195,14 @@ describe('OrderStatusValidator', () => {
         from: 'pending',
         to: 'completed',
         userId: 'user1',
-        reason: 'Payment processed'
+        reason: 'Payment processed',
       });
       
       expect(result.invalid[0]).toMatchObject({
         from: 'completed',
         to: 'cancelled',
         userId: 'user2',
-        reason: 'Invalid attempt'
+        reason: 'Invalid attempt',
       });
     });
 

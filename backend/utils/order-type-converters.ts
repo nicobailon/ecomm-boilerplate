@@ -58,13 +58,13 @@ export interface SerializedOrder {
   paymentIntentId?: string;
   couponCode?: string;
   originalAmount?: number;
-  statusHistory: Array<{
+  statusHistory: {
     from: 'pending' | 'completed' | 'cancelled' | 'refunded' | 'pending_inventory';
     to: 'pending' | 'completed' | 'cancelled' | 'refunded' | 'pending_inventory';
     timestamp: Date;
     userId?: string;
     reason?: string;
-  }>;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,7 +86,7 @@ export interface SerializedOrderStats {
     cancelled: number;
     refunded: number;
   };
-  revenueByDay: Array<{
+  revenueByDay: {
     _id: {
       year: number;
       month: number;
@@ -94,13 +94,13 @@ export interface SerializedOrderStats {
     };
     revenue: number;
     count: number;
-  }>;
-  topProducts: Array<{
+  }[];
+  topProducts: {
     _id: string;
     name: string;
     totalSold: number;
     revenue: number;
-  }>;
+  }[];
 }
 
 export function toSerializedOrder(order: OrderWithPopulatedData): SerializedOrder {

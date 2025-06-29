@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Product, IProductDocument } from '../models/product.model.js';
-import { AppError } from '../utils/AppError.js';
+import { AppError, NotFoundError, ValidationError, ConflictError, InventoryError } from '../utils/AppError.js';
 import { IProduct, IProductWithVariants, IProductVariant } from '../types/index.js';
 import { redis } from '../lib/redis.js';
 import { UTApi } from 'uploadthing/server';
@@ -30,14 +30,16 @@ class ProductService {
       sortBy?: 'name' | 'price' | 'createdAt' | 'updatedAt';
       sortOrder?: 'asc' | 'desc';
       stockStatus?: 'all' | 'inStock' | 'lowStock' | 'outOfStock';
-    }
+    },
   ): Promise<{ products: (IProduct | IProductWithVariants)[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
     // Validate and sanitize pagination parameters
     const pageNum = Math.max(PAGINATION.DEFAULT_PAGE, page);
     const limitNum = Math.min(PAGINATION.MAX_LIMIT, Math.max(PAGINATION.MIN_LIMIT, limit));
     
-    const query: mongoose.FilterQuery<IProductDocument> = {};
-    
+    const query: mongoose.FilterQuery<IProductDocument> = {
+      isDeleted: { $ne: true }, // Exclude soft-deleted products
+    };
+
     if (search) {
       query.$text = { $search: search };
     }
@@ -57,19 +59,19 @@ class ProductService {
         case 'inStock':
           query.$or = [
             { variants: { $exists: false }, inventory: { $gt: 0 } },
-            { 'variants.inventory': { $gt: 0 } }
+            { 'variants.inventory': { $gt: 0 } },
           ];
           break;
         case 'lowStock':
           query.$or = [
             { variants: { $exists: false }, inventory: { $lte: 10, $gt: 0 } },
-            { 'variants.inventory': { $lte: 10, $gt: 0 } }
+            { 'variants.inventory': { $lte: 10, $gt: 0 } },
           ];
           break;
         case 'outOfStock':
           query.$or = [
             { variants: { $exists: false }, inventory: { $lte: 0 } },
-            { 'variants.inventory': { $lte: 0 } }
+            { 'variants.inventory': { $lte: 0 } },
           ];
           break;
       }
@@ -109,7 +111,7 @@ class ProductService {
     const { name, description, price, image, collectionId, variants = [], relatedProducts = [] } = productData;
     
     if (!image) {
-      throw new AppError('Product image URL is required. Please upload an image for the product', 400);
+      throw new ValidationError('Product image URL is required. Please upload an image for the product');
     }
     
     if (variants.length > 0) {
@@ -121,7 +123,7 @@ class ProductService {
         if (variant.sku) {
           const isUnique = await this.validateSKUUniqueness(variant.sku);
           if (!isUnique) {
-            throw new AppError(`SKU '${variant.sku}' already exists. Each variant must have a unique SKU`, 400);
+            throw new ConflictError('SKU', variant.sku);
           }
         }
       }
@@ -135,7 +137,7 @@ class ProductService {
       if (collectionId) {
         const collectionExists = await Collection.findById(collectionId).session(session);
         if (!collectionExists) {
-          throw new AppError(`Invalid collection ID: ${collectionId}. Collection not found`, 400);
+          throw new NotFoundError('Collection', collectionId);
         }
       }
       
@@ -174,7 +176,25 @@ class ProductService {
       return toProduct(product[0]);
     } catch (error) {
       await session.abortTransaction();
-      throw error;
+      
+      // Re-throw AppError instances as-is to preserve error context
+      if (error instanceof AppError) {
+        throw error;
+      }
+      
+      // Log transaction error with structured logging
+      logTransactionError({
+        operation: 'createProduct',
+        userId: 'system', // Since userId is not available in this context
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      
+      // Wrap other errors with transaction context
+      throw new AppError(
+        `Transaction failed during product creation: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        500,
+      );
     } finally {
       await session.endSession();
     }
@@ -186,14 +206,14 @@ class ProductService {
     // Get the current product to check for collection changes
     const currentProduct = await Product.findById(productId);
     if (!currentProduct) {
-      throw new AppError(`Product not found with ID: ${productId}`, 404);
+      throw new NotFoundError('Product', productId);
     }
     
     // Validate new collection exists if provided
     if (collectionId !== undefined && collectionId !== null) {
       const collectionExists = await Collection.findById(collectionId);
       if (!collectionExists) {
-        throw new AppError(`Invalid collection ID: ${collectionId}. Collection not found`, 400);
+        throw new NotFoundError('Collection', collectionId);
       }
     }
     
@@ -207,7 +227,7 @@ class ProductService {
         if (variant.sku) {
           const isUnique = await this.validateSKUUniqueness(variant.sku, productId);
           if (!isUnique) {
-            throw new AppError(`SKU '${variant.sku}' already exists for another product. Each variant must have a unique SKU`, 400);
+            throw new ConflictError('SKU', variant.sku);
           }
         }
       }
@@ -265,7 +285,7 @@ class ProductService {
     );
 
     if (!product) {
-      throw new AppError(`Product not found with ID: ${productId}`, 404);
+      throw new NotFoundError('Product', productId);
     }
 
     // Handle collection changes
@@ -300,7 +320,7 @@ class ProductService {
     const product = await Product.findById(productId);
     
     if (!product) {
-      throw new AppError(`Product not found with ID: ${productId}. Cannot delete non-existent product`, 404);
+      throw new NotFoundError('Product', productId);
     }
     
     // Delete image from UploadThing if exists
@@ -324,16 +344,21 @@ class ProductService {
     await Product.findByIdAndDelete(productId);
   }
 
-  async getFeaturedProducts(): Promise<IProduct[]> {
-    // Try to get from cache first
+  async getFeaturedProducts(bypassCache = false): Promise<IProduct[]> {
+    // Try to get from cache first unless bypass is requested
     const cacheKey = CACHE_KEYS.FEATURED_PRODUCTS;
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      return JSON.parse(cached) as IProduct[];
+    if (!bypassCache) {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached) as IProduct[];
+      }
     }
 
-    // If not in cache, get from database
-    const featuredProducts = await Product.find({ isFeatured: true }).lean();
+    // If not in cache or bypassing cache, get from database
+    const featuredProducts = await Product.find({
+      isFeatured: true,
+      isDeleted: { $ne: true },
+    }).lean();
 
     // Return empty array if no featured products, don't throw error
     if (!featuredProducts || featuredProducts.length === 0) {
@@ -376,7 +401,7 @@ class ProductService {
     
     const product = await Product.findById(productId);
     if (!product) {
-      throw new AppError(`Product not found with ID: ${productId}`, 404);
+      throw new NotFoundError('Product', productId);
     }
 
     const productData = toProductWithVariants(product);
@@ -397,7 +422,7 @@ class ProductService {
     const currentProduct = await Product.findById(productId);
     
     if (!currentProduct) {
-      throw new AppError(`Product not found with ID: ${productId}. Cannot toggle featured status`, 404);
+      throw new NotFoundError('Product', productId);
     }
     
     // Update only the isFeatured field without triggering full validation
@@ -419,7 +444,10 @@ class ProductService {
 
   private async updateFeaturedProductsCache(): Promise<void> {
     try {
-      const featuredProducts = await Product.find({ isFeatured: true }).lean();
+      const featuredProducts = await Product.find({
+        isFeatured: true,
+        isDeleted: { $ne: true },
+      }).lean();
       await redis.set(CACHE_KEYS.FEATURED_PRODUCTS, JSON.stringify(featuredProducts), 'EX', CACHE_TTL.FEATURED_PRODUCTS);
     } catch (error) {
       console.error('error in update cache function', error);
@@ -480,7 +508,7 @@ class ProductService {
         }).session(session);
         
         if (!collection && !newCollection) {
-          throw new AppError(`Collection not found or access denied. Collection ID: ${collectionId} does not exist or you don't have permission to add products to it`, 404);
+          throw new NotFoundError('Collection', collectionId);
         }
       }
       
@@ -488,7 +516,7 @@ class ProductService {
 
       // Validate required fields with explicit runtime checks
       if (!productData.name || typeof productData.name !== 'string' || productData.name.trim() === '') {
-        throw new AppError('Product name is required and must be a non-empty string', 400);
+        throw new ValidationError('Product name is required and must be a non-empty string');
       }
 
       // Generate slug for the product
@@ -533,6 +561,7 @@ class ProductService {
       }
 
       // Log transaction error with structured logging
+      // Ensure we only log serializable data
       logTransactionError({
         operation: 'createProductWithCollection',
         userId,
@@ -575,7 +604,7 @@ class ProductService {
     .lean();
     
     if (!product) {
-      throw new AppError(`Product not found with slug: ${normalizedSlug}`, 404);
+      throw new NotFoundError('Product', normalizedSlug);
     }
     
     // Cache with configured TTL
@@ -745,7 +774,7 @@ class ProductService {
     const result = await Product.aggregate(pipeline);
     
     if (result.length === 0) {
-      throw new AppError(`Product not found with ID: ${productId}. Cannot fetch related products`, 404);
+      throw new NotFoundError('Product', productId);
     }
     
     // Cache with configured TTL
@@ -763,13 +792,13 @@ class ProductService {
     const product = await Product.findById(productId);
     
     if (!product) {
-      throw new AppError(`Product not found with ID: ${productId}. Cannot check variant availability`, 404);
+      throw new NotFoundError('Product', productId);
     }
     
     const { variant } = getVariantOrDefault(product.variants, variantLabel, variantId);
     
     if (!variant) {
-      throw new AppError(`Variant not found for product ${productId}`, 404);
+      throw new NotFoundError('Variant', productId);
     }
     
     return variant.inventory > 0;
@@ -790,7 +819,7 @@ class ProductService {
         const product = await Product.findById(productId);
         
         if (!product) {
-          throw new AppError(`Product not found with ID: ${productId}. Cannot update variant inventory`, 404);
+          throw new NotFoundError('Product', productId);
         }
         
         // Map incoming size to label when flag is ON  
@@ -804,7 +833,7 @@ class ProductService {
         const { variant } = getVariantOrDefault(product.variants, effectiveVariantLabel, effectiveVariantId);
         
         if (!variant) {
-          throw new AppError(`Variant not found for product ${productId}`, 404);
+          throw new NotFoundError('Variant', productId);
         }
         
         // Find the variant index for direct update
@@ -815,7 +844,7 @@ class ProductService {
         );
         
         if (variantIndex === -1) {
-          throw new AppError(`Variant not found for product ${productId}`, 404);
+          throw new NotFoundError('Variant', productId);
         }
         
         const targetVariant = product.variants[variantIndex];
@@ -826,16 +855,22 @@ class ProductService {
             break;
           case 'decrement':
             if (targetVariant.inventory < quantity) {
-              throw new AppError(
-                `Insufficient inventory for variant. Available: ${targetVariant.inventory}, Requested: ${quantity}. Please reduce the quantity or choose a different variant`, 
-                400,
+              throw new InventoryError(
+                `Insufficient inventory for variant. Available: ${targetVariant.inventory}, Requested: ${quantity}. Please reduce the quantity or choose a different variant`,
+                'INSUFFICIENT_INVENTORY',
+                [{
+                  productId: productId,
+                  variantId: targetVariant.variantId,
+                  requestedQuantity: quantity,
+                  availableStock: targetVariant.inventory,
+                }],
               );
             }
             targetVariant.inventory -= quantity;
             break;
           case 'set':
             if (quantity < 0) {
-              throw new AppError(`Inventory cannot be negative. Attempted to set inventory to ${quantity}`, 400);
+              throw new ValidationError(`Inventory cannot be negative. Attempted to set inventory to ${quantity}`);
             }
             targetVariant.inventory = quantity;
             break;
@@ -961,7 +996,7 @@ class ProductService {
         service = {
           validateMediaGallery: (items: IMediaItem[]) => {
             if (items.length > 6) {
-              throw new AppError('Maximum 6 media items allowed', 400);
+              throw new ValidationError('Maximum 6 media items allowed');
             }
             return Promise.resolve();
           },
@@ -975,7 +1010,7 @@ class ProductService {
       
       const product = await Product.findById(productId).session(session);
       if (!product) {
-        throw new AppError('Product not found', 404);
+        throw new NotFoundError('Product');
       }
       
       const oldMediaUrls = (product.mediaGallery ?? [])
@@ -1026,7 +1061,7 @@ class ProductService {
       try {
         const product = await Product.findById(productId);
         if (!product) {
-          throw new AppError('Product not found', 404);
+          throw new NotFoundError('Product');
         }
         
         if (!product.mediaGallery) {
@@ -1084,7 +1119,7 @@ class ProductService {
     try {
       const product = await Product.findById(productId).session(session);
       if (!product) {
-        throw new AppError('Product not found', 404);
+        throw new NotFoundError('Product');
       }
       
       if (!product.mediaGallery) {
@@ -1093,12 +1128,12 @@ class ProductService {
       
       const mediaItem = product.mediaGallery.find((m) => m.id === mediaId);
       if (!mediaItem) {
-        throw new AppError('Media item not found', 404);
+        throw new NotFoundError('Media item');
       }
       
       const imageCount = product.mediaGallery.filter((m) => m.type === 'image').length;
       if (mediaItem.type === 'image' && imageCount === 1) {
-        throw new AppError('Cannot delete the last image', 400);
+        throw new ValidationError('Cannot delete the last image');
       }
       
       product.mediaGallery = product.mediaGallery.filter((m) => m.id !== mediaId);
@@ -1153,7 +1188,7 @@ class ProductService {
   ): Promise<IProduct> {
     const product = await Product.findById(productId);
     if (!product) {
-      throw new AppError('Product not found', 404);
+      throw new NotFoundError('Product');
     }
     
     if (!product.mediaGallery) {
@@ -1161,7 +1196,7 @@ class ProductService {
     }
     
     if (product.mediaGallery.length >= 6) {
-      throw new AppError('Media gallery is full', 400);
+      throw new ValidationError('Media gallery is full');
     }
     
     mediaItem.order = product.mediaGallery.length;

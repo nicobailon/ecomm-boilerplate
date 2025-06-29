@@ -65,7 +65,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       }}
       className={cn(
         'bg-popover text-popover-foreground border rounded-md shadow-lg backdrop-blur-sm',
-        className
+        className,
       )}
       data-portal-id={portalId}
       data-radix-popper-content-wrapper=""

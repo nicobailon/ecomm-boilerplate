@@ -23,7 +23,7 @@ export class OrderStatusValidator {
     pending_inventory: ['completed', 'cancelled'],
     completed: ['refunded'],
     cancelled: ['pending'],
-    refunded: []
+    refunded: [],
   };
 
   static isValidTransition(from: OrderStatus, to: OrderStatus): boolean {
@@ -50,7 +50,7 @@ export class OrderStatusValidator {
       'refunded-cancelled': 'Cannot cancel an order that has already been refunded',
       'cancelled-refunded': 'Cannot refund an order that was never completed',
       'cancelled-completed': 'A cancelled order must be reactivated to pending status first',
-      'pending-refunded': 'Can only refund completed orders'
+      'pending-refunded': 'Can only refund completed orders',
     };
     
     const transitionKey = `${from}-${to}`;
@@ -71,10 +71,10 @@ export class OrderStatusValidator {
 
   static validateBulkTransitions(transitions: StatusTransition[]): {
     valid: StatusTransition[];
-    invalid: Array<StatusTransition & { error: string }>;
+    invalid: (StatusTransition & { error: string })[];
   } {
     const valid: StatusTransition[] = [];
-    const invalid: Array<StatusTransition & { error: string }> = [];
+    const invalid: (StatusTransition & { error: string })[] = [];
     
     transitions.forEach(transition => {
       if (this.isValidTransition(transition.from, transition.to)) {
@@ -82,7 +82,7 @@ export class OrderStatusValidator {
       } else {
         invalid.push({
           ...transition,
-          error: this.getTransitionErrorMessage(transition.from, transition.to)
+          error: this.getTransitionErrorMessage(transition.from, transition.to),
         });
       }
     });

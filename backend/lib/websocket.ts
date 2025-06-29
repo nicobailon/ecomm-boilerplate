@@ -119,7 +119,7 @@ class WebSocketService {
         
         const token = socket.handshake.auth.token as string | undefined;
         if (token && process.env.ACCESS_TOKEN_SECRET) {
-          const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET) as { userId: string };
+          const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET) as jwt.JwtPayload & { userId: string };
           socket.data.userId = decoded.userId;
         }
         next();
@@ -272,6 +272,40 @@ class WebSocketService {
 
   getIO(): Server | null {
     return this.io;
+  }
+
+  async close(): Promise<void> {
+    logger.info('[WebSocket] Closing WebSocket connections...');
+    
+    // Close all socket connections
+    if (this.io) {
+      await new Promise<void>((resolve) => {
+        if (this.io) {
+          this.io.close(() => {
+            logger.info('[WebSocket] Socket.IO server closed');
+            resolve();
+          });
+        } else {
+          resolve();
+        }
+      });
+    }
+    
+    // Close Redis pub/sub clients
+    if (this.pubClient) {
+      await this.pubClient.quit();
+      logger.info('[WebSocket] PubClient closed');
+    }
+    
+    if (this.subClient) {
+      await this.subClient.quit();
+      logger.info('[WebSocket] SubClient closed');
+    }
+    
+    this.io = null;
+    this.pubClient = null;
+    this.subClient = null;
+    this.isRedisConnected = false;
   }
 }
 

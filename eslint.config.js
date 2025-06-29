@@ -27,6 +27,7 @@ export default tseslint.config(
       '**/*.config.ts',
       '**/*.cjs', // Ignore CommonJS files
       'scripts/**',
+      'backend/scripts/**',
       'frontend/scripts/**',
       '**/*.ejs', // EJS templates are not JavaScript/TypeScript
     ],
@@ -100,6 +101,12 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-assertions': ['error', {
         assertionStyle: 'as',
         objectLiteralTypeAssertions: 'never',
+      }],
+      // Allow async middleware in Express routes
+      '@typescript-eslint/no-misused-promises': ['error', {
+        checksVoidReturn: {
+          arguments: false,
+        },
       }]
     },
   },

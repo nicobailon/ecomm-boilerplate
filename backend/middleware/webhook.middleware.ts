@@ -8,11 +8,11 @@ export interface WebhookRequest extends Request {
   stripeEvent?: Stripe.Event;
 }
 
-const verifyWebhookSignatureAsync = async (
+const verifyWebhookSignatureAsync = (
   req: WebhookRequest,
   res: Response,
-  next: NextFunction
-): Promise<void> => {
+  next: NextFunction,
+): void => {
   try {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
@@ -20,7 +20,7 @@ const verifyWebhookSignatureAsync = async (
         'Webhook secret not configured',
         'WEBHOOK_SECRET_MISSING',
         500,
-        false
+        false,
       );
     }
 
@@ -30,7 +30,7 @@ const verifyWebhookSignatureAsync = async (
         'Missing stripe-signature header',
         'SIGNATURE_MISSING',
         401,
-        false
+        false,
       );
     }
 
@@ -49,7 +49,7 @@ const verifyWebhookSignatureAsync = async (
         'Raw body not available',
         'RAW_BODY_MISSING',
         400,
-        false
+        false,
       );
     }
 
@@ -57,7 +57,7 @@ const verifyWebhookSignatureAsync = async (
       const event = stripe.webhooks.constructEvent(
         rawBody,
         signature,
-        webhookSecret
+        webhookSecret,
       );
 
       req.stripeEvent = event;
@@ -69,7 +69,7 @@ const verifyWebhookSignatureAsync = async (
           'Invalid webhook signature',
           'INVALID_SIGNATURE',
           401,
-          false
+          false,
         );
       }
       throw err;
@@ -90,13 +90,7 @@ const verifyWebhookSignatureAsync = async (
   }
 };
 
-export const verifyWebhookSignature = (
-  req: WebhookRequest,
-  res: Response,
-  next: NextFunction
-): void => {
-  verifyWebhookSignatureAsync(req, res, next).catch(next);
-};
+export const verifyWebhookSignature = verifyWebhookSignatureAsync;
 
 export const webhookRateLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
@@ -108,7 +102,7 @@ export const webhookRateLimiter = rateLimit({
     console.warn('Webhook rate limit exceeded:', {
       ip: req.ip,
       userAgent: req.headers['user-agent'],
-      eventId: req.body?.id,
+      eventId: (req.body as { id?: string })?.id,
     });
     res.status(429).json({
       error: 'Too many webhook requests',

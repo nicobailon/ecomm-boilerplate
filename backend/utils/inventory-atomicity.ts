@@ -3,7 +3,7 @@ import type { IProductDocument } from '../models/product.model.js';
 
 export function createInventoryValidationError(
   code: InventoryValidationError['code'],
-  details: InventoryValidationError['details']
+  details: InventoryValidationError['details'],
 ): InventoryValidationError {
   const messages = details.map(detail => {
     const variantInfo = detail.variantDetails ? ` (${detail.variantDetails})` : '';
@@ -24,7 +24,7 @@ export function isInventoryValidationError(error: unknown): error is InventoryVa
 export async function withRetry<T>(
   operation: () => Promise<T>,
   maxRetries = 3,
-  baseDelayMs = 100
+  baseDelayMs = 100,
 ): Promise<T> {
   let lastError: Error | undefined;
 
@@ -70,19 +70,19 @@ export function formatVariantDetails(variant: { size?: string; color?: string; l
 export function buildAtomicUpdateFilter(
   productId: string,
   minInventory: number,
-  variantId?: string
+  variantId?: string,
 ): Record<string, unknown> {
   const filter: Record<string, unknown> = {
     _id: productId,
-    isDeleted: { $ne: true }
+    isDeleted: { $ne: true },
   };
 
   if (variantId) {
-    filter['variants'] = {
+    filter.variants = {
       $elemMatch: {
         variantId: variantId,
-        inventory: { $gte: minInventory }
-      }
+        inventory: { $gte: minInventory },
+      },
     };
   } else {
     // For products without specific variant, check default variant
@@ -94,7 +94,7 @@ export function buildAtomicUpdateFilter(
 
 export function buildAtomicUpdateOperation(
   variantId: string | undefined,
-  inventoryDelta: number
+  inventoryDelta: number,
 ): Record<string, unknown> {
   if (variantId) {
     return {
@@ -103,7 +103,7 @@ export function buildAtomicUpdateOperation(
   } else {
     // Update default variant when no variant is specified
     return {
-      $inc: { 'variants.0.inventory': inventoryDelta }
+      $inc: { 'variants.0.inventory': inventoryDelta },
     };
   }
 }
@@ -112,14 +112,14 @@ export function getArrayFilters(variantId?: string): { 'elem.variantId': string 
   if (!variantId) return undefined;
   
   return [
-    { 'elem.variantId': variantId }
+    { 'elem.variantId': variantId },
   ];
 }
 
 export async function performAtomicInventoryUpdate(
   productId: string,
   quantity: number,
-  variantId?: string
+  variantId?: string,
 ): Promise<IProductDocument | null> {
   const { Product } = await import('../models/product.model.js');
   const filter = buildAtomicUpdateFilter(productId, quantity, variantId);
@@ -133,7 +133,7 @@ export async function performAtomicInventoryUpdate(
 }
 
 export async function validateInventoryAvailability(
-  items: { productId: string; quantity: number; variantId?: string }[]
+  items: { productId: string; quantity: number; variantId?: string }[],
 ): Promise<{
   productId: string;
   hasStock: boolean;

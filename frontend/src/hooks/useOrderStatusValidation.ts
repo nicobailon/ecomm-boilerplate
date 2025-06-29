@@ -1,4 +1,4 @@
-import { OrderStatus } from '../types/order';
+import type { OrderStatus } from '../types/order';
 
 export const useOrderStatusValidation = () => {
   const getValidNextStatuses = (currentStatus: OrderStatus): OrderStatus[] => {
@@ -7,7 +7,7 @@ export const useOrderStatusValidation = () => {
       completed: ['refunded'],
       cancelled: ['pending'],
       refunded: [],
-      pending_inventory: ['completed', 'cancelled']
+      pending_inventory: ['completed', 'cancelled'],
     };
     return validTransitions[currentStatus] || [];
   };
@@ -23,7 +23,7 @@ export const useOrderStatusValidation = () => {
       'refunded-cancelled': 'Cannot cancel an order that has already been refunded',
       'cancelled-refunded': 'Cannot refund an order that was never completed',
       'cancelled-completed': 'A cancelled order must be reactivated to pending status first',
-      'pending-refunded': 'Can only refund completed orders'
+      'pending-refunded': 'Can only refund completed orders',
     };
     
     const transitionKey = `${from}-${to}`;
@@ -43,14 +43,14 @@ export const useOrderStatusValidation = () => {
   };
 
   const validateBulkTransitions = (
-    orders: Array<{ status: OrderStatus }>, 
-    targetStatus: OrderStatus
+    orders: { status: OrderStatus }[], 
+    targetStatus: OrderStatus,
   ): {
     valid: number[];
-    invalid: Array<{ index: number; error: string }>;
+    invalid: { index: number; error: string }[];
   } => {
     const valid: number[] = [];
-    const invalid: Array<{ index: number; error: string }> = [];
+    const invalid: { index: number; error: string }[] = [];
     
     orders.forEach((order, index) => {
       if (isValidTransition(order.status, targetStatus)) {
@@ -58,7 +58,7 @@ export const useOrderStatusValidation = () => {
       } else {
         invalid.push({
           index,
-          error: getTransitionErrorMessage(order.status, targetStatus)
+          error: getTransitionErrorMessage(order.status, targetStatus),
         });
       }
     });
@@ -70,6 +70,6 @@ export const useOrderStatusValidation = () => {
     getValidNextStatuses, 
     isValidTransition, 
     getTransitionErrorMessage,
-    validateBulkTransitions
+    validateBulkTransitions,
   };
 };

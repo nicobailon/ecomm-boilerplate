@@ -33,7 +33,9 @@
 		"revert:variant-labels": "tsx backend/scripts/revert-variant-label.ts",
 		"migrate:product-media": "tsx backend/scripts/migrate-product-media.ts",
 		"migrate:email-verification": "tsx backend/scripts/migrate-email-verification.ts",
-		"verify:db-indexes": "echo 'Database index verification requires a running MongoDB instance. See backend/docs/database-performance-optimizations.md for details.'"
+		"verify:db-indexes": "echo 'Database index verification requires a running MongoDB instance. See backend/docs/database-performance-optimizations.md for details.'",
+		"logs:tail": "tail -n 50 -f logs/unified.log",
+		"logs:info": "tsx backend/scripts/show-logging-info.ts"
 	},
 	"keywords": [],
 	"author": "",
@@ -59,6 +61,7 @@
 		"helmet": "^8.1.0",
 		"html-to-text": "^9.0.5",
 		"ioredis": "^5.4.1",
+		"isomorphic-dompurify": "^2.25.0",
 		"jsonwebtoken": "^9.0.2",
 		"mongoose": "^8.5.3",
 		"nanoid": "^5.1.5",

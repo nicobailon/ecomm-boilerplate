@@ -179,11 +179,31 @@ For detailed documentation, see `/backend/docs/email-system.md`.
     - Mock data generation
     - WebSocket simulation tools
     - Feature flag management
+-   **Email Verification Preview Routes** (requires authentication):
+    - Customer success page: `http://localhost:5173/dev/email-verified/customer`
+    - Admin success page: `http://localhost:5173/dev/email-verified/admin`
+    - These routes allow developers and designers to preview the email verification success states without going through the actual email verification flow
 -   Dev code is automatically stripped from production builds.
 
 ### Admin Management
 -   `npm run list-users`: Lists all users and their roles.
 -   `npm run make-admin <email>`: Promotes a user to admin role.
+
+### Unified Logging
+-   **Single Log Stream**: All backend console logs, frontend console logs, and database queries flow into `logs/unified.log`
+-   **Frontend Logging**: Browser console calls are automatically forwarded to the backend via API
+-   **Database Query Logging**: MongoDB/Mongoose queries are logged with collection, method, and timing info
+-   **Quick Access**: `make tail-logs` shows the last 50 lines and follows new output (ideal for debugging and AI agents)
+-   **Alternative Commands**: `npm run logs:tail` or `tail -f logs/unified.log`
+-   **Log Info**: Run `make logs-info` for detailed logging system information
+
+### Development Route Authentication
+To access the email verification preview routes:
+1. Sign in to the application with any user account
+2. Navigate to the desired route:
+   - `/dev/email-verified/customer` - Shows the customer success experience
+   - `/dev/email-verified/admin` - Shows the admin success experience
+3. The routes are accessible to any authenticated user, allowing developers to preview both customer and admin experiences regardless of their actual role
 
 ## 🤝 Contributing
 

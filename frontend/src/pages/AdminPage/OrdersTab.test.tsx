@@ -21,7 +21,7 @@ vi.mock('@/components/order/OrdersTable', () => ({
 
 // Mock the OrderDetailsDrawer component
 vi.mock('@/components/order/OrderDetailsDrawer', () => ({
-  OrderDetailsDrawer: ({ isOpen, onClose, orderId }: any) => (
+  OrderDetailsDrawer: ({ isOpen, onClose, orderId }: { isOpen: boolean; onClose: () => void; orderId: string | null }) => (
     isOpen ? (
       <div data-testid="mock-order-drawer">
         <h2>Order Details</h2>

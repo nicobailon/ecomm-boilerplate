@@ -30,8 +30,8 @@ export function OrderProductsList({ products }: OrderProductsListProps) {
       <ul className="space-y-4" role="list">
         {products.map((item, index) => {
           const productId = item.product._id.toString();
-          const productName = item.product.name || 'Unknown Product';
-          const productImage = item.product.image || '/placeholder-product.png';
+          const productName = item.product.name ?? 'Unknown Product';
+          const productImage = item.product.image ?? '/placeholder-product.png';
           
           return (
             <React.Fragment key={productId}>

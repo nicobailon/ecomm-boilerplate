@@ -51,7 +51,7 @@ const mockUserData = {
   _id: '1',
   name: 'Test User',
   email: 'test@example.com',
-  role: 'customer' as const,
+  role: 'customer' as 'customer' | 'admin',
   cartItems: [],
   emailVerified: false,
 };
@@ -85,11 +85,12 @@ describe('Email Verification E2E - Basic Flow', () => {
     
     // Reset user data
     mockUserData.emailVerified = false;
+    mockUserData.role = 'customer';
   });
 
   describe('Email Verification Page', () => {
     it('shows loading state when verifying', () => {
-      mockParams.token = 'valid-token';
+      mockParams.token = 'valid-token-1234567890abcdef';
       mockVerifyEmailMutation.isPending = true;
       
       render(<VerifyEmailPage />);
@@ -109,7 +110,7 @@ describe('Email Verification E2E - Basic Flow', () => {
     });
 
     it('shows success message when verification succeeds', async () => {
-      mockParams.token = 'valid-token';
+      mockParams.token = 'valid-token-1234567890abcdef';
       
       // Mock immediate success
       mockVerifyEmailMutation.mutate.mockImplementation((_, options: { onSuccess?: (data: { success: boolean; user: typeof mockUserData }) => void }) => {
@@ -131,26 +132,26 @@ describe('Email Verification E2E - Basic Flow', () => {
       });
 
       void expect(screen.getByText(/your email has been successfully verified/i)).toBeInTheDocument();
-      void expect(screen.getByRole('button', { name: /go to dashboard/i })).toBeInTheDocument();
+      void expect(screen.getByRole('button', { name: /start shopping/i })).toBeInTheDocument();
     });
 
     it('navigates home when continue button clicked', async () => {
       const user = userEvent.setup();
-      mockParams.token = 'valid-token';
+      mockParams.token = 'valid-token-1234567890abcdef';
       
       // Set success state
       mockVerifyEmailMutation.isSuccess = true;
       
       render(<VerifyEmailPage />);
 
-      const continueButton = screen.getByRole('button', { name: /go to dashboard/i });
+      const continueButton = screen.getByRole('button', { name: /start shopping/i });
       await user.click(continueButton);
 
       void expect(mockNavigate).toHaveBeenCalledWith('/');
     });
 
     it('shows error for invalid token', async () => {
-      mockParams.token = 'invalid-token';
+      mockParams.token = 'invalid-token-1234567890abcdef';
       
       // Mock error
       mockVerifyEmailMutation.mutate.mockImplementation((_, options: { onError?: (error: { message: string; code: string }) => void }) => {
@@ -179,29 +180,74 @@ describe('Email Verification E2E - Basic Flow', () => {
 
     it('handles token from query parameters', async () => {
       // Set token in query params instead of route params
-      mockSearchParams.set('token', 'query-token');
+      mockSearchParams.set('token', 'query-token-1234567890abcdef');
       
       render(<VerifyEmailPage />);
 
       await waitFor(() => {
         void expect(mockVerifyEmailMutation.mutate).toHaveBeenCalledWith({
-          token: 'query-token',
+          token: 'query-token-1234567890abcdef',
         });
       });
     });
 
     it('prioritizes route param over query param', async () => {
       // Set both route param and query param
-      mockParams.token = 'route-token';
-      mockSearchParams.set('token', 'query-token');
+      mockParams.token = 'route-token-1234567890abcdef';
+      mockSearchParams.set('token', 'query-token-1234567890abcdef');
       
       render(<VerifyEmailPage />);
 
       await waitFor(() => {
         void expect(mockVerifyEmailMutation.mutate).toHaveBeenCalledWith({
-          token: 'route-token',
+          token: 'route-token-1234567890abcdef',
         });
       });
+    });
+
+    it('shows admin-specific messaging for admin users', async () => {
+      // Set user as admin
+      mockUserData.role = 'admin';
+      mockParams.token = 'valid-token-1234567890abcdef';
+
+      // Mock immediate success
+      mockVerifyEmailMutation.mutate.mockImplementation((_, options: { onSuccess?: (data: { success: boolean; user: typeof mockUserData }) => void }) => {
+        void setTimeout(() => {
+          mockVerifyEmailMutation.isSuccess = true;
+          options?.onSuccess?.({
+            success: true,
+            user: { ...mockUserData, emailVerified: true },
+          });
+        }, 0);
+      });
+
+      const { rerender } = render(<VerifyEmailPage />);
+
+      // Wait for success callback
+      await waitFor(() => {
+        rerender(<VerifyEmailPage />);
+        void expect(screen.getByRole('heading', { name: /email verified/i })).toBeInTheDocument();
+      });
+
+      void expect(screen.getByText(/you can now access all admin features/i)).toBeInTheDocument();
+      void expect(screen.getByRole('button', { name: /go to dashboard/i })).toBeInTheDocument();
+    });
+
+    it('navigates to admin dashboard when admin clicks continue button', async () => {
+      const user = userEvent.setup();
+      // Set user as admin
+      mockUserData.role = 'admin';
+      mockParams.token = 'valid-token-1234567890abcdef';
+
+      // Set success state
+      mockVerifyEmailMutation.isSuccess = true;
+
+      render(<VerifyEmailPage />);
+
+      const continueButton = screen.getByRole('button', { name: /go to dashboard/i });
+      await user.click(continueButton);
+
+      void expect(mockNavigate).toHaveBeenCalledWith('/secret-dashboard');
     });
   });
 

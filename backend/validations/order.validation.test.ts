@@ -10,7 +10,7 @@ import {
   type UpdateOrderStatusInput,
   type BulkUpdateOrderStatusInput,
   type GetOrderByIdInput,
-  type GetOrderStatsInput
+  type GetOrderStatsInput,
 } from './order.validation.js';
 
 type AssertEqual<T, U> = T extends U ? (U extends T ? true : false) : false;
@@ -139,7 +139,7 @@ describe('Order Validation Schemas', () => {
     it('should reject invalid status', () => {
       expect(() => updateOrderStatusSchema.parse({ 
         orderId: '507f1f77bcf86cd799439011', 
-        status: 'invalid' 
+        status: 'invalid', 
       })).toThrow();
     });
 
@@ -165,28 +165,28 @@ describe('Order Validation Schemas', () => {
     it('should reject empty array', () => {
       expect(() => bulkUpdateOrderStatusSchema.parse({ 
         orderIds: [], 
-        status: 'completed' 
+        status: 'completed', 
       })).toThrow();
     });
 
     it('should reject non-array orderIds', () => {
       expect(() => bulkUpdateOrderStatusSchema.parse({ 
         orderIds: '507f1f77bcf86cd799439011', 
-        status: 'completed' 
+        status: 'completed', 
       })).toThrow();
     });
 
     it('should reject array with empty strings', () => {
       expect(() => bulkUpdateOrderStatusSchema.parse({ 
         orderIds: ['507f1f77bcf86cd799439011', ''], 
-        status: 'completed' 
+        status: 'completed', 
       })).toThrow();
     });
 
     it('should reject invalid status', () => {
       expect(() => bulkUpdateOrderStatusSchema.parse({ 
         orderIds: ['507f1f77bcf86cd799439011'], 
-        status: 'shipped' 
+        status: 'shipped', 
       })).toThrow();
     });
 

@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react';
-import { useVerifyEmail } from '@/hooks/auth/useAuth';
-import { Button } from '@/components/ui/Button';
+import { XCircle, Loader2, ArrowRight } from 'lucide-react';
+import { useVerifyEmail, useCurrentUser } from '@/hooks/auth/useAuth';
+import EmailVerifiedSuccess from '@/components/auth/EmailVerifiedSuccess';
 
 const VerifyEmailPage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const verifyEmail = useVerifyEmail();
-  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
-  
+  const { data: currentUser } = useCurrentUser();
+
   // Support both URL patterns: /verify-email/:token and /verify-email?token=...
   const verificationToken = token ?? searchParams.get('token');
 
@@ -27,27 +27,7 @@ const VerifyEmailPage: React.FC = () => {
     if (verificationToken && isValidTokenFormat(verificationToken) && verifyEmail.isIdle) {
       verifyEmail.mutate({ token: verificationToken });
     }
-  }, [verificationToken]);
-
-  // Handle automatic redirect on success
-  useEffect(() => {
-    if (verifyEmail.isSuccess) {
-      // Start countdown from 3 seconds
-      setRedirectCountdown(3);
-    }
-  }, [verifyEmail.isSuccess]);
-
-  // Handle countdown timer
-  useEffect(() => {
-    if (redirectCountdown !== null && redirectCountdown > 0) {
-      const timer = setTimeout(() => {
-        setRedirectCountdown(redirectCountdown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (redirectCountdown === 0) {
-      navigate('/');
-    }
-  }, [redirectCountdown, navigate]);
+  }, [verificationToken, verifyEmail]);
 
   // Loading state - only show if actually pending and token is valid
   if (verifyEmail.isPending && isValidTokenFormat(verificationToken)) {
@@ -71,33 +51,19 @@ const VerifyEmailPage: React.FC = () => {
 
   // Success state
   if (verifyEmail.isSuccess) {
+    const handleCountdownFinish = () => {
+      const isAdmin = currentUser?.role === 'admin';
+      const redirectPath = isAdmin ? '/secret-dashboard' : '/';
+      void navigate(redirectPath);
+    };
+
     return (
-      <div className='flex flex-col justify-center items-center min-h-[60vh] py-12'>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className='text-center max-w-md'
-        >
-          <CheckCircle className='mx-auto h-16 w-16 text-green-500' />
-          <h2 className='mt-4 text-2xl font-semibold text-primary'>Email Verified!</h2>
-          <p className='mt-2 text-sm text-muted-foreground'>
-            Your email has been successfully verified. You can now access all features of your account.
-          </p>
-          {redirectCountdown !== null && (
-            <p className='mt-2 text-sm text-muted-foreground'>
-              Redirecting to home page in {redirectCountdown} second{redirectCountdown !== 1 ? 's' : ''}...
-            </p>
-          )}
-          <Button
-            onClick={() => void navigate('/')}
-            className='mt-6'
-          >
-            Go to Dashboard Now
-            <ArrowRight className='ml-2 h-4 w-4' />
-          </Button>
-        </motion.div>
-      </div>
+      <EmailVerifiedSuccess
+        role={currentUser?.role === 'admin' ? 'admin' : 'customer'}
+        onCountdownFinish={handleCountdownFinish}
+        showCountdown={true}
+        countdownSeconds={3}
+      />
     );
   }
 

@@ -1,5 +1,5 @@
 import { User, IUserDocument } from '../models/user.model.js';
-import { AppError } from '../utils/AppError.js';
+import { AppError, NotFoundError, ValidationError, AuthenticationError, ConflictError, RateLimitError } from '../utils/AppError.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { redis, isRedisHealthy } from '../lib/redis.js';
@@ -55,7 +55,7 @@ export class AuthService {
 
     const userExists = await User.findOne({ email });
     if (userExists) {
-      throw new AppError('User already exists', 400);
+      throw new ConflictError('User', 'email');
     }
     
     const user = await User.create({ 
@@ -107,7 +107,7 @@ export class AuthService {
     const user = await User.findOne({ email });
 
     if (!user || !(await user.comparePassword(password))) {
-      throw new AppError('Invalid email or password', 400);
+      throw new AuthenticationError('Invalid email or password', 'INVALID_CREDENTIALS');
     }
 
     const tokens = this.generateTokens(user._id.toString());
@@ -127,7 +127,7 @@ export class AuthService {
 
   async refreshAccessToken(refreshToken: string): Promise<string> {
     if (!refreshToken) {
-      throw new AppError('No refresh token provided', 401);
+      throw new AuthenticationError('No refresh token provided', 'NO_TOKEN');
     }
 
     const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
@@ -158,7 +158,7 @@ export class AuthService {
     }
 
     if (storedToken !== refreshToken) {
-      throw new AppError('Invalid refresh token', 401);
+      throw new AuthenticationError('Invalid refresh token', 'TOKEN_INVALID');
     }
 
     const accessToken = jwt.sign({ userId: decoded.userId }, accessSecret, {
@@ -181,7 +181,7 @@ export class AuthService {
             await redis.del(`refresh_token:${decoded.userId}`);
           },
           undefined,
-          'Delete refresh token'
+          'Delete refresh token',
         );
 
         // Always clean up memory store
@@ -195,7 +195,7 @@ export class AuthService {
   async getProfile(userId: string): Promise<IUserDocument> {
     const user = await User.findById(userId).select('-password');
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new NotFoundError('User');
     }
     return user;
   }
@@ -229,13 +229,13 @@ export class AuthService {
         return true;
       },
       undefined,
-      'Store refresh token'
+      'Store refresh token',
     );
 
     // Always store in memory as backup
     memoryTokenStore.set(userId, {
       token: refreshToken,
-      expires: Date.now() + (ttl * 1000)
+      expires: Date.now() + (ttl * 1000),
     });
 
     if (!redisResult) {
@@ -275,7 +275,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new AppError('Invalid or expired reset token', 400);
+      throw new ValidationError('Invalid or expired reset token');
     }
 
     // Update password and clear reset token fields
@@ -301,7 +301,7 @@ export class AuthService {
         token,
         reason: 'Invalid or expired token',
       });
-      throw new AppError('Invalid or expired verification token', 400);
+      throw new ValidationError('Invalid or expired verification token');
     }
 
     // Update user to verified and clear verification fields
@@ -336,11 +336,11 @@ export class AuthService {
     const user = await User.findById(userId);
     
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new NotFoundError('User');
     }
 
     if (user.emailVerified) {
-      throw new AppError('Email is already verified', 400);
+      throw new ValidationError('Email is already verified');
     }
 
     // Check rate limiting - max 3 per hour (skip in development)
@@ -360,7 +360,7 @@ export class AuthService {
           email: user.email,
           attemptNumber: resendCount,
         });
-        throw new AppError('Too many verification email requests. Please try again later.', 429);
+        throw new RateLimitError();
       }
     }
     

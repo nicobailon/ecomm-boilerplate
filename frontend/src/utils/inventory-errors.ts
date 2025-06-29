@@ -20,7 +20,7 @@ export function isInventoryError(error: unknown): error is InventoryError {
     'code' in error &&
     'message' in error &&
     ['INSUFFICIENT_INVENTORY', 'PRODUCT_NOT_FOUND', 'VARIANT_NOT_FOUND', 'INVENTORY_LOCK_FAILED'].includes(
-      (error as { code: string }).code
+      (error as { code: string }).code,
     )
   );
 }

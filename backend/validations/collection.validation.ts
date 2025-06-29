@@ -11,7 +11,7 @@ export const createCollectionSchema = z.object({
     .max(500, 'Collection description cannot exceed 500 characters')
     .trim()
     .optional(),
-  isPublic: z.boolean().default(false),
+  isPublic: z.boolean().default(true),
   products: z.array(z.string()).default([]),
 });
 
@@ -67,7 +67,7 @@ export const quickCreateCollectionSchema = z.object({
       (name) => name.length > 0,
       'Collection name cannot be empty',
     ),
-  isPublic: z.boolean().optional().default(false),
+  isPublic: z.boolean().optional().default(true),
 });
 
 export const checkAvailabilitySchema = z.object({

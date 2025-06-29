@@ -58,6 +58,114 @@ import { useOrderStatusValidation } from '@/hooks/useOrderStatusValidation';
 import { toast } from 'sonner';
 import type { OrderListItem, OrderStatus } from '@/types/order';
 
+// Separate component for the actions cell to avoid hooks in non-component functions
+function OrderActionsCell({ 
+  order, 
+  mode, 
+  onEditOrder,
+  updateStatus,
+  isValidTransition,
+}: { 
+  order: OrderListItem; 
+  mode?: 'admin' | 'customer';
+  onEditOrder?: (order: OrderListItem) => void;
+  updateStatus: ReturnType<typeof useUpdateOrderStatus>;
+  isValidTransition: (from: OrderStatus, to: OrderStatus) => boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  
+  // Customer mode - only show view action
+  if (mode === 'customer') {
+    return (
+      <div className="relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          aria-label="View order"
+          onClick={() => onEditOrder?.(order)}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+  
+  // Admin mode - show all actions
+  return (
+    <div className="relative">
+      <Button
+        ref={triggerRef}
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0"
+        aria-label="Actions"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </Button>
+      <Dropdown isOpen={isOpen} triggerRef={triggerRef}>
+        <div className="bg-popover text-popover-foreground border rounded-md shadow-lg backdrop-blur-sm p-1 min-w-[200px]">
+          <button
+            onClick={() => {
+              onEditOrder?.(order);
+              setIsOpen(false);
+            }}
+            className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center"
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            View Details
+          </button>
+          <div className="h-px bg-border my-1" />
+          <button
+            onClick={() => {
+              updateStatus.mutate({
+                orderId: String(order._id),
+                status: 'completed',
+              });
+              setIsOpen(false);
+            }}
+            disabled={!isValidTransition(order.status, 'completed')}
+            className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Mark as Completed
+          </button>
+          <button
+            onClick={() => {
+              updateStatus.mutate({
+                orderId: String(order._id),
+                status: 'cancelled',
+              });
+              setIsOpen(false);
+            }}
+            disabled={!isValidTransition(order.status, 'cancelled')}
+            className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <XCircle className="mr-2 h-4 w-4" />
+            Mark as Cancelled
+          </button>
+          <button
+            onClick={() => {
+              updateStatus.mutate({
+                orderId: String(order._id),
+                status: 'refunded',
+              });
+              setIsOpen(false);
+            }}
+            disabled={!isValidTransition(order.status, 'refunded')}
+            className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Mark as Refunded
+          </button>
+        </div>
+      </Dropdown>
+    </div>
+  );
+}
+
 interface OrdersTableProps {
   onEditOrder?: (order: OrderListItem) => void;
   mode?: 'admin' | 'customer';
@@ -102,12 +210,12 @@ export function OrdersTable({ onEditOrder, mode = 'admin', data: externalData, i
           sortBy: sorting[0]?.id as 'createdAt' | 'totalAmount' | 'status' | undefined,
           sortOrder: sorting[0]?.desc ? 'desc' : 'asc',
         }
-      : undefined
+      : undefined,
   );
 
   // Use external data if provided (customer mode), otherwise fetch admin data
-  const data = externalData || adminQuery.data;
-  const isLoading = externalLoading !== undefined ? externalLoading : adminQuery.isLoading;
+  const data = externalData ?? adminQuery.data;
+  const isLoading = externalLoading ?? adminQuery.isLoading;
   const error = adminQuery.error;
 
   // Debounced search
@@ -225,7 +333,7 @@ export function OrdersTable({ onEditOrder, mode = 'admin', data: externalData, i
         header: 'Items',
         cell: ({ row }) => {
           const order = row.original;
-          const itemCount = order.products?.length || 0;
+          const itemCount = order.products?.length ?? 0;
           return (
             <div className="text-sm">
               {itemCount} {itemCount === 1 ? 'item' : 'items'}
@@ -262,101 +370,15 @@ export function OrdersTable({ onEditOrder, mode = 'admin', data: externalData, i
       {
         id: 'actions',
         header: () => <span className="sr-only">Actions</span>,
-        cell: ({ row }) => {
-          const order = row.original;
-          const [isOpen, setIsOpen] = useState(false);
-          const triggerRef = useRef<HTMLButtonElement>(null);
-          
-          // Customer mode - only show view action
-          if (mode === 'customer') {
-            return (
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  aria-label="View order"
-                  onClick={() => onEditOrder?.(order)}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </div>
-            );
-          }
-          
-          // Admin mode - show all actions
-          return (
-            <div className="relative">
-              <Button
-                ref={triggerRef}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                aria-label="Actions"
-                onClick={() => setIsOpen(!isOpen)}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-              <Dropdown isOpen={isOpen} triggerRef={triggerRef}>
-                <div className="bg-popover text-popover-foreground border rounded-md shadow-lg backdrop-blur-sm p-1 min-w-[200px]">
-                  <button
-                    onClick={() => {
-                      onEditOrder?.(order);
-                      setIsOpen(false);
-                    }}
-                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center"
-                  >
-                    <Eye className="mr-2 h-4 w-4" />
-                    View Details
-                  </button>
-                  <div className="h-px bg-border my-1" />
-                  <button
-                    onClick={() => {
-                      updateStatus.mutate({
-                        orderId: String(order._id),
-                        status: 'completed',
-                      });
-                      setIsOpen(false);
-                    }}
-                    disabled={!isValidTransition(order.status, 'completed')}
-                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Mark as Completed
-                  </button>
-                  <button
-                    onClick={() => {
-                      updateStatus.mutate({
-                        orderId: String(order._id),
-                        status: 'cancelled',
-                      });
-                      setIsOpen(false);
-                    }}
-                    disabled={!isValidTransition(order.status, 'cancelled')}
-                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Mark as Cancelled
-                  </button>
-                  <button
-                    onClick={() => {
-                      updateStatus.mutate({
-                        orderId: String(order._id),
-                        status: 'refunded',
-                      });
-                      setIsOpen(false);
-                    }}
-                    disabled={!isValidTransition(order.status, 'refunded')}
-                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground rounded cursor-pointer flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Mark as Refunded
-                  </button>
-                </div>
-              </Dropdown>
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <OrderActionsCell 
+            order={row.original} 
+            mode={mode} 
+            onEditOrder={onEditOrder}
+            updateStatus={updateStatus}
+            isValidTransition={isValidTransition}
+          />
+        ),
         enableSorting: false,
         enableHiding: false,
       },
@@ -507,7 +529,7 @@ export function OrdersTable({ onEditOrder, mode = 'admin', data: externalData, i
           <Button
             variant="outline"
             size="sm"
-            onClick={handleExport}
+            onClick={() => void handleExport()}
             disabled={!data?.orders.length || isExporting}
             aria-label="Export orders to CSV"
             title="Export filtered orders to CSV file"
@@ -582,19 +604,19 @@ export function OrdersTable({ onEditOrder, mode = 'admin', data: externalData, i
               {
                 label: 'Mark as Completed',
                 variant: 'default',
-                onClick: () => handleBulkStatusUpdate('completed'),
+                onClick: () => void handleBulkStatusUpdate('completed'),
                 icon: <CheckCircle className="w-4 h-4" />,
               },
               {
                 label: 'Mark as Cancelled',
                 variant: 'destructive',
-                onClick: () => handleBulkStatusUpdate('cancelled'),
+                onClick: () => void handleBulkStatusUpdate('cancelled'),
                 icon: <XCircle className="w-4 h-4" />,
               },
               {
                 label: 'Mark as Refunded',
                 variant: 'secondary',
-                onClick: () => handleBulkStatusUpdate('refunded'),
+                onClick: () => void handleBulkStatusUpdate('refunded'),
                 icon: <RefreshCw className="w-4 h-4" />,
               },
             ]}
@@ -717,7 +739,7 @@ export function OrdersTable({ onEditOrder, mode = 'admin', data: externalData, i
               You are about to export {
                 Object.keys(rowSelection).length > 0 
                   ? Object.keys(rowSelection).length 
-                  : data?.orders.length || 0
+                  : data?.orders.length ?? 0
               } orders. This may create a large file and take a few moments.
             </DialogDescription>
           </DialogHeader>
@@ -730,7 +752,7 @@ export function OrdersTable({ onEditOrder, mode = 'admin', data: externalData, i
               Cancel
             </Button>
             <Button
-              onClick={performExport}
+              onClick={() => void performExport()}
               disabled={isExporting}
               aria-label={isExporting ? 'Export in progress' : 'Confirm export'}
             >

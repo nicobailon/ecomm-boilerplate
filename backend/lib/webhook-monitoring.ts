@@ -37,7 +37,7 @@ export class WebhookMonitoring {
       return;
     }
 
-    console.info('[WebhookMonitoring] Starting webhook monitoring');
+    console.error('[WebhookMonitoring] Starting webhook monitoring');
     
     // Initial check
     void this.checkWebhookHealth();
@@ -55,7 +55,7 @@ export class WebhookMonitoring {
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
       this.monitoringInterval = null;
-      console.info('[WebhookMonitoring] Monitoring stopped');
+      console.error('[WebhookMonitoring] Monitoring stopped');
     }
   }
 
@@ -74,8 +74,8 @@ export class WebhookMonitoring {
         WebhookEvent.countDocuments({ 
           createdAt: { $gte: fiveMinutesAgo },
           processed: false,
-          error: { $exists: true }
-        })
+          error: { $exists: true },
+        }),
       ]);
 
       if (totalEvents > 10) { // Only alert if we have meaningful data
@@ -85,7 +85,7 @@ export class WebhookMonitoring {
             type: 'high_failure_rate',
             message: `Webhook failure rate is ${(failureRate * 100).toFixed(2)}% (${failedEvents}/${totalEvents} events)`,
             details: { failureRate },
-            timestamp: now
+            timestamp: now,
           });
         }
       }
@@ -93,7 +93,7 @@ export class WebhookMonitoring {
       // Check for unprocessed old events
       const oldUnprocessedEvents = await WebhookEvent.find({
         createdAt: { $lte: oneHourAgo },
-        processed: false
+        processed: false,
       }).limit(5);
 
       for (const event of oldUnprocessedEvents) {
@@ -103,9 +103,9 @@ export class WebhookMonitoring {
           details: {
             eventId: event.stripeEventId,
             eventType: event.eventType,
-            processingTime: now.getTime() - event.createdAt.getTime()
+            processingTime: now.getTime() - event.createdAt.getTime(),
           },
-          timestamp: now
+          timestamp: now,
         });
       }
 
@@ -114,15 +114,15 @@ export class WebhookMonitoring {
         { $match: { createdAt: { $gte: fiveMinutesAgo } } },
         { $group: { _id: '$stripeEventId', count: { $sum: 1 } } },
         { $match: { count: { $gt: 1 } } },
-        { $count: 'duplicates' }
+        { $count: 'duplicates' },
       ]);
 
-      if (duplicateEvents.length > 0 && duplicateEvents[0].duplicates > 5) {
+      if (duplicateEvents.length > 0 && (duplicateEvents[0] as { duplicates: number }).duplicates > 5) {
         this.sendAlert({
           type: 'duplicate',
-          message: `High duplicate webhook rate detected: ${duplicateEvents[0].duplicates} duplicates in last 5 minutes`,
+          message: `High duplicate webhook rate detected: ${(duplicateEvents[0] as { duplicates: number }).duplicates} duplicates in last 5 minutes`,
           details: {},
-          timestamp: now
+          timestamp: now,
         });
       }
     } catch (error) {
@@ -178,16 +178,16 @@ export class WebhookMonitoring {
     eventType: string,
     success: boolean,
     processingTimeMs: number,
-    error?: string
+    error?: string,
   ): Promise<void> {
     try {
       // Log metrics (could be sent to monitoring service)
-      console.info('[WebhookMonitoring] Event processed:', {
+      console.error('[WebhookMonitoring] Event processed:', {
         eventId,
         eventType,
         success,
         processingTimeMs,
-        error
+        error,
       });
 
       // Alert on slow processing
@@ -198,9 +198,9 @@ export class WebhookMonitoring {
           details: {
             eventId,
             eventType,
-            processingTime: processingTimeMs
+            processingTime: processingTimeMs,
           },
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
 
@@ -212,9 +212,9 @@ export class WebhookMonitoring {
           details: {
             eventId,
             eventType,
-            error
+            error,
           },
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
     } catch (err) {
@@ -230,7 +230,7 @@ export const webhookAlertHandlers = {
       type: alert.type,
       message: alert.message,
       details: alert.details,
-      timestamp: alert.timestamp.toISOString()
+      timestamp: alert.timestamp.toISOString(),
     });
   },
 
@@ -238,7 +238,7 @@ export const webhookAlertHandlers = {
     // Send to monitoring service (Sentry, Datadog, etc.)
     // This is a placeholder - implement based on your monitoring service
     if (process.env.MONITORING_ENABLED === 'true') {
-      console.info('[WebhookMonitoring] Would send to monitoring service:', alert);
+      console.error('[WebhookMonitoring] Would send to monitoring service:', alert);
     }
   },
 
@@ -256,11 +256,11 @@ export const webhookAlertHandlers = {
               type: 'section',
               text: {
                 type: 'mrkdwn',
-                text: `*Alert Type:* ${alert.type}\n*Message:* ${alert.message}\n*Time:* ${alert.timestamp.toISOString()}`
-              }
-            }
-          ]
-        })
+                text: `*Alert Type:* ${alert.type}\n*Message:* ${alert.message}\n*Time:* ${alert.timestamp.toISOString()}`,
+              },
+            },
+          ],
+        }),
       });
       
       if (!response.ok) {
@@ -269,7 +269,7 @@ export const webhookAlertHandlers = {
     } catch (error) {
       console.error('[WebhookMonitoring] Slack notification error:', error);
     }
-  }
+  },
 };
 
 export const webhookMonitoring = new WebhookMonitoring();

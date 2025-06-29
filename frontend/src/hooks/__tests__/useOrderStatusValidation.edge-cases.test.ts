@@ -77,7 +77,7 @@ describe('useOrderStatusValidation Edge Cases', () => {
 
       // Check which orders can transition to 'cancelled'
       const canCancel = orders.filter(order => 
-        result.current.isValidTransition(order.status, 'cancelled')
+        result.current.isValidTransition(order.status, 'cancelled'),
       );
 
       expect(canCancel).toHaveLength(1); // Only pending can go to cancelled
@@ -90,7 +90,7 @@ describe('useOrderStatusValidation Edge Cases', () => {
       const orders: { status: OrderStatus }[] = [];
       
       const canComplete = orders.filter(order => 
-        result.current.isValidTransition(order.status, 'completed')
+        result.current.isValidTransition(order.status, 'completed'),
       );
 
       expect(canComplete).toHaveLength(0);
@@ -145,7 +145,7 @@ describe('useOrderStatusValidation Edge Cases', () => {
       testCases.forEach(({ from, to, shouldContain }) => {
         const message = result.current.getTransitionErrorMessage(
           from as OrderStatus,
-          to as OrderStatus
+          to as OrderStatus,
         );
         expect(message.toLowerCase()).toContain(shouldContain);
       });
@@ -156,7 +156,7 @@ describe('useOrderStatusValidation Edge Cases', () => {
       
       const message = result.current.getTransitionErrorMessage(
         'invalid' as any,
-        'completed'
+        'completed',
       );
       
       expect(message).toBeTruthy();

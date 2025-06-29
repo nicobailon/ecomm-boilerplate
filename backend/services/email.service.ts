@@ -214,7 +214,7 @@ export class EmailService {
         attachments,
       });
       
-      console.info(`[EmailService] Email sent successfully:`, {
+      console.info('[EmailService] Email sent successfully:', {
         id: result.data?.id,
         to,
         subject,

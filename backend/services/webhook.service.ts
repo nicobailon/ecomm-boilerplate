@@ -8,7 +8,7 @@ import { CheckoutProduct as InventoryCheckoutProduct } from '../types/inventory.
 import { 
   WebhookError, 
   WebhookEventType, 
-  WebhookProcessingResult 
+  WebhookProcessingResult, 
 } from '../types/webhook.types.js';
 import { stripe } from '../lib/stripe.js';
 import { queueEmail } from '../lib/email-queue.js';
@@ -22,7 +22,7 @@ export class WebhookService {
 
   async processWebhookEvent(
     event: Stripe.Event,
-    raw?: string
+    raw?: string,
   ): Promise<WebhookProcessingResult> {
     // Record the event
     await this.recordWebhookEvent(event, raw);
@@ -69,7 +69,7 @@ export class WebhookService {
         event.id,
         event.type,
         true,
-        Date.now() - startTime
+        Date.now() - startTime,
       );
       return result;
     } catch (error) {
@@ -78,7 +78,7 @@ export class WebhookService {
         event.type,
         false,
         Date.now() - startTime,
-        error instanceof Error ? error.message : 'Unknown error'
+        error instanceof Error ? error.message : 'Unknown error',
       );
       
       // Record failure
@@ -92,13 +92,13 @@ export class WebhookService {
         error instanceof Error ? error.message : 'Webhook processing failed',
         'PROCESSING_ERROR',
         500,
-        true
+        true,
       );
     }
   }
 
   private async handleCheckoutCompleted(
-    event: Stripe.Event
+    event: Stripe.Event,
   ): Promise<WebhookProcessingResult> {
     const session = event.data.object as Stripe.Checkout.Session;
     
@@ -118,14 +118,14 @@ export class WebhookService {
     const result = await this.createOrderFromSession(
       session.id,
       session.payment_intent as string,
-      event.id
+      event.id,
     );
 
     return result;
   }
 
   private async handlePaymentSucceeded(
-    event: Stripe.Event
+    event: Stripe.Event,
   ): Promise<WebhookProcessingResult> {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
     
@@ -138,7 +138,7 @@ export class WebhookService {
     if (paymentIntent.metadata?.checkoutSessionId) {
       // Check if order already exists for this payment intent
       const existingOrder = await Order.findOne({ 
-        paymentIntentId: paymentIntent.id 
+        paymentIntentId: paymentIntent.id, 
       });
       
       if (existingOrder) {
@@ -153,7 +153,7 @@ export class WebhookService {
       const result = await this.createOrderFromSession(
         paymentIntent.metadata.checkoutSessionId,
         paymentIntent.id,
-        event.id
+        event.id,
       );
       
       return result;
@@ -166,7 +166,7 @@ export class WebhookService {
   }
 
   private async handlePaymentFailed(
-    event: Stripe.Event
+    event: Stripe.Event,
   ): Promise<WebhookProcessingResult> {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
     
@@ -199,7 +199,7 @@ export class WebhookService {
 
   private async recordWebhookEvent(
     event: Stripe.Event,
-    raw?: string
+    raw?: string,
   ): Promise<void> {
     try {
       await WebhookEvent.findOneAndUpdate(
@@ -212,7 +212,7 @@ export class WebhookService {
           rawBody: raw,
           receivedAt: new Date(),
         },
-        { upsert: true }
+        { upsert: true },
       );
     } catch (error) {
       this.logger.error('webhook.event.record.error', error, {
@@ -223,7 +223,7 @@ export class WebhookService {
 
   private async recordEventFailure(
     eventId: string,
-    error: unknown
+    error: unknown,
   ): Promise<void> {
     try {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -245,7 +245,7 @@ export class WebhookService {
             receivedAt: new Date(),
           },
         },
-        { upsert: true }
+        { upsert: true },
       );
     } catch (recordError) {
       this.logger.error('webhook.event.failure.record.error', recordError, {
@@ -257,11 +257,11 @@ export class WebhookService {
   async createOrderFromSession(
     sessionId: string,
     paymentIntentId: string,
-    eventId?: string
+    eventId?: string,
   ): Promise<WebhookProcessingResult> {
     // First check for existing order OUTSIDE of transaction to prevent duplicates
     const existingOrder = await Order.findOne({ 
-      stripeSessionId: sessionId 
+      stripeSessionId: sessionId, 
     });
     
     if (existingOrder) {
@@ -292,7 +292,7 @@ export class WebhookService {
       await dbSession.withTransaction(async () => {
         // Double-check inside transaction for race conditions
         const existingOrderInTx = await Order.findOne({ 
-          stripeSessionId: sessionId 
+          stripeSessionId: sessionId, 
         }).session(dbSession);
         
         if (existingOrderInTx) {
@@ -309,7 +309,7 @@ export class WebhookService {
             'Session not found',
             'SESSION_NOT_FOUND',
             400,
-            false
+            false,
           );
         }
 
@@ -318,7 +318,7 @@ export class WebhookService {
             'Missing required metadata in checkout session',
             'INVALID_SESSION_METADATA',
             400,
-            false
+            false,
           );
         }
 
@@ -328,11 +328,11 @@ export class WebhookService {
             'User not found',
             'USER_NOT_FOUND',
             404,
-            false
+            false,
           );
         }
 
-        const products = JSON.parse(session.metadata.products) as Array<{
+        const products = JSON.parse(session.metadata.products) as {
           id: string;
           quantity: number;
           price: number;
@@ -343,7 +343,7 @@ export class WebhookService {
             sku?: string;
           };
           variantLabel?: string;
-        }>;
+        }[];
 
         // Step 1: Validate inventory atomically BEFORE creating order
         this.logger.info('webhook.inventory.validation.start', {
@@ -361,7 +361,7 @@ export class WebhookService {
 
         const inventoryValidation = await inventoryService.validateAndReserveInventory(
           inventoryProducts,
-          dbSession
+          dbSession,
         );
 
         if (!inventoryValidation.isValid) {
@@ -458,7 +458,7 @@ export class WebhookService {
                 product.id,
                 product.variantId,
                 product.quantity,
-                dbSession
+                dbSession,
               );
 
               // Record inventory history
@@ -485,7 +485,7 @@ export class WebhookService {
                   error.message,
                   'INVENTORY_DEDUCTION_FAILED',
                   500,
-                  true // Retry
+                  true, // Retry
                 );
               }
               throw error;
@@ -575,7 +575,7 @@ export class WebhookService {
 
   private async markEventProcessed(
     eventId: string,
-    orderId?: string
+    orderId?: string,
   ): Promise<void> {
     await WebhookEvent.findOneAndUpdate(
       { stripeEventId: eventId },
@@ -583,13 +583,13 @@ export class WebhookService {
         processed: true,
         processedAt: new Date(),
         orderId,
-      }
+      },
     );
   }
 
   async retryFailedEvents(
-    maxAttempts: number = 3,
-    olderThan: Date = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    maxAttempts = 3,
+    olderThan: Date = new Date(Date.now() - 24 * 60 * 60 * 1000),
   ): Promise<{ processed: number; failed: number }> {
     const failedEvents = await WebhookEvent.find({
       processed: false,
@@ -629,7 +629,7 @@ export class WebhookService {
     const endOfDay = new Date(date.setHours(23, 59, 59, 999));
     
     const orderCount = await Order.countDocuments({
-      createdAt: { $gte: startOfDay, $lte: endOfDay }
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
     });
     
     const sequenceNumber = String(orderCount + 1).padStart(4, '0');
@@ -637,7 +637,7 @@ export class WebhookService {
   }
 
   // Additional methods for exponential backoff
-  private calculateBackoffDelay(attempts: number, baseDelay: number = 1000): number {
+  private calculateBackoffDelay(attempts: number, baseDelay = 1000): number {
     const maxDelay = 300000; // 5 minutes
     const delay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
     return delay + Math.random() * 1000; // Add jitter
@@ -645,7 +645,7 @@ export class WebhookService {
 
   async scheduleRetry(
     eventId: string,
-    _error: WebhookError
+    _error: WebhookError,
   ): Promise<void> {
     const event = await WebhookEvent.findOne({ stripeEventId: eventId });
     if (!event) return;

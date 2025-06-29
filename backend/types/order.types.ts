@@ -7,7 +7,7 @@ export interface OrderWithPopulatedData extends Omit<IOrderDocument, 'user' | 'p
     email: string;
     name: string;
   };
-  products: Array<{
+  products: {
     product: {
       _id: mongoose.Types.ObjectId;
       name: string;
@@ -22,7 +22,7 @@ export interface OrderWithPopulatedData extends Omit<IOrderDocument, 'user' | 'p
       sku?: string;
     };
     variantLabel?: string;
-  }>;
+  }[];
 }
 
 export interface OrderListResponse {
@@ -49,7 +49,7 @@ export interface OrderStats {
     cancelled: number;
     refunded: number;
   };
-  revenueByDay: Array<{
+  revenueByDay: {
     _id: {
       year: number;
       month: number;
@@ -57,11 +57,11 @@ export interface OrderStats {
     };
     revenue: number;
     count: number;
-  }>;
-  topProducts: Array<{
+  }[];
+  topProducts: {
     _id: mongoose.Types.ObjectId;
     name: string;
     totalSold: number;
     revenue: number;
-  }>;
+  }[];
 }

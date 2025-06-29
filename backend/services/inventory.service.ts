@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { Product } from '../models/product.model.js';
 import { InventoryHistory } from '../models/inventory-history.model.js';
-import { AppError, InventoryError } from '../utils/AppError.js';
+import { AppError, InventoryError, NotFoundError } from '../utils/AppError.js';
 import { CacheService } from './cache.service.js';
 import { createLogger, generateCorrelationId } from '../utils/logger.js';
 import { getVariantOrDefault } from './helpers/variant.helper.js';
@@ -76,7 +76,7 @@ export class InventoryService {
   }
 
   async batchValidateInventory(
-    products: { _id: string; quantity: number; variantId?: string }[]
+    products: { _id: string; quantity: number; variantId?: string }[],
   ): Promise<{
     isValid: boolean;
     validatedProducts: {
@@ -147,7 +147,7 @@ export class InventoryService {
 
   async validateAndReserveInventory(
     products: CheckoutProduct[],
-    session: mongoose.ClientSession
+    session: mongoose.ClientSession,
   ): Promise<ValidationResult> {
     const correlationId = generateCorrelationId();
     const errors: string[] = [];
@@ -164,13 +164,13 @@ export class InventoryService {
           product.id,
           product.variantId,
           product.quantity,
-          session
+          session,
         );
 
         if (!result.success) {
           const variantInfo = result.variantDetails ? ` (${result.variantDetails})` : '';
           errors.push(
-            `${result.productName}${variantInfo}: Only ${result.availableStock} available, ${product.quantity} requested`
+            `${result.productName}${variantInfo}: Only ${result.availableStock} available, ${product.quantity} requested`,
           );
         }
 
@@ -216,7 +216,7 @@ export class InventoryService {
     productId: string,
     variantId: string | undefined,
     quantity: number,
-    session: mongoose.ClientSession
+    session: mongoose.ClientSession,
   ): Promise<AtomicInventoryCheckResult> {
     const product = await Product.findById(productId).session(session);
     
@@ -268,7 +268,7 @@ export class InventoryService {
   async getInventoryWithLock(
     productId: string,
     variantId: string | undefined,
-    session: mongoose.ClientSession
+    session: mongoose.ClientSession,
   ): Promise<number> {
     const product = await Product.findById(productId).session(session);
     
@@ -308,7 +308,7 @@ export class InventoryService {
     productId: string,
     variantId: string | undefined,
     quantity: number,
-    session: mongoose.ClientSession
+    session: mongoose.ClientSession,
   ): Promise<boolean> {
     const filter = buildAtomicUpdateFilter(productId, quantity, variantId);
     const update = buildAtomicUpdateOperation(variantId, -quantity);
@@ -352,11 +352,11 @@ export class InventoryService {
     reason: InventoryUpdateReason,
     userId: string,
     metadata?: Record<string, unknown>,
-    session?: mongoose.ClientSession
+    session?: mongoose.ClientSession,
   ): Promise<void> {
     const product = await Product.findById(productId).session(session || null);
     if (!product) {
-      throw new AppError('Product not found', 404);
+      throw new NotFoundError('Product');
     }
 
     let previousQuantity = 0;
@@ -435,7 +435,7 @@ export class InventoryService {
   ): Promise<number> {
     const product = await Product.findById(productId);
     if (!product) {
-      throw new AppError('Product not found', 404);
+      throw new NotFoundError('Product');
     }
 
     // Handle products without variants
@@ -448,13 +448,13 @@ export class InventoryService {
     if (USE_VARIANT_LABEL && variantLabel) {
       const { variant } = getVariantOrDefault(product.variants, variantLabel);
       if (!variant) {
-        throw new AppError('Variant not found', 404);
+        throw new NotFoundError('Variant');
       }
       totalInventory = variant.inventory;
     } else if (variantId) {
       const variant = product.variants.find(v => v.variantId === variantId);
       if (!variant) {
-        throw new AppError('Variant not found', 404);
+        throw new NotFoundError('Variant');
       }
       totalInventory = variant.inventory;
     } else {
@@ -496,7 +496,7 @@ export class InventoryService {
       // First, check if product exists and has variants
       const product = await Product.findById(productId);
       if (!product) {
-        throw new AppError('Product not found', 404);
+        throw new NotFoundError('Product');
       }
       
       // If product has no variants, create a default variant
@@ -541,9 +541,15 @@ export class InventoryService {
         if (reason === 'sale' && adjustment < 0) {
           const availableStock = await this.getAvailableInventory(productId, variantId);
           if (Math.abs(adjustment) > availableStock) {
-            throw new AppError(
+            throw new InventoryError(
               `Cannot sell ${Math.abs(adjustment)} items. Only ${availableStock} available`,
-              400,
+              'INSUFFICIENT_INVENTORY',
+              [{
+                productId: productId,
+                variantId: variantId,
+                requestedQuantity: Math.abs(adjustment),
+                availableStock: availableStock,
+              }],
             );
           }
         }
@@ -562,15 +568,21 @@ export class InventoryService {
           if (variantId) {
             const variant = product.variants.find(v => v.variantId === variantId);
             if (!variant) {
-              throw new AppError('Variant not found', 404);
+              throw new NotFoundError('Variant');
             }
           }
           
-          throw new AppError(
+          throw new InventoryError(
             adjustment < 0 
               ? `Insufficient inventory. Current: ${product.variants[0]?.inventory ?? 0}, Requested adjustment: ${adjustment}`
               : `Inventory limit exceeded. Maximum allowed: ${MAX_INVENTORY}`,
-            400,
+            'INSUFFICIENT_INVENTORY',
+            [{
+              productId: productId,
+              variantId: variantId,
+              requestedQuantity: Math.abs(adjustment),
+              availableStock: product.variants[0]?.inventory ?? 0,
+            }],
           );
         }
         
@@ -739,7 +751,7 @@ export class InventoryService {
   ): Promise<ProductInventoryInfo> {
     const product = await Product.findById(productId);
     if (!product) {
-      throw new AppError('Product not found', 404);
+      throw new NotFoundError('Product');
     }
 
     const availableStock = await this.getAvailableInventory(productId, variantId, variantLabel);
@@ -753,13 +765,13 @@ export class InventoryService {
     } else if (USE_VARIANT_LABEL && variantLabel) {
       const { variant } = getVariantOrDefault(product.variants, variantLabel);
       if (!variant) {
-        throw new AppError('Variant not found', 404);
+        throw new NotFoundError('Variant');
       }
       currentStock = variant.inventory;
     } else if (variantId) {
       const variant = product.variants.find(v => v.variantId === variantId);
       if (!variant) {
-        throw new AppError('Variant not found', 404);
+        throw new NotFoundError('Variant');
       }
       currentStock = variant.inventory;
     } else {

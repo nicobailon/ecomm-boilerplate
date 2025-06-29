@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import path from 'path';
 import * as trpcExpress from '@trpc/server/adapters/express';
-import { connectDB } from './lib/db.js';
+import { connectDB, disconnectDB } from './lib/db.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { securityMiddleware, authRateLimit, trpcRateLimit, emailRateLimit } from './middleware/security.middleware.js';
 import { validateEnvVariables } from './utils/validateEnv.js';
@@ -13,10 +13,16 @@ import { createContext } from './trpc/context.js';
 import { appRouter } from './trpc/routers/app.router.js';
 import { websocketService } from './lib/websocket.js';
 import { inventoryMonitor } from './services/inventory-monitor.service.js';
+import { cacheWarmingService } from './services/cache-warming.service.js';
 import { getEmailQueueForShutdown, shutdownEmailQueue } from './lib/email-queue.js';
 import { queueMonitoring, alertHandlers } from './lib/queue-monitoring.js';
 import { redisMonitoring, monitoringHandlers } from './lib/redis-monitoring.js';
 import { webhookMonitoring, webhookAlertHandlers } from './lib/webhook-monitoring.js';
+import { 
+  patchConsoleForUnifiedLogging, 
+  enableMongooseQueryLogging, 
+  frontendLogMiddleware
+} from './lib/unified-logger.js';
 import authRoutes from './routes/auth.route.js';
 import productRoutes from './routes/product.route.js';
 import cartRoutes from './routes/cart.route.js';
@@ -31,10 +37,17 @@ import healthRoutes from './routes/health.route.js';
 dotenv.config();
 validateEnvVariables();
 
+// Initialize unified logging
+patchConsoleForUnifiedLogging();
+enableMongooseQueryLogging();
+
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 
 const __dirname = path.resolve();
+
+// Add frontend log collection endpoint
+app.use(frontendLogMiddleware);
 
 app.use(securityMiddleware);
 app.use(cors({
@@ -92,20 +105,24 @@ const httpServer = createServer(app);
 
 // Initialize WebSocket service and inventory monitor
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.info('Server is running on http://localhost:' + PORT);
+  console.error('Server is running on http://localhost:' + PORT);
   
   void (async () => {
     try {
       await connectDB();
+      
+      // Warm caches after database connection
+      await cacheWarmingService.warmAllCaches();
+      
       await websocketService.initialize(httpServer);
       await inventoryMonitor.startMonitoring();
-      console.info('Real-time inventory monitoring started');
+      console.error('Real-time inventory monitoring started');
       
       // Initialize email queue if available
-      const emailQueue = await getEmailQueueForShutdown();
+      const emailQueue = getEmailQueueForShutdown();
       if (emailQueue) {
         await emailQueue.isReady();
-        console.info('Email queue initialized');
+        console.error('Email queue initialized');
         
         // Set up queue monitoring and alerts
         queueMonitoring.onAlert(alertHandlers.console);
@@ -167,12 +184,15 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   })();
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  void (async () => {
-  console.info('SIGTERM received, shutting down gracefully...');
+// Graceful shutdown handler
+const gracefulShutdown = async (signal: string): Promise<void> => {
+  console.info(`${signal} received, shutting down gracefully...`);
   
   try {
+    // Stop inventory monitoring
+    await inventoryMonitor.stopMonitoring();
+    console.info('Inventory monitoring stopped');
+    
     // Stop Redis monitoring
     redisMonitoring.stopMonitoring();
     console.info('Redis monitoring stopped');
@@ -184,16 +204,35 @@ process.on('SIGTERM', () => {
     // Shutdown email queue with proper cleanup
     await shutdownEmailQueue();
     
+    // Close WebSocket connections
+    await websocketService.close();
+    console.info('WebSocket connections closed');
+    
     // Close HTTP server
-    httpServer.close(() => {
-      console.info('HTTP server closed');
-      process.exit(0);
+    await new Promise<void>((resolve) => {
+      httpServer.close(() => {
+        console.info('HTTP server closed');
+        resolve();
+      });
     });
+    
+    // Disconnect from MongoDB
+    await disconnectDB();
+    
+    process.exit(0);
   } catch (error) {
     console.error('Error during shutdown:', error);
     process.exit(1);
   }
-  })();
+};
+
+// Register graceful shutdown handlers
+process.on('SIGTERM', () => {
+  void gracefulShutdown('SIGTERM');
+});
+
+process.on('SIGINT', () => {
+  void gracefulShutdown('SIGINT');
 });
 
 export default app;

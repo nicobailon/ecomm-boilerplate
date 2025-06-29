@@ -5,7 +5,7 @@ export interface IWebhookEventDocument extends Document {
   stripeEventId: string;
   type: string;
   eventType?: string;
-  data?: any;
+  data?: unknown;
   rawBody?: string;
   processed: boolean;
   processedAt?: Date;

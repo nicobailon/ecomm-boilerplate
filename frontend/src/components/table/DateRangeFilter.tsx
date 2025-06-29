@@ -66,7 +66,7 @@ export function DateRangeFilter({
             <label className="text-sm font-medium">From</label>
             <Input
               type="date"
-              value={localValue.from || ''}
+              value={localValue.from ?? ''}
               onChange={(e) => setLocalValue({ ...localValue, from: e.target.value })}
               className="mt-1"
             />
@@ -75,7 +75,7 @@ export function DateRangeFilter({
             <label className="text-sm font-medium">To</label>
             <Input
               type="date"
-              value={localValue.to || ''}
+              value={localValue.to ?? ''}
               onChange={(e) => setLocalValue({ ...localValue, to: e.target.value })}
               className="mt-1"
               min={localValue.from}

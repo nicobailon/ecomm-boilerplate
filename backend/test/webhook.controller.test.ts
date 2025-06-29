@@ -51,7 +51,7 @@ describe('WebhookController', () => {
       await handleStripeWebhook(
         mockReq as WebhookRequest,
         mockRes as Response,
-        mockNext
+        mockNext,
       );
 
       expect(webhookService.processWebhookEvent).toHaveBeenCalledWith(mockReq.stripeEvent);
@@ -72,7 +72,7 @@ describe('WebhookController', () => {
       await handleStripeWebhook(
         mockReq as WebhookRequest,
         mockRes as Response,
-        mockNext
+        mockNext,
       );
 
       expect(mockRes.status).toHaveBeenCalledWith(200);
@@ -89,7 +89,7 @@ describe('WebhookController', () => {
       await handleStripeWebhook(
         mockReq as WebhookRequest,
         mockRes as Response,
-        mockNext
+        mockNext,
       );
 
       expect(mockNext).toHaveBeenCalledWith(expect.any(WebhookError));
@@ -103,7 +103,7 @@ describe('WebhookController', () => {
         'Database connection failed',
         'DB_ERROR',
         500,
-        true
+        true,
       );
 
       vi.mocked(webhookService.processWebhookEvent).mockRejectedValueOnce(webhookError);
@@ -111,7 +111,7 @@ describe('WebhookController', () => {
       await handleStripeWebhook(
         mockReq as WebhookRequest,
         mockRes as Response,
-        mockNext
+        mockNext,
       );
 
       expect(mockRes.status).toHaveBeenCalledWith(500);
@@ -127,7 +127,7 @@ describe('WebhookController', () => {
         'Invalid event data',
         'INVALID_DATA',
         400,
-        false
+        false,
       );
 
       vi.mocked(webhookService.processWebhookEvent).mockRejectedValueOnce(webhookError);
@@ -135,7 +135,7 @@ describe('WebhookController', () => {
       await handleStripeWebhook(
         mockReq as WebhookRequest,
         mockRes as Response,
-        mockNext
+        mockNext,
       );
 
       expect(mockRes.status).toHaveBeenCalledWith(200);
@@ -149,13 +149,13 @@ describe('WebhookController', () => {
 
     it('should handle unexpected errors', async () => {
       vi.mocked(webhookService.processWebhookEvent).mockRejectedValueOnce(
-        new Error('Unexpected error')
+        new Error('Unexpected error'),
       );
 
       await handleStripeWebhook(
         mockReq as WebhookRequest,
         mockRes as Response,
-        mockNext
+        mockNext,
       );
 
       expect(mockRes.status).toHaveBeenCalledWith(500);
@@ -175,11 +175,11 @@ describe('WebhookController', () => {
       await handleStripeWebhook(
         mockReq as WebhookRequest,
         mockRes as Response,
-        mockNext
+        mockNext,
       );
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        'Webhook received: payment_intent.succeeded (evt_test123)'
+        'Webhook received: payment_intent.succeeded (evt_test123)',
       );
     });
   });
@@ -191,7 +191,7 @@ describe('WebhookController', () => {
       await retryFailedWebhooks(
         mockReq as WebhookRequest,
         mockRes as Response,
-        mockNext
+        mockNext,
       );
 
       expect(webhookService.retryFailedEvents).toHaveBeenCalled();
@@ -204,13 +204,13 @@ describe('WebhookController', () => {
 
     it('should handle retry errors', async () => {
       vi.mocked(webhookService.retryFailedEvents).mockRejectedValueOnce(
-        new Error('Retry failed')
+        new Error('Retry failed'),
       );
 
       await retryFailedWebhooks(
         mockReq as WebhookRequest,
         mockRes as Response,
-        mockNext
+        mockNext,
       );
 
       expect(mockNext).toHaveBeenCalledWith(expect.any(WebhookError));
@@ -228,7 +228,7 @@ describe('WebhookController', () => {
       await retryFailedWebhooks(
         mockReq as WebhookRequest,
         mockRes as Response,
-        mockNext
+        mockNext,
       );
 
       expect(consoleSpy).toHaveBeenCalledWith('Manual webhook retry triggered');

@@ -181,7 +181,7 @@ export class AuthService {
             await redis.del(`refresh_token:${decoded.userId}`);
           },
           undefined,
-          'Delete refresh token'
+          'Delete refresh token',
         );
 
         // Always clean up memory store
@@ -229,13 +229,13 @@ export class AuthService {
         return true;
       },
       undefined,
-      'Store refresh token'
+      'Store refresh token',
     );
 
     // Always store in memory as backup
     memoryTokenStore.set(userId, {
       token: refreshToken,
-      expires: Date.now() + (ttl * 1000)
+      expires: Date.now() + (ttl * 1000),
     });
 
     if (!redisResult) {

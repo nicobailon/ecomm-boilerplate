@@ -15,7 +15,7 @@ interface IdempotencyResponse {
 export const idempotencyMiddleware = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   const idempotencyKey = req.headers['idempotency-key'] as string;
   
@@ -79,7 +79,7 @@ export const idempotencyMiddleware = async (
           .catch((error) => {
             logger.error('[Idempotency] Failed to cache response', {
               idempotencyKey,
-              error: error.message,
+              error: (error as Error).message,
             });
           });
         

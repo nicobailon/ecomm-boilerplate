@@ -85,7 +85,7 @@ describe('Inventory Atomicity Integration Tests', () => {
       const filter = buildAtomicUpdateFilter(
         testProduct._id!.toString(),
         5,
-        undefined
+        undefined,
       );
 
       expect((filter._id as any).toString()).toBe(testProduct._id!.toString());
@@ -97,7 +97,7 @@ describe('Inventory Atomicity Integration Tests', () => {
       const filter = buildAtomicUpdateFilter(
         multiVariantProduct._id!.toString(),
         3,
-        'var-1'
+        'var-1',
       );
 
       expect((filter._id as any).toString()).toBe(multiVariantProduct._id!.toString());
@@ -114,7 +114,7 @@ describe('Inventory Atomicity Integration Tests', () => {
       const filter = buildAtomicUpdateFilter(
         multiVariantProduct._id!.toString(),
         5,
-        undefined
+        undefined,
       );
 
       expect((filter._id as any).toString()).toBe(multiVariantProduct._id!.toString());
@@ -128,7 +128,7 @@ describe('Inventory Atomicity Integration Tests', () => {
       const result = await performAtomicInventoryUpdate(
         testProduct._id!.toString(),
         5,
-        undefined
+        undefined,
       );
 
       expect(result).toBeTruthy();
@@ -144,7 +144,7 @@ describe('Inventory Atomicity Integration Tests', () => {
       const result = await performAtomicInventoryUpdate(
         testProduct._id!.toString(),
         15,
-        undefined
+        undefined,
       );
 
       expect(result).toBeNull();
@@ -158,7 +158,7 @@ describe('Inventory Atomicity Integration Tests', () => {
       const result = await performAtomicInventoryUpdate(
         multiVariantProduct._id!.toString(),
         3,
-        'var-1'
+        'var-1',
       );
 
       expect(result).toBeTruthy();
@@ -167,7 +167,7 @@ describe('Inventory Atomicity Integration Tests', () => {
 
       const updated = await Product.findById(multiVariantProduct._id!);
       const updatedVariant = updated?.variants.find(
-        (v: { variantId: string }) => v.variantId === 'var-1'
+        (v: { variantId: string }) => v.variantId === 'var-1',
       );
       expect(updatedVariant?.inventory).toBe(5);
     });
@@ -176,7 +176,7 @@ describe('Inventory Atomicity Integration Tests', () => {
       const updates = [];
       for (let i = 0; i < 5; i++) {
         updates.push(
-          performAtomicInventoryUpdate(testProduct._id!.toString(), 3, undefined)
+          performAtomicInventoryUpdate(testProduct._id!.toString(), 3, undefined),
         );
       }
 
@@ -209,8 +209,8 @@ describe('Inventory Atomicity Integration Tests', () => {
 
       expect(results).toHaveLength(2);
       expect(results.every((r) => r.hasStock)).toBe(true);
-      expect(results[0]!.availableStock).toBe(10);
-      expect(results[1]!.availableStock).toBe(8);
+      expect(results[0].availableStock).toBe(10);
+      expect(results[1].availableStock).toBe(8);
     });
 
     it('should identify insufficient stock', async () => {
@@ -228,10 +228,10 @@ describe('Inventory Atomicity Integration Tests', () => {
 
       const results = await validateInventoryAvailability(items);
 
-      expect(results[0]!.hasStock).toBe(false);
-      expect(results[0]!.availableStock).toBe(10);
-      expect(results[1]!.hasStock).toBe(false);
-      expect(results[1]!.availableStock).toBe(8);
+      expect(results[0].hasStock).toBe(false);
+      expect(results[0].availableStock).toBe(10);
+      expect(results[1].hasStock).toBe(false);
+      expect(results[1].availableStock).toBe(8);
     });
 
     it('should handle non-existent products', async () => {
@@ -244,9 +244,9 @@ describe('Inventory Atomicity Integration Tests', () => {
 
       const results = await validateInventoryAvailability(items);
 
-      expect(results[0]!.hasStock).toBe(false);
-      expect(results[0]!.availableStock).toBe(0);
-      expect(results[0]!.productName).toBeUndefined();
+      expect(results[0].hasStock).toBe(false);
+      expect(results[0].availableStock).toBe(0);
+      expect(results[0].productName).toBeUndefined();
     });
 
     it('should validate total inventory for product without specific variant', async () => {
@@ -259,8 +259,8 @@ describe('Inventory Atomicity Integration Tests', () => {
 
       const results = await validateInventoryAvailability(items);
 
-      expect(results[0]!.hasStock).toBe(true);
-      expect(results[0]!.availableStock).toBe(20);
+      expect(results[0].hasStock).toBe(true);
+      expect(results[0].availableStock).toBe(20);
     });
   });
 
@@ -275,8 +275,8 @@ describe('Inventory Atomicity Integration Tests', () => {
           performAtomicInventoryUpdate(
             testProduct._id!.toString(),
             quantityPerUpdate,
-            undefined
-          )
+            undefined,
+          ),
         );
       }
 
@@ -299,15 +299,15 @@ describe('Inventory Atomicity Integration Tests', () => {
           performAtomicInventoryUpdate(
             multiVariantProduct._id!.toString(),
             1,
-            'var-1'
-          )
+            'var-1',
+          ),
         );
         var2Updates.push(
           performAtomicInventoryUpdate(
             multiVariantProduct._id!.toString(),
             1,
-            'var-2'
-          )
+            'var-2',
+          ),
         );
       }
 

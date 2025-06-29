@@ -90,7 +90,7 @@ router.get('/health', (_req, res) => {
   }
   
   // Check email queue if available
-  const emailQueue = await getEmailQueueForShutdown();
+  const emailQueue = getEmailQueueForShutdown();
   if (emailQueue) {
     try {
       const queueHealth = await queueMonitoring.getQueueHealth();

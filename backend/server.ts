@@ -18,6 +18,11 @@ import { getEmailQueueForShutdown, shutdownEmailQueue } from './lib/email-queue.
 import { queueMonitoring, alertHandlers } from './lib/queue-monitoring.js';
 import { redisMonitoring, monitoringHandlers } from './lib/redis-monitoring.js';
 import { webhookMonitoring, webhookAlertHandlers } from './lib/webhook-monitoring.js';
+import { 
+  patchConsoleForUnifiedLogging, 
+  enableMongooseQueryLogging, 
+  frontendLogMiddleware
+} from './lib/unified-logger.js';
 import authRoutes from './routes/auth.route.js';
 import productRoutes from './routes/product.route.js';
 import cartRoutes from './routes/cart.route.js';
@@ -32,10 +37,17 @@ import healthRoutes from './routes/health.route.js';
 dotenv.config();
 validateEnvVariables();
 
+// Initialize unified logging
+patchConsoleForUnifiedLogging();
+enableMongooseQueryLogging();
+
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 
 const __dirname = path.resolve();
+
+// Add frontend log collection endpoint
+app.use(frontendLogMiddleware);
 
 app.use(securityMiddleware);
 app.use(cors({
@@ -93,7 +105,7 @@ const httpServer = createServer(app);
 
 // Initialize WebSocket service and inventory monitor
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.info('Server is running on http://localhost:' + PORT);
+  console.error('Server is running on http://localhost:' + PORT);
   
   void (async () => {
     try {
@@ -104,13 +116,13 @@ httpServer.listen(PORT, '0.0.0.0', () => {
       
       await websocketService.initialize(httpServer);
       await inventoryMonitor.startMonitoring();
-      console.info('Real-time inventory monitoring started');
+      console.error('Real-time inventory monitoring started');
       
       // Initialize email queue if available
-      const emailQueue = await getEmailQueueForShutdown();
+      const emailQueue = getEmailQueueForShutdown();
       if (emailQueue) {
         await emailQueue.isReady();
-        console.info('Email queue initialized');
+        console.error('Email queue initialized');
         
         // Set up queue monitoring and alerts
         queueMonitoring.onAlert(alertHandlers.console);

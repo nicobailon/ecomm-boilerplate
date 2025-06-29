@@ -341,7 +341,7 @@ export class CollectionService {
       page,
       sortBy = 'createdAt',
       sortOrder = 'desc',
-      search
+      search,
     } = options;
 
     const query: CollectionQuery = {};
@@ -359,7 +359,7 @@ export class CollectionService {
       const searchRegex = new RegExp(escapeRegExp(search), 'i');
       (query as any).$or = [
         { name: searchRegex },
-        { description: searchRegex }
+        { description: searchRegex },
       ];
     }
 
@@ -375,7 +375,7 @@ export class CollectionService {
       }
       
       const sortOptions: Record<string, 1 | -1> = {
-        [sortField]: sortOrder === 'asc' ? 1 : -1
+        [sortField]: sortOrder === 'asc' ? 1 : -1,
       };
       
       const [collections, total] = await Promise.all([
@@ -388,7 +388,7 @@ export class CollectionService {
             path: 'products',
             select: '_id name description price image category isFeatured collectionId slug',
           }),
-        Collection.countDocuments(query)
+        Collection.countDocuments(query),
       ]);
 
       return {
@@ -398,8 +398,8 @@ export class CollectionService {
           page,
           limit,
           total,
-          pages: Math.ceil(total / limit)
-        }
+          pages: Math.ceil(total / limit),
+        },
       };
     }
 

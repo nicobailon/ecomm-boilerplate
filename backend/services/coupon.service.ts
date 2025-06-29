@@ -84,7 +84,7 @@ export class CouponService {
       status = 'all',
       expirationDateFrom,
       expirationDateTo,
-      usageStatus = 'all'
+      usageStatus = 'all',
     } = options;
     
     const query: mongoose.FilterQuery<ICouponDocument> = {};
@@ -93,7 +93,7 @@ export class CouponService {
     if (search) {
       query.$or = [
         { code: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { description: { $regex: search, $options: 'i' } },
       ];
     }
     

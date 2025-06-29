@@ -24,7 +24,7 @@ describe('OrderService', () => {
             quantity: 2,
             price: 50,
             variantLabel: 'Size: M',
-          }
+          },
         ],
         totalAmount: 100,
         subtotal: 100,
@@ -50,7 +50,7 @@ describe('OrderService', () => {
             product: { _id: new mongoose.Types.ObjectId(), name: 'Product 2', image: 'image2.jpg' },
             quantity: 1,
             price: 200,
-          }
+          },
         ],
         totalAmount: 200,
         subtotal: 200,
@@ -64,7 +64,7 @@ describe('OrderService', () => {
         statusHistory: [],
         shippingAddress: {},
         billingAddress: {},
-      }
+      },
     ];
 
     it('should list orders with default pagination', async () => {
@@ -73,8 +73,8 @@ describe('OrderService', () => {
           {
             orders: mockOrders,
             totalCount: [{ count: 2 }],
-          }
-        ])
+          },
+        ]),
       });
       
       Order.aggregate = mockAggregate;
@@ -117,8 +117,8 @@ describe('OrderService', () => {
           {
             orders: [mockOrders[0]],
             totalCount: [{ count: 1 }],
-          }
-        ])
+          },
+        ]),
       });
       
       Order.aggregate = mockAggregate;
@@ -144,8 +144,8 @@ describe('OrderService', () => {
           {
             orders: mockOrders,
             totalCount: [{ count: 2 }],
-          }
-        ])
+          },
+        ]),
       });
       
       Order.aggregate = mockAggregate;
@@ -173,8 +173,8 @@ describe('OrderService', () => {
           {
             orders: mockOrders,
             totalCount: [{ count: 2 }],
-          }
-        ])
+          },
+        ]),
       });
       
       Order.aggregate = mockAggregate;
@@ -203,8 +203,8 @@ describe('OrderService', () => {
           {
             orders: mockOrders,
             totalCount: [{ count: 2 }],
-          }
-        ])
+          },
+        ]),
       });
       
       Order.aggregate = mockAggregate;
@@ -232,8 +232,8 @@ describe('OrderService', () => {
           {
             orders: [],
             totalCount: [{ count: 50 }],
-          }
-        ])
+          },
+        ]),
       });
       
       Order.aggregate = mockAggregate;
@@ -260,7 +260,7 @@ describe('OrderService', () => {
 
     it('should handle empty results', async () => {
       const mockAggregate = vi.fn().mockReturnValue({
-        exec: vi.fn().mockResolvedValue([])
+        exec: vi.fn().mockResolvedValue([]),
       });
       
       Order.aggregate = mockAggregate;
@@ -291,8 +291,8 @@ describe('OrderService', () => {
             {
               orders: [mockOrders[0]],
               totalCount: [{ count: 1 }],
-            }
-          ])
+            },
+          ]),
         });
         
         Order.aggregate = mockAggregate;
@@ -322,8 +322,8 @@ describe('OrderService', () => {
             {
               orders: mockOrders,
               totalCount: [{ count: 2 }],
-            }
-          ])
+            },
+          ]),
         });
         
         Order.aggregate = mockAggregate;
@@ -353,8 +353,8 @@ describe('OrderService', () => {
             {
               orders: [],
               totalCount: [{ count: 0 }],
-            }
-          ])
+            },
+          ]),
         });
         
         Order.aggregate = mockAggregate;
@@ -379,8 +379,8 @@ describe('OrderService', () => {
             {
               orders: [],
               totalCount: [{ count: 0 }],
-            }
-          ])
+            },
+          ]),
         });
         
         Order.aggregate = mockAggregate;
@@ -417,7 +417,7 @@ describe('OrderService', () => {
             product: { _id: new mongoose.Types.ObjectId(), name: 'Product 1', image: 'image1.jpg' },
             quantity: 2,
             price: 50,
-          }
+          },
         ],
         totalAmount: 100,
         subtotal: 100,
@@ -630,7 +630,7 @@ describe('OrderService', () => {
         }
         // Transactional path
         return {
-          session: vi.fn().mockReturnValue(Promise.resolve(mockOrders))
+          session: vi.fn().mockReturnValue(Promise.resolve(mockOrders)),
         };
       });
 
@@ -682,7 +682,7 @@ describe('OrderService', () => {
         }
         // Transactional path
         return {
-          session: vi.fn().mockReturnValue(Promise.resolve(mockOrders))
+          session: vi.fn().mockReturnValue(Promise.resolve(mockOrders)),
         };
       });
 
@@ -722,7 +722,7 @@ describe('OrderService', () => {
         }
         // Transactional path
         return {
-          session: vi.fn().mockReturnValue(Promise.resolve([]))
+          session: vi.fn().mockReturnValue(Promise.resolve([])),
         };
       });
 
@@ -768,7 +768,7 @@ describe('OrderService', () => {
             { _id: new mongoose.Types.ObjectId(), name: 'Product 1', totalSold: 50, revenue: 2500 },
             { _id: new mongoose.Types.ObjectId(), name: 'Product 2', totalSold: 30, revenue: 3000 },
           ],
-        }
+        },
       ];
 
       Order.aggregate = vi.fn().mockResolvedValue(mockStats);
@@ -809,7 +809,7 @@ describe('OrderService', () => {
           statusCounts: [],
           revenueByDay: [],
           topProducts: [],
-        }
+        },
       ];
 
       Order.aggregate = vi.fn().mockResolvedValue(mockStats);

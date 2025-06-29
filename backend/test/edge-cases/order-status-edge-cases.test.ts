@@ -50,7 +50,7 @@ describe('Order Status Edge Cases and Error Conditions', () => {
         orderService.updateOrderStatus({
           orderId,
           status: 'completed',
-        })
+        }),
       ).rejects.toThrow('Connection timeout');
     });
   });
@@ -63,7 +63,7 @@ describe('Order Status Edge Cases and Error Conditions', () => {
         orderService.updateOrderStatus({
           orderId: invalidOrderId,
           status: 'completed',
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -101,7 +101,7 @@ describe('Order Status Edge Cases and Error Conditions', () => {
         orderService.bulkUpdateOrderStatus({
           orderIds: [],
           status: 'completed',
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -227,13 +227,13 @@ describe('Order Status Edge Cases and Error Conditions', () => {
       const mockOrder = {
         _id: orderId,
         status: 'pending' as const,
-        statusHistory: [] as Array<{
+        statusHistory: [] as {
           from: 'pending' | 'completed' | 'cancelled' | 'refunded' | 'pending_inventory';
           to: 'pending' | 'completed' | 'cancelled' | 'refunded' | 'pending_inventory';
           timestamp: Date;
           userId?: mongoose.Types.ObjectId;
           reason?: string;
-        }>,
+        }[],
         save: vi.fn().mockResolvedValue(true),
       };
 
@@ -279,7 +279,7 @@ describe('Order Status Edge Cases and Error Conditions', () => {
     it('should handle bulk update of 1000+ orders efficiently', async () => {
       const orderCount = 1000;
       const orderIds = Array.from({ length: orderCount }, () =>
-        new mongoose.Types.ObjectId().toString()
+        new mongoose.Types.ObjectId().toString(),
       );
 
       const mockOrders = orderIds.map(id => ({

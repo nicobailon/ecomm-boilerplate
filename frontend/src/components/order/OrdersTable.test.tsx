@@ -269,7 +269,7 @@ describe('OrdersTable', () => {
         expect(mockListOrders).toHaveBeenCalledWith(
           expect.objectContaining({
             search: 'ORD-001',
-          })
+          }),
         );
       });
     });
@@ -288,12 +288,12 @@ describe('OrdersTable', () => {
         expect(mockListOrders).toHaveBeenCalledWith(
           expect.objectContaining({
             status: 'pending',
-          })
+          }),
         );
       });
     });
 
-    it('should filter by date range', async () => {
+    it('should filter by date range', () => {
       renderWithProviders(<OrdersTable onEditOrder={mockOnEditOrder} />);
 
       // This test would need actual DateRangeFilter implementation
@@ -323,7 +323,7 @@ describe('OrdersTable', () => {
             status: undefined,
             startDate: undefined,
             endDate: undefined,
-          })
+          }),
         );
       });
     });
@@ -348,7 +348,7 @@ describe('OrdersTable', () => {
           expect.objectContaining({
             sortBy: 'createdAt',
             sortOrder: 'asc',
-          })
+          }),
         );
       });
     });
@@ -370,7 +370,7 @@ describe('OrdersTable', () => {
           expect.objectContaining({
             sortBy: 'totalAmount',
             sortOrder: 'asc',
-          })
+          }),
         );
       });
     });
@@ -385,7 +385,7 @@ describe('OrdersTable', () => {
       expect(screen.getByText(/page 1 of 1/i)).toBeInTheDocument();
     });
 
-    it('should handle page navigation', async () => {
+    it('should handle page navigation', () => {
       mockUseListOrders.mockReturnValue({
         data: { ...mockOrders, totalPages: 2 },
         isLoading: false,
@@ -402,7 +402,7 @@ describe('OrdersTable', () => {
       expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument();
     });
 
-    it('should handle page size change', async () => {
+    it('should handle page size change', () => {
       renderWithProviders(<OrdersTable onEditOrder={mockOnEditOrder} />);
 
       const pageSizeSelect = screen.getByLabelText('Rows per page');
@@ -621,7 +621,7 @@ describe('OrdersTable', () => {
       // Find the one next to 'customer' text
       const customerText = screen.getByText('customer');
       const customerCheckbox = checkboxes.find(cb => 
-        cb.parentElement?.contains(customerText)
+        cb.parentElement?.contains(customerText),
       );
       
       if (customerCheckbox) {
@@ -652,7 +652,7 @@ describe('OrdersTable', () => {
           data={mockOrders} 
           isLoading={false}
           onEditOrder={mockOnEditOrder} 
-        />
+        />,
       );
 
       // Should not have bulk selection checkboxes
@@ -680,7 +680,7 @@ describe('OrdersTable', () => {
           data={mockOrders} 
           isLoading={false}
           onEditOrder={mockOnEditOrder} 
-        />
+        />,
       );
 
       // Should have these columns
@@ -710,7 +710,7 @@ describe('OrdersTable', () => {
           data={customData} 
           isLoading={false}
           onEditOrder={mockOnEditOrder} 
-        />
+        />,
       );
 
       expect(screen.getByText('CUSTOM-001')).toBeInTheDocument();
@@ -725,7 +725,7 @@ describe('OrdersTable', () => {
           data={undefined} 
           isLoading={true}
           onEditOrder={mockOnEditOrder} 
-        />
+        />,
       );
 
       expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
@@ -738,7 +738,7 @@ describe('OrdersTable', () => {
           data={mockOrders} 
           isLoading={false}
           onEditOrder={mockOnEditOrder} 
-        />
+        />,
       );
 
       // Actions column should still exist
@@ -767,7 +767,7 @@ describe('OrdersTable', () => {
           data={mockOrders} 
           isLoading={false}
           onEditOrder={mockOnEditOrder} 
-        />
+        />,
       );
 
       // Status filter should still be visible for customers to filter their own orders

@@ -30,7 +30,7 @@ class ProductService {
       sortBy?: 'name' | 'price' | 'createdAt' | 'updatedAt';
       sortOrder?: 'asc' | 'desc';
       stockStatus?: 'all' | 'inStock' | 'lowStock' | 'outOfStock';
-    }
+    },
   ): Promise<{ products: (IProduct | IProductWithVariants)[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
     // Validate and sanitize pagination parameters
     const pageNum = Math.max(PAGINATION.DEFAULT_PAGE, page);
@@ -57,19 +57,19 @@ class ProductService {
         case 'inStock':
           query.$or = [
             { variants: { $exists: false }, inventory: { $gt: 0 } },
-            { 'variants.inventory': { $gt: 0 } }
+            { 'variants.inventory': { $gt: 0 } },
           ];
           break;
         case 'lowStock':
           query.$or = [
             { variants: { $exists: false }, inventory: { $lte: 10, $gt: 0 } },
-            { 'variants.inventory': { $lte: 10, $gt: 0 } }
+            { 'variants.inventory': { $lte: 10, $gt: 0 } },
           ];
           break;
         case 'outOfStock':
           query.$or = [
             { variants: { $exists: false }, inventory: { $lte: 0 } },
-            { 'variants.inventory': { $lte: 0 } }
+            { 'variants.inventory': { $lte: 0 } },
           ];
           break;
       }
@@ -835,8 +835,8 @@ class ProductService {
                   productId: productId,
                   variantId: targetVariant.variantId,
                   requestedQuantity: quantity,
-                  availableStock: targetVariant.inventory
-                }]
+                  availableStock: targetVariant.inventory,
+                }],
               );
             }
             targetVariant.inventory -= quantity;

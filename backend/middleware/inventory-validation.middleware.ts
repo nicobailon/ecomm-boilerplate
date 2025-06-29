@@ -12,16 +12,16 @@ const checkoutProductsSchema = z.array(
     _id: z.string(),
     quantity: z.number().positive().int(),
     variantId: z.string().optional(),
-  })
+  }),
 );
 
 export async function validateInventoryPreCheckout(
   req: AuthRequest,
   _res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
-    const { products } = req.body;
+    const { products } = req.body as { products: unknown };
     
     // Validate request body
     const validationResult = checkoutProductsSchema.safeParse(products);
@@ -30,14 +30,14 @@ export async function validateInventoryPreCheckout(
     }
 
     const validProducts = validationResult.data;
-    const inventoryIssues: Array<{
+    const inventoryIssues: {
       productId: string;
       variantId?: string;
       requestedQuantity: number;
       availableStock: number;
       productName?: string;
       variantDetails?: string;
-    }> = [];
+    }[] = [];
 
     logger.info('inventory.validation.pre-checkout.start', {
       productCount: validProducts.length,
@@ -93,7 +93,7 @@ export async function validateInventoryPreCheckout(
       throw new InventoryError(
         `Inventory validation failed: ${errorMessages.join('; ')}`,
         'INSUFFICIENT_INVENTORY',
-        inventoryIssues
+        inventoryIssues,
       );
     }
 
@@ -108,13 +108,13 @@ export async function validateInventoryPreCheckout(
   }
 }
 
-export async function logInventoryValidation(
+export function logInventoryValidation(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
-): Promise<void> {
+  next: NextFunction,
+): void {
   const startTime = Date.now();
-  const { products } = req.body;
+  const { products } = req.body as { products: unknown };
   
   logger.info('inventory.validation.request', {
     endpoint: req.path,

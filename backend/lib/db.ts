@@ -14,7 +14,7 @@ const setupConnectionEventListeners = (): void => {
     logger.info('[MongoDB] Successfully connected to database');
   });
   
-  connection.on('error', (error) => {
+  connection.on('error', (error: Error) => {
     logger.error('[MongoDB] Connection error:', {
       error: error.message,
       stack: error.stack,
@@ -82,30 +82,28 @@ export const connectDB = async (): Promise<void> => {
     });
 
     // Connection pool event monitoring
-    mongoose.connection.on('connectionPoolCreated', (event) => {
+    mongoose.connection.on('connectionPoolCreated', (event: mongoose.mongo.ConnectionPoolCreatedEvent) => {
       logger.info('[MongoDB] Connection pool created', {
         maxPoolSize: event.options?.maxPoolSize,
         minPoolSize: event.options?.minPoolSize,
       });
     });
 
-    mongoose.connection.on('connectionCreated', (event) => {
+    mongoose.connection.on('connectionCreated', (event: mongoose.mongo.ConnectionCreatedEvent) => {
       logger.debug('[MongoDB] Connection created', {
         connectionId: event.connectionId,
       });
     });
 
-    mongoose.connection.on('connectionClosed', (event) => {
+    mongoose.connection.on('connectionClosed', (event: mongoose.mongo.ConnectionClosedEvent) => {
       logger.debug('[MongoDB] Connection closed', {
         connectionId: event.connectionId,
         reason: event.reason,
       });
     });
 
-    mongoose.connection.on('connectionPoolCleared', (event) => {
-      logger.warn('[MongoDB] Connection pool cleared', {
-        reason: event.reason,
-      });
+    mongoose.connection.on('connectionPoolCleared', (_event: mongoose.mongo.ConnectionPoolClearedEvent) => {
+      logger.warn('[MongoDB] Connection pool cleared');
     });
 
   } catch (error) {
@@ -125,7 +123,7 @@ export const connectDB = async (): Promise<void> => {
 
       try {
         const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
+        const data = await response.json() as { ip: string };
         logger.error(`📍 Your current IP address: ${data.ip}`);
       } catch {
         logger.error('📍 Could not determine your current IP address');

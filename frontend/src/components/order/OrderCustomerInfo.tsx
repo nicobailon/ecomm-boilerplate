@@ -56,7 +56,7 @@ export function OrderCustomerInfo({ order }: OrderCustomerInfoProps) {
           <div>
             <span className="text-sm text-muted-foreground" data-testid="name-label">Name</span>
             <p className="font-medium" data-testid="name-value">
-              {order.shippingAddress?.fullName || 'Name not provided'}
+              {order.shippingAddress?.fullName ?? 'Name not provided'}
             </p>
           </div>
           <div>
@@ -184,7 +184,7 @@ export function OrderCustomerInfo({ order }: OrderCustomerInfoProps) {
               Payment ID
             </span>
             <p className="font-medium text-xs font-mono" data-testid="payment-id-value">
-              {order.paymentIntentId || 'N/A'}
+              {order.paymentIntentId ?? 'N/A'}
             </p>
           </div>
         </div>

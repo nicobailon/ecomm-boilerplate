@@ -32,13 +32,13 @@ export const enhancedValidate = (
       };
 
       // Validate with schema
-      const result = await schema.parseAsync(validationData);
+      const result = await schema.parseAsync(validationData) as { body: unknown; query: unknown; params: unknown };
 
       // Update request with validated data
       if (!allowUnknownFields) {
-        req.body = result.body;
-        req.query = result.query;
-        req.params = result.params;
+        req.body = result.body as Record<string, unknown>;
+        req.query = result.query as typeof req.query;
+        req.params = result.params as typeof req.params;
       }
 
       next();

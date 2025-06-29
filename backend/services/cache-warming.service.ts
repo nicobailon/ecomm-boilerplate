@@ -33,7 +33,7 @@ export class CacheWarmingService {
       await this.cacheService.set(
         CACHE_KEYS.FEATURED_PRODUCTS,
         featuredProducts,
-        CACHE_TTL.FEATURED_PRODUCTS
+        CACHE_TTL.FEATURED_PRODUCTS,
       );
       
       logger.info(`[CacheWarming] Cached ${featuredProducts.length} featured products`);

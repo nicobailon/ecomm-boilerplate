@@ -591,7 +591,7 @@ describe('useOrders hooks', () => {
     it('should export orders successfully', async () => {
       const { result } = renderHook(
         () => useExportOrders(),
-        { wrapper: createWrapper(false) }
+        { wrapper: createWrapper(false) },
       );
 
       // Mock document methods after rendering
@@ -646,7 +646,7 @@ describe('useOrders hooks', () => {
     it('should export selected orders only', async () => {
       const { result } = renderHook(
         () => useExportOrders(),
-        { wrapper: createWrapper(false) }
+        { wrapper: createWrapper(false) },
       );
 
       // Mock document methods after rendering
@@ -674,7 +674,7 @@ describe('useOrders hooks', () => {
           products: [],
           paymentMethod: 'card',
           createdAt: '2024-01-01T00:00:00Z',
-          shippingAddress: { fullName: 'User 1' }
+          shippingAddress: { fullName: 'User 1' },
         },
         { 
           _id: 'order2', 
@@ -685,7 +685,7 @@ describe('useOrders hooks', () => {
           products: [],
           paymentMethod: 'card',
           createdAt: '2024-01-01T00:00:00Z',
-          shippingAddress: { fullName: 'User 2' }
+          shippingAddress: { fullName: 'User 2' },
         },
         { 
           _id: 'order3', 
@@ -696,7 +696,7 @@ describe('useOrders hooks', () => {
           products: [],
           paymentMethod: 'card',
           createdAt: '2024-01-01T00:00:00Z',
-          shippingAddress: { fullName: 'User 3' }
+          shippingAddress: { fullName: 'User 3' },
         },
       ] as any[];
 
@@ -713,7 +713,7 @@ describe('useOrders hooks', () => {
     it('should handle export error', async () => {
       const { result } = renderHook(
         () => useExportOrders(),
-        { wrapper: createWrapper(false) }
+        { wrapper: createWrapper(false) },
       );
 
       // Mock document.createElement to throw an error after rendering
@@ -730,7 +730,7 @@ describe('useOrders hooks', () => {
     it('should track loading state', async () => {
       const { result } = renderHook(
         () => useExportOrders(),
-        { wrapper: createWrapper(false) }
+        { wrapper: createWrapper(false) },
       );
 
       // Mock document methods after rendering

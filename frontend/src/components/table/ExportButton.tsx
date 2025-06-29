@@ -18,7 +18,7 @@ export function ExportButton({
     <Button
       variant="outline"
       onClick={onExport}
-      disabled={disabled || loading}
+      disabled={disabled ?? loading}
       className={className}
     >
       <Download className="w-4 h-4 mr-2" />

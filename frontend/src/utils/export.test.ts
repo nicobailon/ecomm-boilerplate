@@ -87,22 +87,27 @@ describe('Export Utilities', () => {
   });
 
   describe('downloadFile', () => {
-    let createElementSpy: any;
-    let appendChildSpy: any;
-    let removeChildSpy: any;
-    let clickSpy: any;
-    let createObjectURLSpy: any;
-    let revokeObjectURLSpy: any;
+    let clickSpy: ReturnType<typeof vi.fn>;
+    let createObjectURLSpy: ReturnType<typeof vi.fn>;
+    let revokeObjectURLSpy: ReturnType<typeof vi.fn>;
+    let mockAnchor: HTMLAnchorElement;
 
     beforeEach(() => {
       clickSpy = vi.fn();
-      createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue({
+      mockAnchor = {
         href: '',
         download: '',
         click: clickSpy,
-      } as any);
-      appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => null as any);
-      removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation(() => null as any);
+      } as unknown as HTMLAnchorElement;
+      
+      vi.spyOn(document, 'createElement').mockImplementation((tagName) => {
+        if (tagName === 'a') {
+          return mockAnchor;
+        }
+        return document.createElement(tagName);
+      });
+      vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
+      vi.spyOn(document.body, 'removeChild').mockImplementation((child) => child);
       createObjectURLSpy = vi.fn().mockReturnValue('blob:mock-url');
       revokeObjectURLSpy = vi.fn();
       global.URL.createObjectURL = createObjectURLSpy;
@@ -116,18 +121,18 @@ describe('Export Utilities', () => {
     it('should create and click download link', () => {
       downloadFile('test content', 'test.csv');
 
-      expect(createElementSpy).toHaveBeenCalledWith('a');
+      expect(document.createElement).toHaveBeenCalledWith('a');
       expect(createObjectURLSpy).toHaveBeenCalled();
-      expect(appendChildSpy).toHaveBeenCalled();
+      expect(document.body.appendChild).toHaveBeenCalled();
       expect(clickSpy).toHaveBeenCalled();
-      expect(removeChildSpy).toHaveBeenCalled();
+      expect(document.body.removeChild).toHaveBeenCalled();
       expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:mock-url');
     });
 
     it('should use custom mime type', () => {
       downloadFile('test content', 'test.json', 'application/json');
 
-      const blobCall = createObjectURLSpy.mock.calls[0][0];
+      const blobCall = createObjectURLSpy.mock.calls[0][0] as Blob;
       expect(blobCall.type).toBe('application/json');
     });
   });
@@ -154,8 +159,8 @@ describe('Export Utilities', () => {
 
   describe('formatAddressForCSV', () => {
     it('should return empty string for falsy address', () => {
-      expect(formatAddressForCSV(null as any)).toBe('');
-      expect(formatAddressForCSV(undefined as any)).toBe('');
+      expect(formatAddressForCSV(null)).toBe('');
+      expect(formatAddressForCSV(undefined)).toBe('');
     });
 
     it('should format complete address', () => {

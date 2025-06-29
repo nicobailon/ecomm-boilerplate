@@ -76,7 +76,7 @@ export class InventoryService {
   }
 
   async batchValidateInventory(
-    products: { _id: string; quantity: number; variantId?: string }[]
+    products: { _id: string; quantity: number; variantId?: string }[],
   ): Promise<{
     isValid: boolean;
     validatedProducts: {
@@ -147,7 +147,7 @@ export class InventoryService {
 
   async validateAndReserveInventory(
     products: CheckoutProduct[],
-    session: mongoose.ClientSession
+    session: mongoose.ClientSession,
   ): Promise<ValidationResult> {
     const correlationId = generateCorrelationId();
     const errors: string[] = [];
@@ -164,13 +164,13 @@ export class InventoryService {
           product.id,
           product.variantId,
           product.quantity,
-          session
+          session,
         );
 
         if (!result.success) {
           const variantInfo = result.variantDetails ? ` (${result.variantDetails})` : '';
           errors.push(
-            `${result.productName}${variantInfo}: Only ${result.availableStock} available, ${product.quantity} requested`
+            `${result.productName}${variantInfo}: Only ${result.availableStock} available, ${product.quantity} requested`,
           );
         }
 
@@ -216,7 +216,7 @@ export class InventoryService {
     productId: string,
     variantId: string | undefined,
     quantity: number,
-    session: mongoose.ClientSession
+    session: mongoose.ClientSession,
   ): Promise<AtomicInventoryCheckResult> {
     const product = await Product.findById(productId).session(session);
     
@@ -268,7 +268,7 @@ export class InventoryService {
   async getInventoryWithLock(
     productId: string,
     variantId: string | undefined,
-    session: mongoose.ClientSession
+    session: mongoose.ClientSession,
   ): Promise<number> {
     const product = await Product.findById(productId).session(session);
     
@@ -308,7 +308,7 @@ export class InventoryService {
     productId: string,
     variantId: string | undefined,
     quantity: number,
-    session: mongoose.ClientSession
+    session: mongoose.ClientSession,
   ): Promise<boolean> {
     const filter = buildAtomicUpdateFilter(productId, quantity, variantId);
     const update = buildAtomicUpdateOperation(variantId, -quantity);
@@ -352,7 +352,7 @@ export class InventoryService {
     reason: InventoryUpdateReason,
     userId: string,
     metadata?: Record<string, unknown>,
-    session?: mongoose.ClientSession
+    session?: mongoose.ClientSession,
   ): Promise<void> {
     const product = await Product.findById(productId).session(session || null);
     if (!product) {
@@ -548,8 +548,8 @@ export class InventoryService {
                 productId: productId,
                 variantId: variantId,
                 requestedQuantity: Math.abs(adjustment),
-                availableStock: availableStock
-              }]
+                availableStock: availableStock,
+              }],
             );
           }
         }
@@ -581,8 +581,8 @@ export class InventoryService {
               productId: productId,
               variantId: variantId,
               requestedQuantity: Math.abs(adjustment),
-              availableStock: product.variants[0]?.inventory ?? 0
-            }]
+              availableStock: product.variants[0]?.inventory ?? 0,
+            }],
           );
         }
         

@@ -40,29 +40,29 @@ export const inventoryRouter = router({
             _id: z.string(),
             quantity: z.number().positive().int(),
             variantId: z.string().optional(),
-          })
+          }),
         ),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       try {
         const validationResult = {
           isValid: true,
-          adjustments: [] as Array<{
+          adjustments: [] as {
             productId: string;
             productName: string;
             variantDetails?: string;
             requestedQuantity: number;
             adjustedQuantity: number;
             availableStock: number;
-          }>,
+          }[],
         };
 
         // Check each product's inventory
         for (const product of input.products) {
           const availableStock = await inventoryService.getAvailableInventory(
             product._id,
-            product.variantId
+            product.variantId,
           );
 
           if (availableStock < product.quantity) {

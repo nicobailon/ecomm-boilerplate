@@ -22,7 +22,7 @@ export const useCartStore = create<CartStore>()(
       updateQuantity: (productId, quantity) =>
         set((state) => ({
           items: state.items.map((item) =>
-            item._id === productId ? { ...item, quantity } : item
+            item._id === productId ? { ...item, quantity } : item,
           ),
         })),
       removeItem: (productId) =>
@@ -34,6 +34,6 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'cart-store',
-    }
-  )
+    },
+  ),
 );

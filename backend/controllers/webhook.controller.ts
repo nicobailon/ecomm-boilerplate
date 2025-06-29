@@ -12,11 +12,11 @@ export const handleStripeWebhook = asyncHandler(async (req: WebhookRequest, res:
       'Stripe event not found in request',
       'EVENT_MISSING',
       400,
-      false
+      false,
     );
   }
 
-  console.info(`Webhook received: ${event.type} (${event.id})`);
+  console.error(`Webhook received: ${event.type} (${event.id})`);
 
   try {
     const result = await webhookService.processWebhookEvent(event);
@@ -64,7 +64,7 @@ export const handleStripeWebhook = asyncHandler(async (req: WebhookRequest, res:
 });
 
 export const retryFailedWebhooks = asyncHandler(async (_req: WebhookRequest, res: Response) => {
-  console.info('Manual webhook retry triggered');
+  console.error('Manual webhook retry triggered');
   
   try {
     await webhookService.retryFailedEvents();
@@ -79,7 +79,7 @@ export const retryFailedWebhooks = asyncHandler(async (_req: WebhookRequest, res
       'Failed to retry webhooks',
       'RETRY_ERROR',
       500,
-      false
+      false,
     );
   }
 });

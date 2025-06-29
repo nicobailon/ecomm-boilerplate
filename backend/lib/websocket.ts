@@ -119,7 +119,7 @@ class WebSocketService {
         
         const token = socket.handshake.auth.token as string | undefined;
         if (token && process.env.ACCESS_TOKEN_SECRET) {
-          const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET) as { userId: string };
+          const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET) as jwt.JwtPayload & { userId: string };
           socket.data.userId = decoded.userId;
         }
         next();
@@ -280,10 +280,14 @@ class WebSocketService {
     // Close all socket connections
     if (this.io) {
       await new Promise<void>((resolve) => {
-        this.io!.close(() => {
-          logger.info('[WebSocket] Socket.IO server closed');
+        if (this.io) {
+          this.io.close(() => {
+            logger.info('[WebSocket] Socket.IO server closed');
+            resolve();
+          });
+        } else {
           resolve();
-        });
+        }
       });
     }
     

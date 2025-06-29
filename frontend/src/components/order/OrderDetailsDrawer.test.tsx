@@ -4,27 +4,59 @@ import userEvent from '@testing-library/user-event';
 import { OrderDetailsDrawer } from './OrderDetailsDrawer';
 import { renderWithProviders } from '@/test/test-utils';
 import type { RouterOutputs } from '@/lib/trpc';
+import type { UseMutationResult } from '@tanstack/react-query';
 
 // Mock hooks
 const mockGetOrderById = vi.fn();
 const mockGetMyOrderById = vi.fn();
 const mockUpdateOrderStatus = vi.fn();
-const updateStatusMutation = {
-  mutate: mockUpdateOrderStatus,
-  mutateAsync: vi.fn().mockResolvedValue(undefined),
-  isPending: false,
-} as any;
+const createMockMutation = (overrides: Partial<UseMutationResult<unknown, Error, unknown>> = {}): UseMutationResult<unknown, Error, unknown> => {
+  const baseState = {
+    mutate: mockUpdateOrderStatus,
+    mutateAsync: vi.fn().mockResolvedValue(undefined),
+    isPending: false,
+    isIdle: true,
+    isSuccess: false,
+    isError: false,
+    isPaused: false,
+    data: undefined,
+    error: null,
+    variables: undefined,
+    status: 'idle' as const,
+    failureCount: 0,
+    failureReason: null,
+    submittedAt: 0,
+    reset: vi.fn(),
+  };
+  
+  // Apply overrides and ensure consistency
+  const merged = { ...baseState, ...overrides };
+  
+  // Ensure status consistency
+  if (merged.isPending) {
+    merged.status = 'pending' as const;
+    merged.isIdle = false;
+  } else if (merged.isSuccess) {
+    merged.status = 'success' as const;
+    merged.isIdle = false;
+  } else if (merged.isError) {
+    merged.status = 'error' as const;
+    merged.isIdle = false;
+  }
+  
+  return merged as UseMutationResult<unknown, Error, unknown>;
+};
 
-let mockUseUpdateOrderStatusReturn = updateStatusMutation;
+let mockUseUpdateOrderStatusReturn = createMockMutation();
 let mockGetOrderByIdReturn = {
-  data: null as any,
+  data: null as RouterOutputs['order']['getById'] | null,
   isLoading: false,
-  error: null as any,
+  error: null as Error | null,
 };
 let mockGetMyOrderByIdReturn = {
-  data: null as any,
+  data: null as RouterOutputs['order']['getById'] | null,
   isLoading: false,
-  error: null as any,
+  error: null as Error | null,
 };
 
 vi.mock('@/hooks/queries/useOrders', () => ({
@@ -127,7 +159,7 @@ describe('OrderDetailsDrawer', () => {
       isLoading: false,
       error: null,
     };
-    mockUseUpdateOrderStatusReturn = updateStatusMutation;
+    mockUseUpdateOrderStatusReturn = createMockMutation();
   });
 
   describe('drawer open/close states', () => {
@@ -379,7 +411,7 @@ describe('OrderDetailsDrawer', () => {
       const updateButton = screen.getByRole('button', { name: /update status/i });
       await user.click(updateButton);
 
-      expect(updateStatusMutation.mutateAsync).toHaveBeenCalledWith({
+      expect(mockUseUpdateOrderStatusReturn.mutateAsync).toHaveBeenCalledWith({
         orderId: '507f1f77bcf86cd799439011',
         status: 'completed',
       });
@@ -400,10 +432,7 @@ describe('OrderDetailsDrawer', () => {
 
     it('should show loading state during update', () => {
       // Override the mock for this specific test
-      mockUseUpdateOrderStatusReturn = {
-        ...updateStatusMutation,
-        isPending: true,
-      };
+      mockUseUpdateOrderStatusReturn = createMockMutation({ isPending: true });
 
       renderWithProviders(
         <OrderDetailsDrawer
@@ -594,10 +623,9 @@ describe('OrderDetailsDrawer', () => {
 
     it('should handle status update errors gracefully', async () => {
       const mockError = new Error('Invalid status transition');
-      mockUseUpdateOrderStatusReturn = {
-        ...updateStatusMutation,
+      mockUseUpdateOrderStatusReturn = createMockMutation({
         mutateAsync: vi.fn().mockRejectedValue(mockError),
-      };
+      });
 
       renderWithProviders(
         <OrderDetailsDrawer

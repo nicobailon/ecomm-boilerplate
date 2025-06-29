@@ -6,18 +6,18 @@ import type {
   ListOrdersInput, 
   UpdateOrderStatusInput, 
   BulkUpdateOrderStatusInput, 
-  GetOrderStatsInput 
+  GetOrderStatsInput, 
 } from '../validations/order.validation.js';
 import type { 
   OrderWithPopulatedData, 
-  BulkUpdateResponse 
+  BulkUpdateResponse, 
 } from '../types/order.types.js';
 import { 
   toSerializedOrder, 
   toSerializedOrderStats,
   type SerializedOrderListResponse,
   type SerializedOrder,
-  type SerializedOrderStats
+  type SerializedOrderStats,
 } from '../utils/order-type-converters.js';
 
 export class OrderService {
@@ -79,7 +79,7 @@ export class OrderService {
           foreignField: '_id',
           as: 'populatedProducts',
         },
-      }
+      },
     );
 
     if (search) {
@@ -146,7 +146,7 @@ export class OrderService {
           ],
           totalCount: [{ $count: 'count' }],
         },
-      }
+      },
     );
 
     const result = await Order.aggregate(pipeline).exec();
@@ -210,7 +210,7 @@ export class OrderService {
           from: order.status,
           to: status,
           userId,
-          reason
+          reason,
         });
 
         // Add to status history
@@ -219,7 +219,7 @@ export class OrderService {
           to: status,
           timestamp: new Date(),
           userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
-          reason
+          reason,
         });
 
         order.status = status;
@@ -251,7 +251,7 @@ export class OrderService {
         from: order.status,
         to: status,
         userId,
-        reason
+        reason,
       });
 
       // Add to status history
@@ -260,7 +260,7 @@ export class OrderService {
         to: status,
         timestamp: new Date(),
         userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
-        reason
+        reason,
       });
 
       order.status = status;
@@ -301,11 +301,11 @@ export class OrderService {
           from: order.status,
           to: status,
           userId,
-          reason
+          reason,
         }));
 
         const validation = OrderStatusValidator.validateBulkTransitions(
-          transitions.map(({ from, to, userId, reason }) => ({ from, to, userId, reason }))
+          transitions.map(({ from, to, userId, reason }) => ({ from, to, userId, reason })),
         );
 
         if (validation.valid.length === 0) {
@@ -331,11 +331,11 @@ export class OrderService {
                     to: status,
                     timestamp,
                     userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
-                    reason
-                  }
-                }
-              }
-            }
+                    reason,
+                  },
+                },
+              },
+            },
           };
         });
 
@@ -379,11 +379,11 @@ export class OrderService {
         from: order.status,
         to: status,
         userId,
-        reason
+        reason,
       }));
 
       const validation = OrderStatusValidator.validateBulkTransitions(
-        transitions.map(({ from, to, userId, reason }) => ({ from, to, userId, reason }))
+        transitions.map(({ from, to, userId, reason }) => ({ from, to, userId, reason })),
       );
 
       if (validation.valid.length === 0) {
@@ -409,11 +409,11 @@ export class OrderService {
                   to: status,
                   timestamp,
                   userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
-                  reason
-                }
-              }
-            }
-          }
+                  reason,
+                },
+              },
+            },
+          },
         };
       });
 

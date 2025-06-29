@@ -114,7 +114,7 @@ export const orderRouter = router({
       try {
         return await orderService.listAllOrders({
           ...input,
-          userId: ctx.user._id.toString()
+          userId: ctx.user._id.toString(),
         });
       } catch (error) {
         throw new TRPCError({

@@ -9,10 +9,11 @@ import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { useInventoryValidation } from '@/hooks/useInventoryValidation';
 import { InventoryWarning } from '@/components/inventory/InventoryWarning';
+import type { InventoryErrorDetail, InventoryAdjustment } from '@/utils/inventory-errors';
 import { 
   getInventoryErrorMessage,
   getInventoryErrorTitle,
-  formatInventoryAdjustments 
+  formatInventoryAdjustments, 
 } from '@/utils/inventory-errors';
 interface CheckoutProduct {
 	_id: string;
@@ -36,23 +37,7 @@ interface ErrorResponse {
 	error?: string;
 	message?: string;
 	code?: string;
-	details?: Array<{
-		productId: string;
-		productName?: string;
-		variantId?: string;
-		variantDetails?: string;
-		requestedQuantity: number;
-		availableStock: number;
-	}>;
-}
-
-interface InventoryAdjustment {
-	productId: string;
-	productName: string;
-	variantDetails?: string;
-	requestedQuantity: number;
-	adjustedQuantity: number;
-	availableStock: number;
+	details?: InventoryErrorDetail[];
 }
 
 interface CheckoutSessionResponse {
@@ -68,7 +53,7 @@ const OrderSummary = () => {
 	const { data: cart, source } = useUnifiedCart();
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [adjustments, setAdjustments] = useState<InventoryAdjustment[]>([]);
-	const [inventoryError, setInventoryError] = useState<{ code: string; details: ErrorResponse['details'] } | null>(null);
+	const [inventoryError, setInventoryError] = useState<{ code: 'INSUFFICIENT_INVENTORY' | 'PRODUCT_NOT_FOUND' | 'VARIANT_NOT_FOUND' | 'INVENTORY_LOCK_FAILED'; details: InventoryErrorDetail[] } | null>(null);
 	const navigate = useNavigate();
 	
 	const { checkInventoryAvailability } = useInventoryValidation({
@@ -90,10 +75,17 @@ const OrderSummary = () => {
 
 	const handleInventoryError = useCallback((error: ErrorResponse) => {
 		if (error.code && error.details) {
-			setInventoryError({ code: error.code, details: error.details });
+			const validCodes = ['INSUFFICIENT_INVENTORY', 'PRODUCT_NOT_FOUND', 'VARIANT_NOT_FOUND', 'INVENTORY_LOCK_FAILED'] as const;
+			type ValidCode = typeof validCodes[number];
+			
+			const errorCode = validCodes.includes(error.code as ValidCode) 
+				? (error.code as ValidCode)
+				: 'INSUFFICIENT_INVENTORY'; // Default fallback
+			
+			setInventoryError({ code: errorCode, details: error.details });
 			
 			const { title, messages } = getInventoryErrorMessage({
-				code: error.code as any,
+				code: errorCode,
 				message: error.message ?? '',
 				details: error.details,
 			});
@@ -103,10 +95,11 @@ const OrderSummary = () => {
 				duration: 8000,
 				action: {
 					label: 'Update Cart',
-					onClick: async () => {
+					onClick: () => {
 						// Re-validate inventory and auto-adjust cart
-						await checkInventoryAvailability();
-						setInventoryError(null);
+						void checkInventoryAvailability().then(() => {
+							setInventoryError(null);
+						});
 					},
 				},
 			});
@@ -229,7 +222,7 @@ const OrderSummary = () => {
 			<p className='text-xl font-semibold text-primary'>Order summary</p>
 
 			<AnimatePresence>
-				{inventoryError && inventoryError.details && (
+				{inventoryError?.details && (
 					<motion.div
 						initial={{ opacity: 0, height: 0 }}
 						animate={{ opacity: 1, height: 'auto' }}
@@ -237,11 +230,12 @@ const OrderSummary = () => {
 					>
 						<InventoryWarning
 							type="error"
-							title={getInventoryErrorTitle(inventoryError.code as any)}
+							title={getInventoryErrorTitle(inventoryError.code)}
 							details={inventoryError.details}
-							onAction={async () => {
-								await checkInventoryAvailability();
-								setInventoryError(null);
+							onAction={() => {
+								void checkInventoryAvailability().then(() => {
+									setInventoryError(null);
+								});
 							}}
 							actionLabel="Update Cart"
 						/>

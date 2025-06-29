@@ -327,7 +327,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
         enableHiding: false,
       },
     ],
-    [deleteCollection, onEdit, expandedRows],
+    [deleteCollection, onEdit, expandedRows, toggleRowExpansion],
   );
 
   // Table instance
@@ -397,7 +397,7 @@ export function CollectionsTable({ onEdit, className }: CollectionsTableProps) {
       ['Name', 'Description', 'Products', 'Visibility', 'Slug', 'Created'].join(','),
       ...collections.map(c => [
         `"${c.name}"`,
-        `"${c.description || ''}"`,
+        `"${c.description ?? ''}"`,
         Array.isArray(c.products) ? c.products.length : 0,
         c.isPublic ? 'Public' : 'Private',
         c.slug,

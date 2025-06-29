@@ -27,7 +27,7 @@ const VerifyEmailPage: React.FC = () => {
     if (verificationToken && isValidTokenFormat(verificationToken) && verifyEmail.isIdle) {
       verifyEmail.mutate({ token: verificationToken });
     }
-  }, [verificationToken]);
+  }, [verificationToken, verifyEmail]);
 
   // Loading state - only show if actually pending and token is valid
   if (verifyEmail.isPending && isValidTokenFormat(verificationToken)) {
@@ -54,7 +54,7 @@ const VerifyEmailPage: React.FC = () => {
     const handleCountdownFinish = () => {
       const isAdmin = currentUser?.role === 'admin';
       const redirectPath = isAdmin ? '/secret-dashboard' : '/';
-      navigate(redirectPath);
+      void navigate(redirectPath);
     };
 
     return (

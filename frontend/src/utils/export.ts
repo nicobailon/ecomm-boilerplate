@@ -35,9 +35,9 @@ export function escapeCSVValue(value: string | number | null | undefined): strin
  * ];
  * arrayToCSV(data, columns) // returns 'Name,Age\nJohn,30\nJane,25'
  */
-export function arrayToCSV<T extends Record<string, unknown>>(
+export function arrayToCSV<T>(
   data: T[],
-  columns: { key: keyof T; label: string }[]
+  columns: { key: keyof T; label: string }[],
 ): string {
   if (!data.length) return '';
   
@@ -63,7 +63,7 @@ export function arrayToCSV<T extends Record<string, unknown>>(
  * downloadFile('Name,Age\nJohn,30', 'users.csv', 'text/csv');
  * downloadFile(JSON.stringify(data), 'data.json', 'application/json');
  */
-export function downloadFile(content: string, filename: string, mimeType: string = 'text/csv') {
+export function downloadFile(content: string, filename: string, mimeType = 'text/csv') {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -116,7 +116,7 @@ export function formatAddressForCSV(address: {
   state?: string;
   postalCode?: string;
   country?: string;
-}): string {
+} | null | undefined): string {
   if (!address) return '';
   
   const parts = [
@@ -125,7 +125,7 @@ export function formatAddressForCSV(address: {
     address.city,
     address.state,
     address.postalCode,
-    address.country
+    address.country,
   ].filter(Boolean);
   
   return parts.join(', ');

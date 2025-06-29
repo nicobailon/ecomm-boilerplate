@@ -7,11 +7,11 @@ import { checkoutSchema, checkoutSuccessSchema } from '../validations/index.js';
 import { emailRateLimit, inventoryCheckRateLimit } from '../middleware/security.middleware.js';
 import { 
   verifyWebhookSignature, 
-  webhookRateLimiter
+  webhookRateLimiter,
 } from '../middleware/webhook.middleware.js';
 import { 
   validateInventoryPreCheckout, 
-  logInventoryValidation 
+  logInventoryValidation, 
 } from '../middleware/inventory-validation.middleware.js';
 import { idempotencyMiddleware } from '../middleware/idempotency.middleware.js';
 
@@ -26,7 +26,7 @@ router.post(
   validateBody(checkoutSchema), 
   logInventoryValidation,
   validateInventoryPreCheckout,
-  createCheckoutSession
+  createCheckoutSession,
 );
 router.post(
   '/checkout-success', 
@@ -34,7 +34,7 @@ router.post(
   idempotencyMiddleware,
   emailRateLimit, 
   validateBody(checkoutSuccessSchema), 
-  checkoutSuccess
+  checkoutSuccess,
 );
 
 // Webhook endpoints
@@ -42,7 +42,7 @@ router.post(
   '/webhook',
   webhookRateLimiter,
   verifyWebhookSignature,
-  handleStripeWebhook
+  handleStripeWebhook,
 );
 
 // Admin endpoint to manually retry failed webhooks

@@ -189,6 +189,14 @@ For detailed documentation, see `/backend/docs/email-system.md`.
 -   `npm run list-users`: Lists all users and their roles.
 -   `npm run make-admin <email>`: Promotes a user to admin role.
 
+### Unified Logging
+-   **Single Log Stream**: All backend console logs, frontend console logs, and database queries flow into `logs/unified.log`
+-   **Frontend Logging**: Browser console calls are automatically forwarded to the backend via API
+-   **Database Query Logging**: MongoDB/Mongoose queries are logged with collection, method, and timing info
+-   **Quick Access**: `make tail-logs` shows the last 50 lines and follows new output (ideal for debugging and AI agents)
+-   **Alternative Commands**: `npm run logs:tail` or `tail -f logs/unified.log`
+-   **Log Info**: Run `make logs-info` for detailed logging system information
+
 ### Development Route Authentication
 To access the email verification preview routes:
 1. Sign in to the application with any user account

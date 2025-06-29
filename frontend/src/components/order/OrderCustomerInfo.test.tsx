@@ -219,7 +219,7 @@ describe('OrderCustomerInfo', () => {
     });
 
     it('should handle guest checkout (no user)', () => {
-      const guestOrder = { ...mockOrder, user: { _id: '' as any, name: '', email: '' } };
+      const guestOrder = { ...mockOrder, user: { _id: '', name: '', email: '' } };
       render(<OrderCustomerInfo order={guestOrder} />);
 
       expect(screen.getByText('Guest Checkout')).toBeInTheDocument();

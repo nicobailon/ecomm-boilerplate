@@ -28,7 +28,7 @@ export class QueueMonitoring {
     try {
       // Wait a bit for the email queue to potentially be initialized
       await new Promise(resolve => setTimeout(resolve, 1000));
-      this.emailQueue = await getEmailQueueForShutdown();
+      this.emailQueue = getEmailQueueForShutdown();
       this.setupQueueListeners();
     } catch (error) {
       console.error('[QueueMonitoring] Failed to initialize:', error);

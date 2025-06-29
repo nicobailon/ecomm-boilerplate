@@ -9,7 +9,7 @@ describe('OrderProductsList', () => {
   const mockProducts: OrderProduct[] = [
     {
       product: {
-        _id: 'prod1' as any,
+        _id: 'prod1' ,
         name: 'Test Product 1',
         image: 'https://example.com/image1.jpg',
       },
@@ -21,7 +21,7 @@ describe('OrderProductsList', () => {
     },
     {
       product: {
-        _id: 'prod2' as any,
+        _id: 'prod2' ,
         name: 'Test Product 2',
         image: 'https://example.com/image2.jpg',
       },
@@ -33,9 +33,9 @@ describe('OrderProductsList', () => {
     },
     {
       product: {
-        _id: 'prod3' as any,
+        _id: 'prod3' ,
         name: 'Product with Long Name That Should Be Truncated',
-        image: null as any,
+        image: '' ,
       },
       price: 199.99,
       quantity: 3,
@@ -116,9 +116,9 @@ describe('OrderProductsList', () => {
       const productsWithZero: OrderProduct[] = [
         {
           product: {
-            _id: 'prod1' as any,
+            _id: 'prod1' ,
             name: 'Zero Quantity Product',
-            image: null as any,
+            image: '' ,
           },
           price: 50,
           quantity: 0,
@@ -141,9 +141,9 @@ describe('OrderProductsList', () => {
       const expensiveProducts: OrderProduct[] = [
         {
           product: {
-            _id: 'prod1' as any,
+            _id: 'prod1' ,
             name: 'Expensive Product',
-            image: null as any,
+            image: '' ,
           },
           price: 999999.99,
           quantity: 2,
@@ -165,9 +165,9 @@ describe('OrderProductsList', () => {
       const decimalProducts: OrderProduct[] = [
         {
           product: {
-            _id: 'prod1' as any,
+            _id: 'prod1' ,
             name: 'Product sold by weight',
-            image: null as any,
+            image: '' ,
           },
           price: 10.50,
           quantity: 2.5,
@@ -188,9 +188,9 @@ describe('OrderProductsList', () => {
       const productsWithoutName: OrderProduct[] = [
         {
           product: {
-            _id: 'prod1' as any,
+            _id: 'prod1' ,
             name: '',
-            image: null as any,
+            image: '' ,
           },
           price: 50,
           quantity: 1,
@@ -209,9 +209,9 @@ describe('OrderProductsList', () => {
       const longNameProducts: OrderProduct[] = [
         {
           product: {
-            _id: 'prod1' as any,
+            _id: 'prod1' ,
             name: 'A'.repeat(100), // 100 character name
-            image: null as any,
+            image: '' ,
           },
           price: 50,
           quantity: 1,

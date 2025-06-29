@@ -59,7 +59,7 @@ export class PaymentService {
     const endOfDay = new Date(date.setHours(23, 59, 59, 999));
     
     const orderCount = await Order.countDocuments({
-      createdAt: { $gte: startOfDay, $lte: endOfDay }
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
     });
     
     const sequence = (orderCount + 1).toString().padStart(4, '0');
@@ -87,7 +87,7 @@ export class PaymentService {
     for (const requestedProduct of products) {
       const serverProduct = validProducts.find(p => String(p._id) === requestedProduct._id);
       if (!serverProduct) {
-        throw new NotFoundError('Product', requestedProduct._id as string);
+        throw new NotFoundError('Product', requestedProduct._id);
       }
 
       let productPrice = serverProduct.price;
@@ -325,7 +325,7 @@ export class PaymentService {
 
         const inventoryValidation = await inventoryService.validateAndReserveInventory(
           inventoryProducts,
-          dbSession
+          dbSession,
         );
 
         if (!inventoryValidation.isValid) {
@@ -346,7 +346,7 @@ export class PaymentService {
                 variantDetails: vp.variantDetails,
                 requestedQuantity: vp.requestedQuantity,
                 availableStock: vp.availableStock,
-              }))
+              })),
           );
         }
 
@@ -438,7 +438,7 @@ export class PaymentService {
               product.id,
               product.variantId,
               product.quantity,
-              dbSession
+              dbSession,
             );
 
             // Record inventory history within the same transaction
@@ -449,7 +449,7 @@ export class PaymentService {
               'sale',
               session.metadata?.userId ?? 'system',
               { orderId: String(orderId) },
-              dbSession
+              dbSession,
             );
           } catch (error) {
             this.logger.error('checkout.inventory.deduction.error', error, {

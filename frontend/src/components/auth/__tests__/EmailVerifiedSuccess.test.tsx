@@ -13,9 +13,9 @@ describe('EmailVerifiedSuccess', () => {
       render(
         <EmailVerifiedSuccess
           role="customer"
-          onCountdownFinish={() => {}}
+          onCountdownFinish={() => undefined}
           showCountdown={false}
-        />
+        />,
       );
 
       expect(screen.getByText('Email Verified!')).toBeInTheDocument();
@@ -27,9 +27,9 @@ describe('EmailVerifiedSuccess', () => {
       render(
         <EmailVerifiedSuccess
           role="admin"
-          onCountdownFinish={() => {}}
+          onCountdownFinish={() => undefined}
           showCountdown={false}
-        />
+        />,
       );
 
       expect(screen.getByText('Email Verified!')).toBeInTheDocument();
@@ -49,10 +49,10 @@ describe('EmailVerifiedSuccess', () => {
       const { rerender } = render(
         <EmailVerifiedSuccess
           role="customer"
-          onCountdownFinish={() => {}}
+          onCountdownFinish={() => undefined}
           showCountdown={true}
           countdownSeconds={3}
-        />
+        />,
       );
 
       expect(screen.getByText('Redirecting in 3 seconds...')).toBeInTheDocument();
@@ -64,10 +64,10 @@ describe('EmailVerifiedSuccess', () => {
       rerender(
         <EmailVerifiedSuccess
           role="customer"
-          onCountdownFinish={() => {}}
+          onCountdownFinish={() => undefined}
           showCountdown={true}
           countdownSeconds={3}
-        />
+        />,
       );
       
       expect(screen.getByText('Redirecting in 2 seconds...')).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe('EmailVerifiedSuccess', () => {
           onCountdownFinish={mockOnCountdownFinish}
           showCountdown={true}
           countdownSeconds={1}
-        />
+        />,
       );
 
       expect(mockOnCountdownFinish).not.toHaveBeenCalled();
@@ -100,9 +100,9 @@ describe('EmailVerifiedSuccess', () => {
       render(
         <EmailVerifiedSuccess
           role="customer"
-          onCountdownFinish={() => {}}
+          onCountdownFinish={() => undefined}
           showCountdown={false}
-        />
+        />,
       );
 
       expect(screen.queryByText(/Redirecting in/)).not.toBeInTheDocument();
@@ -118,7 +118,7 @@ describe('EmailVerifiedSuccess', () => {
           role="customer"
           onCountdownFinish={mockOnCountdownFinish}
           showCountdown={false}
-        />
+        />,
       );
 
       const button = screen.getByText('Start Shopping');
@@ -145,7 +145,7 @@ describe('EmailVerifiedSuccess', () => {
         <EmailVerifiedSuccess
           role="admin"
           showCountdown={false}
-        />
+        />,
       );
 
       const button = screen.getByText('Go to Dashboard');
@@ -170,9 +170,9 @@ describe('EmailVerifiedSuccess', () => {
       render(
         <EmailVerifiedSuccess
           role="customer"
-          onCountdownFinish={() => {}}
+          onCountdownFinish={() => undefined}
           showCountdown={false}
-        />
+        />,
       );
 
       const heading = screen.getByRole('heading', { level: 2 });
@@ -183,9 +183,9 @@ describe('EmailVerifiedSuccess', () => {
       render(
         <EmailVerifiedSuccess
           role="customer"
-          onCountdownFinish={() => {}}
+          onCountdownFinish={() => undefined}
           showCountdown={false}
-        />
+        />,
       );
 
       const button = screen.getByRole('button');

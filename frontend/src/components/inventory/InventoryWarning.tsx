@@ -1,7 +1,8 @@
 import { AlertCircle, Package } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
-import { InventoryErrorDetail, formatInventoryError } from '@/utils/inventory-errors';
+import type { InventoryErrorDetail} from '@/utils/inventory-errors';
+import { formatInventoryError } from '@/utils/inventory-errors';
 
 interface InventoryWarningProps {
   type: 'error' | 'warning' | 'info';

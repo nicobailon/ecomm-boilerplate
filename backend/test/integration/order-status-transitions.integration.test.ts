@@ -166,7 +166,7 @@ describe('Order Status Transitions Integration Tests', () => {
         caller.order.updateStatus({
           orderId: order._id.toString(),
           status: 'cancelled',
-        })
+        }),
       ).rejects.toThrow(TRPCError);
 
       try {
@@ -192,7 +192,7 @@ describe('Order Status Transitions Integration Tests', () => {
           caller.order.updateStatus({
             orderId: order._id.toString(),
             status: status as any,
-          })
+          }),
         ).rejects.toThrow(TRPCError);
       }
     });
@@ -204,7 +204,7 @@ describe('Order Status Transitions Integration Tests', () => {
         caller.order.updateStatus({
           orderId: order._id.toString(),
           status: 'completed',
-        })
+        }),
       ).rejects.toThrow(TRPCError);
     });
 
@@ -215,7 +215,7 @@ describe('Order Status Transitions Integration Tests', () => {
         caller.order.updateStatus({
           orderId: order._id.toString(),
           status: 'refunded',
-        })
+        }),
       ).rejects.toThrow(TRPCError);
     });
   });
@@ -290,7 +290,7 @@ describe('Order Status Transitions Integration Tests', () => {
             completedOrder2._id.toString(),
           ],
           status: 'pending',
-        })
+        }),
       ).rejects.toThrow('Failed to update orders');
     });
   });
@@ -363,7 +363,7 @@ describe('Order Status Transitions Integration Tests', () => {
         caller.order.updateStatus({
           orderId: fakeOrderId,
           status: 'completed',
-        })
+        }),
       ).rejects.toThrow(TRPCError);
 
       try {
@@ -382,7 +382,7 @@ describe('Order Status Transitions Integration Tests', () => {
         caller.order.updateStatus({
           orderId: 'invalid-id',
           status: 'completed',
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -393,7 +393,7 @@ describe('Order Status Transitions Integration Tests', () => {
         caller.order.updateStatus({
           orderId: order._id.toString(),
           status: 'pending',
-        })
+        }),
       ).rejects.toThrow('Invalid status transition');
     });
   });

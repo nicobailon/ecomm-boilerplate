@@ -176,7 +176,25 @@ class ProductService {
       return toProduct(product[0]);
     } catch (error) {
       await session.abortTransaction();
-      throw error;
+      
+      // Re-throw AppError instances as-is to preserve error context
+      if (error instanceof AppError) {
+        throw error;
+      }
+      
+      // Log transaction error with structured logging
+      logTransactionError({
+        operation: 'createProduct',
+        userId: 'system', // Since userId is not available in this context
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      
+      // Wrap other errors with transaction context
+      throw new AppError(
+        `Transaction failed during product creation: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        500,
+      );
     } finally {
       await session.endSession();
     }
@@ -543,6 +561,7 @@ class ProductService {
       }
 
       // Log transaction error with structured logging
+      // Ensure we only log serializable data
       logTransactionError({
         operation: 'createProductWithCollection',
         userId,

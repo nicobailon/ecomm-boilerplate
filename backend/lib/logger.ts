@@ -38,10 +38,44 @@ const developmentFormat = winston.format.combine(
   ),
 );
 
+// Custom format to handle circular references and non-serializable objects
+const safeJsonFormat = winston.format.printf((info) => {
+  const seen = new Set();
+  const replacer = (_key: string, value: unknown) => {
+    if (value && typeof value === 'object') {
+      if (seen.has(value)) {
+        return '[Circular]';
+      }
+      seen.add(value);
+      
+      // Filter out Mongoose/MongoDB specific objects that cause serialization issues
+      if (value.constructor && value.constructor.name === 'ClientSession') {
+        return '[MongoDB Session]';
+      }
+      if (value.constructor && (value.constructor.name === 'Query' || value.constructor.name === 'Document')) {
+        return '[MongoDB Object]';
+      }
+    }
+    return value;
+  };
+  
+  try {
+    return JSON.stringify(info, replacer);
+  } catch (err) {
+    // Fallback to a simple string representation
+    return JSON.stringify({
+      level: info.level,
+      message: String(info.message),
+      timestamp: info.timestamp,
+      error: 'Failed to serialize log entry',
+    });
+  }
+});
+
 const productionFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
-  winston.format.json(),
+  safeJsonFormat,
 );
 
 // Define transports
@@ -181,15 +215,18 @@ export const logTransactionError = (data: {
   error: string;
   stack?: string;
 }): void => {
-  logger.error('Transaction failed', {
+  // Ensure all data is serializable
+  const sanitizedData = {
     service: 'DatabaseService',
-    operation: data.operation,
+    operation: String(data.operation),
     status: 'transaction_error',
-    userId: data.userId,
-    error: data.error,
-    stack: data.stack,
+    userId: String(data.userId),
+    error: String(data.error),
+    stack: data.stack ? String(data.stack) : undefined,
     timestamp: new Date().toISOString(),
-  });
+  };
+  
+  logger.error('Transaction failed', sanitizedData);
 };
 
 // Helper functions for authentication/authorization

@@ -225,8 +225,8 @@ export const productRouter = router({
 
   update: adminProcedure
     .input(z.object({
-      id: z.string(),
-      data: updateProductSchema,
+      id: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
+      data: updateProductSchema
     }))
     .mutation(async ({ input }) => {
       try {
@@ -283,6 +283,31 @@ export const productRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: message ?? 'Failed to toggle featured status',
+        });
+      }
+    }),
+
+  bulkUpdate: adminProcedure
+    .input(z.object({
+      updates: z.array(z.object({
+        id: z.string().regex(MONGODB_OBJECTID_REGEX, 'Invalid product ID'),
+        data: updateProductSchema
+      })).min(1, 'At least one update is required').max(50, 'Maximum 50 updates allowed')
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const results = await productService.bulkUpdateProducts(input.updates);
+        return {
+          success: results.success,
+          updated: results.updated,
+          failed: results.failed,
+          errors: results.errors
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to bulk update products';
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: message ?? 'Failed to bulk update products',
         });
       }
     }),

@@ -1290,6 +1290,69 @@ class ProductService {
       console.error('Failed to log audit:', error);
     }
   }
+
+  async bulkUpdateProducts(
+    updates: Array<{ id: string; data: UpdateProductInput }>,
+  ): Promise<{
+    success: boolean;
+    updated: string[];
+    failed: string[];
+    errors: Array<{ id: string; error: string }>;
+  }> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    const updated: string[] = [];
+    const failed: string[] = [];
+    const errors: Array<{ id: string; error: string }> = [];
+    
+    try {
+      for (const update of updates) {
+        try {
+          // Pass the session to updateProduct to ensure it's part of the transaction
+          await this.updateProduct(update.id, update.data);
+          updated.push(update.id);
+        } catch (error) {
+          // If one fails, the whole transaction should be rolled back.
+          // Accumulate errors to provide a detailed failure report.
+          failed.push(update.id);
+          errors.push({
+            id: update.id,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
+      // If any updates failed, abort the transaction
+      if (failed.length > 0) {
+        throw new AppError(
+          'Bulk update failed for some products',
+          400,
+          errors.map(e => ({...e, message: e.error, path: [e.id]}))
+        );
+      }
+      
+      await session.commitTransaction();
+      
+      // Clear featured products cache only if the transaction was successful
+      if (updated.length > 0) {
+        await redis.del(CACHE_KEYS.FEATURED_PRODUCTS);
+      }
+      
+      return {
+        success: true,
+        updated,
+        failed: [],
+        errors: [],
+      };
+    } catch (error) {
+      await session.abortTransaction();
+      // Re-throw the original error to be handled by the caller
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+  }
 }
 
 export const productService = new ProductService();
